@@ -167,6 +167,17 @@ router.post("/providers", async (req, res) => {
   }
 
   try {
+    // Prevent duplicate provider applications per account
+    const existing = await db
+      .select({ id: providers.id })
+      .from(providers)
+      .where(eq(providers.profileId, req.user!.id))
+      .limit(1);
+    if (existing.length > 0) {
+      res.status(409).json({ error: "A provider application already exists for this account" });
+      return;
+    }
+
     const body = CreateProviderBody.safeParse(req.body);
     if (!body.success) {
       res.status(400).json({ error: "Validation error", details: body.error.flatten() });
