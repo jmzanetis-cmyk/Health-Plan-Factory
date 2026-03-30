@@ -1,0 +1,457 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
+import Svg, { Circle } from "react-native-svg";
+import { useAuth } from "@/lib/auth";
+import { COLORS, SPACING, RADIUS } from "@/constants/theme";
+import { useGetCurrentAuthUser, useListProgress, useListIntakes } from "@workspace/api-client-react";
+
+const RING_SIZE = 140;
+const RING_STROKE = 14;
+const RING_R = (RING_SIZE - RING_STROKE) / 2;
+const RING_CIRC = 2 * Math.PI * RING_R;
+
+function WellnessRing({ score }: { score: number }) {
+  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const dashOffset = RING_CIRC * (1 - pct);
+
+  const color =
+    score >= 75 ? COLORS.sage : score >= 50 ? COLORS.amber : COLORS.rose;
+
+  return (
+    <View style={styles.ringContainer}>
+      <Svg width={RING_SIZE} height={RING_SIZE}>
+        <Circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RING_R}
+          stroke={COLORS.navy20}
+          strokeWidth={RING_STROKE}
+          fill="none"
+        />
+        <Circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RING_R}
+          stroke={color}
+          strokeWidth={RING_STROKE}
+          fill="none"
+          strokeDasharray={`${RING_CIRC}`}
+          strokeDashoffset={dashOffset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${RING_SIZE / 2},${RING_SIZE / 2}`}
+        />
+      </Svg>
+      <View style={styles.ringInner}>
+        <Text style={[styles.ringScore, { color }]}>{score}</Text>
+        <Text style={styles.ringLabel}>Wellness Score</Text>
+      </View>
+    </View>
+  );
+}
+
+interface RoutineItem {
+  id: string;
+  name: string;
+  emoji: string;
+  done: boolean;
+}
+
+const QUICK_ROUTINES: RoutineItem[] = [
+  { id: "1", name: "Morning walk (20 min)", emoji: "🚶", done: false },
+  { id: "2", name: "Hydration check", emoji: "💧", done: false },
+  { id: "3", name: "Mindful breathing (5 min)", emoji: "🧘", done: false },
+  { id: "4", name: "Evening wind-down", emoji: "🌙", done: false },
+];
+
+export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const { user } = useAuth();
+
+  const { data: authData } = useGetCurrentAuthUser();
+  const profileId = authData?.user?.id ?? "";
+
+  const { data: progressData, isLoading: progressLoading, refetch } = useListProgress(
+    { profileId, limit: 30 },
+    { query: { enabled: !!profileId } }
+  );
+
+  const [routines, setRoutines] = useState<RoutineItem[]>(QUICK_ROUTINES);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const entries = progressData ?? [];
+  const streak = calculateStreak(entries);
+  const wellnessScore = calculateWellnessScore(entries);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }
+
+  function toggleRoutine(id: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRoutines((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, done: !r.done } : r))
+    );
+  }
+
+  const firstName = user?.firstName ?? authData?.user?.firstName ?? "there";
+  const doneCount = routines.filter((r) => r.done).length;
+
+  return (
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.content, { paddingTop: topPad + SPACING.xl }]}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
+      }
+    >
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Good morning,</Text>
+          <Text style={styles.name}>{firstName}</Text>
+        </View>
+        <View style={styles.streakBadge}>
+          <Feather name="zap" size={14} color={COLORS.amber} />
+          <Text style={styles.streakText}>{streak}d</Text>
+        </View>
+      </View>
+
+      {progressLoading ? (
+        <View style={styles.loadingRing}>
+          <ActivityIndicator color={COLORS.amber} />
+        </View>
+      ) : (
+        <View style={styles.scoreSection}>
+          <WellnessRing score={wellnessScore} />
+          <View style={styles.scoreMeta}>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaValue}>{streak}</Text>
+              <Text style={styles.metaLabel}>Day Streak</Text>
+            </View>
+            <View style={styles.metaDivider} />
+            <View style={styles.metaItem}>
+              <Text style={styles.metaValue}>{entries.length}</Text>
+              <Text style={styles.metaLabel}>Journal Entries</Text>
+            </View>
+            <View style={styles.metaDivider} />
+            <View style={styles.metaItem}>
+              <Text style={styles.metaValue}>{doneCount}/{routines.length}</Text>
+              <Text style={styles.metaLabel}>Today</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Today's Routine</Text>
+        <View style={styles.routineCard}>
+          {routines.map((item, idx) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.routineRow,
+                idx < routines.length - 1 && styles.routineRowBorder,
+              ]}
+              onPress={() => toggleRoutine(item.id)}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.checkbox,
+                  item.done && styles.checkboxDone,
+                ]}
+              >
+                {item.done && (
+                  <Feather name="check" size={12} color={COLORS.white} />
+                )}
+              </View>
+              <Text
+                style={[styles.routineName, item.done && styles.routineNameDone]}
+              >
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {streak >= 3 && (
+        <View style={styles.streakCard}>
+          <Feather name="award" size={20} color={COLORS.amber} />
+          <View style={styles.streakCardText}>
+            <Text style={styles.streakCardTitle}>
+              {streak}-Day Streak!
+            </Text>
+            <Text style={styles.streakCardSub}>
+              You're building a real habit. Keep it going.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {doneCount === routines.length && doneCount > 0 && (
+        <View style={styles.completedBanner}>
+          <Feather name="check-circle" size={16} color={COLORS.sage} />
+          <Text style={styles.completedText}>
+            All routines complete for today!
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.disclaimer}>
+        <Text style={styles.disclaimerText}>
+          Content is for general wellness purposes and not medical advice. Consult your healthcare provider for medical decisions.
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+function calculateStreak(entries: Array<{ createdAt?: string }>): number {
+  if (!entries.length) return 0;
+  const dates = entries
+    .map((e) => new Date(e.createdAt ?? "").toDateString())
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+  let streak = 0;
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+  if (dates[0] !== today && dates[0] !== yesterday) return 0;
+
+  for (let i = 0; i < dates.length; i++) {
+    const expected = new Date(Date.now() - i * 86400000).toDateString();
+    if (dates[i] === expected) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function calculateWellnessScore(entries: Array<{ mood?: number | null; energy?: number | null; pain?: number | null }>): number {
+  if (!entries.length) return 62;
+  const recent = entries.slice(0, 7);
+  const avg = (key: "mood" | "energy" | "pain") => {
+    const vals = recent.map((e) => e[key]).filter((v) => v != null) as number[];
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 3;
+  };
+  const moodScore = avg("mood") * 20;
+  const energyScore = avg("energy") * 20;
+  const painInv = (5 - avg("pain")) * 20;
+  const streak = Math.min(entries.length * 5, 25);
+  return Math.round((moodScore + energyScore + painInv) / 3 + streak / 5);
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: COLORS.warm },
+  content: { paddingHorizontal: SPACING.xl, paddingBottom: 120 },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: SPACING.xxl,
+  },
+  greeting: {
+    fontFamily: "sans-serif",
+    fontSize: 14,
+    color: COLORS.textMuted,
+    letterSpacing: 0.2,
+  },
+  name: {
+    fontFamily: "serif",
+    fontSize: 28,
+    color: COLORS.navy,
+    marginTop: 2,
+  },
+  streakBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: COLORS.amberPale,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.amber10,
+  },
+  streakText: {
+    fontFamily: "sans-serif",
+    fontSize: 13,
+    fontWeight: "600" as const,
+    color: COLORS.amber,
+  },
+  loadingRing: {
+    height: 180,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scoreSection: {
+    alignItems: "center",
+    marginBottom: SPACING.xxl,
+    gap: SPACING.xl,
+  },
+  ringContainer: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringInner: {
+    position: "absolute",
+    alignItems: "center",
+  },
+  ringScore: {
+    fontFamily: "sans-serif",
+    fontSize: 38,
+    fontWeight: "700" as const,
+    lineHeight: 42,
+  },
+  ringLabel: {
+    fontFamily: "sans-serif",
+    fontSize: 10,
+    color: COLORS.textMuted,
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
+  scoreMeta: {
+    flexDirection: "row",
+    gap: SPACING.xl,
+    alignItems: "center",
+  },
+  metaItem: { alignItems: "center" },
+  metaValue: {
+    fontFamily: "sans-serif",
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: COLORS.navy,
+  },
+  metaLabel: {
+    fontFamily: "sans-serif",
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  metaDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: COLORS.border,
+  },
+  section: { marginBottom: SPACING.xxl },
+  sectionTitle: {
+    fontFamily: "serif",
+    fontSize: 20,
+    color: COLORS.navy,
+    marginBottom: SPACING.md,
+  },
+  routineCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  routineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md + 2,
+  },
+  routineRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxDone: {
+    backgroundColor: COLORS.sage,
+    borderColor: COLORS.sage,
+  },
+  routineName: {
+    fontFamily: "sans-serif",
+    fontSize: 15,
+    color: COLORS.navy,
+    flex: 1,
+  },
+  routineNameDone: {
+    color: COLORS.textMuted,
+    textDecorationLine: "line-through",
+  },
+  streakCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    backgroundColor: COLORS.amberPale,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.amber10,
+    marginBottom: SPACING.xxl,
+  },
+  streakCardText: { flex: 1 },
+  streakCardTitle: {
+    fontFamily: "sans-serif",
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: COLORS.amber,
+  },
+  streakCardSub: {
+    fontFamily: "sans-serif",
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  completedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+    backgroundColor: COLORS.sagePale,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    marginBottom: SPACING.xxl,
+  },
+  completedText: {
+    fontFamily: "sans-serif",
+    fontSize: 14,
+    color: COLORS.sage,
+    fontWeight: "500" as const,
+  },
+  disclaimer: {
+    marginTop: SPACING.xl,
+    paddingTop: SPACING.xl,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    marginBottom: SPACING.lg,
+  },
+  disclaimerText: {
+    fontFamily: "sans-serif",
+    fontSize: 11,
+    color: COLORS.textLight,
+    lineHeight: 16,
+    textAlign: "center",
+  },
+});

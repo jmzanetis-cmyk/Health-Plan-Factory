@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/health-plan-mobile/"
+title = "Health Plan Factory Mobile"
+version = "1.0.0"
+id = "artifacts/health-plan-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/health-plan-mobile/" ]
+localPort = 22448
+
+[services.development]
+run = "pnpm --filter @workspace/health-plan-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/health-plan-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/health-plan-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "22448"
+BASE_PATH = "/health-plan-mobile/"

@@ -8,6 +8,7 @@ import providersRouter from "./providers";
 import favoritesRouter from "./favorites";
 import progressRouter from "./progress";
 import adminRouter from "./admin";
+import coachRouter from "./coach";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(providersRouter);
 router.use(favoritesRouter);
 router.use(progressRouter);
 router.use(adminRouter);
+router.use(coachRouter);
 
 export default router;
