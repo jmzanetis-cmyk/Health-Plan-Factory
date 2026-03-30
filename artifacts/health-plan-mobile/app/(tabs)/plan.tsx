@@ -14,7 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import { COLORS, SPACING, RADIUS } from "@/constants/theme";
-import { useGetCurrentAuthUser } from "@workspace/api-client-react";
+import { useGetCurrentAuthUser, useListModalities } from "@workspace/api-client-react";
+import type { ModalityRecord } from "@workspace/api-client-react";
 
 function getApiBaseUrl(): string {
   if (process.env.EXPO_PUBLIC_DOMAIN) {
@@ -38,6 +39,7 @@ type PlanItem = {
   rationale?: string;
   isDeprioritized?: boolean;
   sortOrder?: number;
+  score?: number;
 };
 
 type LatestPlan = {
@@ -62,12 +64,23 @@ async function fetchLatestPlan(profileId: string): Promise<LatestPlan | null> {
   return res.json();
 }
 
+const EVIDENCE_COLORS: Record<string, string> = {
+  Strong: COLORS.sage,
+  Moderate: COLORS.amber,
+  Emerging: COLORS.sky,
+  Limited: COLORS.textMuted,
+};
+const EVIDENCE_BG: Record<string, string> = {
+  Strong: COLORS.sagePale,
+  Moderate: COLORS.amberPale,
+  Emerging: COLORS.skyPale,
+  Limited: COLORS.off,
+};
+
 function EvidenceBadge({ level }: { level?: string | null }) {
   if (!level) return null;
-  const color =
-    level === "Strong" ? COLORS.sage : level === "Moderate" ? COLORS.amber : COLORS.sky;
-  const bg =
-    level === "Strong" ? COLORS.sagePale : level === "Moderate" ? COLORS.amberPale : COLORS.skyPale;
+  const color = EVIDENCE_COLORS[level] ?? COLORS.textMuted;
+  const bg = EVIDENCE_BG[level] ?? COLORS.off;
   return (
     <View style={[styles.badge, { backgroundColor: bg, borderColor: color + "30" }]}>
       <Text style={[styles.badgeText, { color }]}>{level}</Text>
@@ -75,10 +88,35 @@ function EvidenceBadge({ level }: { level?: string | null }) {
   );
 }
 
-function PlanItemCard({ item }: { item: PlanItem }) {
+function UnlockBadge({ score }: { score?: number }) {
+  const unlocked = (score ?? 0) >= 60;
+  if (unlocked) {
+    return (
+      <View style={[styles.badge, { backgroundColor: COLORS.sagePale, borderColor: COLORS.sage + "30" }]}>
+        <Feather name="unlock" size={10} color={COLORS.sage} />
+        <Text style={[styles.badgeText, { color: COLORS.sage }]}>Unlocked</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.badge, { backgroundColor: COLORS.amberPale, borderColor: COLORS.amber + "30" }]}>
+      <Feather name="lock" size={10} color={COLORS.amber} />
+      <Text style={[styles.badgeText, { color: COLORS.amber }]}>Reveal on Web</Text>
+    </View>
+  );
+}
+
+function PlanItemCard({
+  item,
+  modalityMap,
+}: {
+  item: PlanItem;
+  modalityMap: Record<string, ModalityRecord>;
+}) {
   const [expanded, setExpanded] = useState(false);
-  const name = item.modality?.name ?? "Modality";
-  const emoji = item.modality?.emoji ?? "🌿";
+  const name = item.modality?.name ?? modalityMap[item.modalityId ?? ""]?.name ?? "Modality";
+  const emoji = item.modality?.emoji ?? modalityMap[item.modalityId ?? ""]?.emoji ?? "🌿";
+  const evidenceLevel = modalityMap[item.modalityId ?? ""]?.evidenceLevel;
 
   return (
     <TouchableOpacity
@@ -110,9 +148,23 @@ function PlanItemCard({ item }: { item: PlanItem }) {
         </View>
       </View>
 
-      {expanded && item.rationale ? (
+      <View style={styles.badgeRow}>
+        <EvidenceBadge level={evidenceLevel} />
+        <UnlockBadge score={item.score} />
+      </View>
+
+      {expanded && (
         <View style={styles.itemExpanded}>
-          <Text style={styles.itemRationale}>{item.rationale}</Text>
+          {item.rationale ? (
+            <Text style={styles.itemRationale}>{item.rationale}</Text>
+          ) : (
+            <View style={styles.lockedRationale}>
+              <Feather name="lock" size={14} color={COLORS.amber} />
+              <Text style={styles.lockedText}>
+                Unlock the full rationale on the HealthPlanFactory web app.
+              </Text>
+            </View>
+          )}
           {item.isDeprioritized && (
             <View style={styles.deprioNote}>
               <Feather name="info" size={12} color={COLORS.textMuted} />
@@ -120,7 +172,7 @@ function PlanItemCard({ item }: { item: PlanItem }) {
             </View>
           )}
         </View>
-      ) : null}
+      )}
     </TouchableOpacity>
   );
 }
@@ -137,13 +189,20 @@ export default function PlanScreen() {
     data: planData,
     isLoading,
     refetch,
-    error,
   } = useQuery({
     queryKey: ["latest-plan", profileId],
     queryFn: () => fetchLatestPlan(profileId),
     enabled: !!profileId,
     staleTime: 60_000,
   });
+
+  const { data: modalities } = useListModalities(undefined, {
+    query: { staleTime: 300_000 },
+  });
+
+  const modalityMap: Record<string, ModalityRecord> = Object.fromEntries(
+    (modalities ?? []).map((m) => [m.id, m])
+  );
 
   async function onRefresh() {
     setRefreshing(true);
@@ -193,10 +252,9 @@ export default function PlanScreen() {
         <FlatList
           data={priorityItems}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PlanItemCard item={item} />}
+          renderItem={({ item }) => <PlanItemCard item={item} modalityMap={modalityMap} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={!!priorityItems.length}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
           }
@@ -224,12 +282,12 @@ export default function PlanScreen() {
                 <View style={styles.deprioSection}>
                   <Text style={styles.deprioSectionTitle}>Also Considered</Text>
                   {deprioItems.map((item) => (
-                    <PlanItemCard key={item.id} item={item} />
+                    <PlanItemCard key={item.id} item={item} modalityMap={modalityMap} />
                   ))}
                 </View>
               )}
               <Text style={styles.footerText}>
-                Tap any item for rationale. Not medical advice — discuss with your provider.
+                Tap any item for details. Not medical advice — discuss with your provider.
               </Text>
             </>
           }
@@ -270,11 +328,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: SPACING.md,
   },
-  loadingText: {
-    fontFamily: "sans-serif",
-    fontSize: 14,
-    color: COLORS.textMuted,
-  },
+  loadingText: { fontFamily: "sans-serif", fontSize: 14, color: COLORS.textMuted },
   emptyState: {
     flex: 1,
     alignItems: "center",
@@ -290,11 +344,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-  listContent: {
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: 120,
-    gap: SPACING.sm,
-  },
+  listContent: { paddingHorizontal: SPACING.xl, paddingBottom: 120, gap: SPACING.sm },
   summaryCard: {
     flexDirection: "row",
     backgroundColor: COLORS.navy,
@@ -327,11 +377,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   itemCardDeprio: { opacity: 0.7 },
-  itemTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+  itemTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   itemLeft: { flexDirection: "row", alignItems: "center", gap: SPACING.md, flex: 1 },
   itemEmoji: { fontSize: 24 },
   itemInfo: { flex: 1 },
@@ -350,35 +396,47 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
     color: COLORS.amber,
   },
-  itemExpanded: {
-    paddingTop: SPACING.sm,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    gap: SPACING.sm,
-  },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
   badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
     borderRadius: RADIUS.full,
     paddingHorizontal: SPACING.sm + 2,
     paddingVertical: 3,
     borderWidth: 1,
   },
   badgeText: { fontFamily: "sans-serif", fontSize: 11, fontWeight: "600" as const },
+  itemExpanded: {
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    gap: SPACING.sm,
+  },
   itemRationale: {
     fontFamily: "sans-serif",
     fontSize: 13,
     color: COLORS.textMuted,
     lineHeight: 18,
   },
-  deprioNote: {
+  lockedRationale: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-  },
-  deprioText: { fontFamily: "sans-serif", fontSize: 12, color: COLORS.textMuted },
-  deprioSection: {
-    marginTop: SPACING.xl,
     gap: SPACING.sm,
+    backgroundColor: COLORS.amberPale,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
   },
+  lockedText: {
+    fontFamily: "sans-serif",
+    fontSize: 13,
+    color: COLORS.amber,
+    flex: 1,
+    lineHeight: 17,
+  },
+  deprioNote: { flexDirection: "row", alignItems: "center", gap: 6 },
+  deprioText: { fontFamily: "sans-serif", fontSize: 12, color: COLORS.textMuted },
+  deprioSection: { marginTop: SPACING.xl, gap: SPACING.sm },
   deprioSectionTitle: {
     fontFamily: "serif",
     fontSize: 16,

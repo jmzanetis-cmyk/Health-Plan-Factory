@@ -16,29 +16,15 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS, SPACING, RADIUS } from "@/constants/theme";
 import { useListProviders, useListModalities } from "@workspace/api-client-react";
+import type { ProviderRecord, ModalityRecord } from "@workspace/api-client-react";
 
-const MODALITY_FILTERS = ["All", "Acupuncture", "Yoga", "Massage", "Nutrition", "Chiropractic"];
-
-type Provider = {
-  id: string;
-  name: string;
-  bio?: string | null;
-  city?: string | null;
-  state?: string | null;
-  acceptsTelehealth?: boolean | null;
-  acceptsHsa?: boolean | null;
-  costLow?: number | null;
-  costHigh?: number | null;
-  website?: string | null;
-  phone?: string | null;
-  credentials?: string[];
-};
-
-function ProviderCard({ provider }: { provider: Provider }) {
+function ProviderCard({ provider }: { provider: ProviderRecord }) {
   function handleContact() {
-    const options = [];
-    if (provider.website) options.push({ title: "Visit Website", fn: () => Linking.openURL(provider.website!) });
-    if (provider.phone) options.push({ title: "Call", fn: () => Linking.openURL(`tel:${provider.phone}`) });
+    const options: Array<{ title: string; fn: () => void }> = [];
+    if (provider.website)
+      options.push({ title: "Visit Website", fn: () => Linking.openURL(provider.website!) });
+    if (provider.phone)
+      options.push({ title: "Call", fn: () => Linking.openURL(`tel:${provider.phone}`) });
 
     if (!options.length) {
       Alert.alert("Contact", "No contact info available. Unlock on the web app.");
@@ -48,85 +34,70 @@ function ProviderCard({ provider }: { provider: Provider }) {
       options[0].fn();
       return;
     }
-    Alert.alert(
-      "Contact Provider",
-      provider.name,
-      options.map((o) => ({ text: o.title, onPress: o.fn })).concat([{ text: "Cancel" }])
-    );
+    Alert.alert("Contact " + provider.name, undefined, [
+      ...options.map((o) => ({ text: o.title, onPress: o.fn })),
+      { text: "Cancel", style: "cancel" },
+    ]);
   }
 
-  const costRange =
-    provider.costLow != null || provider.costHigh != null
-      ? `$${provider.costLow ?? "?"}–$${provider.costHigh ?? "?"}/session`
-      : null;
-
   return (
-    <View style={styles.providerCard}>
+    <View style={styles.card}>
       <View style={styles.cardTop}>
-        <View style={styles.cardLeft}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarInitial}>
-              {provider.name?.charAt(0)?.toUpperCase() ?? "P"}
+        <View style={styles.avatarCircle}>
+          <Text style={styles.avatarText}>
+            {provider.name.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+        <View style={styles.providerInfo}>
+          <Text style={styles.providerName}>{provider.name}</Text>
+          {(provider.city || provider.state) && (
+            <Text style={styles.providerLocation}>
+              {[provider.city, provider.state].filter(Boolean).join(", ")}
             </Text>
-          </View>
-          <View style={styles.cardInfo}>
-            <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
-            {provider.city && (
-              <View style={styles.locationRow}>
-                <Feather name="map-pin" size={11} color={COLORS.textMuted} />
-                <Text style={styles.locationText}>
-                  {provider.city}{provider.state ? `, ${provider.state}` : ""}
+          )}
+          <View style={styles.tagRow}>
+            {provider.offersTelehealth && (
+              <View style={styles.tag}>
+                <Feather name="video" size={10} color={COLORS.sky} />
+                <Text style={[styles.tagText, { color: COLORS.sky }]}>Telehealth</Text>
+              </View>
+            )}
+            {provider.acceptsInsurance && (
+              <View style={[styles.tag, { backgroundColor: COLORS.sagePale }]}>
+                <Feather name="shield" size={10} color={COLORS.sage} />
+                <Text style={[styles.tagText, { color: COLORS.sage }]}>Insurance</Text>
+              </View>
+            )}
+            {provider.costPerSession != null && (
+              <View style={[styles.tag, { backgroundColor: COLORS.amberPale }]}>
+                <Text style={[styles.tagText, { color: COLORS.amber }]}>
+                  ${provider.costPerSession}/session
                 </Text>
               </View>
             )}
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.contactBtn}
-          onPress={handleContact}
-          activeOpacity={0.8}
-        >
-          <Feather name="phone" size={14} color={COLORS.navy} />
-        </TouchableOpacity>
       </View>
-
       {provider.bio ? (
-        <Text style={styles.bioText} numberOfLines={2}>
-          {provider.bio}
-        </Text>
+        <Text style={styles.providerBio} numberOfLines={2}>{provider.bio}</Text>
       ) : null}
-
-      <View style={styles.tagRow}>
-        {provider.acceptsTelehealth && (
-          <View style={[styles.tag, styles.tagTelehealth]}>
-            <Feather name="video" size={10} color={COLORS.sky} />
-            <Text style={[styles.tagText, { color: COLORS.sky }]}>Telehealth</Text>
-          </View>
-        )}
-        {provider.acceptsHsa && (
-          <View style={[styles.tag, styles.tagHsa]}>
-            <Feather name="credit-card" size={10} color={COLORS.sage} />
-            <Text style={[styles.tagText, { color: COLORS.sage }]}>HSA</Text>
-          </View>
-        )}
-        {costRange && (
-          <View style={[styles.tag, styles.tagCost]}>
-            <Text style={[styles.tagText, { color: COLORS.amber }]}>{costRange}</Text>
-          </View>
-        )}
-      </View>
-
-      {provider.credentials && provider.credentials.length > 0 && (
-        <View style={styles.credRow}>
-          {provider.credentials.slice(0, 3).map((cred) => (
-            <View key={cred} style={styles.credBadge}>
-              <Text style={styles.credText}>{cred}</Text>
-            </View>
-          ))}
-        </View>
-      )}
+      <TouchableOpacity style={styles.contactBtn} onPress={handleContact} activeOpacity={0.85}>
+        <Feather name="phone" size={14} color={COLORS.white} />
+        <Text style={styles.contactBtnText}>Contact</Text>
+      </TouchableOpacity>
     </View>
   );
+}
+
+function getModalityId(
+  modalities: ModalityRecord[],
+  filter: string
+): string | undefined {
+  if (filter === "All") return undefined;
+  const found = modalities.find(
+    (m) => m.name.toLowerCase() === filter.toLowerCase()
+  );
+  return found?.id;
 }
 
 export default function DiscoverScreen() {
@@ -135,13 +106,21 @@ export default function DiscoverScreen() {
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
+
+  const { data: modalities } = useListModalities(undefined, {
+    query: { staleTime: 300_000 },
+  });
+
+  const modalityFilters: string[] = ["All", ...(modalities ?? []).slice(0, 5).map((m) => m.name)];
+  const selectedModalityId = getModalityId(modalities ?? [], selectedFilter);
 
   const { data: providers, isLoading, refetch } = useListProviders(
     {
       limit: 20,
       page,
       search: search.length >= 2 ? search : undefined,
+      modalityId: selectedModalityId,
     },
     { query: { enabled: true } }
   );
@@ -152,7 +131,9 @@ export default function DiscoverScreen() {
     setRefreshing(false);
   }
 
-  const providerList: Provider[] = (providers ?? []).filter((p: any) => p.isActive !== false);
+  const providerList: ProviderRecord[] = (providers ?? []).filter(
+    (p) => p.status === "active" || p.status === "approved"
+  );
 
   return (
     <View style={[styles.screen, { paddingTop: topPad }]}>
@@ -179,7 +160,7 @@ export default function DiscoverScreen() {
       </View>
 
       <FlatList
-        data={MODALITY_FILTERS}
+        data={modalityFilters}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(f) => f}
@@ -187,35 +168,21 @@ export default function DiscoverScreen() {
         style={styles.filterList}
         renderItem={({ item: filter }) => (
           <TouchableOpacity
-            style={[
-              styles.filterChip,
-              selectedFilter === filter && styles.filterChipActive,
-            ]}
+            style={[styles.filterChip, selectedFilter === filter && styles.filterChipActive]}
             onPress={() => setSelectedFilter(filter)}
             activeOpacity={0.7}
           >
-            <Text
-              style={[
-                styles.filterText,
-                selectedFilter === filter && styles.filterTextActive,
-              ]}
-            >
+            <Text style={[styles.filterText, selectedFilter === filter && styles.filterTextActive]}>
               {filter}
             </Text>
           </TouchableOpacity>
         )}
       />
 
-      {isLoading && !providerList.length ? (
+      {isLoading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator color={COLORS.amber} />
-          <Text style={styles.loadingText}>Finding providers…</Text>
-        </View>
-      ) : providerList.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Feather name="users" size={40} color={COLORS.textLight} />
-          <Text style={styles.emptyTitle}>No providers found</Text>
-          <Text style={styles.emptyText}>Try adjusting your search</Text>
+          <Text style={styles.loadingText}>Loading providers…</Text>
         </View>
       ) : (
         <FlatList
@@ -224,19 +191,23 @@ export default function DiscoverScreen() {
           renderItem={({ item }) => <ProviderCard provider={item} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={!!providerList.length}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.amber}
+            />
           }
-          ListFooterComponent={
-            providerList.length >= 20 ? (
-              <TouchableOpacity
-                style={styles.loadMoreBtn}
-                onPress={() => setPage((p) => p + 1)}
-              >
-                <Text style={styles.loadMoreText}>Load more</Text>
-              </TouchableOpacity>
-            ) : null
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Feather name="users" size={36} color={COLORS.textLight} />
+              <Text style={styles.emptyTitle}>No providers found</Text>
+              <Text style={styles.emptyText}>
+                {selectedFilter !== "All"
+                  ? `No ${selectedFilter} providers listed yet.`
+                  : "Try a different search."}
+              </Text>
+            </View>
           }
         />
       )}
@@ -246,203 +217,137 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.warm },
-  header: {
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.sm,
-  },
+  header: { paddingHorizontal: SPACING.xl, paddingBottom: SPACING.sm },
   title: { fontFamily: "serif", fontSize: 28, color: COLORS.navy },
-  subtitle: {
-    fontFamily: "sans-serif",
-    fontSize: 13,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
+  subtitle: { fontFamily: "sans-serif", fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
+    gap: SPACING.sm,
     backgroundColor: COLORS.white,
-    borderRadius: RADIUS.full,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.lg,
     marginHorizontal: SPACING.xl,
-    marginVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   searchInput: {
     flex: 1,
     fontFamily: "sans-serif",
-    fontSize: 14,
-    color: COLORS.navy,
-    padding: 0,
+    fontSize: 15,
+    color: COLORS.text,
+    paddingVertical: 0,
   },
   filterList: { maxHeight: 44 },
-  filterContent: {
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.sm,
-    paddingVertical: SPACING.sm,
-  },
+  filterContent: { paddingHorizontal: SPACING.xl, gap: SPACING.sm, paddingVertical: SPACING.xs },
   filterChip: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
+    paddingVertical: SPACING.xs + 2,
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  filterChipActive: {
-    backgroundColor: COLORS.navy,
-    borderColor: COLORS.navy,
-  },
+  filterChipActive: { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
   filterText: {
     fontFamily: "sans-serif",
     fontSize: 13,
     color: COLORS.textMuted,
   },
-  filterTextActive: { color: COLORS.white },
+  filterTextActive: { color: COLORS.white, fontWeight: "600" as const },
   loadingState: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: SPACING.md,
   },
-  loadingText: {
-    fontFamily: "sans-serif",
-    fontSize: 14,
-    color: COLORS.textMuted,
-  },
+  loadingText: { fontFamily: "sans-serif", fontSize: 14, color: COLORS.textMuted },
+  listContent: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.sm, paddingBottom: 120, gap: SPACING.sm },
   emptyState: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    paddingTop: SPACING.xxxl * 2,
+    paddingHorizontal: SPACING.xxxl,
     gap: SPACING.md,
   },
-  emptyTitle: { fontFamily: "serif", fontSize: 22, color: COLORS.navy },
+  emptyTitle: { fontFamily: "serif", fontSize: 20, color: COLORS.navy },
   emptyText: {
     fontFamily: "sans-serif",
     fontSize: 14,
     color: COLORS.textMuted,
+    textAlign: "center",
   },
-  listContent: {
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: 120,
-    gap: SPACING.sm,
-    paddingTop: SPACING.sm,
-  },
-  providerCard: {
+  card: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: SPACING.sm,
+    gap: SPACING.md,
   },
-  cardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  cardLeft: { flexDirection: "row", gap: SPACING.md, flex: 1 },
+  cardTop: { flexDirection: "row", gap: SPACING.md },
   avatarCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: COLORS.navy10,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: COLORS.navy,
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarInitial: {
-    fontFamily: "serif",
+  avatarText: {
+    fontFamily: "sans-serif",
     fontSize: 18,
-    color: COLORS.navy,
     fontWeight: "700" as const,
+    color: COLORS.white,
   },
-  cardInfo: { flex: 1 },
+  providerInfo: { flex: 1 },
   providerName: {
     fontFamily: "sans-serif",
     fontSize: 15,
     fontWeight: "600" as const,
     color: COLORS.navy,
   },
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
-  locationText: {
+  providerLocation: {
     fontFamily: "sans-serif",
     fontSize: 12,
     color: COLORS.textMuted,
+    marginTop: 2,
   },
-  contactBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: COLORS.navy10,
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: SPACING.xs },
+  tag: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 3,
+    backgroundColor: COLORS.skyPale,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderRadius: RADIUS.full,
   },
-  bioText: {
+  tagText: {
+    fontFamily: "sans-serif",
+    fontSize: 10,
+    fontWeight: "600" as const,
+  },
+  providerBio: {
     fontFamily: "sans-serif",
     fontSize: 13,
     color: COLORS.textMuted,
     lineHeight: 18,
   },
-  tagRow: {
+  contactBtn: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
     gap: SPACING.sm,
+    backgroundColor: COLORS.navy,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm + 2,
   },
-  tag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: 3,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-  },
-  tagTelehealth: {
-    backgroundColor: COLORS.skyPale,
-    borderColor: COLORS.sky + "30",
-  },
-  tagHsa: {
-    backgroundColor: COLORS.sagePale,
-    borderColor: COLORS.sage + "30",
-  },
-  tagCost: {
-    backgroundColor: COLORS.amberPale,
-    borderColor: COLORS.amber10,
-  },
-  tagText: {
-    fontFamily: "sans-serif",
-    fontSize: 11,
-    fontWeight: "500" as const,
-  },
-  credRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
-  credBadge: {
-    backgroundColor: COLORS.off,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  credText: {
-    fontFamily: "sans-serif",
-    fontSize: 10,
-    color: COLORS.textMuted,
-  },
-  loadMoreBtn: {
-    alignItems: "center",
-    paddingVertical: SPACING.lg,
-  },
-  loadMoreText: {
+  contactBtnText: {
     fontFamily: "sans-serif",
     fontSize: 14,
-    color: COLORS.amber,
-    fontWeight: "500" as const,
+    fontWeight: "600" as const,
+    color: COLORS.white,
   },
 });
