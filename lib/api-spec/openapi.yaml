@@ -3,13 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Health Plan Factory API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: modalities
+    description: Wellness modality catalog
+  - name: intakes
+    description: Member intake submissions
+  - name: plans
+    description: Generated wellness plans
+  - name: providers
+    description: Wellness provider directory
+  - name: favorites
+    description: Member saved providers
+  - name: progress
+    description: Member progress logs
+  - name: admin
+    description: Admin operations
+
 paths:
   /healthz:
     get:
@@ -24,6 +39,493 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /modalities:
+    get:
+      operationId: listModalities
+      tags: [modalities]
+      summary: List all active wellness modalities
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of modalities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModalityRecord"
+    post:
+      operationId: createModality
+      tags: [modalities]
+      summary: Create a new modality (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateModalityBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModalityRecord"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /intakes:
+    get:
+      operationId: listIntakes
+      tags: [intakes]
+      summary: List member intakes (own or admin)
+      responses:
+        "200":
+          description: List of intakes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntakeRecord"
+    post:
+      operationId: createIntake
+      tags: [intakes]
+      summary: Submit member intake data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIntakeBody"
+      responses:
+        "201":
+          description: Intake saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntakeRecord"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /plans/generate:
+    post:
+      operationId: generatePlan
+      tags: [plans]
+      summary: Generate and persist a wellness plan from an intake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePlanBody"
+      responses:
+        "201":
+          description: Plan generated and saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanWithItems"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /plans/{id}:
+    get:
+      operationId: getPlan
+      tags: [plans]
+      summary: Get a saved plan with its items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plan with items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanWithItems"
+        "404":
+          description: Plan not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updatePlan
+      tags: [plans]
+      summary: Update plan status (save/activate)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePlanBody"
+      responses:
+        "200":
+          description: Updated plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanRecord"
+        "404":
+          description: Plan not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /providers:
+    get:
+      operationId: listProviders
+      tags: [providers]
+      summary: List approved providers with optional filters
+      parameters:
+        - name: modalityId
+          in: query
+          schema:
+            type: string
+        - name: zipCode
+          in: query
+          schema:
+            type: string
+        - name: radius
+          in: query
+          schema:
+            type: number
+        - name: telehealth
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: number
+        - name: offset
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderRecord"
+    post:
+      operationId: createProvider
+      tags: [providers]
+      summary: Create a provider profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProviderBody"
+      responses:
+        "201":
+          description: Provider created (pending approval)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderRecord"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /favorites:
+    get:
+      operationId: listFavorites
+      tags: [favorites]
+      summary: List member's favorited providers
+      responses:
+        "200":
+          description: List of favorites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FavoriteRecord"
+    post:
+      operationId: addFavorite
+      tags: [favorites]
+      summary: Add a provider to favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddFavoriteBody"
+      responses:
+        "201":
+          description: Added to favorites
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoriteRecord"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /favorites/{providerId}:
+    delete:
+      operationId: removeFavorite
+      tags: [favorites]
+      summary: Remove a provider from favorites
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Removed
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /progress:
+    get:
+      operationId: listProgress
+      tags: [progress]
+      summary: List member's progress logs
+      parameters:
+        - name: planId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Progress logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProgressLogRecord"
+    post:
+      operationId: createProgressLog
+      tags: [progress]
+      summary: Log a wellness session or check-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProgressLogBody"
+      responses:
+        "201":
+          description: Progress logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressLogRecord"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get aggregate platform stats
+      responses:
+        "200":
+          description: Admin statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/modalities/{id}:
+    get:
+      operationId: getAdminModality
+      tags: [admin]
+      summary: Get a single modality (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Modality detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModalityRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateAdminModality
+      tags: [admin]
+      summary: Update modality (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateModalityBody"
+      responses:
+        "200":
+          description: Updated modality
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModalityRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/providers/{id}:
+    get:
+      operationId: getAdminProvider
+      tags: [admin]
+      summary: Get a single provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Provider detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateAdminProvider
+      tags: [admin]
+      summary: Approve or reject a provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProviderStatusBody"
+      responses:
+        "200":
+          description: Updated provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/settings:
+    get:
+      operationId: listAdminSettings
+      tags: [admin]
+      summary: List all admin settings
+      responses:
+        "200":
+          description: Admin settings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminSettingRecord"
+    patch:
+      operationId: upsertAdminSetting
+      tags: [admin]
+      summary: Create or update an admin setting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAdminSettingBody"
+      responses:
+        "200":
+          description: Updated setting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSettingRecord"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +536,564 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+      required:
+        - error
+
+    ModalityRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        emoji:
+          type: string
+        category:
+          type: string
+        evidenceLevel:
+          type: string
+        costLow:
+          type: integer
+        costHigh:
+          type: integer
+        typicalFrequency:
+          type: string
+        hsaEligible:
+          type: boolean
+        description:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        preferenceMatch:
+          type: array
+          items:
+            type: string
+        exclusionIds:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - emoji
+        - category
+        - evidenceLevel
+        - costLow
+        - costHigh
+        - typicalFrequency
+        - hsaEligible
+        - description
+        - goals
+        - conditions
+        - preferenceMatch
+        - exclusionIds
+        - isActive
+        - createdAt
+        - updatedAt
+
+    CreateModalityBody:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        emoji:
+          type: string
+        category:
+          type: string
+        evidenceLevel:
+          type: string
+        costLow:
+          type: integer
+        costHigh:
+          type: integer
+        typicalFrequency:
+          type: string
+        hsaEligible:
+          type: boolean
+        description:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        preferenceMatch:
+          type: array
+          items:
+            type: string
+        exclusionIds:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - name
+        - category
+        - evidenceLevel
+        - costLow
+        - costHigh
+        - typicalFrequency
+        - description
+
+    UpdateModalityBody:
+      type: object
+      properties:
+        name:
+          type: string
+        emoji:
+          type: string
+        isActive:
+          type: boolean
+        costLow:
+          type: integer
+        costHigh:
+          type: integer
+        description:
+          type: string
+
+    IntakeRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        profileId:
+          type: string
+          nullable: true
+        budget:
+          type: integer
+        goals:
+          type: array
+          items:
+            type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        preferences:
+          type: array
+          items:
+            type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+        zipCode:
+          type: string
+          nullable: true
+        radius:
+          type: integer
+        telehealth:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - budget
+        - goals
+        - conditions
+        - preferences
+        - exclusions
+        - radius
+        - telehealth
+        - createdAt
+
+    CreateIntakeBody:
+      type: object
+      properties:
+        profileId:
+          type: string
+        budget:
+          type: integer
+        goals:
+          type: array
+          items:
+            type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        preferences:
+          type: array
+          items:
+            type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+        zipCode:
+          type: string
+        radius:
+          type: integer
+        telehealth:
+          type: boolean
+      required:
+        - budget
+        - goals
+        - conditions
+        - preferences
+        - exclusions
+        - telehealth
+
+    GeneratePlanBody:
+      type: object
+      properties:
+        intakeId:
+          type: string
+        profileId:
+          type: string
+        budget:
+          type: integer
+        goals:
+          type: array
+          items:
+            type: string
+        conditions:
+          type: array
+          items:
+            type: string
+        preferences:
+          type: array
+          items:
+            type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+        zipCode:
+          type: string
+        radius:
+          type: integer
+        telehealth:
+          type: boolean
+      required:
+        - budget
+        - goals
+        - conditions
+        - preferences
+        - exclusions
+        - telehealth
+
+    PlanRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        profileId:
+          type: string
+          nullable: true
+        intakeId:
+          type: string
+          nullable: true
+        status:
+          type: string
+        totalMonthlyCost:
+          type: integer
+        budgetUtilization:
+          type: integer
+        budget:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - status
+        - totalMonthlyCost
+        - budgetUtilization
+        - budget
+        - createdAt
+        - updatedAt
+
+    PlanItemRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        planId:
+          type: string
+        modalityId:
+          type: string
+        score:
+          type: integer
+        frequency:
+          type: string
+        estimatedMonthlyCost:
+          type: integer
+        rationale:
+          type: string
+        isDeprioritized:
+          type: boolean
+        sortOrder:
+          type: integer
+      required:
+        - id
+        - planId
+        - modalityId
+        - score
+        - frequency
+        - estimatedMonthlyCost
+        - rationale
+        - isDeprioritized
+        - sortOrder
+
+    PlanWithItems:
+      type: object
+      properties:
+        plan:
+          $ref: "#/components/schemas/PlanRecord"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanItemRecord"
+      required:
+        - plan
+        - items
+
+    UpdatePlanBody:
+      type: object
+      properties:
+        status:
+          type: string
+
+    ProviderRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        profileId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        state:
+          type: string
+          nullable: true
+        zipCode:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+        acceptsInsurance:
+          type: boolean
+        offersTelehealth:
+          type: boolean
+        costPerSession:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - status
+        - acceptsInsurance
+        - offersTelehealth
+        - createdAt
+        - updatedAt
+
+    CreateProviderBody:
+      type: object
+      properties:
+        name:
+          type: string
+        bio:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zipCode:
+          type: string
+        phone:
+          type: string
+        website:
+          type: string
+        acceptsInsurance:
+          type: boolean
+        offersTelehealth:
+          type: boolean
+        costPerSession:
+          type: integer
+        modalityIds:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+
+    UpdateProviderStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+      required:
+        - status
+
+    FavoriteRecord:
+      type: object
+      properties:
+        profileId:
+          type: string
+        providerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - profileId
+        - providerId
+        - createdAt
+
+    AddFavoriteBody:
+      type: object
+      properties:
+        profileId:
+          type: string
+        providerId:
+          type: string
+      required:
+        - providerId
+
+    ProgressLogRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        profileId:
+          type: string
+        planId:
+          type: string
+          nullable: true
+        modalityId:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          nullable: true
+        sessionDate:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - profileId
+        - createdAt
+
+    CreateProgressLogBody:
+      type: object
+      properties:
+        profileId:
+          type: string
+        planId:
+          type: string
+        modalityId:
+          type: string
+        note:
+          type: string
+        rating:
+          type: integer
+        sessionDate:
+          type: string
+          format: date-time
+      required:
+        - profileId
+
+    AdminStats:
+      type: object
+      properties:
+        totalMembers:
+          type: integer
+        totalProviders:
+          type: integer
+        totalPlans:
+          type: integer
+        pendingProviders:
+          type: integer
+        recentSignups:
+          type: integer
+      required:
+        - totalMembers
+        - totalProviders
+        - totalPlans
+        - pendingProviders
+        - recentSignups
+
+    AdminSettingRecord:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - key
+        - updatedAt
+
+    UpsertAdminSettingBody:
+      type: object
+      properties:
+        key:
+          type: string
+        value: {}
+      required:
+        - key
