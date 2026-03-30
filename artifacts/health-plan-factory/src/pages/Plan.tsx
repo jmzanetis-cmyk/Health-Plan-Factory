@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { type Plan, type PlanItem } from "@/lib/planEngine";
-import { type IntakeData } from "@/types/onboarding";
+import { intakeSchema, type IntakeData } from "@/types/onboarding";
 import { type EvidenceLevel } from "@/data/modalities";
 import { Logo } from "@/components/Logo";
 
@@ -258,11 +258,33 @@ export default function Plan() {
   const [intake, setIntake] = useState<IntakeData | null>(null);
 
   useEffect(() => {
-    const storedPlan = sessionStorage.getItem("hpf_plan");
-    const storedIntake = sessionStorage.getItem("hpf_intake");
-    if (storedPlan && storedIntake) {
-      setPlan(JSON.parse(storedPlan) as Plan);
-      setIntake(JSON.parse(storedIntake) as IntakeData);
+    try {
+      const storedPlan = sessionStorage.getItem("hpf_plan");
+      const storedIntake = sessionStorage.getItem("hpf_intake");
+      if (!storedPlan || !storedIntake) return;
+
+      const rawIntake = JSON.parse(storedIntake);
+      const intakeResult = intakeSchema.safeParse(rawIntake);
+      if (!intakeResult.success) {
+        console.warn("Stored intake data failed validation — clearing");
+        sessionStorage.removeItem("hpf_intake");
+        sessionStorage.removeItem("hpf_plan");
+        return;
+      }
+
+      const rawPlan = JSON.parse(storedPlan) as Plan;
+      if (!Array.isArray(rawPlan?.included)) {
+        console.warn("Stored plan data is malformed — clearing");
+        sessionStorage.removeItem("hpf_plan");
+        return;
+      }
+
+      setIntake(intakeResult.data);
+      setPlan(rawPlan);
+    } catch {
+      console.warn("Failed to parse stored plan data — clearing");
+      sessionStorage.removeItem("hpf_intake");
+      sessionStorage.removeItem("hpf_plan");
     }
   }, []);
 

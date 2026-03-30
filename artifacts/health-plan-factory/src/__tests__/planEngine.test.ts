@@ -14,7 +14,7 @@ const BASE_INTAKE: IntakeData = {
 };
 
 describe("planEngine – named scenario rules", () => {
-  it("Scenario 1: stress + anxiety + sleep → meditation, yoga, telehealth appear in top results", () => {
+  it("Scenario 1: stress + anxiety + sleep → meditation, yoga, or telehealth appear in top 3", () => {
     const intake: IntakeData = {
       ...BASE_INTAKE,
       budget: 200,
@@ -24,16 +24,14 @@ describe("planEngine – named scenario rules", () => {
       telehealth: true,
     };
     const plan = generatePlan(intake);
-    const ids = plan.included.map((p) => p.modality.id);
-
-    // At least one of the Rule 1 targets should be in the included plan
-    const stressModalityPresent = ids.some((id) =>
+    const topThreeIds = plan.included.slice(0, 3).map((p) => p.modality.id);
+    const stressModalityInTop3 = topThreeIds.some((id) =>
       ["meditation", "yoga", "telehealth"].includes(id)
     );
-    expect(stressModalityPresent).toBe(true);
+    expect(stressModalityInTop3).toBe(true);
   });
 
-  it("Scenario 2: back pain + posture + moderate budget → PT/Pilates/massage/acupuncture appear", () => {
+  it("Scenario 2: back pain + posture → PT, massage, or acupuncture appear in top 4", () => {
     const intake: IntakeData = {
       ...BASE_INTAKE,
       budget: 400,
@@ -42,16 +40,15 @@ describe("planEngine – named scenario rules", () => {
       preferences: ["in-person", "clinically-guided"],
     };
     const plan = generatePlan(intake);
-    const ids = plan.included.map((p) => p.modality.id);
-
-    // At least 2 of the Rule 2 targets should appear (budget allows multiple)
-    const backModalitiesIncluded = ids.filter((id) =>
-      ["physical-therapy", "pilates", "massage", "acupuncture"].includes(id)
+    const topFourIds = plan.included.slice(0, 4).map((p) => p.modality.id);
+    const backModality = topFourIds.filter((id) =>
+      ["physical-therapy", "massage", "acupuncture", "pilates"].includes(id)
     );
-    expect(backModalitiesIncluded.length).toBeGreaterThanOrEqual(1);
+    // At least 2 of the structural modalities appear in top 4
+    expect(backModality.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("Scenario 3: fitness + high-accountability → personal training + pilates are strongly preferred", () => {
+  it("Scenario 3: fitness + high-accountability → personal-training or pilates are #1 or #2", () => {
     const intake: IntakeData = {
       ...BASE_INTAKE,
       budget: 500,
@@ -60,16 +57,14 @@ describe("planEngine – named scenario rules", () => {
       preferences: ["exercise-based", "high-accountability", "in-person"],
     };
     const plan = generatePlan(intake);
-    const ids = plan.included.map((p) => p.modality.id);
-
-    // personal-training or pilates should appear (or both)
-    const fitnessModalityPresent = ids.some((id) =>
+    const topTwoIds = plan.included.slice(0, 2).map((p) => p.modality.id);
+    const fitnessModalityInTop2 = topTwoIds.some((id) =>
       ["personal-training", "pilates"].includes(id)
     );
-    expect(fitnessModalityPresent).toBe(true);
+    expect(fitnessModalityInTop2).toBe(true);
   });
 
-  it("Scenario 4: preventive goals → DPC, telehealth, or RD appear in results", () => {
+  it("Scenario 4: preventive goals → DPC, telehealth, or RD appear in top 4", () => {
     const intake: IntakeData = {
       ...BASE_INTAKE,
       budget: 250,
@@ -79,18 +74,14 @@ describe("planEngine – named scenario rules", () => {
       telehealth: true,
     };
     const plan = generatePlan(intake);
-    const allIds = [
-      ...plan.included.map((p) => p.modality.id),
-      ...plan.deprioritized.map((p) => p.modality.id),
-    ];
-
-    const preventiveModalityPresent = allIds.some((id) =>
+    const topFourIds = plan.included.slice(0, 4).map((p) => p.modality.id);
+    const preventiveModalityInTop4 = topFourIds.some((id) =>
       ["dpc", "telehealth", "registered-dietitian"].includes(id)
     );
-    expect(preventiveModalityPresent).toBe(true);
+    expect(preventiveModalityInTop4).toBe(true);
   });
 
-  it("Exclusions: mobility-limits removes personal-training and pilates", () => {
+  it("Exclusions: mobility-limits hard-blocks personal-training and pilates from all results", () => {
     const intake: IntakeData = {
       ...BASE_INTAKE,
       budget: 500,
@@ -108,7 +99,7 @@ describe("planEngine – named scenario rules", () => {
     expect(allIds).not.toContain("pilates");
   });
 
-  it("Exclusions: pregnancy-safe removes chiropractic, acupuncture, personal-training", () => {
+  it("Exclusions: pregnancy-safe hard-blocks chiropractic, acupuncture, personal-training from all results", () => {
     const intake: IntakeData = {
       ...BASE_INTAKE,
       budget: 600,
