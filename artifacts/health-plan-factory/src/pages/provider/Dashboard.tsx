@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Users, Star, Calendar, TrendingUp, ChevronRight, ExternalLink, Clock, MapPin, Video } from "lucide-react";
+import { Users, Star, Calendar, TrendingUp, ChevronRight, ExternalLink, Clock, MapPin, Video, Eye } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -38,6 +38,21 @@ function StatCard({ icon, label, value, trend }: { icon: React.ReactNode; label:
   );
 }
 
+function computeCompleteness(p: Provider): number {
+  const checks = [
+    !!p.name,
+    !!p.bio,
+    !!p.city,
+    !!p.state,
+    !!p.phone,
+    !!p.costPerSession,
+    p.modalities && p.modalities.length > 0,
+    p.acceptsInsurance !== undefined,
+  ];
+  const done = checks.filter(Boolean).length;
+  return Math.round((done / checks.length) * 100);
+}
+
 export default function ProviderDashboard() {
   const { user } = useAuth();
   const [provider, setProvider] = useState<Provider | null>(null);
@@ -54,6 +69,7 @@ export default function ProviderDashboard() {
   }, []);
 
   const displayName = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : user?.email ?? "Provider";
+  const completeness = provider ? computeCompleteness(provider) : 0;
 
   return (
     <div className="min-h-screen px-6 md:px-12 py-16" style={{ background: "var(--warm-white)" }}>
@@ -98,12 +114,36 @@ export default function ProviderDashboard() {
         <div className="grid md:grid-cols-3 gap-6">
           {/* Profile card */}
           <div className="md:col-span-2 rounded-xl p-6" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
-            <div className="flex items-start justify-between mb-5">
+            <div className="flex items-start justify-between mb-4">
               <h2 className="text-base font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Your profile</h2>
-              <Link to="/provider/profile" className="text-xs no-underline flex items-center gap-1" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
-                Edit <ExternalLink size={11} />
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link to="/provider/preview" className="text-xs no-underline flex items-center gap-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                  <Eye size={11} />
+                  Preview
+                </Link>
+                <Link to="/provider/profile" className="text-xs no-underline flex items-center gap-1" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                  Edit <ExternalLink size={11} />
+                </Link>
+              </div>
             </div>
+
+            {/* Profile completeness bar */}
+            {provider && (
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Profile completeness</span>
+                  <span className="text-xs font-semibold" style={{ color: completeness >= 80 ? "var(--sage)" : "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>{completeness}%</span>
+                </div>
+                <div className="h-1.5 rounded-full" style={{ background: "rgba(27,45,79,0.08)" }}>
+                  <div className="h-full rounded-full transition-all" style={{ width: `${completeness}%`, background: completeness >= 80 ? "var(--sage)" : "var(--hpf-amber)" }} />
+                </div>
+                {completeness < 80 && (
+                  <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                    Complete your profile to get more leads — add bio, location, and pricing.
+                  </p>
+                )}
+              </div>
+            )}
 
             {loading ? (
               <div className="flex items-center gap-3">
@@ -137,6 +177,16 @@ export default function ProviderDashboard() {
                     </div>
                   )}
                 </div>
+                {/* Modalities */}
+                {provider.modalities && provider.modalities.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {provider.modalities.map((m) => (
+                      <span key={m.id} className="px-2.5 py-1 rounded-lg text-xs font-medium" style={{ background: "rgba(27,45,79,0.06)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                        {m.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium"
                   style={{
@@ -147,7 +197,7 @@ export default function ProviderDashboard() {
                   }}
                 >
                   <div className="w-1.5 h-1.5 rounded-full" style={{ background: provider.status === "approved" ? "var(--sage)" : "var(--hpf-amber)" }} />
-                  {provider.status === "approved" ? "Profile active" : `Status: ${provider.status}`}
+                  {provider.status === "approved" ? "Profile active" : provider.status === "pending" ? "Pending review" : `Status: ${provider.status}`}
                 </div>
               </div>
             ) : (
@@ -174,6 +224,7 @@ export default function ProviderDashboard() {
                 {[
                   { to: "/provider/leads", label: "Member leads" },
                   { to: "/provider/profile", label: "Edit profile" },
+                  { to: "/provider/preview", label: "Preview public profile" },
                   { to: "/modalities", label: "Browse modalities" },
                   { to: "/for-providers", label: "Provider resources" },
                 ].map((item) => (

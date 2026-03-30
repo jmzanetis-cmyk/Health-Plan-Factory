@@ -119,7 +119,7 @@ export default function ProviderSignup() {
             Sign in first to apply as a founding provider.
           </p>
           <button
-            onClick={login}
+            onClick={() => login()}
             className="w-full py-3.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-3"
             style={{ background: "var(--navy)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
           >

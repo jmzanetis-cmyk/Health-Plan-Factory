@@ -35,7 +35,7 @@ export default function SignIn() {
 
         <div className="rounded-2xl p-8" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", boxShadow: "0 8px 32px rgba(27,45,79,0.08)" }}>
           <button
-            onClick={login}
+            onClick={() => login()}
             disabled={isLoading}
             className="w-full py-3.5 rounded-lg text-sm font-semibold text-white transition-all flex items-center justify-center gap-3"
             style={{
@@ -72,7 +72,7 @@ export default function SignIn() {
           <p className="text-center text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             No account needed —{" "}
             <button
-              onClick={login}
+              onClick={() => login()}
               className="font-semibold"
               style={{ color: "var(--hpf-amber)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
             >

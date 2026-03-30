@@ -142,14 +142,14 @@ export function Navbar() {
           {!isLoading && !isAuthenticated ? (
             <>
               <button
-                onClick={login}
+                onClick={() => login()}
                 className="text-sm font-medium no-underline transition-colors"
                 style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", background: "none", border: "none", cursor: "pointer" }}
               >
                 Sign In
               </button>
               <button
-                onClick={login}
+                onClick={() => login()}
                 className="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-white transition-all"
                 style={{
                   background: "var(--navy)",

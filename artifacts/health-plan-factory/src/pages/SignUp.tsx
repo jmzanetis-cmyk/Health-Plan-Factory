@@ -1,11 +1,26 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@workspace/replit-auth-web";
+
+type Role = "member" | "provider";
+
+const MEMBER_FEATURES = [
+  "AI-powered personalized health plan",
+  "Budget-aware provider matching",
+  "Progress tracking & accountability coach",
+];
+
+const PROVIDER_FEATURES = [
+  "Get discovered by health-motivated members",
+  "Receive qualified leads in your specialty",
+  "0% commission for founding providers (90 days)",
+];
 
 export default function SignUp() {
   const { login, isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
+  const [selectedRole, setSelectedRole] = useState<Role>("member");
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -16,6 +31,16 @@ export default function SignUp() {
     }
   }, [isAuthenticated, isLoading, navigate, user]);
 
+  const handleContinue = () => {
+    if (selectedRole === "provider") {
+      login("/provider/signup");
+    } else {
+      login("/onboarding");
+    }
+  };
+
+  const features = selectedRole === "provider" ? PROVIDER_FEATURES : MEMBER_FEATURES;
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-16" style={{ background: "var(--warm-white)" }}>
       <div className="w-full max-w-md">
@@ -24,17 +49,59 @@ export default function SignUp() {
             <Logo variant="auth" />
           </div>
           <h1 className="mb-2" style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
-            Build your plan free
+            Get started free
           </h1>
           <p className="text-sm font-light" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-            No credit card required. Takes about 5 minutes.
+            Choose how you'd like to use Health Plan Factory
           </p>
         </div>
 
         <div className="rounded-2xl p-8" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", boxShadow: "0 8px 32px rgba(27,45,79,0.08)" }}>
+
+          {/* Role selector */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {(["member", "provider"] as Role[]).map((role) => (
+              <button
+                key={role}
+                onClick={() => setSelectedRole(role)}
+                className="relative flex flex-col items-center gap-2 p-4 rounded-xl text-center transition-all"
+                style={{
+                  border: selectedRole === role ? "2px solid var(--navy)" : "2px solid rgba(27,45,79,0.12)",
+                  background: selectedRole === role ? "rgba(27,45,79,0.04)" : "white",
+                  cursor: "pointer",
+                  fontFamily: "var(--app-font-sans)",
+                }}
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: selectedRole === role ? "var(--navy)" : "rgba(27,45,79,0.06)" }}>
+                  {role === "member" ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke={selectedRole === role ? "white" : "var(--navy)"} strokeWidth="2" strokeLinecap="round"/>
+                      <circle cx="12" cy="7" r="4" stroke={selectedRole === role ? "white" : "var(--navy)"} strokeWidth="2"/>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke={selectedRole === role ? "white" : "var(--navy)"} strokeWidth="2" strokeLinecap="round"/>
+                      <polyline points="9,22 9,12 15,12 15,22" stroke={selectedRole === role ? "white" : "var(--navy)"} strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span className="text-sm font-semibold capitalize" style={{ color: "var(--navy)" }}>{role}</span>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  {role === "member" ? "Get a health plan" : "List my practice"}
+                </span>
+                {selectedRole === role && (
+                  <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "var(--navy)" }}>
+                    <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Features list */}
           <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.12)" }}>
             <div className="flex flex-col gap-2">
-              {["AI-powered personalized health plan", "Budget-aware provider matching", "Progress tracking & accountability coach"].map((f) => (
+              {features.map((f) => (
                 <div key={f} className="flex items-center gap-2.5">
                   <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--sage)" }}>
                     <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -46,7 +113,7 @@ export default function SignUp() {
           </div>
 
           <button
-            onClick={login}
+            onClick={handleContinue}
             disabled={isLoading}
             className="w-full py-3.5 rounded-lg text-sm font-semibold text-white transition-all flex items-center justify-center gap-3"
             style={{
@@ -66,7 +133,7 @@ export default function SignUp() {
                 <rect x="13" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
               </svg>
             )}
-            Get started with Replit →
+            Continue with Replit →
           </button>
 
           <p className="text-center text-xs mt-4 leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -77,7 +144,7 @@ export default function SignUp() {
 
           <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             Already have an account?{" "}
-            <button onClick={login} className="font-semibold" style={{ color: "var(--hpf-amber)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>Sign in</button>
+            <Link to="/sign-in" className="font-semibold no-underline" style={{ color: "var(--hpf-amber)" }}>Sign in</Link>
           </p>
         </div>
       </div>

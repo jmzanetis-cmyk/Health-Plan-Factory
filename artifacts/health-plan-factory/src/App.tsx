@@ -29,6 +29,7 @@ import Profile from "@/pages/Profile";
 import ProviderDashboard from "@/pages/provider/Dashboard";
 import ProviderSignup from "@/pages/provider/Signup";
 import ProviderProfile from "@/pages/provider/Profile";
+import ProviderPreview from "@/pages/provider/Preview";
 import ProviderLeads from "@/pages/provider/Leads";
 
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -78,6 +79,7 @@ function AppRoutes() {
       <Route path="/provider/dashboard" element={<Layout><ProtectedRoute role="provider"><ProviderDashboard /></ProtectedRoute></Layout>} />
       <Route path="/provider/signup" element={<Layout><ProviderSignup /></Layout>} />
       <Route path="/provider/profile" element={<Layout><ProtectedRoute role="provider"><ProviderProfile /></ProtectedRoute></Layout>} />
+      <Route path="/provider/preview" element={<Layout><ProtectedRoute role="provider"><ProviderPreview /></ProtectedRoute></Layout>} />
       <Route path="/provider/leads" element={<Layout><ProtectedRoute role="provider"><ProviderLeads /></ProtectedRoute></Layout>} />
 
       {/* Admin routes — protected */}
