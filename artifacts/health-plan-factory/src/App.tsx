@@ -62,10 +62,10 @@ function AppRoutes() {
       <Route path="/sign-in" element={<Layout hideFooter><SignIn /></Layout>} />
       <Route path="/sign-up" element={<Layout hideFooter><SignUp /></Layout>} />
 
-      {/* Member app — protected */}
+      {/* Member app */}
       <Route path="/dashboard" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
-      <Route path="/onboarding" element={<Layout hideFooter><ProtectedRoute><Onboarding /></ProtectedRoute></Layout>} />
-      <Route path="/plan" element={<Layout><ProtectedRoute><Plan /></ProtectedRoute></Layout>} />
+      <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/plan" element={<Plan />} />
       <Route path="/providers" element={<Layout><ProtectedRoute><Providers /></ProtectedRoute></Layout>} />
       <Route path="/bookmarks" element={<Layout><ProtectedRoute><Bookmarks /></ProtectedRoute></Layout>} />
       <Route path="/progress" element={<Layout><ProtectedRoute><Progress /></ProtectedRoute></Layout>} />

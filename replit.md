@@ -95,18 +95,53 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 
 React + Vite frontend for the **Health Plan Factory** product — a premium editorial wellness optimization platform.
 
-- **Brand tokens** (in `src/index.css`): `--navy #1b2d4f`, `--amber #b8892a`, `--sage #3d6b52`, `--warm-white #fafaf8`
-- **Fonts**: Cormorant Garamond (serif headings), Outfit (body sans), DM Mono (prices/data)
-- **Router**: Wouter with `BASE_URL` base path
-- **Components**: `Logo`, `Navbar` (fixed, responsive, mobile hamburger), `Footer`, `DisclaimerBar` (sticky, dismissible), `Layout` shell
+- **Brand tokens** (in `src/index.css`): `--navy #1b2d4f`, `--hpf-amber #b8892a`, `--amber-light #d4a44c`, `--sage #3d6b52`, `--warm-white #fafaf8`
+- **Fonts**: Cormorant Garamond (serif headings), Outfit (body sans), DM Mono (prices/data/mono)
+- **Router**: React Router v7 with `BASE_URL` base path
+- **Components**: `Logo`, `Navbar`, `Footer`, `DisclaimerBar`, `Layout` shell, `ProtectedRoute`
 - **Page routes** (all wired in `src/App.tsx`):
   - Public: `/`, `/how-it-works`, `/modalities`, `/for-providers`, `/pricing`, `/faq`, `/legal`, `/privacy`, `/terms`, `/contact`
   - Auth: `/sign-in`, `/sign-up`
-  - Member: `/dashboard`, `/onboarding`, `/plan`, `/providers`, `/bookmarks`, `/progress`, `/profile`
-  - Provider: `/provider/dashboard`, `/provider/signup`, `/provider/profile`, `/provider/leads`
-  - Admin: `/admin/dashboard`, `/admin/users`, `/admin/providers`, `/admin/modalities`, `/admin/settings`
-- All pages wrapped in `<Layout>` (Navbar + Footer + DisclaimerBar)
+  - **Public lead-capture** (no auth, no Layout wrapper): `/onboarding`, `/plan`
+  - Member (protected): `/dashboard`, `/providers`, `/bookmarks`, `/progress`, `/profile`
+  - Provider (protected): `/provider/dashboard`, `/provider/signup`, `/provider/profile`, `/provider/leads`
+  - Admin (protected): `/admin/dashboard`, `/admin/users`, `/admin/providers`, `/admin/modalities`, `/admin/settings`
+- All marketing/member pages use `<Layout>` (Navbar + Footer + DisclaimerBar)
 - Disclaimer bar with 911/988/741741 crisis numbers sitewide
+
+#### Onboarding Wizard (`/onboarding`) — Task #2
+7-step intake wizard, full-page layout (no Layout wrapper), public (no auth required):
+- Step 1: Budget slider ($50–$1000 with live label + typeahead input)
+- Step 2: Goals (chip multi-select from 10 options)
+- Step 3: Conditions/concerns (chip multi-select, "None" exclusive)
+- Step 4: Preferences (chip multi-select from 9 options)
+- Step 5: Exclusions (optional chip multi-select)
+- Step 6: Region (ZIP code + radius buttons + telehealth toggle)
+- Step 7: Review (all selections + inline Edit links)
+- Validates per-step before advancing; "Generate My Plan" on final step triggers BuildingScreen
+
+#### Building Screen (`src/components/onboarding/BuildingScreen.tsx`)
+- Navy-background overlay with animated 🏭 factory emoji (CSS translateY bob)
+- 6 build steps animate sequentially (600ms each): spinner → checkmark
+- Redirects to `/plan` when complete
+
+#### Plan Engine (`src/lib/planEngine.ts`)
+- Pure rules-based scorer: goal match (+3), condition match (+4), preference match (+2), telehealth bonus, evidence bonus, HSA bonus, hard exclusion block
+- `generatePlan(intake)` returns `{ included: PlanItem[], deprioritized: PlanItem[], totalMonthlyCost, budgetUtilization }`
+- Budget-aware: fills plan greedily up to user budget, max 6 included + 4 deprioritized
+
+#### Plan Results (`/plan`) — Task #2
+- Reads `hpf_plan` + `hpf_intake` from `sessionStorage`
+- Budget allocation bar with utilization % and remaining budget
+- Ranked modality cards (rank circle, emoji, name, evidence badge, HSA badge, rationale, cost/frequency)
+- Expandable "More ↓" detail: description, tags, locked provider CTA ("Unlock $1–$3")
+- Deprioritized section for over-budget modalities
+- Navy CTA block: "Create Free Account" + "See Plans"
+- Empty-state redirects to `/onboarding`
+
+#### Modality Data (`src/data/modalities.ts`)
+12 modalities: Massage, Yoga, Pilates, Chiropractic, Acupuncture, Physical Therapy, Personal Training, Registered Dietitian, Nutrition Coaching, Meditation/MBSR, Telehealth Wellness, Direct Primary Care
+
 - `pnpm --filter @workspace/health-plan-factory run dev` — Vite dev server
 
 ### `scripts` (`@workspace/scripts`)
