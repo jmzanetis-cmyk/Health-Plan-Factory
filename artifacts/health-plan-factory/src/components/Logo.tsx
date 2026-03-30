@@ -9,84 +9,80 @@ export function Logo({ variant = "default", className = "" }: LogoProps) {
   const isFooter = variant === "footer";
   const isAuth = variant === "auth";
 
-  const markSize = isAuth ? 44 : isFooter ? 34 : 40;
-  const mainSize = isAuth ? "1.15rem" : isFooter ? "0.92rem" : "1.06rem";
-  const accentSize = isAuth ? "0.9rem" : isFooter ? "0.73rem" : "0.86rem";
-  const lineWidth = isFooter ? "1.8rem" : "2.7rem";
+  const markSize = isAuth ? 52 : isFooter ? 36 : 42;
+  const mainSize = isAuth ? "1.2rem" : isFooter ? "0.9rem" : "1.05rem";
+  const subSize = isAuth ? "0.75rem" : isFooter ? "0.62rem" : "0.7rem";
 
-  const mainColor = isFooter ? "rgba(255,255,255,0.9)" : "var(--navy)";
-  const accentColor = isFooter ? "var(--amber-light)" : "var(--amber)";
-  const lineColor = isFooter ? "rgba(212,164,76,0.7)" : "rgba(196,154,42,0.9)";
+  const mainColor = isFooter ? "rgba(255,255,255,0.93)" : "var(--navy)";
+  const subColor = isFooter ? "rgba(212,175,100,0.9)" : "var(--hpf-amber)";
+  const ringColor = isFooter ? "rgba(212,175,100,0.6)" : "#c49a2a";
+  const innerColor = isFooter ? "rgba(255,255,255,0.12)" : "rgba(27,45,79,0.06)";
+  const hColor = isFooter ? "rgba(255,255,255,0.95)" : "#1b2d4f";
 
   return (
     <Link
       to="/"
       aria-label="HealthPlanFactory home"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0.82rem",
-        textDecoration: "none",
-      }}
+      style={{ display: "flex", alignItems: "center", gap: "0.78rem", textDecoration: "none" }}
       className={className}
     >
       <span
         aria-hidden="true"
-        style={{
-          width: markSize,
-          height: markSize,
-          display: "inline-block",
-          flexShrink: 0,
-        }}
+        style={{ width: markSize, height: markSize, display: "inline-block", flexShrink: 0 }}
       >
-        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%", display: "block" }}>
-          <rect x="3" y="3" width="19" height="19" rx="5.5" fill="#22365f" />
-          <rect x="26" y="3" width="19" height="19" rx="5.5" fill="#d4a44c" />
-          <rect x="3" y="26" width="19" height="19" rx="5.5" fill="#f3eee3" />
-          <rect x="26" y="26" width="19" height="19" rx="5.5" fill="#c7ccc5" />
-          <path d="M20.2 6.5 8 20.2" stroke="#fbfaf7" strokeWidth="1.8" strokeLinecap="round" opacity={0.6} />
-          <path d="M30.1 28.2 18 42" stroke="#fbfaf7" strokeWidth="1.8" strokeLinecap="round" opacity={0.4} />
+        <svg
+          viewBox="0 0 48 48"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          <circle cx="24" cy="24" r="22" fill={innerColor} />
+
+          <circle cx="24" cy="24" r="22" fill="none" stroke={ringColor} strokeWidth="1.5" />
+
+          <circle cx="24" cy="24" r="16.5" fill="none" stroke={ringColor} strokeWidth="0.7" strokeDasharray="2.4 3.2" />
+
+          <rect x="14" y="15" width="5.5" height="18" rx="1.5" fill={hColor} />
+          <rect x="28.5" y="15" width="5.5" height="18" rx="1.5" fill={hColor} />
+          <rect x="14" y="21.25" width="20" height="5.5" rx="1.5" fill={hColor} />
+
+          <circle cx="24" cy="7.5" r="2" fill={ringColor} />
+          <circle cx="24" cy="40.5" r="2" fill={ringColor} />
+          <circle cx="7.5" cy="24" r="2" fill={ringColor} />
+          <circle cx="40.5" cy="24" r="2" fill={ringColor} />
         </svg>
       </span>
 
-      <span style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+      <span style={{ display: "flex", flexDirection: "column", lineHeight: 1, gap: "0.3rem" }}>
         <span
           style={{
             fontFamily: "var(--app-font-sans)",
             fontSize: mainSize,
-            fontWeight: 700,
-            letterSpacing: "0.02em",
+            fontWeight: 800,
+            letterSpacing: "0.04em",
             color: mainColor,
             textTransform: "uppercase",
           }}
         >
           Health Plan
         </span>
-        <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.55rem",
-            marginTop: "0.22rem",
-          }}
-        >
+        <span style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
           <span
             aria-hidden="true"
             style={{
-              width: lineWidth,
-              height: "1.5px",
-              background: lineColor,
-              borderRadius: 999,
+              flex: 1,
+              height: "1px",
+              background: `linear-gradient(to right, ${ringColor}, transparent)`,
+              minWidth: isAuth ? "2.2rem" : isFooter ? "1.5rem" : "1.8rem",
             }}
           />
           <span
             style={{
               fontFamily: "var(--app-font-sans)",
-              fontSize: accentSize,
+              fontSize: subSize,
               fontWeight: 700,
-              letterSpacing: "0.18em",
+              letterSpacing: "0.22em",
               textTransform: "uppercase",
-              color: accentColor,
+              color: subColor,
             }}
           >
             Factory
@@ -94,10 +90,10 @@ export function Logo({ variant = "default", className = "" }: LogoProps) {
           <span
             aria-hidden="true"
             style={{
-              width: lineWidth,
-              height: "1.5px",
-              background: lineColor,
-              borderRadius: 999,
+              flex: 1,
+              height: "1px",
+              background: `linear-gradient(to left, ${ringColor}, transparent)`,
+              minWidth: isAuth ? "2.2rem" : isFooter ? "1.5rem" : "1.8rem",
             }}
           />
         </span>
