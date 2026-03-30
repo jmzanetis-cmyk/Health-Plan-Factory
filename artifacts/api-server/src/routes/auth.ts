@@ -258,7 +258,10 @@ router.post(
 
     try {
       const config = await getOidcConfig();
+      // Include code (and state) in the URL so authorizationCodeGrant can extract them
       const callbackUrl = new URL(redirect_uri);
+      callbackUrl.searchParams.set("code", code);
+      if (state) callbackUrl.searchParams.set("state", state);
       const tokens = await oidc.authorizationCodeGrant(config, callbackUrl, {
         pkceCodeVerifier: code_verifier,
         expectedNonce: nonce ?? undefined,

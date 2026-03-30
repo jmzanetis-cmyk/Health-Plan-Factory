@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles } from "@workspace/db";
+import { providers, providerModalities, profiles, modalities as modalitiesTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   ListProvidersQueryParams,
@@ -132,12 +132,28 @@ router.get("/providers/me", async (req, res) => {
     }
 
     const provider = rows[0];
-    const modalityRows = await db
+    const modalityLinks = await db
       .select()
       .from(providerModalities)
       .where(eq(providerModalities.providerId, provider.id));
 
-    res.json({ provider: { ...provider, modalityIds: modalityRows.map((m) => m.modalityId) } });
+    let modalityObjects: Array<{ id: string; name: string }> = [];
+    if (modalityLinks.length > 0) {
+      const ids = modalityLinks.map((m) => m.modalityId);
+      const mRows = await db
+        .select({ id: modalitiesTable.id, name: modalitiesTable.name })
+        .from(modalitiesTable)
+        .where(inArray(modalitiesTable.id, ids));
+      modalityObjects = mRows;
+    }
+
+    res.json({
+      provider: {
+        ...provider,
+        modalityIds: modalityLinks.map((m) => m.modalityId),
+        modalities: modalityObjects,
+      },
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

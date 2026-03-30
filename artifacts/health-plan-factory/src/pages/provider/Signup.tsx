@@ -5,26 +5,36 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@workspace/replit-auth-web";
-import { ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, Loader2, Upload } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
 const step1Schema = z.object({
-  name: z.string().min(2, "Practice name required"),
+  name: z.string().min(2, "Practice or provider name required"),
   phone: z.string().optional(),
   website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
+  credentials: z.string().optional(),
+  licenseNumber: z.string().optional(),
+  licenseState: z.string().optional(),
 });
+
 const step2Schema = z.object({
   city: z.string().min(1, "City required"),
   state: z.string().min(2, "State required"),
   zipCode: z.string().regex(/^\d{5}$/, "5-digit ZIP required"),
+  serviceRadiusMiles: z.coerce.number().min(0).max(500).optional(),
   offersTelehealth: z.boolean(),
+  offersInPerson: z.boolean(),
+}).refine((d) => d.offersTelehealth || d.offersInPerson, {
+  message: "Select at least one service format",
+  path: ["offersTelehealth"],
 });
+
 const step3Schema = z.object({
   bio: z.string().min(30, "Please write at least 30 characters").max(800),
+  modalityIds: z.array(z.string()).min(1, "Select at least one modality"),
   acceptsInsurance: z.boolean(),
   costPerSession: z.coerce.number().min(0).max(10000).optional(),
-  modalityIds: z.array(z.string()).min(1, "Select at least one modality"),
 });
 
 type Step1 = z.infer<typeof step1Schema>;
@@ -37,7 +47,7 @@ interface Modality {
   category: string;
 }
 
-const STEPS = ["Practice info", "Location", "Specialties & bio"];
+const STEPS = ["Practice & credentials", "Location & format", "Specialties & pricing"];
 
 const inputStyle = {
   border: "1px solid rgba(27,45,79,0.15)",
@@ -56,6 +66,7 @@ export default function ProviderSignup() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Step1 & Step2 & Step3>>({});
+  const [photoNote, setPhotoNote] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${BASE}/api/modalities`)
@@ -65,12 +76,13 @@ export default function ProviderSignup() {
   }, []);
 
   const form1 = useForm<Step1>({ resolver: zodResolver(step1Schema), defaultValues: formData });
-  const form2 = useForm<Step2>({ resolver: zodResolver(step2Schema), defaultValues: { offersTelehealth: false, ...formData } });
+  const form2 = useForm<Step2>({ resolver: zodResolver(step2Schema), defaultValues: { offersTelehealth: false, offersInPerson: true, serviceRadiusMiles: 25, ...formData } });
   const form3 = useForm<Step3>({ resolver: zodResolver(step3Schema), defaultValues: { acceptsInsurance: false, modalityIds: [], ...formData } });
 
   const nextStep = async (data: Step1 | Step2) => {
     setFormData((prev) => ({ ...prev, ...data }));
     setStep((s) => s + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleFinalSubmit = async (data: Step3) => {
@@ -86,11 +98,12 @@ export default function ProviderSignup() {
           ...payload,
           costPerSession: payload.costPerSession ? Number(payload.costPerSession) : undefined,
           website: payload.website || undefined,
+          serviceRadiusMiles: payload.serviceRadiusMiles ? Number(payload.serviceRadiusMiles) : undefined,
         }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error ?? `Error ${res.status}`);
+        throw new Error((err as { error?: string })?.error ?? `Error ${res.status}`);
       }
       navigate("/provider/dashboard");
     } catch (e: unknown) {
@@ -167,9 +180,27 @@ export default function ProviderSignup() {
         </div>
 
         <div className="rounded-2xl p-8 md:p-10" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", boxShadow: "0 8px 32px rgba(27,45,79,0.06)" }}>
-          {/* Step 1 */}
+
+          {/* Step 1 — Practice info & credentials */}
           {step === 0 && (
             <form onSubmit={form1.handleSubmit(nextStep)} className="flex flex-col gap-5">
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Practice information</p>
+
+              {/* Photo upload placeholder */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Profile photo</label>
+                <div
+                  className="relative flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer transition-all"
+                  style={{ border: "2px dashed rgba(27,45,79,0.15)", background: "rgba(27,45,79,0.02)", minHeight: "96px" }}
+                  onClick={() => setPhotoNote("Photo uploads will be available after your application is approved.")}
+                >
+                  <Upload size={20} style={{ color: "var(--text-muted)" }} />
+                  <p className="text-xs text-center" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                    {photoNote ?? "Upload a professional headshot (available after approval)"}
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Practice or provider name *</label>
                 <input {...form1.register("name")} placeholder="Austin Integrative Health" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
@@ -184,6 +215,31 @@ export default function ProviderSignup() {
                 <input {...form1.register("website")} type="url" placeholder="https://yourpractice.com" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
                 {form1.formState.errors.website && <p className="text-xs mt-1" style={errorStyle}>{form1.formState.errors.website.message}</p>}
               </div>
+
+              <div style={{ borderTop: "1px solid rgba(27,45,79,0.06)", paddingTop: "16px" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Credentials & licensing</p>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Professional credentials</label>
+                    <input {...form1.register("credentials")} placeholder="e.g. RD, LMT, ACE-CPT, NMD" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Abbreviations shown on your public profile</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>License number</label>
+                      <input {...form1.register("licenseNumber")} placeholder="e.g. RD-123456" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>License state</label>
+                      <input {...form1.register("licenseState")} placeholder="TX" maxLength={2} className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
+                    </div>
+                  </div>
+                  <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.12)", color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                    License info is used for verification and not shown publicly.
+                  </p>
+                </div>
+              </div>
+
               <div className="mt-2 flex justify-end">
                 <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white" style={{ background: "var(--navy)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
                   Next <ChevronRight size={16} />
@@ -192,9 +248,10 @@ export default function ProviderSignup() {
             </form>
           )}
 
-          {/* Step 2 */}
+          {/* Step 2 — Location & service format */}
           {step === 1 && (
             <form onSubmit={form2.handleSubmit(nextStep)} className="flex flex-col gap-5">
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Location</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>City *</label>
@@ -212,13 +269,35 @@ export default function ProviderSignup() {
                 <input {...form2.register("zipCode")} placeholder="78701" maxLength={5} className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
                 {form2.formState.errors.zipCode && <p className="text-xs mt-1" style={errorStyle}>{form2.formState.errors.zipCode.message}</p>}
               </div>
-              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(27,45,79,0.03)", border: "1px solid rgba(27,45,79,0.08)" }}>
-                <input type="checkbox" {...form2.register("offersTelehealth")} className="w-4 h-4 accent-navy" />
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Offer telehealth / virtual sessions</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Expand your reach to members statewide</p>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>In-person service radius (miles)</label>
+                <div className="flex items-center gap-3">
+                  <input {...form2.register("serviceRadiusMiles")} type="number" min={0} max={500} placeholder="25" className="w-28 px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
+                  <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Leave blank if you only see patients at your office</span>
                 </div>
-              </label>
+              </div>
+
+              <div style={{ borderTop: "1px solid rgba(27,45,79,0.06)", paddingTop: "16px" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Session formats *</p>
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(27,45,79,0.03)", border: "1px solid rgba(27,45,79,0.08)" }}>
+                    <input type="checkbox" {...form2.register("offersInPerson")} className="w-4 h-4" />
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>In-person sessions</p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Members can book appointments at your location</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(27,45,79,0.03)", border: "1px solid rgba(27,45,79,0.08)" }}>
+                    <input type="checkbox" {...form2.register("offersTelehealth")} className="w-4 h-4" />
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Telehealth / virtual sessions</p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Expand your reach to members statewide</p>
+                    </div>
+                  </label>
+                  {form2.formState.errors.offersTelehealth && <p className="text-xs" style={errorStyle}>{form2.formState.errors.offersTelehealth.message}</p>}
+                </div>
+              </div>
+
               <div className="mt-2 flex justify-between">
                 <button type="button" onClick={() => setStep(0)} className="flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium" style={{ border: "1.5px solid rgba(27,45,79,0.2)", color: "var(--navy)", background: "transparent", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
                   <ChevronLeft size={16} /> Back
@@ -230,14 +309,11 @@ export default function ProviderSignup() {
             </form>
           )}
 
-          {/* Step 3 */}
+          {/* Step 3 — Specialties, bio & pricing */}
           {step === 2 && (
             <form onSubmit={form3.handleSubmit(handleFinalSubmit)} className="flex flex-col gap-5">
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Your bio / practice description *</label>
-                <textarea {...form3.register("bio")} rows={4} placeholder="Tell members about your approach, training, and what makes your practice unique..." className="w-full px-4 py-3 rounded-lg text-sm outline-none resize-none" style={inputStyle} />
-                {form3.formState.errors.bio && <p className="text-xs mt-1" style={errorStyle}>{form3.formState.errors.bio.message}</p>}
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Specialties & bio</p>
+
               <div>
                 <label className="block text-xs font-semibold mb-2" style={labelStyle}>Modalities offered * (select all that apply)</label>
                 <div className="flex flex-wrap gap-2">
@@ -271,18 +347,33 @@ export default function ProviderSignup() {
                 </div>
                 {form3.formState.errors.modalityIds && <p className="text-xs mt-1" style={errorStyle}>{form3.formState.errors.modalityIds.message}</p>}
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Cost per session ($)</label>
-                  <input {...form3.register("costPerSession")} type="number" min={0} placeholder="150" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
-                </div>
-                <div className="flex items-end pb-1">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" {...form3.register("acceptsInsurance")} className="w-4 h-4" />
-                    <span className="text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Accepts insurance</span>
-                  </label>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Your bio / practice description *</label>
+                <textarea {...form3.register("bio")} rows={5} placeholder="Tell members about your approach, training, and what makes your practice unique..." className="w-full px-4 py-3 rounded-lg text-sm outline-none resize-none" style={inputStyle} />
+                {form3.formState.errors.bio && <p className="text-xs mt-1" style={errorStyle}>{form3.formState.errors.bio.message}</p>}
+              </div>
+
+              <div style={{ borderTop: "1px solid rgba(27,45,79,0.06)", paddingTop: "16px" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Pricing</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Cost per session ($)</label>
+                    <input {...form3.register("costPerSession")} type="number" min={0} placeholder="150" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Your standard rate (members see this)</p>
+                  </div>
+                  <div className="flex items-end pb-1">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" {...form3.register("acceptsInsurance")} className="w-4 h-4" />
+                      <div>
+                        <span className="text-sm font-semibold block" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Accepts insurance</span>
+                        <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Shown as a filter on member search</span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
+
               {submitError && (
                 <div className="p-3 rounded-lg text-sm" style={{ background: "rgba(192,57,43,0.06)", border: "1px solid rgba(192,57,43,0.15)", color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>
                   {submitError}
