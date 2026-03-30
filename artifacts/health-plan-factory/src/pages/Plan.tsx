@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { type Plan, type PlanItem, planSchema } from "@/lib/planEngine";
+import { type Plan, type PlanItem, planSchema, deserializePlan } from "@/lib/planEngine";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
 import { type EvidenceLevel } from "@/data/modalities";
 import { Logo } from "@/components/Logo";
@@ -275,13 +275,20 @@ export default function Plan() {
       const rawPlan = JSON.parse(storedPlan);
       const planResult = planSchema.safeParse(rawPlan);
       if (!planResult.success) {
-        console.warn("Stored plan data failed validation — clearing");
+        console.warn("Stored plan data failed schema validation — clearing");
+        sessionStorage.removeItem("hpf_plan");
+        return;
+      }
+
+      const rehydrated = deserializePlan(planResult.data);
+      if (!rehydrated) {
+        console.warn("Stored plan references unknown modality IDs — clearing");
         sessionStorage.removeItem("hpf_plan");
         return;
       }
 
       setIntake(intakeResult.data);
-      setPlan(planResult.data as unknown as Plan);
+      setPlan(rehydrated);
     } catch {
       console.warn("Failed to parse stored plan data — clearing");
       sessionStorage.removeItem("hpf_intake");

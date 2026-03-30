@@ -17,9 +17,12 @@ export interface Plan {
   budgetUtilization: number;
 }
 
-// Zod schema for validating persisted Plan payload from sessionStorage
-const planItemSchema = z.object({
-  modality: z.object({ id: z.string() }).passthrough(),
+// ── sessionStorage serialization ─────────────────────────────────────────────
+// Store only modality IDs to avoid storing redundant/possibly stale modality
+// objects in sessionStorage. The full Modality is rehydrated from MODALITIES.
+
+const persistedItemSchema = z.object({
+  modalityId: z.string(),
   score: z.number(),
   frequency: z.string(),
   estimatedMonthlyCost: z.number(),
@@ -27,11 +30,49 @@ const planItemSchema = z.object({
 });
 
 export const planSchema = z.object({
-  included: z.array(planItemSchema),
-  deprioritized: z.array(planItemSchema),
+  included: z.array(persistedItemSchema),
+  deprioritized: z.array(persistedItemSchema),
   totalMonthlyCost: z.number(),
   budgetUtilization: z.number(),
 });
+
+export type PersistedPlan = z.infer<typeof planSchema>;
+
+/** Serialize a Plan to a storage-safe form (modality → modalityId). */
+export function serializePlan(plan: Plan): PersistedPlan {
+  const mapItem = (item: PlanItem) => ({
+    modalityId: item.modality.id,
+    score: item.score,
+    frequency: item.frequency,
+    estimatedMonthlyCost: item.estimatedMonthlyCost,
+    rationale: item.rationale,
+  });
+  return {
+    included: plan.included.map(mapItem),
+    deprioritized: plan.deprioritized.map(mapItem),
+    totalMonthlyCost: plan.totalMonthlyCost,
+    budgetUtilization: plan.budgetUtilization,
+  };
+}
+
+/** Rehydrate a PersistedPlan to a full Plan by looking up modalities from MODALITIES.
+ *  Returns null if any modality ID cannot be resolved. */
+export function deserializePlan(persisted: PersistedPlan): Plan | null {
+  const rehydrate = (items: PersistedPlan["included"]): PlanItem[] | null => {
+    const result: PlanItem[] = [];
+    for (const item of items) {
+      const modality = MODALITIES.find((m) => m.id === item.modalityId);
+      if (!modality) return null;
+      result.push({ modality, score: item.score, frequency: item.frequency, estimatedMonthlyCost: item.estimatedMonthlyCost, rationale: item.rationale });
+    }
+    return result;
+  };
+  const included = rehydrate(persisted.included);
+  const deprioritized = rehydrate(persisted.deprioritized);
+  if (!included || !deprioritized) return null;
+  return { included, deprioritized, totalMonthlyCost: persisted.totalMonthlyCost, budgetUtilization: persisted.budgetUtilization };
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function scoreModality(modality: Modality, intake: IntakeData): number {
   let score = 0;

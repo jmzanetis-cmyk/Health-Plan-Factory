@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
-import { generatePlan } from "@/lib/planEngine";
+import { generatePlan, serializePlan } from "@/lib/planEngine";
 import { StepBudget } from "@/components/onboarding/StepBudget";
 import { StepGoals } from "@/components/onboarding/StepGoals";
 import { StepConditions } from "@/components/onboarding/StepConditions";
@@ -141,7 +141,7 @@ export default function Onboarding() {
     const data = getValues();
     const plan = generatePlan(data);
     sessionStorage.setItem("hpf_intake", JSON.stringify(data));
-    sessionStorage.setItem("hpf_plan", JSON.stringify(plan));
+    sessionStorage.setItem("hpf_plan", JSON.stringify(serializePlan(plan)));
     navigate("/plan");
   }, [getValues, navigate]);
 

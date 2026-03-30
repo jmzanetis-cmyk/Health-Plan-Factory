@@ -1,15 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { generatePlan, planSchema } from "@/lib/planEngine";
+import { generatePlan, serializePlan, deserializePlan, planSchema } from "@/lib/planEngine";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
 
 /**
  * Integration test: onboarding → sessionStorage → plan hydration
  *
  * Tests the exact data flow that Onboarding.tsx → Plan.tsx executes:
- *  1. Generate plan from valid intake
- *  2. Serialize both to sessionStorage (JSON.stringify)
- *  3. Deserialize and validate (intakeSchema.safeParse + array guard)
- *  4. Assert plan data survives the roundtrip without corruption
+ *  1. generatePlan produces a Plan
+ *  2. serializePlan converts it to PersistedPlan (modality → modalityId)
+ *  3. JSON.stringify → sessionStorage → JSON.parse
+ *  4. planSchema.safeParse validates the stored shape
+ *  5. deserializePlan rehydrates full Modality objects from MODALITIES
  */
 
 const VALID_INTAKE: IntakeData = {
@@ -39,14 +40,14 @@ describe("Onboarding → sessionStorage → Plan hydration integration", () => {
     sessionStorageMock.clear();
   });
 
-  it("plan and intake survive a full JSON.stringify/parse roundtrip", () => {
+  it("plan survives full serialize → JSON roundtrip → validate → deserialize", () => {
     const plan = generatePlan(VALID_INTAKE);
 
-    // Simulate what Onboarding.tsx does before navigating to /plan
-    sessionStorageMock.setItem("hpf_plan", JSON.stringify(plan));
+    // Simulate Onboarding.tsx: serialize + store
     sessionStorageMock.setItem("hpf_intake", JSON.stringify(VALID_INTAKE));
+    sessionStorageMock.setItem("hpf_plan", JSON.stringify(serializePlan(plan)));
 
-    // Simulate what Plan.tsx does on mount
+    // Simulate Plan.tsx: parse + validate
     const rawIntake = JSON.parse(sessionStorageMock.getItem("hpf_intake")!);
     const intakeResult = intakeSchema.safeParse(rawIntake);
     expect(intakeResult.success).toBe(true);
@@ -54,14 +55,21 @@ describe("Onboarding → sessionStorage → Plan hydration integration", () => {
     const rawPlan = JSON.parse(sessionStorageMock.getItem("hpf_plan")!);
     const planResult = planSchema.safeParse(rawPlan);
     expect(planResult.success).toBe(true);
+
     if (planResult.success) {
-      expect(planResult.data.included.length).toBeGreaterThan(0);
+      const rehydrated = deserializePlan(planResult.data);
+      expect(rehydrated).not.toBeNull();
+      expect(rehydrated!.included.length).toBeGreaterThan(0);
+      // Rehydrated modality must have full fields (not just id)
+      const firstItem = rehydrated!.included[0];
+      expect(firstItem.modality).toHaveProperty("name");
+      expect(firstItem.modality).toHaveProperty("emoji");
+      expect(firstItem.modality).toHaveProperty("evidenceLevel");
     }
   });
 
-  it("malformed intake is rejected by the validation guard", () => {
+  it("malformed intake is rejected by intakeSchema", () => {
     sessionStorageMock.setItem("hpf_intake", JSON.stringify({ budget: "not-a-number" }));
-    sessionStorageMock.setItem("hpf_plan", JSON.stringify({ included: [] }));
 
     const rawIntake = JSON.parse(sessionStorageMock.getItem("hpf_intake")!);
     const intakeResult = intakeSchema.safeParse(rawIntake);
@@ -69,7 +77,6 @@ describe("Onboarding → sessionStorage → Plan hydration integration", () => {
   });
 
   it("malformed plan (missing required fields) is rejected by planSchema", () => {
-    sessionStorageMock.setItem("hpf_intake", JSON.stringify(VALID_INTAKE));
     sessionStorageMock.setItem("hpf_plan", JSON.stringify({ totalMonthlyCost: 0 }));
 
     const rawPlan = JSON.parse(sessionStorageMock.getItem("hpf_plan")!);
@@ -77,18 +84,31 @@ describe("Onboarding → sessionStorage → Plan hydration integration", () => {
     expect(planResult.success).toBe(false);
   });
 
-  it("plan includes all expected PlanItem fields after roundtrip", () => {
+  it("plan with unknown modalityId is rejected by deserializePlan", () => {
     const plan = generatePlan(VALID_INTAKE);
-    sessionStorageMock.setItem("hpf_plan", JSON.stringify(plan));
+    const persisted = serializePlan(plan);
 
+    // Tamper one modality ID
+    if (persisted.included.length > 0) {
+      persisted.included[0].modalityId = "does-not-exist";
+    }
+
+    sessionStorageMock.setItem("hpf_plan", JSON.stringify(persisted));
     const rawPlan = JSON.parse(sessionStorageMock.getItem("hpf_plan")!);
-    const firstItem = rawPlan.included[0];
+    const planResult = planSchema.safeParse(rawPlan);
+    expect(planResult.success).toBe(true); // schema is fine — ID is still a string
 
-    expect(firstItem).toHaveProperty("modality");
-    expect(firstItem).toHaveProperty("score");
-    expect(firstItem).toHaveProperty("frequency");
-    expect(firstItem).toHaveProperty("estimatedMonthlyCost");
-    expect(firstItem).toHaveProperty("rationale");
-    expect(typeof firstItem.estimatedMonthlyCost).toBe("number");
+    if (planResult.success) {
+      const rehydrated = deserializePlan(planResult.data);
+      expect(rehydrated).toBeNull(); // lookup fails → null
+    }
+  });
+
+  it("PersistedPlan stores modalityId (not full modality object)", () => {
+    const plan = generatePlan(VALID_INTAKE);
+    const persisted = serializePlan(plan);
+
+    expect(typeof persisted.included[0].modalityId).toBe("string");
+    expect((persisted.included[0] as Record<string, unknown>).modality).toBeUndefined();
   });
 });
