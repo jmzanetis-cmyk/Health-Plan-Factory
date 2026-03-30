@@ -62,7 +62,11 @@ export default function AdminProviders() {
 
   const reject = async () => {
     if (!rejectTarget) return;
-    await updateProvider(rejectTarget, { status: "rejected", verificationStatus: "rejected" });
+    await updateProvider(rejectTarget, {
+      status: "rejected",
+      verificationStatus: "rejected",
+      rejectionReason: rejectReason.trim() || null,
+    });
     toast({ title: "Provider rejected", description: rejectReason ? `Reason: ${rejectReason}` : "Provider application rejected." });
     setRejectTarget(null);
     setRejectReason("");

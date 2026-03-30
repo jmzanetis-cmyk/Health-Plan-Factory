@@ -1,8 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
+
+const DEFAULT_TEXT =
+  "HealthPlanFactory is a wellness optimization platform — not a medical provider, diagnostic tool, or substitute for professional medical care. This is not medical advice. For emergencies call 911. For mental health crisis call 988.";
 
 export function DisclaimerBar() {
   const [dismissed, setDismissed] = useState(false);
+  const [text, setText] = useState(DEFAULT_TEXT);
+
+  useEffect(() => {
+    fetch(`${BASE}/api/settings/disclaimer`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.disclaimer) setText(data.disclaimer);
+      })
+      .catch(() => {});
+  }, []);
 
   if (dismissed) return null;
 
@@ -18,10 +33,7 @@ export function DisclaimerBar() {
     >
       <p className="flex-1">
         <strong className="text-white/90 font-semibold">Important:</strong>{" "}
-        HealthPlanFactory is a wellness optimization platform — not a medical provider, diagnostic tool, or substitute for professional medical care.
-        This is not medical advice. For emergencies call{" "}
-        <strong className="text-white/90">911</strong>. For mental health crisis call{" "}
-        <strong className="text-white/90">988</strong>.{" "}
+        {text}{" "}
         <Link to="/legal" className="text-[#d4a44c] underline underline-offset-2 hover:text-[#b8892a] transition-colors whitespace-nowrap">
           Full disclaimer ↓
         </Link>

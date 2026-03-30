@@ -103,7 +103,21 @@ router.get("/providers", async (req, res) => {
     const offset = query.data.offset ?? 0;
     rows = rows.slice(Number(offset), Number(offset) + Number(limit));
 
-    res.json(ListProvidersResponse.parse(rows));
+    const providerIds = rows.map((p) => p.id);
+    let credMap: Record<string, string[]> = {};
+    if (providerIds.length > 0) {
+      const creds = await db
+        .select({ providerId: providerCredentials.providerId, name: providerCredentials.credentialName })
+        .from(providerCredentials)
+        .where(inArray(providerCredentials.providerId, providerIds));
+      for (const c of creds) {
+        if (!credMap[c.providerId]) credMap[c.providerId] = [];
+        credMap[c.providerId].push(c.name);
+      }
+    }
+
+    const enriched = rows.map((p) => ({ ...p, credentials: credMap[p.id] ?? [] }));
+    res.json(enriched);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

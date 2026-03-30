@@ -26,6 +26,7 @@ interface Provider {
   costPerSession: number | null;
   avatarUrl: string | null;
   status: string;
+  credentials: string[];
 }
 
 interface Favorite {
@@ -293,6 +294,21 @@ export default function Providers() {
                     <p className="text-xs leading-relaxed line-clamp-2" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
                       {p.bio}
                     </p>
+                  )}
+
+                  {/* Credentials */}
+                  {p.credentials && p.credentials.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.credentials.slice(0, 3).map((cred) => (
+                        <span
+                          key={cred}
+                          className="px-2 py-0.5 rounded text-xs font-medium"
+                          style={{ background: "rgba(27,45,79,0.05)", color: "var(--navy)", fontFamily: "var(--app-font-mono)", fontSize: "0.68rem", border: "1px solid rgba(27,45,79,0.1)" }}
+                        >
+                          {cred}
+                        </span>
+                      ))}
+                    </div>
                   )}
 
                   {/* Badges */}

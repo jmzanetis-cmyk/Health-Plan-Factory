@@ -11,6 +11,19 @@ import {
 
 const router: IRouter = Router();
 
+// Public endpoint — returns only the disclaimer text (no auth required)
+router.get("/settings/disclaimer", async (req, res) => {
+  try {
+    const [row] = await db
+      .select()
+      .from(adminSettings)
+      .where(eq(adminSettings.key, "disclaimer"));
+    res.json({ disclaimer: row?.value ?? null });
+  } catch {
+    res.json({ disclaimer: null });
+  }
+});
+
 // Require admin role for all /admin/* routes
 router.use("/admin", (req, res, next) => {
   if (!req.isAuthenticated()) {
@@ -136,14 +149,16 @@ router.get("/admin/providers", async (req, res) => {
 router.patch("/admin/providers/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, verificationStatus } = req.body as {
+    const { status, verificationStatus, rejectionReason } = req.body as {
       status?: string;
       verificationStatus?: string;
+      rejectionReason?: string;
     };
 
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (status) updates.status = status;
     if (verificationStatus) updates.verificationStatus = verificationStatus;
+    if (rejectionReason !== undefined) updates.rejectionReason = rejectionReason || null;
 
     const [updated] = await db
       .update(providers)
