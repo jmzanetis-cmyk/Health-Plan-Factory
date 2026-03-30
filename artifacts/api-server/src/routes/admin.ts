@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { profiles, providers, plans, adminSettings } from "@workspace/db";
 import { eq, gte, count } from "drizzle-orm";
-import { sql } from "drizzle-orm";
+import { UpsertAdminSettingBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -46,12 +46,13 @@ router.get("/admin/settings", async (req, res) => {
 
 router.patch("/admin/settings", async (req, res) => {
   try {
-    const { key, value } = req.body as { key?: string; value?: unknown };
-    if (!key) {
-      res.status(400).json({ error: "key is required" });
+    const body = UpsertAdminSettingBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: "Validation error", details: body.error.flatten() });
       return;
     }
 
+    const { key, value } = body.data;
     const [upserted] = await db
       .insert(adminSettings)
       .values({ key, value: value ?? null, updatedAt: new Date() })

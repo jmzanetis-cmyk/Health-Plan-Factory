@@ -2,7 +2,18 @@
  * Seed script: inserts demo modalities, providers, and admin settings.
  * Run with: pnpm --filter @workspace/scripts seed
  */
-import { db, pool, modalities, providers, providerModalities, adminSettings } from "@workspace/db";
+import {
+  db,
+  pool,
+  modalities,
+  providers,
+  providerModalities,
+  adminSettings,
+  profiles,
+  memberIntakes,
+  plans,
+  planItems,
+} from "@workspace/db";
 
 // ── Modalities ────────────────────────────────────────────────────────────────
 
@@ -342,6 +353,151 @@ const ADMIN_SETTINGS_SEED = [
   },
 ];
 
+// ── Demo Profile, Intake, Plans ───────────────────────────────────────────────
+
+const DEMO_PROFILE_ID = "demo-member-001";
+const DEMO_INTAKE_ID = "demo-intake-001";
+
+const DEMO_PLANS = [
+  {
+    id: "demo-plan-001",
+    label: "Stress & Back Pain Focus ($250/mo)",
+    budget: 250,
+    totalMonthlyCost: 230,
+    budgetUtilization: 92,
+    items: [
+      {
+        id: "demo-item-001",
+        modalityId: "massage",
+        score: 92,
+        frequency: "2×/month",
+        estimatedMonthlyCost: 100,
+        rationale: "Directly targets chronic tension and stress; HSA-eligible and proven for back pain.",
+        isDeprioritized: false,
+        sortOrder: 0,
+      },
+      {
+        id: "demo-item-002",
+        modalityId: "yoga",
+        score: 85,
+        frequency: "3×/week",
+        estimatedMonthlyCost: 80,
+        rationale: "Builds back strength and flexibility while reducing cortisol; strong evidence for stress.",
+        isDeprioritized: false,
+        sortOrder: 1,
+      },
+      {
+        id: "demo-item-003",
+        modalityId: "meditation",
+        score: 78,
+        frequency: "Daily",
+        estimatedMonthlyCost: 20,
+        rationale: "Low cost, high impact for stress and sleep; reinforces yoga practice.",
+        isDeprioritized: false,
+        sortOrder: 2,
+      },
+      {
+        id: "demo-item-004",
+        modalityId: "acupuncture",
+        score: 65,
+        frequency: "1×/month",
+        estimatedMonthlyCost: 110,
+        rationale: "Strong evidence for back pain; deprioritized due to budget constraints — consider adding when budget allows.",
+        isDeprioritized: true,
+        sortOrder: 3,
+      },
+    ],
+  },
+  {
+    id: "demo-plan-002",
+    label: "Nutrition & Fitness Overhaul ($400/mo)",
+    budget: 400,
+    totalMonthlyCost: 380,
+    budgetUtilization: 95,
+    items: [
+      {
+        id: "demo-item-005",
+        modalityId: "registered-dietitian",
+        score: 94,
+        frequency: "2×/month",
+        estimatedMonthlyCost: 160,
+        rationale: "Clinical nutrition guidance; HSA-eligible and highly effective for weight management.",
+        isDeprioritized: false,
+        sortOrder: 0,
+      },
+      {
+        id: "demo-item-006",
+        modalityId: "personal-training",
+        score: 90,
+        frequency: "2×/week",
+        estimatedMonthlyCost: 160,
+        rationale: "Structured resistance training with accountability; accelerates metabolic and fitness goals.",
+        isDeprioritized: false,
+        sortOrder: 1,
+      },
+      {
+        id: "demo-item-007",
+        modalityId: "meditation",
+        score: 72,
+        frequency: "Daily",
+        estimatedMonthlyCost: 20,
+        rationale: "Supports behavior change around eating and exercise habits.",
+        isDeprioritized: false,
+        sortOrder: 2,
+      },
+      {
+        id: "demo-item-008",
+        modalityId: "nutrition-coach",
+        score: 60,
+        frequency: "2×/month",
+        estimatedMonthlyCost: 80,
+        rationale: "Complements dietitian; deprioritized to avoid redundancy at current budget.",
+        isDeprioritized: true,
+        sortOrder: 3,
+      },
+    ],
+  },
+  {
+    id: "demo-plan-003",
+    label: "Whole-Body Preventive ($150/mo)",
+    budget: 150,
+    totalMonthlyCost: 140,
+    budgetUtilization: 93,
+    items: [
+      {
+        id: "demo-item-009",
+        modalityId: "telehealth",
+        score: 88,
+        frequency: "1×/month",
+        estimatedMonthlyCost: 75,
+        rationale: "On-demand access to licensed clinicians; HSA-eligible and high value for preventive care.",
+        isDeprioritized: false,
+        sortOrder: 0,
+      },
+      {
+        id: "demo-item-010",
+        modalityId: "yoga",
+        score: 82,
+        frequency: "2×/week",
+        estimatedMonthlyCost: 45,
+        rationale: "Low-cost movement and mindfulness practice with strong preventive evidence.",
+        isDeprioritized: false,
+        sortOrder: 1,
+      },
+      {
+        id: "demo-item-011",
+        modalityId: "meditation",
+        score: 75,
+        frequency: "Daily",
+        estimatedMonthlyCost: 20,
+        rationale: "Daily stress regulation for long-term preventive health.",
+        isDeprioritized: false,
+        sortOrder: 2,
+      },
+    ],
+  },
+];
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -412,6 +568,78 @@ async function main() {
       });
   }
   console.log(`     ✓ ${ADMIN_SETTINGS_SEED.length} admin settings`);
+
+  // Demo profile
+  console.log("  → Seeding demo member profile...");
+  await db
+    .insert(profiles)
+    .values({
+      id: DEMO_PROFILE_ID,
+      email: "demo@healthplanfactory.com",
+      displayName: "Demo Member",
+      role: "member",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .onConflictDoNothing();
+  console.log("     ✓ 1 demo profile");
+
+  // Demo intake
+  console.log("  → Seeding demo member intake...");
+  await db
+    .insert(memberIntakes)
+    .values({
+      id: DEMO_INTAKE_ID,
+      profileId: DEMO_PROFILE_ID,
+      budget: 300,
+      goals: ["stress-reduction", "pain-relief", "sleep"],
+      conditions: ["back-pain", "stress", "insomnia"],
+      preferences: ["in-person", "virtual", "mind-body"],
+      exclusions: [],
+      zipCode: "78701",
+      radius: 25,
+      telehealth: true,
+      createdAt: new Date(),
+    })
+    .onConflictDoNothing();
+  console.log("     ✓ 1 demo intake");
+
+  // Demo plans
+  console.log("  → Seeding demo plans and plan items...");
+  for (const plan of DEMO_PLANS) {
+    await db
+      .insert(plans)
+      .values({
+        id: plan.id,
+        profileId: DEMO_PROFILE_ID,
+        intakeId: DEMO_INTAKE_ID,
+        status: "saved",
+        budget: plan.budget,
+        totalMonthlyCost: plan.totalMonthlyCost,
+        budgetUtilization: plan.budgetUtilization,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing();
+
+    for (const item of plan.items) {
+      await db
+        .insert(planItems)
+        .values({
+          id: item.id,
+          planId: plan.id,
+          modalityId: item.modalityId,
+          score: item.score,
+          frequency: item.frequency,
+          estimatedMonthlyCost: item.estimatedMonthlyCost,
+          rationale: item.rationale,
+          isDeprioritized: item.isDeprioritized,
+          sortOrder: item.sortOrder,
+        })
+        .onConflictDoNothing();
+    }
+  }
+  console.log(`     ✓ ${DEMO_PLANS.length} demo plans with ${DEMO_PLANS.reduce((s, p) => s + p.items.length, 0)} items`);
 
   console.log("✅ Seeding complete!");
   await pool.end();

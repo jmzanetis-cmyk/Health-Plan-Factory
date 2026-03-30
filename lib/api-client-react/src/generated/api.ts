@@ -29,6 +29,7 @@ import type {
   GeneratePlanBody,
   HealthStatus,
   IntakeRecord,
+  ListFavoritesParams,
   ListModalitiesParams,
   ListProgressParams,
   ListProvidersParams,
@@ -37,6 +38,7 @@ import type {
   PlanWithItems,
   ProgressLogRecord,
   ProviderRecord,
+  RemoveFavoriteParams,
   UpdateModalityBody,
   UpdatePlanBody,
   UpdateProviderStatusBody,
@@ -902,41 +904,57 @@ export const useCreateProvider = <
 /**
  * @summary List member's favorited providers
  */
-export const getListFavoritesUrl = () => {
-  return `/api/favorites`;
+export const getListFavoritesUrl = (params: ListFavoritesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/favorites?${stringifiedParams}`
+    : `/api/favorites`;
 };
 
 export const listFavorites = async (
+  params: ListFavoritesParams,
   options?: RequestInit,
 ): Promise<FavoriteRecord[]> => {
-  return customFetch<FavoriteRecord[]>(getListFavoritesUrl(), {
+  return customFetch<FavoriteRecord[]>(getListFavoritesUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListFavoritesQueryKey = () => {
-  return [`/api/favorites`] as const;
+export const getListFavoritesQueryKey = (params?: ListFavoritesParams) => {
+  return [`/api/favorites`, ...(params ? [params] : [])] as const;
 };
 
 export const getListFavoritesQueryOptions = <
   TData = Awaited<ReturnType<typeof listFavorites>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listFavorites>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params: ListFavoritesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFavorites>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListFavoritesQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListFavoritesQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listFavorites>>> = ({
     signal,
-  }) => listFavorites({ signal, ...requestOptions });
+  }) => listFavorites(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listFavorites>>,
@@ -957,15 +975,18 @@ export type ListFavoritesQueryError = ErrorType<unknown>;
 export function useListFavorites<
   TData = Awaited<ReturnType<typeof listFavorites>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listFavorites>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListFavoritesQueryOptions(options);
+>(
+  params: ListFavoritesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFavorites>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFavoritesQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -1063,15 +1084,31 @@ export const useAddFavorite = <
 /**
  * @summary Remove a provider from favorites
  */
-export const getRemoveFavoriteUrl = (providerId: string) => {
-  return `/api/favorites/${providerId}`;
+export const getRemoveFavoriteUrl = (
+  providerId: string,
+  params: RemoveFavoriteParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/favorites/${providerId}?${stringifiedParams}`
+    : `/api/favorites/${providerId}`;
 };
 
 export const removeFavorite = async (
   providerId: string,
+  params: RemoveFavoriteParams,
   options?: RequestInit,
 ): Promise<void> => {
-  return customFetch<void>(getRemoveFavoriteUrl(providerId), {
+  return customFetch<void>(getRemoveFavoriteUrl(providerId, params), {
     ...options,
     method: "DELETE",
   });
@@ -1084,14 +1121,14 @@ export const getRemoveFavoriteMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof removeFavorite>>,
     TError,
-    { providerId: string },
+    { providerId: string; params: RemoveFavoriteParams },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof removeFavorite>>,
   TError,
-  { providerId: string },
+  { providerId: string; params: RemoveFavoriteParams },
   TContext
 > => {
   const mutationKey = ["removeFavorite"];
@@ -1105,11 +1142,11 @@ export const getRemoveFavoriteMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof removeFavorite>>,
-    { providerId: string }
+    { providerId: string; params: RemoveFavoriteParams }
   > = (props) => {
-    const { providerId } = props ?? {};
+    const { providerId, params } = props ?? {};
 
-    return removeFavorite(providerId, requestOptions);
+    return removeFavorite(providerId, params, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1131,14 +1168,14 @@ export const useRemoveFavorite = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof removeFavorite>>,
     TError,
-    { providerId: string },
+    { providerId: string; params: RemoveFavoriteParams },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof removeFavorite>>,
   TError,
-  { providerId: string },
+  { providerId: string; params: RemoveFavoriteParams },
   TContext
 > => {
   return useMutation(getRemoveFavoriteMutationOptions(options));
@@ -1147,7 +1184,7 @@ export const useRemoveFavorite = <
 /**
  * @summary List member's progress logs
  */
-export const getListProgressUrl = (params?: ListProgressParams) => {
+export const getListProgressUrl = (params: ListProgressParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1164,7 +1201,7 @@ export const getListProgressUrl = (params?: ListProgressParams) => {
 };
 
 export const listProgress = async (
-  params?: ListProgressParams,
+  params: ListProgressParams,
   options?: RequestInit,
 ): Promise<ProgressLogRecord[]> => {
   return customFetch<ProgressLogRecord[]>(getListProgressUrl(params), {
@@ -1181,7 +1218,7 @@ export const getListProgressQueryOptions = <
   TData = Awaited<ReturnType<typeof listProgress>>,
   TError = ErrorType<unknown>,
 >(
-  params?: ListProgressParams,
+  params: ListProgressParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof listProgress>>,
@@ -1219,7 +1256,7 @@ export function useListProgress<
   TData = Awaited<ReturnType<typeof listProgress>>,
   TError = ErrorType<unknown>,
 >(
-  params?: ListProgressParams,
+  params: ListProgressParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof listProgress>>,

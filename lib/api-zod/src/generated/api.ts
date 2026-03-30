@@ -222,6 +222,10 @@ export const CreateProviderBody = zod.object({
 /**
  * @summary List member's favorited providers
  */
+export const ListFavoritesQueryParams = zod.object({
+  profileId: zod.coerce.string(),
+});
+
 export const ListFavoritesResponseItem = zod.object({
   profileId: zod.string(),
   providerId: zod.string(),
@@ -244,10 +248,15 @@ export const RemoveFavoriteParams = zod.object({
   providerId: zod.coerce.string(),
 });
 
+export const RemoveFavoriteQueryParams = zod.object({
+  profileId: zod.coerce.string(),
+});
+
 /**
  * @summary List member's progress logs
  */
 export const ListProgressQueryParams = zod.object({
+  profileId: zod.coerce.string(),
   planId: zod.coerce.string().optional(),
   limit: zod.coerce.number().optional(),
 });

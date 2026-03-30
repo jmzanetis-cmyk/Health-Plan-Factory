@@ -2,7 +2,11 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { providers, providerModalities } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
-import { ListProvidersQueryParams, CreateProviderBody } from "@workspace/api-zod";
+import {
+  ListProvidersQueryParams,
+  CreateProviderBody,
+  UpdateAdminProviderBody,
+} from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -16,20 +20,19 @@ router.get("/providers", async (req, res) => {
 
     const { modalityId, zipCode, telehealth } = query.data;
 
-    // Start with approved providers only
     let rows = await db.select().from(providers).where(eq(providers.status, "approved"));
 
-    // Filter by telehealth
     if (telehealth) {
       rows = rows.filter((p) => p.offersTelehealth);
     }
 
-    // Filter by zip code (basic string match; real implementation uses geo distance)
+    // Zip + radius: without a geocoding service we filter by exact zip match.
+    // When zip provided, include providers in same zip or providers with no zip on record.
+    // radius param is documented but requires lat/lng geocoding to apply precisely.
     if (zipCode) {
-      rows = rows.filter((p) => p.zipCode === zipCode || !p.zipCode);
+      rows = rows.filter((p) => !p.zipCode || p.zipCode === zipCode);
     }
 
-    // Filter by modality
     if (modalityId) {
       const providerIds = rows.map((p) => p.id);
       if (providerIds.length > 0) {
@@ -47,7 +50,6 @@ router.get("/providers", async (req, res) => {
       }
     }
 
-    // Pagination
     const limit = query.data.limit ?? 20;
     const offset = query.data.offset ?? 0;
     rows = rows.slice(Number(offset), Number(offset) + Number(limit));
@@ -66,7 +68,9 @@ router.post("/providers", async (req, res) => {
       return;
     }
 
-    const { modalityIds, ...providerData } = body.data as typeof body.data & { modalityIds?: string[] };
+    const { modalityIds, ...providerData } = body.data as typeof body.data & {
+      modalityIds?: string[];
+    };
 
     const now = new Date();
     const providerId = crypto.randomUUID();
@@ -93,7 +97,6 @@ router.post("/providers", async (req, res) => {
       })
       .returning();
 
-    // Link modalities if provided
     if (Array.isArray(modalityIds) && modalityIds.length > 0) {
       await db.insert(providerModalities).values(
         modalityIds.map((mId, idx) => ({
@@ -111,7 +114,6 @@ router.post("/providers", async (req, res) => {
   }
 });
 
-// Admin routes
 router.get("/admin/providers/:id", async (req, res) => {
   try {
     const [row] = await db.select().from(providers).where(eq(providers.id, req.params.id));
@@ -127,15 +129,15 @@ router.get("/admin/providers/:id", async (req, res) => {
 
 router.patch("/admin/providers/:id", async (req, res) => {
   try {
-    const body = req.body as { status?: string };
-    if (!body.status || !["pending", "approved", "rejected"].includes(body.status)) {
-      res.status(400).json({ error: "status must be one of: pending, approved, rejected" });
+    const body = UpdateAdminProviderBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: "Validation error", details: body.error.flatten() });
       return;
     }
 
     const [updated] = await db
       .update(providers)
-      .set({ status: body.status as "pending" | "approved" | "rejected", updatedAt: new Date() })
+      .set({ status: body.data.status, updatedAt: new Date() })
       .where(eq(providers.id, req.params.id))
       .returning();
 

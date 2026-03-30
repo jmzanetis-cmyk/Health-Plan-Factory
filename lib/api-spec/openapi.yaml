@@ -272,6 +272,12 @@ paths:
       operationId: listFavorites
       tags: [favorites]
       summary: List member's favorited providers
+      parameters:
+        - name: profileId
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: List of favorites
@@ -316,6 +322,11 @@ paths:
           required: true
           schema:
             type: string
+        - name: profileId
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         "204":
           description: Removed
@@ -332,6 +343,11 @@ paths:
       tags: [progress]
       summary: List member's progress logs
       parameters:
+        - name: profileId
+          in: query
+          required: true
+          schema:
+            type: string
         - name: planId
           in: query
           schema:

@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListProgressParams = {
+export type RemoveFavoriteParams = {
   profileId: string;
-  planId?: string;
-  limit?: number;
 };

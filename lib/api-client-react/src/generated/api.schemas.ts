@@ -244,7 +244,16 @@ export type ListProvidersParams = {
   offset?: number;
 };
 
+export type ListFavoritesParams = {
+  profileId: string;
+};
+
+export type RemoveFavoriteParams = {
+  profileId: string;
+};
+
 export type ListProgressParams = {
+  profileId: string;
   planId?: string;
   limit?: number;
 };
