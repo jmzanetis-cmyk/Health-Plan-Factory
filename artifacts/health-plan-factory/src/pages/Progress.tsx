@@ -1,14 +1,297 @@
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useAuth } from "@workspace/replit-auth-web";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from "recharts";
+import { Loader2, Plus, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
+
+const logSchema = z.object({
+  rating: z.coerce.number().min(1).max(10),
+  note: z.string().max(500).optional(),
+  sessionDate: z.string().optional(),
+});
+type LogForm = z.infer<typeof logSchema>;
+
+interface ProgressLog {
+  id: string;
+  rating: number | null;
+  note: string | null;
+  createdAt: string;
+  sessionDate: string | null;
+}
+
+function SkeletonBlock({ h = 16 }: { h?: number }) {
+  return <div className="animate-pulse rounded-md" style={{ height: h, background: "rgba(27,45,79,0.06)" }} />;
+}
+
 export default function Progress() {
+  const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [logs, setLogs] = useState<ProgressLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<LogForm>({
+    resolver: zodResolver(logSchema),
+    defaultValues: { rating: 7, sessionDate: new Date().toISOString().slice(0, 10) },
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`${BASE}/api/progress?profileId=${user.id}&limit=60`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setLogs(data.reverse());
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [user]);
+
+  const onSubmit = async (data: LogForm) => {
+    if (!user) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${BASE}/api/progress`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          profileId: user.id,
+          rating: data.rating,
+          note: data.note || null,
+          sessionDate: data.sessionDate || null,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save log");
+      const created: ProgressLog = await res.json();
+      setLogs((prev) => [...prev, created]);
+      reset({ rating: 7, sessionDate: new Date().toISOString().slice(0, 10) });
+      setShowForm(false);
+      toast({ title: "Progress logged!", description: "Your wellness score has been saved." });
+    } catch {
+      toast({ title: "Error", description: "Could not save your log. Please try again.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const chartData = logs
+    .filter((l) => l.rating != null)
+    .slice(-30)
+    .map((l) => ({
+      date: new Date(l.sessionDate ?? l.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      rating: l.rating,
+    }));
+
+  const avg =
+    logs.filter((l) => l.rating != null).length > 0
+      ? (logs.filter((l) => l.rating != null).reduce((s, l) => s + (l.rating ?? 0), 0) /
+          logs.filter((l) => l.rating != null).length).toFixed(1)
+      : null;
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--warm-white)" }}>
+        <Loader2 className="animate-spin" size={28} style={{ color: "var(--navy)" }} />
+      </div>
+    );
+  }
+
+  const cardStyle = { background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 16 };
+  const inputStyle = {
+    background: "var(--warm-white)",
+    border: "1.5px solid rgba(27,45,79,0.12)",
+    color: "var(--navy)",
+    fontFamily: "var(--app-font-sans)",
+    outline: "none",
+    borderRadius: 8,
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "var(--warm-white)" }}>
-      <div className="max-w-lg text-center">
-        <div className="text-5xl mb-6">📈</div>
-        <h1 className="mb-3" style={{ fontFamily: "var(--app-font-serif)", fontSize: "2.5rem", fontWeight: 700, color: "var(--navy)" }}>
-          Progress & Insights
-        </h1>
-        <p className="text-sm font-light leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-          Track your wellness score over time, view journal trends, and see which modalities are making the biggest difference.
-        </p>
+    <div className="min-h-screen px-4 md:px-10 py-10" style={{ background: "var(--warm-white)" }}>
+      <div className="max-w-4xl mx-auto flex flex-col gap-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+              Progress Tracker
+            </h1>
+            <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+              Log your wellness scores and see trends over time
+            </p>
+          </div>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white"
+            style={{ background: "var(--navy)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+          >
+            <Plus size={15} /> Log Entry
+          </button>
+        </div>
+
+        {/* Log form */}
+        {showForm && (
+          <form onSubmit={handleSubmit(onSubmit)} className="p-6 flex flex-col gap-4" style={cardStyle}>
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+              New Wellness Log
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  Wellness Score (1–10) *
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  {...register("rating")}
+                  className="w-full px-4 py-2.5 text-sm"
+                  style={inputStyle}
+                />
+                {errors.rating && <p className="text-xs mt-1" style={{ color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>{errors.rating.message}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  Date
+                </label>
+                <input
+                  type="date"
+                  {...register("sessionDate")}
+                  className="w-full px-4 py-2.5 text-sm"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                Notes (optional)
+              </label>
+              <textarea
+                {...register("note")}
+                rows={3}
+                placeholder="How did you feel today? What sessions did you complete?"
+                className="w-full px-4 py-2.5 text-sm resize-none"
+                style={inputStyle}
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ background: "none", border: "1.5px solid rgba(27,45,79,0.15)", color: "var(--navy)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white"
+                style={{ background: submitting ? "rgba(27,45,79,0.4)" : "var(--navy)", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                {submitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                {submitting ? "Saving..." : "Save Log"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: "Total Logs", value: logs.length.toString() },
+            { label: "Avg Score", value: avg ? `${avg}/10` : "—" },
+            { label: "This Month", value: logs.filter((l) => new Date(l.createdAt).getMonth() === new Date().getMonth()).length.toString() },
+          ].map((s) => (
+            <div key={s.label} className="p-4 text-center" style={cardStyle}>
+              <p className="text-xs uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>
+                {s.label}
+              </p>
+              {loading ? <SkeletonBlock h={32} /> : (
+                <p className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+                  {s.value}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Chart */}
+        <div className="p-6" style={cardStyle}>
+          <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+            Wellness Score Over Time
+          </h2>
+          {loading ? (
+            <SkeletonBlock h={220} />
+          ) : chartData.length < 2 ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                Log at least 2 entries to see your trend chart.
+              </p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,45,79,0.06)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
+                <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
+                <Tooltip
+                  contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, borderRadius: 8, border: "1px solid rgba(27,45,79,0.12)" }}
+                />
+                <Legend wrapperStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12 }} />
+                <Line type="monotone" dataKey="rating" name="Wellness Score" stroke="var(--sage)" strokeWidth={2.5} dot={{ r: 4, fill: "var(--sage)" }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Recent logs */}
+        <div className="p-6" style={cardStyle}>
+          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+            Recent Entries
+          </h2>
+          {loading ? (
+            <div className="flex flex-col gap-2">
+              {[1, 2, 3].map((i) => <SkeletonBlock key={i} h={56} />)}
+            </div>
+          ) : logs.length === 0 ? (
+            <p className="text-sm py-6 text-center" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+              No logs yet. Click "Log Entry" to start tracking.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {[...logs].reverse().slice(0, 10).map((l) => (
+                <div key={l.id} className="flex items-start justify-between py-3 px-3 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.04)" }}>
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                      {l.note ?? <em style={{ color: "var(--text-muted)" }}>No notes</em>}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                      {new Date(l.sessionDate ?? l.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    </p>
+                  </div>
+                  <div
+                    className="ml-4 shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+                    style={{
+                      background: (l.rating ?? 0) >= 7 ? "rgba(61,107,82,0.1)" : (l.rating ?? 0) >= 5 ? "rgba(184,137,42,0.1)" : "rgba(192,57,43,0.08)",
+                      color: (l.rating ?? 0) >= 7 ? "var(--sage)" : (l.rating ?? 0) >= 5 ? "var(--hpf-amber)" : "#c0392b",
+                      fontFamily: "var(--app-font-serif)",
+                    }}
+                  >
+                    {l.rating ?? "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

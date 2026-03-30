@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { plans, planItems, memberIntakes, modalities } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import {
   GeneratePlanBody,
   GetPlanParams,
@@ -76,6 +76,30 @@ router.post("/plans/generate", async (req, res) => {
       : [];
 
     res.status(201).json(GetPlanResponse.parse({ plan, items: savedItems }));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+router.get("/plans/:profileId/latest", async (req, res) => {
+  try {
+    const { profileId } = req.params;
+    const [latest] = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.profileId, profileId))
+      .orderBy(desc(plans.createdAt))
+      .limit(1);
+    if (!latest) {
+      res.status(404).json({ error: "No plan found" });
+      return;
+    }
+    const items = await db
+      .select()
+      .from(planItems)
+      .where(eq(planItems.planId, latest.id));
+    res.json({ plan: latest, items });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

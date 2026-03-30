@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { profiles, providers, plans, adminSettings } from "@workspace/db";
-import { eq, gte, count } from "drizzle-orm";
+import { profiles, providers, plans, adminSettings, modalities } from "@workspace/db";
+import { eq, gte, count, desc, asc } from "drizzle-orm";
 import {
   UpsertAdminSettingBody,
   GetAdminStatsResponse,
@@ -49,6 +49,117 @@ router.get("/admin/stats", async (req, res) => {
         recentSignups: recentSignups.count,
       }),
     );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /admin/users — paginated list of all users
+router.get("/admin/users", async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit ?? 50), 200);
+    const offset = Number(req.query.offset ?? 0);
+    const rows = await db
+      .select()
+      .from(profiles)
+      .orderBy(desc(profiles.createdAt))
+      .limit(limit)
+      .offset(offset);
+    res.json({ users: rows, limit, offset });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /admin/providers — all providers regardless of status
+router.get("/admin/providers", async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit ?? 50), 200);
+    const offset = Number(req.query.offset ?? 0);
+    const status = req.query.status as string | undefined;
+    let rows = await db
+      .select()
+      .from(providers)
+      .orderBy(desc(providers.createdAt));
+    if (status) rows = rows.filter((p) => p.status === status);
+    const sliced = rows.slice(offset, offset + limit);
+    res.json({ providers: sliced, total: rows.length, limit, offset });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// PATCH /admin/providers/:id — approve / reject / update provider
+router.patch("/admin/providers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, verificationStatus } = req.body as {
+      status?: string;
+      verificationStatus?: string;
+    };
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    if (verificationStatus) updates.verificationStatus = verificationStatus;
+
+    const [updated] = await db
+      .update(providers)
+      .set(updates)
+      .where(eq(providers.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Provider not found" });
+      return;
+    }
+    res.json({ provider: updated });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /admin/modalities — all modalities
+router.get("/admin/modalities", async (req, res) => {
+  try {
+    const rows = await db.select().from(modalities).orderBy(asc(modalities.name));
+    res.json({ modalities: rows });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// PATCH /admin/modalities/:id — inline edit modality
+router.patch("/admin/modalities/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { evidenceLevel, costMin, costMax, isActive } = req.body as {
+      evidenceLevel?: string;
+      costMin?: number;
+      costMax?: number;
+      isActive?: boolean;
+    };
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (evidenceLevel !== undefined) updates.evidenceLevel = evidenceLevel;
+    if (costMin !== undefined) updates.costMin = costMin;
+    if (costMax !== undefined) updates.costMax = costMax;
+    if (isActive !== undefined) updates.isActive = isActive;
+
+    const [updated] = await db
+      .update(modalities)
+      .set(updates)
+      .where(eq(modalities.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Modality not found" });
+      return;
+    }
+    res.json({ modality: updated });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
