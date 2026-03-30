@@ -141,26 +141,24 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           {!isLoading && !isAuthenticated ? (
             <>
-              <button
-                onClick={() => login()}
+              <Link
+                to="/sign-in"
                 className="text-sm font-medium no-underline transition-colors"
-                style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", background: "none", border: "none", cursor: "pointer" }}
+                style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
               >
                 Sign In
-              </button>
-              <button
-                onClick={() => login()}
-                className="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-white transition-all"
+              </Link>
+              <Link
+                to="/sign-up"
+                className="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-white no-underline transition-all"
                 style={{
                   background: "var(--navy)",
                   fontFamily: "var(--app-font-sans)",
                   boxShadow: "0 2px 8px rgba(27,45,79,0.2)",
-                  border: "none",
-                  cursor: "pointer",
                 }}
               >
                 Build My Plan →
-              </button>
+              </Link>
             </>
           ) : !isLoading ? (
             <UserMenu />

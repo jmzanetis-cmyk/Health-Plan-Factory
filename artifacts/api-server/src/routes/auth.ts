@@ -105,6 +105,23 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
   return { id, email, firstName, lastName, profileImageUrl, role: profile.role };
 }
 
+// GET /auth/me — alias for /auth/user (spec contract)
+router.get("/auth/me", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.json(GetCurrentAuthUserResponse.parse({ user: null }));
+    return;
+  }
+  try {
+    const [profile] = await db
+      .select({ role: profiles.role })
+      .from(profiles)
+      .where(eq(profiles.id, req.user!.id));
+    res.json(GetCurrentAuthUserResponse.parse({ user: { ...req.user, role: profile?.role ?? "member" } }));
+  } catch {
+    res.json(GetCurrentAuthUserResponse.parse({ user: req.user ?? null }));
+  }
+});
+
 router.get("/auth/user", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.json(GetCurrentAuthUserResponse.parse({ user: null }));

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles, modalities as modalitiesTable } from "@workspace/db";
+import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   ListProvidersQueryParams,
@@ -180,6 +180,15 @@ router.post("/providers", async (req, res) => {
     const now = new Date();
     const providerId = crypto.randomUUID();
 
+    // Extract extended fields not in the Zod schema
+    const rawBody = req.body as {
+      credentials?: string;
+      licenseNumber?: string;
+      licenseState?: string;
+      serviceRadiusMiles?: number;
+      offersInPerson?: boolean;
+    };
+
     const [created] = await db
       .insert(providers)
       .values({
@@ -196,8 +205,11 @@ router.post("/providers", async (req, res) => {
         website: providerData.website ?? null,
         avatarUrl: null,
         status: "pending",
+        verificationStatus: "submitted",
         acceptsInsurance: providerData.acceptsInsurance ?? false,
         offersTelehealth: providerData.offersTelehealth ?? false,
+        offersInPerson: rawBody.offersInPerson ?? true,
+        serviceRadiusMiles: rawBody.serviceRadiusMiles ? Number(rawBody.serviceRadiusMiles) : null,
         costPerSession: providerData.costPerSession ?? null,
         createdAt: now,
         updatedAt: now,
@@ -212,6 +224,18 @@ router.post("/providers", async (req, res) => {
           isPrimary: idx === 0,
         })),
       );
+    }
+
+    // Persist credentials if provided
+    if (rawBody.credentials) {
+      await db.insert(providerCredentials).values({
+        id: crypto.randomUUID(),
+        providerId,
+        credentialName: rawBody.credentials,
+        licenseNumber: rawBody.licenseNumber ?? null,
+        issuingBody: rawBody.licenseState ? `${rawBody.licenseState} State Board` : null,
+        createdAt: now,
+      });
     }
 
     // Update the profile role to "provider" so ProtectedRoute lets them in
