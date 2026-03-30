@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { MODALITIES, type Modality } from "@/data/modalities";
 import { type IntakeData } from "@/types/onboarding";
 
@@ -15,6 +16,22 @@ export interface Plan {
   totalMonthlyCost: number;
   budgetUtilization: number;
 }
+
+// Zod schema for validating persisted Plan payload from sessionStorage
+const planItemSchema = z.object({
+  modality: z.object({ id: z.string() }).passthrough(),
+  score: z.number(),
+  frequency: z.string(),
+  estimatedMonthlyCost: z.number(),
+  rationale: z.string(),
+});
+
+export const planSchema = z.object({
+  included: z.array(planItemSchema),
+  deprioritized: z.array(planItemSchema),
+  totalMonthlyCost: z.number(),
+  budgetUtilization: z.number(),
+});
 
 function scoreModality(modality: Modality, intake: IntakeData): number {
   let score = 0;

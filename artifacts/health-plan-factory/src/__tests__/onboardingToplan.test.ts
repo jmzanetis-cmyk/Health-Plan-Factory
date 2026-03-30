@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { generatePlan } from "@/lib/planEngine";
+import { generatePlan, planSchema } from "@/lib/planEngine";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
 
 /**
@@ -52,8 +52,11 @@ describe("Onboarding → sessionStorage → Plan hydration integration", () => {
     expect(intakeResult.success).toBe(true);
 
     const rawPlan = JSON.parse(sessionStorageMock.getItem("hpf_plan")!);
-    expect(Array.isArray(rawPlan?.included)).toBe(true);
-    expect(rawPlan.included.length).toBeGreaterThan(0);
+    const planResult = planSchema.safeParse(rawPlan);
+    expect(planResult.success).toBe(true);
+    if (planResult.success) {
+      expect(planResult.data.included.length).toBeGreaterThan(0);
+    }
   });
 
   it("malformed intake is rejected by the validation guard", () => {
@@ -65,12 +68,13 @@ describe("Onboarding → sessionStorage → Plan hydration integration", () => {
     expect(intakeResult.success).toBe(false);
   });
 
-  it("malformed plan (missing included array) is caught by the array guard", () => {
+  it("malformed plan (missing required fields) is rejected by planSchema", () => {
     sessionStorageMock.setItem("hpf_intake", JSON.stringify(VALID_INTAKE));
     sessionStorageMock.setItem("hpf_plan", JSON.stringify({ totalMonthlyCost: 0 }));
 
     const rawPlan = JSON.parse(sessionStorageMock.getItem("hpf_plan")!);
-    expect(Array.isArray(rawPlan?.included)).toBe(false);
+    const planResult = planSchema.safeParse(rawPlan);
+    expect(planResult.success).toBe(false);
   });
 
   it("plan includes all expected PlanItem fields after roundtrip", () => {
