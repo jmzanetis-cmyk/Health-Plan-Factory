@@ -45,6 +45,50 @@ function scoreModality(modality: Modality, intake: IntakeData): number {
   // HSA eligible bonus (users with tight budgets benefit more)
   if (modality.hsaEligible && intake.budget < 250) score += 2;
 
+  // ── Named scenario rules ─────────────────────────────────────────────────
+  // Rule 1: stress / anxiety / sleep → mind-body modalities strongly preferred
+  const hasStressOrAnxiety =
+    intake.conditions.some((c) => ["stress", "anxiety"].includes(c)) ||
+    intake.goals.some((g) => ["stress-reduction", "sleep"].includes(g));
+  if (hasStressOrAnxiety && ["meditation", "yoga", "telehealth"].includes(modality.id)) {
+    score += 5;
+  }
+
+  // Rule 2: back pain + posture goals → manual/movement structural care
+  const hasBackOrPosture =
+    intake.conditions.includes("back-pain") || intake.goals.includes("posture");
+  if (hasBackOrPosture && ["physical-therapy", "pilates", "massage", "chiropractic"].includes(modality.id)) {
+    score += 5;
+  }
+
+  // Rule 3: low budget (<$150) → highest-value-per-dollar options first
+  if (intake.budget < 150 && ["meditation", "yoga", "nutrition-coach"].includes(modality.id)) {
+    score += 3;
+  }
+
+  // Rule 4: sedentary + fitness goals → exercise-based priority
+  const hasFitnessNeed =
+    intake.conditions.includes("sedentary") || intake.goals.includes("fitness");
+  if (hasFitnessNeed && ["personal-training", "pilates", "yoga"].includes(modality.id)) {
+    score += 4;
+  }
+
+  // Rule 5: preventive / comprehensive goals → DPC + RD as foundation
+  const isPreventive = intake.goals.includes("preventive") || intake.goals.includes("nutrition");
+  if (isPreventive && ["dpc", "registered-dietitian"].includes(modality.id)) {
+    score += 4;
+  }
+
+  // Rule 6: virtual preference with telehealth enabled → telehealth / meditation / nutrition coach
+  if (
+    intake.telehealth &&
+    intake.preferences.includes("virtual") &&
+    ["telehealth", "meditation", "nutrition-coach"].includes(modality.id)
+  ) {
+    score += 4;
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Exclusion penalty — hard block
   for (const excl of intake.exclusions) {
     if (modality.exclusionIds.includes(excl)) return -999;

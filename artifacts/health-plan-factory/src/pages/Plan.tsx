@@ -314,23 +314,40 @@ export default function Plan() {
         zIndex: 10,
       }}>
         <Logo />
-        <button
-          type="button"
-          onClick={() => navigate("/onboarding")}
-          style={{
-            padding: "0.5rem 1rem",
-            borderRadius: 8,
-            border: "1.5px solid rgba(27,45,79,0.2)",
-            background: "white",
-            color: "var(--navy)",
-            fontWeight: 600,
-            fontSize: "0.8rem",
-            cursor: "pointer",
-            fontFamily: "var(--app-font-sans)",
-          }}
-        >
-          Retake Quiz
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => navigate("/onboarding")}
+            style={{
+              padding: "0.5rem 0.875rem",
+              borderRadius: 8,
+              border: "1.5px solid rgba(27,45,79,0.2)",
+              background: "white",
+              color: "var(--navy)",
+              fontWeight: 600,
+              fontSize: "0.78rem",
+              cursor: "pointer",
+              fontFamily: "var(--app-font-sans)",
+            }}
+          >
+            Edit Inputs
+          </button>
+          <Link
+            to="/sign-up"
+            style={{
+              padding: "0.5rem 0.875rem",
+              borderRadius: 8,
+              background: "var(--navy)",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "0.78rem",
+              textDecoration: "none",
+              fontFamily: "var(--app-font-sans)",
+            }}
+          >
+            Save Plan
+          </Link>
+        </div>
       </header>
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "2rem 1.25rem 4rem" }}>
@@ -504,10 +521,10 @@ export default function Plan() {
                 fontFamily: "var(--app-font-sans)",
               }}
             >
-              Create Free Account
+              See Providers
             </Link>
             <Link
-              to="/pricing"
+              to="/sign-up"
               style={{
                 padding: "0.875rem 1.75rem",
                 borderRadius: 10,
@@ -520,7 +537,7 @@ export default function Plan() {
                 fontFamily: "var(--app-font-sans)",
               }}
             >
-              See Plans
+              Save Plan
             </Link>
           </div>
         </div>

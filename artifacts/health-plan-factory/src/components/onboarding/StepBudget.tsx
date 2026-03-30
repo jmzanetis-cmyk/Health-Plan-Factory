@@ -1,56 +1,49 @@
+import { Controller, type Control } from "react-hook-form";
 import { useState } from "react";
+import { type IntakeData } from "@/types/onboarding";
 
 interface StepBudgetProps {
-  value: number;
-  onChange: (val: number) => void;
+  control: Control<IntakeData>;
 }
 
 const MIN = 50;
 const MAX = 1000;
 
-export function StepBudget({ value, onChange }: StepBudgetProps) {
-  const [inputVal, setInputVal] = useState(String(value));
+function budgetLabel(v: number): string {
+  if (v < 150) return "Starter budget — great for 1–2 modalities";
+  if (v < 300) return "Moderate budget — solid 2–3 modality plan";
+  if (v < 500) return "Comfortable budget — 4–5 modality plan";
+  return "Premium budget — comprehensive wellness plan";
+}
 
+interface BudgetInputProps {
+  value: number;
+  onChange: (v: number) => void;
+}
+
+function BudgetInput({ value, onChange }: BudgetInputProps) {
+  const [inputStr, setInputStr] = useState(String(value));
   const pct = ((value - MIN) / (MAX - MIN)) * 100;
-
-  const budgetLabel =
-    value < 150 ? "Starter budget — great for 1–2 modalities"
-    : value < 300 ? "Moderate budget — solid 2–3 modality plan"
-    : value < 500 ? "Comfortable budget — 4–5 modality plan"
-    : "Premium budget — comprehensive wellness plan";
-
-  const handleSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = Number(e.target.value);
-    onChange(v);
-    setInputVal(String(v));
-  };
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputVal(e.target.value);
-    const v = Number(e.target.value);
-    if (!isNaN(v) && v >= MIN && v <= MAX) {
-      onChange(Math.round(v));
-    }
-  };
 
   return (
     <div>
-      <div
-        className="text-center mb-6"
-        style={{ fontFamily: "var(--app-font-mono)" }}
-      >
+      <div className="text-center mb-6" style={{ fontFamily: "var(--app-font-mono)" }}>
         <div style={{ fontSize: "3rem", fontWeight: 500, color: "var(--navy)", lineHeight: 1 }}>
           <span style={{ fontSize: "1.4rem", verticalAlign: "super" }}>$</span>
           <input
             type="number"
-            value={inputVal}
+            value={inputStr}
             min={MIN}
             max={MAX}
-            onChange={handleInput}
+            onChange={(e) => {
+              setInputStr(e.target.value);
+              const v = Number(e.target.value);
+              if (!isNaN(v) && v >= MIN && v <= MAX) onChange(Math.round(v));
+            }}
             onBlur={() => {
-              const v = Math.max(MIN, Math.min(MAX, Number(inputVal) || MIN));
+              const v = Math.max(MIN, Math.min(MAX, Number(inputStr) || MIN));
               onChange(v);
-              setInputVal(String(v));
+              setInputStr(String(v));
             }}
             style={{
               width: "5.5ch",
@@ -68,7 +61,7 @@ export function StepBudget({ value, onChange }: StepBudgetProps) {
           <span style={{ fontSize: "1.1rem", color: "var(--text-secondary)", marginLeft: 4 }}>/mo</span>
         </div>
         <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-          {budgetLabel}
+          {budgetLabel(value)}
         </p>
       </div>
 
@@ -79,7 +72,11 @@ export function StepBudget({ value, onChange }: StepBudgetProps) {
           max={MAX}
           step={10}
           value={value}
-          onChange={handleSlider}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            onChange(v);
+            setInputStr(String(v));
+          }}
           style={{
             width: "100%",
             appearance: "none",
@@ -87,7 +84,7 @@ export function StepBudget({ value, onChange }: StepBudgetProps) {
             borderRadius: 100,
             outline: "none",
             cursor: "pointer",
-            background: `linear-gradient(90deg, var(--navy) ${pct}%, var(--parchment, #edeae3) ${pct}%)`,
+            background: `linear-gradient(90deg, var(--navy) ${pct}%, rgba(27,45,79,0.12) ${pct}%)`,
           }}
         />
         <div className="flex justify-between mt-1.5">
@@ -99,8 +96,8 @@ export function StepBudget({ value, onChange }: StepBudgetProps) {
       <div
         className="rounded-xl p-4 text-xs leading-relaxed"
         style={{
-          background: "var(--amber-pale, #fdf5e6)",
-          border: "1px solid rgba(184,137,42,0.12)",
+          background: "rgba(184,137,42,0.07)",
+          border: "1px solid rgba(184,137,42,0.15)",
           color: "var(--navy)",
           fontFamily: "var(--app-font-sans)",
         }}
@@ -109,5 +106,17 @@ export function StepBudget({ value, onChange }: StepBudgetProps) {
         these in your plan. Your budget is an estimate; actual costs depend on your local providers.
       </div>
     </div>
+  );
+}
+
+export function StepBudget({ control }: StepBudgetProps) {
+  return (
+    <Controller
+      control={control}
+      name="budget"
+      render={({ field }) => (
+        <BudgetInput value={field.value} onChange={field.onChange} />
+      )}
+    />
   );
 }
