@@ -113,7 +113,43 @@ router.get("/providers", async (req, res) => {
   }
 });
 
+// Get the authenticated user's own provider profile (any status)
+router.get("/providers/me", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  try {
+    const rows = await db
+      .select()
+      .from(providers)
+      .where(eq(providers.profileId, req.user!.id))
+      .limit(1);
+
+    if (rows.length === 0) {
+      res.json({ provider: null });
+      return;
+    }
+
+    const provider = rows[0];
+    const modalityRows = await db
+      .select()
+      .from(providerModalities)
+      .where(eq(providerModalities.providerId, provider.id));
+
+    res.json({ provider: { ...provider, modalityIds: modalityRows.map((m) => m.modalityId) } });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
 router.post("/providers", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   try {
     const body = CreateProviderBody.safeParse(req.body);
     if (!body.success) {
@@ -132,7 +168,7 @@ router.post("/providers", async (req, res) => {
       .insert(providers)
       .values({
         id: providerId,
-        profileId: null,
+        profileId: req.user!.id,
         name: providerData.name,
         bio: providerData.bio ?? null,
         city: providerData.city ?? null,

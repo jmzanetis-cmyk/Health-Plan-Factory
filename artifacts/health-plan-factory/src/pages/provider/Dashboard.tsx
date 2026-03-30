@@ -44,15 +44,14 @@ export default function ProviderDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${BASE}/api/providers?limit=100`, { credentials: "include" })
+    fetch(`${BASE}/api/providers/me`, { credentials: "include" })
       .then((r) => r.json())
-      .then((data: Provider[]) => {
-        const match = data.find((p) => p.name && user?.firstName && p.name.toLowerCase().includes(user.firstName.toLowerCase()));
-        setProvider(match ?? data[0] ?? null);
+      .then((data: { provider: Provider | null }) => {
+        setProvider(data.provider);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [user]);
+  }, []);
 
   const displayName = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : user?.email ?? "Provider";
 

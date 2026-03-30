@@ -41,7 +41,8 @@ export function ProtectedRoute({ role = "member", children }: ProtectedRouteProp
 
   if (!hasRequiredRole(user, role)) {
     if (role === "admin") {
-      return <Navigate to="/dashboard" replace />;
+      const fallback = user?.role === "provider" ? "/provider/dashboard" : "/dashboard";
+      return <Navigate to={fallback} replace />;
     }
     if (role === "provider") {
       return <Navigate to="/provider/signup" replace />;
