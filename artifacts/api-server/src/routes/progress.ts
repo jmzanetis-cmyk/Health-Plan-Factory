@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, Request, Response } from "express";
 import { db } from "@workspace/db";
 import { planProgressLogs } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
@@ -9,9 +9,25 @@ import {
   ListProgressResponseItem,
 } from "@workspace/api-zod";
 
-const router: IRouter = Router();
+const router = Router();
+
+function requireAuth(req: Request, res: Response): boolean {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return false;
+  }
+  return true;
+}
+
+function canAccessProfile(req: Request, res: Response, profileId: string): boolean {
+  if (req.user!.role === "admin") return true;
+  if (req.user!.id === profileId) return true;
+  res.status(403).json({ error: "Forbidden" });
+  return false;
+}
 
 router.get("/progress", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   try {
     const query = ListProgressQueryParams.safeParse(req.query);
     if (!query.success) {
@@ -20,6 +36,8 @@ router.get("/progress", async (req, res) => {
     }
 
     const { profileId, planId, limit = 50 } = query.data;
+
+    if (!canAccessProfile(req, res, profileId)) return;
 
     let rows = planId
       ? await db
@@ -42,12 +60,15 @@ router.get("/progress", async (req, res) => {
 });
 
 router.post("/progress", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   try {
     const body = CreateProgressLogBody.safeParse(req.body);
     if (!body.success) {
       res.status(400).json({ error: "Validation error", details: body.error.flatten() });
       return;
     }
+
+    if (!canAccessProfile(req, res, body.data.profileId)) return;
 
     const [created] = await db
       .insert(planProgressLogs)

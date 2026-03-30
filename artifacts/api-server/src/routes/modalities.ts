@@ -72,7 +72,11 @@ router.post("/modalities", async (req, res) => {
   }
 });
 
-router.get("/admin/modalities/:id", async (req, res) => {
+router.get("/admin/modalities/:id", (req, res, next) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Authentication required" }); return; }
+  if (req.user!.role !== "admin") { res.status(403).json({ error: "Admin access required" }); return; }
+  next();
+}, async (req, res) => {
   try {
     const params = GetAdminModalityParams.safeParse(req.params);
     if (!params.success) {
@@ -94,7 +98,11 @@ router.get("/admin/modalities/:id", async (req, res) => {
   }
 });
 
-router.patch("/admin/modalities/:id", async (req, res) => {
+router.patch("/admin/modalities/:id", (req, res, next) => {
+  if (!req.isAuthenticated()) { res.status(401).json({ error: "Authentication required" }); return; }
+  if (req.user!.role !== "admin") { res.status(403).json({ error: "Admin access required" }); return; }
+  next();
+}, async (req, res) => {
   try {
     const params = UpdateAdminModalityParams.safeParse(req.params);
     if (!params.success) {

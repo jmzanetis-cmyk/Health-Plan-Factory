@@ -309,7 +309,7 @@ export default function Providers() {
                     )}
                     {p.acceptsInsurance && (
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(184,137,42,0.1)", color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
-                        Insurance
+                        HSA/FSA
                       </span>
                     )}
                     {p.costPerSession != null && (
@@ -320,20 +320,37 @@ export default function Providers() {
                   </div>
 
                   {/* Contact row */}
-                  {(p.phone || p.website) && (
-                    <div className="flex gap-3 pt-1 border-t" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
-                      {p.phone && (
-                        <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                          <Phone size={11} /> {p.phone}
-                        </a>
-                      )}
-                      {p.website && (
-                        <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
-                          <Globe size={11} /> Website
-                        </a>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-3 pt-1 border-t items-center" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
+                    {p.phone && (
+                      <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                        <Phone size={11} /> {p.phone}
+                      </a>
+                    )}
+                    {p.website && (
+                      <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                        <Globe size={11} /> Website
+                      </a>
+                    )}
+                    {p.phone ? (
+                      <a
+                        href={`tel:${p.phone}`}
+                        className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
+                        style={{ background: "var(--navy)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                      >
+                        Request Info
+                      </a>
+                    ) : p.website ? (
+                      <a
+                        href={p.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
+                        style={{ background: "var(--navy)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                      >
+                        Request Info
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               );
             })

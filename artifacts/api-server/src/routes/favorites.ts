@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, Request, Response } from "express";
 import { db } from "@workspace/db";
 import { favorites } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
@@ -9,9 +9,25 @@ import {
   ListFavoritesResponseItem,
 } from "@workspace/api-zod";
 
-const router: IRouter = Router();
+const router = Router();
+
+function requireAuth(req: Request, res: Response): boolean {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return false;
+  }
+  return true;
+}
+
+function canAccessProfile(req: Request, res: Response, profileId: string): boolean {
+  if (req.user!.role === "admin") return true;
+  if (req.user!.id === profileId) return true;
+  res.status(403).json({ error: "Forbidden" });
+  return false;
+}
 
 router.get("/favorites", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   try {
     const query = ListFavoritesQueryParams.safeParse(req.query);
     if (!query.success) {
@@ -19,6 +35,7 @@ router.get("/favorites", async (req, res) => {
       return;
     }
     const { profileId } = query.data;
+    if (!canAccessProfile(req, res, profileId)) return;
     const rows = await db.select().from(favorites).where(eq(favorites.profileId, profileId));
     res.json(ListFavoritesResponse.parse(rows));
   } catch (err: unknown) {
@@ -28,6 +45,7 @@ router.get("/favorites", async (req, res) => {
 });
 
 router.post("/favorites", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   try {
     const body = AddFavoriteBody.safeParse(req.body);
     if (!body.success) {
@@ -41,6 +59,8 @@ router.post("/favorites", async (req, res) => {
       return;
     }
 
+    if (!canAccessProfile(req, res, profileId)) return;
+
     const [inserted] = await db
       .insert(favorites)
       .values({
@@ -51,16 +71,13 @@ router.post("/favorites", async (req, res) => {
       .onConflictDoNothing()
       .returning();
 
-    // If no row returned (already existed), fetch the existing record
     const record =
       inserted ??
       (
         await db
           .select()
           .from(favorites)
-          .where(
-            and(eq(favorites.profileId, profileId), eq(favorites.providerId, body.data.providerId)),
-          )
+          .where(and(eq(favorites.profileId, profileId), eq(favorites.providerId, body.data.providerId)))
       )[0];
 
     if (!record) {
@@ -76,6 +93,7 @@ router.post("/favorites", async (req, res) => {
 });
 
 router.delete("/favorites/:providerId", async (req, res) => {
+  if (!requireAuth(req, res)) return;
   try {
     const query = ListFavoritesQueryParams.safeParse(req.query);
     if (!query.success) {
@@ -84,14 +102,11 @@ router.delete("/favorites/:providerId", async (req, res) => {
     }
     const { profileId } = query.data;
 
+    if (!canAccessProfile(req, res, profileId)) return;
+
     const deleted = await db
       .delete(favorites)
-      .where(
-        and(
-          eq(favorites.profileId, profileId),
-          eq(favorites.providerId, req.params.providerId),
-        ),
-      )
+      .where(and(eq(favorites.profileId, profileId), eq(favorites.providerId, req.params.providerId)))
       .returning();
 
     if (!deleted.length) {

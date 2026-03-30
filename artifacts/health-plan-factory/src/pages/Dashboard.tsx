@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { LayoutDashboard, MapPin, TrendingUp, BookmarkIcon, Plus, ArrowRight, Loader2 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -243,12 +244,36 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-                {avgRating && (
+                {progressLogs.length > 0 && (
                   <div className="pt-2 border-t" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
-                    <p className="text-xs uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Avg Wellness Score</p>
-                    <p className="text-3xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--sage)" }}>
-                      {avgRating}<span className="text-base font-normal" style={{ color: "var(--text-muted)" }}>/10</span>
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Progress Trend</p>
+                      {avgRating && (
+                        <span className="text-sm font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--sage)" }}>
+                          {avgRating}<span className="text-xs font-normal" style={{ color: "var(--text-muted)" }}> avg</span>
+                        </span>
+                      )}
+                    </div>
+                    <ResponsiveContainer width="100%" height={70}>
+                      <LineChart
+                        data={progressLogs.filter((l) => l.rating != null).slice(0, 10).reverse().map((l) => ({
+                          date: new Date(l.sessionDate ?? l.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+                          score: l.rating,
+                        }))}
+                        margin={{ top: 2, right: 4, left: -30, bottom: 0 }}
+                      >
+                        <XAxis dataKey="date" hide />
+                        <YAxis domain={[0, 10]} hide />
+                        <Tooltip
+                          contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 11, borderRadius: 6, border: "1px solid rgba(27,45,79,0.12)", padding: "4px 8px" }}
+                          formatter={(v: number) => [`${v}/10`, "Score"]}
+                        />
+                        <Line type="monotone" dataKey="score" stroke="var(--sage)" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                    <Link to="/progress" className="text-xs font-medium no-underline mt-1 block text-right" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                      View full tracker →
+                    </Link>
                   </div>
                 )}
               </>
