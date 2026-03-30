@@ -11,6 +11,19 @@ import {
 
 const router: IRouter = Router();
 
+// Require admin role for all /admin/* routes
+router.use("/admin", (req, res, next) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  if (req.user!.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+  next();
+});
+
 router.get("/admin/stats", async (req, res) => {
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);

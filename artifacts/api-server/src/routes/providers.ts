@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { providers, providerModalities } from "@workspace/db";
+import { providers, providerModalities, profiles } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   ListProvidersQueryParams,
@@ -198,6 +198,12 @@ router.post("/providers", async (req, res) => {
       );
     }
 
+    // Update the profile role to "provider" so ProtectedRoute lets them in
+    await db
+      .update(profiles)
+      .set({ role: "provider", updatedAt: new Date() })
+      .where(eq(profiles.id, req.user!.id));
+
     res.status(201).json(GetAdminProviderResponse.parse(created));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
@@ -205,7 +211,58 @@ router.post("/providers", async (req, res) => {
   }
 });
 
+// Self-service: provider updates their own profile (non-admin, auth required)
+router.patch("/providers/me", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  try {
+    const rows = await db.select().from(providers).where(eq(providers.profileId, req.user!.id)).limit(1);
+    if (rows.length === 0) {
+      res.status(404).json({ error: "No provider profile found for this account" });
+      return;
+    }
+    const provider = rows[0];
+    const allowed = ["name", "bio", "city", "state", "zipCode", "phone", "website", "acceptsInsurance", "offersTelehealth", "costPerSession"] as const;
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    for (const field of allowed) {
+      if (field in req.body) updates[field] = req.body[field] ?? null;
+    }
+
+    const [updated] = await db.update(providers).set(updates).where(eq(providers.id, provider.id)).returning();
+
+    // Handle modality update if provided
+    if (Array.isArray(req.body.modalityIds)) {
+      await db.delete(providerModalities).where(eq(providerModalities.providerId, provider.id));
+      if (req.body.modalityIds.length > 0) {
+        await db.insert(providerModalities).values(
+          (req.body.modalityIds as string[]).map((mId, idx) => ({
+            providerId: provider.id,
+            modalityId: mId,
+            isPrimary: idx === 0,
+          })),
+        );
+      }
+    }
+
+    res.json({ provider: updated });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// Admin-only: get provider by id
 router.get("/admin/providers/:id", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  if (req.user!.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
   try {
     const params = GetAdminProviderParams.safeParse(req.params);
     if (!params.success) {
@@ -224,7 +281,16 @@ router.get("/admin/providers/:id", async (req, res) => {
   }
 });
 
+// Admin-only: update provider status
 router.patch("/admin/providers/:id", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  if (req.user!.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
   try {
     const params = UpdateAdminProviderParams.safeParse(req.params);
     if (!params.success) {

@@ -119,7 +119,7 @@ export default function ProviderProfile() {
     setSaving(true);
     setSaveError(null);
     try {
-      const res = await fetch(`${BASE}/api/admin/providers/${provider.id}`, {
+      const res = await fetch(`${BASE}/api/providers/me`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
