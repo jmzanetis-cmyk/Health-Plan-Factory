@@ -196,12 +196,12 @@ export default function Landing() {
             Tell us your budget, your conditions, and your goals.
             HealthPlanFactory assembles a{" "}
             <strong style={{ color: "var(--navy)", fontWeight: 600 }}>prioritized, costed wellness plan</strong>
-            {" "}— fitted to what you can actually spend, not what an insurer decided.
+            {" "}— fitted to what you can actually spend, built around your goals.
           </p>
 
           <div className="flex flex-wrap gap-3 mb-8">
             <Link
-              href="/sign-up"
+              to="/sign-up"
               className="inline-flex items-center px-7 py-3.5 rounded-md text-sm font-semibold text-white no-underline transition-all hover:-translate-y-0.5"
               style={{
                 background: "var(--navy)",
@@ -213,7 +213,7 @@ export default function Landing() {
               Build my plan free →
             </Link>
             <Link
-              href="/provider/signup"
+              to="/provider/signup"
               className="inline-flex items-center px-6 py-3.5 rounded-md text-sm font-medium no-underline transition-all"
               style={{
                 background: "transparent",
@@ -333,7 +333,7 @@ export default function Landing() {
           { icon: "✓", text: "Evidence-led modality library" },
           { icon: "✓", text: "12 wellness modalities" },
           { icon: "✓", text: "HSA/FSA tracking included" },
-          { icon: "✓", text: "No insurance required" },
+          { icon: "✓", text: "Works alongside your existing coverage" },
           { icon: "✓", text: "Budget-aware by design" },
         ].map((item) => (
           <div key={item.text} className="flex items-center gap-2 text-xs font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>
@@ -578,7 +578,7 @@ export default function Landing() {
                   "A licensed medical provider or healthcare system",
                   "A diagnostic tool or medical advice service",
                   "A substitute for a physician or therapist",
-                  "A health insurance plan or insurance replacement",
+                  "A replacement for your doctor or care team",
                   "A prescription management or clinical platform",
                   "Regulated by HIPAA as a covered entity",
                 ].map((item) => (
@@ -791,7 +791,7 @@ export default function Landing() {
                 </ul>
 
                 <Link
-                  href={tier.ctaHref}
+                  to={tier.ctaHref}
                   className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold no-underline transition-all"
                   style={
                     tier.featured
@@ -942,11 +942,11 @@ export default function Landing() {
             className="text-sm font-light mb-10 leading-relaxed mx-auto"
             style={{ color: "rgba(255,255,255,0.55)", maxWidth: "380px", fontFamily: "var(--app-font-sans)" }}
           >
-            Free to start. No insurance required. No credit card needed to build your first plan.
+            Free to start. No credit card needed to build your first plan.
           </p>
 
           <Link
-            href="/sign-up"
+            to="/sign-up"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-lg text-sm font-semibold no-underline transition-all hover:-translate-y-0.5"
             style={{
               background: "white",

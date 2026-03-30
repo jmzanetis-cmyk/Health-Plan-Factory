@@ -15,7 +15,7 @@ export default function ForProviders() {
             </p>
             <div className="flex gap-3">
               <Link
-                href="/provider/signup"
+                to="/provider/signup"
                 className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-semibold text-white no-underline"
                 style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
               >
@@ -80,7 +80,7 @@ export default function ForProviders() {
 
           <div className="mt-10 text-center">
             <Link
-              href="/provider/signup"
+              to="/provider/signup"
               className="inline-flex items-center px-8 py-3.5 rounded-lg text-sm font-semibold text-white no-underline"
               style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
             >

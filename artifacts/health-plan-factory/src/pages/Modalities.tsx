@@ -64,7 +64,7 @@ export default function Modalities() {
 
           <div className="mt-10 text-center">
             <Link
-              href="/sign-up"
+              to="/sign-up"
               className="inline-flex items-center px-8 py-3.5 rounded-lg text-sm font-semibold text-white no-underline"
               style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
             >
