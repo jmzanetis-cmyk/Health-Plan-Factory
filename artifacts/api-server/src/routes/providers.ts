@@ -8,9 +8,6 @@ import {
   CreateProviderBody,
   GetAdminProviderParams,
   GetAdminProviderResponse,
-  UpdateAdminProviderBody,
-  UpdateAdminProviderParams,
-  UpdateAdminProviderResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -335,45 +332,6 @@ router.get("/admin/providers/:id", async (req, res) => {
       return;
     }
     res.json(GetAdminProviderResponse.parse(row));
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    res.status(500).json({ error: message });
-  }
-});
-
-// Admin-only: update provider status
-router.patch("/admin/providers/:id", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Authentication required" });
-    return;
-  }
-  if (req.user!.role !== "admin") {
-    res.status(403).json({ error: "Admin access required" });
-    return;
-  }
-  try {
-    const params = UpdateAdminProviderParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: "Invalid params", details: params.error.flatten() });
-      return;
-    }
-    const body = UpdateAdminProviderBody.safeParse(req.body);
-    if (!body.success) {
-      res.status(400).json({ error: "Validation error", details: body.error.flatten() });
-      return;
-    }
-
-    const [updated] = await db
-      .update(providers)
-      .set({ status: body.data.status, updatedAt: new Date() })
-      .where(eq(providers.id, params.data.id))
-      .returning();
-
-    if (!updated) {
-      res.status(404).json({ error: "Provider not found" });
-      return;
-    }
-    res.json(UpdateAdminProviderResponse.parse(updated));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

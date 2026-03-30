@@ -12,15 +12,24 @@ import { useToast } from "@/hooks/use-toast";
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
 const logSchema = z.object({
-  rating: z.coerce.number().min(1).max(10),
+  rating: z.coerce.number().min(1).max(10).optional(),
+  mood: z.coerce.number().min(1).max(10).optional(),
+  pain: z.coerce.number().min(1).max(10).optional(),
+  energy: z.coerce.number().min(1).max(10).optional(),
   note: z.string().max(500).optional(),
   sessionDate: z.string().optional(),
+}).refine((d) => d.rating ?? d.mood ?? d.pain ?? d.energy, {
+  message: "Log at least one metric",
+  path: ["rating"],
 });
 type LogForm = z.infer<typeof logSchema>;
 
 interface ProgressLog {
   id: string;
   rating: number | null;
+  mood: number | null;
+  pain: number | null;
+  energy: number | null;
   note: string | null;
   createdAt: string;
   sessionDate: string | null;
@@ -28,6 +37,32 @@ interface ProgressLog {
 
 function SkeletonBlock({ h = 16 }: { h?: number }) {
   return <div className="animate-pulse rounded-md" style={{ height: h, background: "rgba(27,45,79,0.06)" }} />;
+}
+
+function MetricInput({ label, name, register }: { label: string; name: keyof LogForm; register: ReturnType<typeof useForm<LogForm>>["register"] }) {
+  const inputStyle = {
+    background: "var(--warm-white)",
+    border: "1.5px solid rgba(27,45,79,0.12)",
+    color: "var(--navy)",
+    fontFamily: "var(--app-font-sans)",
+    outline: "none",
+    borderRadius: 8,
+    textAlign: "center" as const,
+  };
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.06em" }}>{label}</label>
+      <input
+        type="number"
+        min={1}
+        max={10}
+        {...register(name)}
+        placeholder="1–10"
+        className="w-20 px-2 py-2 text-sm"
+        style={inputStyle}
+      />
+    </div>
+  );
 }
 
 export default function Progress() {
@@ -40,7 +75,7 @@ export default function Progress() {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<LogForm>({
     resolver: zodResolver(logSchema),
-    defaultValues: { rating: 7, sessionDate: new Date().toISOString().slice(0, 10) },
+    defaultValues: { sessionDate: new Date().toISOString().slice(0, 10) },
   });
 
   useEffect(() => {
@@ -64,7 +99,10 @@ export default function Progress() {
         credentials: "include",
         body: JSON.stringify({
           profileId: user.id,
-          rating: data.rating,
+          rating: data.rating ? Number(data.rating) : undefined,
+          mood: data.mood ? Number(data.mood) : undefined,
+          pain: data.pain ? Number(data.pain) : undefined,
+          energy: data.energy ? Number(data.energy) : undefined,
           note: data.note || null,
           sessionDate: data.sessionDate || null,
         }),
@@ -72,9 +110,9 @@ export default function Progress() {
       if (!res.ok) throw new Error("Failed to save log");
       const created: ProgressLog = await res.json();
       setLogs((prev) => [...prev, created]);
-      reset({ rating: 7, sessionDate: new Date().toISOString().slice(0, 10) });
+      reset({ sessionDate: new Date().toISOString().slice(0, 10) });
       setShowForm(false);
-      toast({ title: "Progress logged!", description: "Your wellness score has been saved." });
+      toast({ title: "Progress logged!", description: "Your wellness metrics have been saved." });
     } catch {
       toast({ title: "Error", description: "Could not save your log. Please try again.", variant: "destructive" });
     } finally {
@@ -83,18 +121,19 @@ export default function Progress() {
   };
 
   const chartData = logs
-    .filter((l) => l.rating != null)
     .slice(-30)
     .map((l) => ({
       date: new Date(l.sessionDate ?? l.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      rating: l.rating,
+      Wellness: l.rating ?? undefined,
+      Mood: l.mood ?? undefined,
+      Energy: l.energy ?? undefined,
+      Pain: l.pain ?? undefined,
     }));
 
-  const avg =
-    logs.filter((l) => l.rating != null).length > 0
-      ? (logs.filter((l) => l.rating != null).reduce((s, l) => s + (l.rating ?? 0), 0) /
-          logs.filter((l) => l.rating != null).length).toFixed(1)
-      : null;
+  const avgOf = (field: keyof ProgressLog) => {
+    const vals = logs.map((l) => l[field] as number | null).filter((v) => v != null) as number[];
+    return vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
+  };
 
   if (authLoading) {
     return (
@@ -124,7 +163,7 @@ export default function Progress() {
               Progress Tracker
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Log your wellness scores and see trends over time
+              Track mood, energy, pain, and overall wellness over time
             </p>
           </div>
           <button
@@ -138,45 +177,34 @@ export default function Progress() {
 
         {/* Log form */}
         {showForm && (
-          <form onSubmit={handleSubmit(onSubmit)} className="p-6 flex flex-col gap-4" style={cardStyle}>
+          <form onSubmit={handleSubmit(onSubmit)} className="p-6 flex flex-col gap-5" style={cardStyle}>
             <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
               New Wellness Log
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
-                  Wellness Score (1–10) *
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={10}
-                  {...register("rating")}
-                  className="w-full px-4 py-2.5 text-sm"
-                  style={inputStyle}
-                />
-                {errors.rating && <p className="text-xs mt-1" style={{ color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>{errors.rating.message}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
-                  Date
-                </label>
-                <input
-                  type="date"
-                  {...register("sessionDate")}
-                  className="w-full px-4 py-2.5 text-sm"
-                  style={inputStyle}
-                />
+            <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+              Fill in one or more metrics. Use 1–10 where higher is better (except Pain, where higher = more pain).
+            </p>
+
+            <div className="flex flex-wrap items-end gap-6">
+              <MetricInput label="Wellness" name="rating" register={register} />
+              <MetricInput label="Mood" name="mood" register={register} />
+              <MetricInput label="Energy" name="energy" register={register} />
+              <MetricInput label="Pain" name="pain" register={register} />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.06em" }}>Date</label>
+                <input type="date" {...register("sessionDate")} className="px-3 py-2 text-sm" style={{ ...inputStyle, width: 148 }} />
               </div>
             </div>
+            {errors.rating && <p className="text-xs" style={{ color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>{errors.rating.message}</p>}
+
             <div>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
                 Notes (optional)
               </label>
               <textarea
                 {...register("note")}
-                rows={3}
-                placeholder="How did you feel today? What sessions did you complete?"
+                rows={2}
+                placeholder="How did you feel? What sessions did you complete?"
                 className="w-full px-4 py-2.5 text-sm resize-none"
                 style={inputStyle}
               />
@@ -204,11 +232,12 @@ export default function Progress() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
+            { label: "Avg Wellness", value: avgOf("rating") ? `${avgOf("rating")}/10` : "—" },
+            { label: "Avg Mood", value: avgOf("mood") ? `${avgOf("mood")}/10` : "—" },
+            { label: "Avg Energy", value: avgOf("energy") ? `${avgOf("energy")}/10` : "—" },
             { label: "Total Logs", value: logs.length.toString() },
-            { label: "Avg Score", value: avg ? `${avg}/10` : "—" },
-            { label: "This Month", value: logs.filter((l) => new Date(l.createdAt).getMonth() === new Date().getMonth()).length.toString() },
           ].map((s) => (
             <div key={s.label} className="p-4 text-center" style={cardStyle}>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>
@@ -226,7 +255,7 @@ export default function Progress() {
         {/* Chart */}
         <div className="p-6" style={cardStyle}>
           <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
-            Wellness Score Over Time
+            Trends Over Time
           </h2>
           {loading ? (
             <SkeletonBlock h={220} />
@@ -237,16 +266,17 @@ export default function Progress() {
               </p>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={240}>
               <LineChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,45,79,0.06)" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
                 <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
-                <Tooltip
-                  contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, borderRadius: 8, border: "1px solid rgba(27,45,79,0.12)" }}
-                />
+                <Tooltip contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, borderRadius: 8, border: "1px solid rgba(27,45,79,0.12)" }} />
                 <Legend wrapperStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12 }} />
-                <Line type="monotone" dataKey="rating" name="Wellness Score" stroke="var(--sage)" strokeWidth={2.5} dot={{ r: 4, fill: "var(--sage)" }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="Wellness" stroke="#1b2d4f" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                <Line type="monotone" dataKey="Mood" stroke="#3d6b52" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                <Line type="monotone" dataKey="Energy" stroke="#b8892a" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                <Line type="monotone" dataKey="Pain" stroke="#c0392b" strokeWidth={1.5} dot={{ r: 3 }} strokeDasharray="4 3" connectNulls />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -267,28 +297,39 @@ export default function Progress() {
             </p>
           ) : (
             <div className="flex flex-col gap-2">
-              {[...logs].reverse().slice(0, 10).map((l) => (
-                <div key={l.id} className="flex items-start justify-between py-3 px-3 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.04)" }}>
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
-                      {l.note ?? <em style={{ color: "var(--text-muted)" }}>No notes</em>}
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                      {new Date(l.sessionDate ?? l.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                    </p>
+              {[...logs].reverse().slice(0, 10).map((l) => {
+                const metrics = [
+                  l.rating != null ? `Wellness ${l.rating}` : null,
+                  l.mood != null ? `Mood ${l.mood}` : null,
+                  l.energy != null ? `Energy ${l.energy}` : null,
+                  l.pain != null ? `Pain ${l.pain}` : null,
+                ].filter(Boolean);
+                return (
+                  <div key={l.id} className="flex items-start justify-between py-3 px-3 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.04)" }}>
+                    <div>
+                      <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-mono)" }}>
+                        {metrics.join(" · ")}
+                      </p>
+                      <p className="text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                        {l.note ?? <em style={{ color: "var(--text-muted)" }}>No notes</em>}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                        {new Date(l.sessionDate ?? l.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                      </p>
+                    </div>
+                    <div
+                      className="ml-4 shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+                      style={{
+                        background: (l.rating ?? 0) >= 7 ? "rgba(61,107,82,0.1)" : (l.rating ?? 0) >= 5 ? "rgba(184,137,42,0.1)" : "rgba(192,57,43,0.08)",
+                        color: (l.rating ?? 0) >= 7 ? "var(--sage)" : (l.rating ?? 0) >= 5 ? "var(--hpf-amber)" : "#c0392b",
+                        fontFamily: "var(--app-font-serif)",
+                      }}
+                    >
+                      {l.rating ?? "—"}
+                    </div>
                   </div>
-                  <div
-                    className="ml-4 shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{
-                      background: (l.rating ?? 0) >= 7 ? "rgba(61,107,82,0.1)" : (l.rating ?? 0) >= 5 ? "rgba(184,137,42,0.1)" : "rgba(192,57,43,0.08)",
-                      color: (l.rating ?? 0) >= 7 ? "var(--sage)" : (l.rating ?? 0) >= 5 ? "var(--hpf-amber)" : "#c0392b",
-                      fontFamily: "var(--app-font-serif)",
-                    }}
-                  >
-                    {l.rating ?? "—"}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

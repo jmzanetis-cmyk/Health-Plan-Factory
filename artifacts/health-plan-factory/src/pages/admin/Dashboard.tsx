@@ -11,15 +11,13 @@ interface Stats {
   totalPlans: number;
   pendingProviders: number;
   recentSignups: number;
+  activeModalities?: number;
 }
 
-const MOCK_WEEKLY = [
-  { week: "Mar 2", signups: 4 },
-  { week: "Mar 9", signups: 7 },
-  { week: "Mar 16", signups: 5 },
-  { week: "Mar 23", signups: 9 },
-  { week: "Mar 30", signups: 3 },
-];
+interface WeeklyData {
+  week: string;
+  signups: number;
+}
 
 function StatCard({ label, value, icon, loading, to }: { label: string; value: number; icon: React.ReactNode; loading: boolean; to?: string }) {
   return (
@@ -74,13 +72,20 @@ export function AdminNav({ active }: { active: string }) {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${BASE}/api/admin/stats`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((data) => { setStats(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch(`${BASE}/api/admin/stats`, { credentials: "include" }).then((r) => r.json()),
+      fetch(`${BASE}/api/admin/weekly-signups`, { credentials: "include" }).then((r) => r.json()),
+    ]).then(([statsData, weeklyRes]) => {
+      setStats(statsData);
+      if (Array.isArray(weeklyRes?.data)) setWeeklyData(weeklyRes.data);
+      setLoading(false);
+      setChartLoading(false);
+    }).catch(() => { setLoading(false); setChartLoading(false); });
   }, []);
 
   return (
@@ -98,12 +103,13 @@ export default function AdminDashboard() {
         <AdminNav active="/admin/dashboard" />
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <StatCard label="Members" value={stats?.totalMembers ?? 0} icon={<Users size={18} />} loading={loading} to="/admin/users" />
           <StatCard label="Providers" value={stats?.totalProviders ?? 0} icon={<Stethoscope size={18} />} loading={loading} to="/admin/providers" />
           <StatCard label="Plans" value={stats?.totalPlans ?? 0} icon={<FileText size={18} />} loading={loading} />
           <StatCard label="Pending" value={stats?.pendingProviders ?? 0} icon={<Clock size={18} />} loading={loading} to="/admin/providers" />
           <StatCard label="30d Signups" value={stats?.recentSignups ?? 0} icon={<TrendingUp size={18} />} loading={loading} />
+          <StatCard label="Modalities" value={stats?.activeModalities ?? 0} icon={<Loader2 size={18} />} loading={loading} to="/admin/modalities" />
         </div>
 
         {/* Weekly signups chart */}
@@ -111,18 +117,19 @@ export default function AdminDashboard() {
           <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
             Weekly Signups
           </h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={MOCK_WEEKLY} margin={{ top: 4, right: 20, left: -20, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,45,79,0.06)" />
-              <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
-              <YAxis tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
-              <Tooltip contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, borderRadius: 8 }} />
-              <Bar dataKey="signups" name="Signups" fill="var(--navy)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-          <p className="text-xs mt-2 text-center" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-            Sample data — will reflect real signups once analytics are wired
-          </p>
+          {chartLoading ? (
+            <div className="h-52 animate-pulse rounded-xl" style={{ background: "rgba(27,45,79,0.04)" }} />
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={weeklyData} margin={{ top: 4, right: 20, left: -20, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,45,79,0.06)" />
+                <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
+                <Tooltip contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, borderRadius: 8 }} />
+                <Bar dataKey="signups" name="Signups" fill="var(--navy)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>

@@ -309,7 +309,10 @@ export const planProgressLogs = pgTable(
     planId: text("plan_id").references(() => plans.id),
     modalityId: text("modality_id").references(() => modalities.id),
     note: text("note"),
-    rating: integer("rating"), // 1–5 how it went
+    rating: integer("rating"), // 1–10 overall wellness
+    mood: integer("mood"),     // 1–10
+    pain: integer("pain"),     // 1–10 (higher = more pain)
+    energy: integer("energy"), // 1–10
     sessionDate: timestamp("session_date"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

@@ -58,6 +58,9 @@ router.post("/progress", async (req, res) => {
         modalityId: body.data.modalityId ?? null,
         note: body.data.note ?? null,
         rating: body.data.rating ?? null,
+        mood: body.data.mood ?? null,
+        pain: body.data.pain ?? null,
+        energy: body.data.energy ?? null,
         sessionDate: body.data.sessionDate ? new Date(body.data.sessionDate) : null,
         createdAt: new Date(),
       })

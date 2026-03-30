@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { plans, planItems, memberIntakes, modalities } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import {
   GeneratePlanBody,
   GetPlanParams,
@@ -83,6 +83,15 @@ router.post("/plans/generate", async (req, res) => {
 });
 
 router.get("/plans/:profileId/latest", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const caller = req.user!;
+  if (caller.role !== "admin" && caller.id !== req.params.profileId) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
   try {
     const { profileId } = req.params;
     const [latest] = await db
@@ -95,10 +104,21 @@ router.get("/plans/:profileId/latest", async (req, res) => {
       res.status(404).json({ error: "No plan found" });
       return;
     }
-    const items = await db
+    const rawItems = await db
       .select()
       .from(planItems)
       .where(eq(planItems.planId, latest.id));
+
+    const modalityIds = rawItems.map((i) => i.modalityId).filter(Boolean) as string[];
+    const modalityRows = modalityIds.length > 0
+      ? await db.select({ id: modalities.id, name: modalities.name, emoji: modalities.emoji }).from(modalities).where(inArray(modalities.id, modalityIds))
+      : [];
+    const modalityMap = Object.fromEntries(modalityRows.map((m) => [m.id, m]));
+
+    const items = rawItems.map((i) => ({
+      ...i,
+      modality: i.modalityId ? modalityMap[i.modalityId] ?? null : null,
+    }));
     res.json({ plan: latest, items });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";

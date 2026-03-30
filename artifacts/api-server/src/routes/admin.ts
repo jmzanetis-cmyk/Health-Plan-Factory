@@ -39,6 +39,10 @@ router.get("/admin/stats", async (req, res) => {
       .select({ count: count() })
       .from(profiles)
       .where(gte(profiles.createdAt, thirtyDaysAgo));
+    const [activeModalities] = await db
+      .select({ count: count() })
+      .from(modalities)
+      .where(eq(modalities.isActive, true));
 
     res.json(
       GetAdminStatsResponse.parse({
@@ -47,8 +51,44 @@ router.get("/admin/stats", async (req, res) => {
         totalPlans: totalPlans.count,
         pendingProviders: pendingProviders.count,
         recentSignups: recentSignups.count,
+        activeModalities: activeModalities.count,
       }),
     );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /admin/weekly-signups — 5 most recent weeks of member signups
+router.get("/admin/weekly-signups", async (req, res) => {
+  try {
+    const allProfiles = await db
+      .select({ createdAt: profiles.createdAt })
+      .from(profiles)
+      .orderBy(asc(profiles.createdAt));
+
+    const weeks: Record<string, number> = {};
+    const now = new Date();
+    for (let w = 4; w >= 0; w--) {
+      const start = new Date(now);
+      start.setDate(start.getDate() - w * 7 - start.getDay());
+      start.setHours(0, 0, 0, 0);
+      const label = start.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      weeks[label] = 0;
+    }
+
+    allProfiles.forEach(({ createdAt }) => {
+      const d = new Date(createdAt);
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const label = weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      if (label in weeks) weeks[label]++;
+    });
+
+    const data = Object.entries(weeks).map(([week, signups]) => ({ week, signups }));
+    res.json({ data });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
@@ -137,21 +177,29 @@ router.get("/admin/modalities", async (req, res) => {
 router.patch("/admin/modalities/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { evidenceLevel, costMin, costMax, isActive } = req.body as {
-      evidenceLevel?: string;
-      costMin?: number;
-      costMax?: number;
+    const { evidenceLevel, costLow, costHigh, isActive } = req.body as {
+      evidenceLevel?: "Strong" | "Moderate" | "Emerging";
+      costLow?: number;
+      costHigh?: number;
       isActive?: boolean;
     };
-    const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (evidenceLevel !== undefined) updates.evidenceLevel = evidenceLevel;
-    if (costMin !== undefined) updates.costMin = costMin;
-    if (costMax !== undefined) updates.costMax = costMax;
-    if (isActive !== undefined) updates.isActive = isActive;
+
+    const updatePayload: {
+      updatedAt: Date;
+      evidenceLevel?: "Strong" | "Moderate" | "Emerging";
+      costLow?: number;
+      costHigh?: number;
+      isActive?: boolean;
+    } = { updatedAt: new Date() };
+
+    if (evidenceLevel !== undefined) updatePayload.evidenceLevel = evidenceLevel;
+    if (costLow !== undefined) updatePayload.costLow = costLow;
+    if (costHigh !== undefined) updatePayload.costHigh = costHigh;
+    if (isActive !== undefined) updatePayload.isActive = isActive;
 
     const [updated] = await db
       .update(modalities)
-      .set(updates)
+      .set(updatePayload)
       .where(eq(modalities.id, id))
       .returning();
 

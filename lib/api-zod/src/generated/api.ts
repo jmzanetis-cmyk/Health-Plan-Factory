@@ -275,6 +275,9 @@ export const ListProgressResponseItem = zod.object({
   modalityId: zod.string().nullish(),
   note: zod.string().nullish(),
   rating: zod.number().nullish(),
+  mood: zod.number().nullish(),
+  pain: zod.number().nullish(),
+  energy: zod.number().nullish(),
   sessionDate: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
@@ -289,6 +292,9 @@ export const CreateProgressLogBody = zod.object({
   modalityId: zod.string().optional(),
   note: zod.string().optional(),
   rating: zod.number().optional(),
+  mood: zod.number().optional(),
+  pain: zod.number().optional(),
+  energy: zod.number().optional(),
   sessionDate: zod.coerce.date().optional(),
 });
 
@@ -301,6 +307,7 @@ export const GetAdminStatsResponse = zod.object({
   totalPlans: zod.number(),
   pendingProviders: zod.number(),
   recentSignups: zod.number(),
+  activeModalities: zod.number().optional(),
 });
 
 /**

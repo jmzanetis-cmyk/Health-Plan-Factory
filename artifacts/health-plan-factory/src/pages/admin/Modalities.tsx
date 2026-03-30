@@ -10,16 +10,16 @@ interface Modality {
   name: string;
   category: string;
   emoji: string;
-  evidenceLevel: string | null;
-  costMin: number | null;
-  costMax: number | null;
+  evidenceLevel: "Strong" | "Moderate" | "Emerging" | null;
+  costLow: number;
+  costHigh: number;
   isActive: boolean;
 }
 
 interface EditState {
   evidenceLevel: string;
-  costMin: string;
-  costMax: string;
+  costLow: string;
+  costHigh: string;
 }
 
 export default function AdminModalities() {
@@ -27,7 +27,7 @@ export default function AdminModalities() {
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
-  const [editState, setEditState] = useState<EditState>({ evidenceLevel: "", costMin: "", costMax: "" });
+  const [editState, setEditState] = useState<EditState>({ evidenceLevel: "", costLow: "", costHigh: "" });
   const [savingId, setSavingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -45,17 +45,18 @@ export default function AdminModalities() {
     setEditId(m.id);
     setEditState({
       evidenceLevel: m.evidenceLevel ?? "",
-      costMin: m.costMin?.toString() ?? "",
-      costMax: m.costMax?.toString() ?? "",
+      costLow: m.costLow?.toString() ?? "",
+      costHigh: m.costHigh?.toString() ?? "",
     });
   };
 
   const saveEdit = async (id: string) => {
     setSavingId(id);
     try {
-      const payload: Record<string, unknown> = { evidenceLevel: editState.evidenceLevel || null };
-      if (editState.costMin) payload.costMin = Number(editState.costMin);
-      if (editState.costMax) payload.costMax = Number(editState.costMax);
+      const payload: Record<string, unknown> = {};
+      if (editState.evidenceLevel) payload.evidenceLevel = editState.evidenceLevel;
+      if (editState.costLow) payload.costLow = Number(editState.costLow);
+      if (editState.costHigh) payload.costHigh = Number(editState.costHigh);
 
       const res = await fetch(`${BASE}/api/admin/modalities/${id}`, {
         method: "PATCH",
@@ -95,7 +96,14 @@ export default function AdminModalities() {
     }
   };
 
-  const evidenceLevels = ["strong", "moderate", "emerging", "limited"];
+  const evidenceLevels: Array<"Strong" | "Moderate" | "Emerging"> = ["Strong", "Moderate", "Emerging"];
+
+  const evidenceBadge = (level: string | null) => {
+    if (!level) return { bg: "rgba(27,45,79,0.06)", color: "var(--text-muted)" };
+    if (level === "Strong") return { bg: "rgba(61,107,82,0.12)", color: "var(--sage)" };
+    if (level === "Moderate") return { bg: "rgba(184,137,42,0.12)", color: "var(--hpf-amber)" };
+    return { bg: "rgba(27,45,79,0.06)", color: "var(--text-muted)" };
+  };
 
   const inputStyle = {
     background: "var(--warm-white)",
@@ -154,11 +162,7 @@ export default function AdminModalities() {
                             {evidenceLevels.map((l) => <option key={l} value={l}>{l}</option>)}
                           </select>
                         ) : (
-                          <span className="text-xs capitalize px-2 py-0.5 rounded-full" style={{
-                            fontFamily: "var(--app-font-sans)",
-                            background: m.evidenceLevel === "strong" ? "rgba(61,107,82,0.1)" : "rgba(27,45,79,0.06)",
-                            color: m.evidenceLevel === "strong" ? "var(--sage)" : "var(--text-muted)",
-                          }}>
+                          <span className="text-xs px-2 py-0.5 rounded-full" style={{ fontFamily: "var(--app-font-sans)", ...evidenceBadge(m.evidenceLevel) }}>
                             {m.evidenceLevel ?? "—"}
                           </span>
                         )}
@@ -168,25 +172,25 @@ export default function AdminModalities() {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
-                              placeholder="Min"
-                              value={editState.costMin}
-                              onChange={(e) => setEditState((s) => ({ ...s, costMin: e.target.value }))}
+                              placeholder="Low"
+                              value={editState.costLow}
+                              onChange={(e) => setEditState((s) => ({ ...s, costLow: e.target.value }))}
                               className="w-16"
                               style={inputStyle}
                             />
                             <span className="text-xs" style={{ color: "var(--text-muted)" }}>–</span>
                             <input
                               type="number"
-                              placeholder="Max"
-                              value={editState.costMax}
-                              onChange={(e) => setEditState((s) => ({ ...s, costMax: e.target.value }))}
+                              placeholder="High"
+                              value={editState.costHigh}
+                              onChange={(e) => setEditState((s) => ({ ...s, costHigh: e.target.value }))}
                               className="w-16"
                               style={inputStyle}
                             />
                           </div>
                         ) : (
                           <span className="text-xs" style={{ fontFamily: "var(--app-font-mono)", color: "var(--text-secondary)" }}>
-                            {m.costMin != null && m.costMax != null ? `$${m.costMin}–$${m.costMax}` : m.costMin != null ? `from $${m.costMin}` : "—"}
+                            ${m.costLow}–${m.costHigh}
                           </span>
                         )}
                       </td>
@@ -195,11 +199,7 @@ export default function AdminModalities() {
                           onClick={() => toggleActive(m.id, m.isActive)}
                           disabled={togglingId === m.id}
                           className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
-                          style={{
-                            background: m.isActive ? "var(--sage)" : "rgba(27,45,79,0.15)",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
+                          style={{ background: m.isActive ? "var(--sage)" : "rgba(27,45,79,0.15)", border: "none", cursor: "pointer" }}
                         >
                           {togglingId === m.id ? (
                             <Loader2 size={10} className="animate-spin mx-auto" style={{ color: "white" }} />
