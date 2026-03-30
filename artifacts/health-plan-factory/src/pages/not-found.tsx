@@ -24,7 +24,7 @@ export default function NotFound() {
       <Link
         to="/"
         className="px-6 py-3 rounded-lg text-sm font-semibold no-underline text-white"
-        style={{ background: "var(--amber)", fontFamily: "var(--app-font-sans)" }}
+        style={{ background: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}
       >
         Back to HealthPlanFactory →
       </Link>
