@@ -157,6 +157,8 @@ export const providerModalities = pgTable(
       .notNull()
       .references(() => modalities.id, { onDelete: "cascade" }),
     isPrimary: boolean("is_primary").notNull().default(false),
+    costMin: integer("cost_min"),
+    costMax: integer("cost_max"),
   },
   (t) => [
     uniqueIndex("provider_modalities_pk").on(t.providerId, t.modalityId),

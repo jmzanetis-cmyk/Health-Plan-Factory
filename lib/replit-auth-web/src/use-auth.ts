@@ -1,64 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useContext } from "react";
 import type { AuthUser } from "@workspace/api-client-react";
+import { AuthContext } from "./auth-context";
 
 export type { AuthUser };
 
-interface AuthState {
-  user: AuthUser | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (returnTo?: string) => void;
-  logout: () => void;
-}
-
-export function useAuth(): AuthState {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    fetch("/api/auth/user", { credentials: "include" })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<{ user: AuthUser | null }>;
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setUser(data.user ?? null);
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setUser(null);
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const login = useCallback((returnTo?: string) => {
-    const dest =
-      returnTo ??
-      (typeof window !== "undefined"
-        ? window.location.pathname + window.location.search
-        : "/");
-    window.location.href = `/api/login?returnTo=${encodeURIComponent(dest)}`;
-  }, []);
-
-  const logout = useCallback(() => {
-    window.location.href = "/api/logout";
-  }, []);
-
-  return {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    login,
-    logout,
-  };
+/**
+ * useAuth() — consumes the global AuthContext provided by AuthProvider.
+ * Must be used inside an AuthProvider; throws otherwise.
+ */
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return ctx;
 }

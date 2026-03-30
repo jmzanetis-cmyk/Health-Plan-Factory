@@ -122,6 +122,24 @@ router.get("/auth/me", async (req: Request, res: Response) => {
   }
 });
 
+// Auth path aliases: /auth/login, /auth/logout, /auth/callback
+// These are direct aliases of the top-level routes handled in app.ts
+// They are registered here so they appear in the same auth router context
+router.get("/auth/login", async (req: Request, res: Response) => {
+  // Preserve query string (returnTo, etc.) when forwarding to /login
+  const qs = new URL(req.url, "http://localhost").searchParams.toString();
+  res.redirect(302, `/api/login${qs ? "?" + qs : ""}`);
+});
+
+router.get("/auth/logout", async (req: Request, res: Response) => {
+  res.redirect(302, "/api/logout");
+});
+
+router.get("/auth/callback", async (req: Request, res: Response) => {
+  const qs = new URL(req.url, "http://localhost").searchParams.toString();
+  res.redirect(302, `/api/callback${qs ? "?" + qs : ""}`);
+});
+
 router.get("/auth/user", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
     res.json(GetCurrentAuthUserResponse.parse({ user: null }));
@@ -240,7 +258,15 @@ router.get("/callback", async (req: Request, res: Response) => {
   res.clearCookie("state", { path: "/" });
   res.clearCookie("return_to", { path: "/" });
 
-  res.redirect(returnTo);
+  // Role-based post-login routing when no explicit returnTo was set
+  let destination = returnTo;
+  if (destination === "/") {
+    if (userInfo.role === "provider") destination = "/provider/dashboard";
+    else if (userInfo.role === "admin") destination = "/admin";
+    else destination = "/dashboard";
+  }
+
+  res.redirect(destination);
 });
 
 router.get("/logout", async (req: Request, res: Response) => {

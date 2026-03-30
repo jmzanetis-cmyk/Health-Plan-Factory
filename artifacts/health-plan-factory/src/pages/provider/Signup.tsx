@@ -30,11 +30,16 @@ const step2Schema = z.object({
   path: ["offersTelehealth"],
 });
 
+const modalityPricingSchema = z.object({
+  costMin: z.coerce.number().min(0).max(10000).optional(),
+  costMax: z.coerce.number().min(0).max(10000).optional(),
+});
+
 const step3Schema = z.object({
   bio: z.string().min(30, "Please write at least 30 characters").max(800),
   modalityIds: z.array(z.string()).min(1, "Select at least one modality"),
+  modalityPricing: z.record(z.string(), modalityPricingSchema).optional(),
   acceptsInsurance: z.boolean(),
-  costPerSession: z.coerce.number().min(0).max(10000).optional(),
 });
 
 type Step1 = z.infer<typeof step1Schema>;
@@ -89,6 +94,13 @@ export default function ProviderSignup() {
     const payload = { ...formData, ...data };
     setSubmitting(true);
     setSubmitError(null);
+
+    // Build modalityPricingRanges array for the API
+    const modalityPricingRanges = (payload.modalityIds as string[]).map((id: string) => {
+      const p = (payload.modalityPricing as Record<string, { costMin?: number; costMax?: number }> | undefined)?.[id];
+      return { modalityId: id, costMin: p?.costMin ? Number(p.costMin) : undefined, costMax: p?.costMax ? Number(p.costMax) : undefined };
+    });
+
     try {
       const res = await fetch(`${BASE}/api/providers`, {
         method: "POST",
@@ -96,7 +108,7 @@ export default function ProviderSignup() {
         credentials: "include",
         body: JSON.stringify({
           ...payload,
-          costPerSession: payload.costPerSession ? Number(payload.costPerSession) : undefined,
+          modalityPricingRanges,
           website: payload.website || undefined,
           serviceRadiusMiles: payload.serviceRadiusMiles ? Number(payload.serviceRadiusMiles) : undefined,
         }),
@@ -316,7 +328,7 @@ export default function ProviderSignup() {
 
               <div>
                 <label className="block text-xs font-semibold mb-2" style={labelStyle}>Modalities offered * (select all that apply)</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {modalities.length === 0 ? (
                     <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Loading modalities...</p>
                   ) : (
@@ -345,7 +357,39 @@ export default function ProviderSignup() {
                     })
                   )}
                 </div>
-                {form3.formState.errors.modalityIds && <p className="text-xs mt-1" style={errorStyle}>{form3.formState.errors.modalityIds.message}</p>}
+                {form3.formState.errors.modalityIds && <p className="text-xs mt-1 mb-2" style={errorStyle}>{form3.formState.errors.modalityIds.message}</p>}
+
+                {/* Per-modality pricing rows */}
+                {(form3.watch("modalityIds") || []).length > 0 && (
+                  <div className="flex flex-col gap-2 mt-1">
+                    <p className="text-xs font-semibold" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Pricing per modality (optional — min / max $)</p>
+                    {(form3.watch("modalityIds") || []).map((mId) => {
+                      const mod = modalities.find((m) => m.id === mId);
+                      return (
+                        <div key={mId} className="flex items-center gap-2">
+                          <span className="text-xs w-32 shrink-0" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)", fontWeight: 500 }}>{mod?.name ?? mId}</span>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="Min $"
+                            className="w-24 px-2 py-1.5 rounded-md text-xs outline-none"
+                            style={inputStyle}
+                            {...form3.register(`modalityPricing.${mId}.costMin`)}
+                          />
+                          <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>–</span>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="Max $"
+                            className="w-24 px-2 py-1.5 rounded-md text-xs outline-none"
+                            style={inputStyle}
+                            {...form3.register(`modalityPricing.${mId}.costMax`)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -355,23 +399,13 @@ export default function ProviderSignup() {
               </div>
 
               <div style={{ borderTop: "1px solid rgba(27,45,79,0.06)", paddingTop: "16px" }}>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Pricing</p>
-                <div className="grid grid-cols-2 gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" {...form3.register("acceptsInsurance")} className="w-4 h-4" />
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Cost per session ($)</label>
-                    <input {...form3.register("costPerSession")} type="number" min={0} placeholder="150" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
-                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Your standard rate (members see this)</p>
+                    <span className="text-sm font-semibold block" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Accepts insurance</span>
+                    <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Shown as a filter on member search</span>
                   </div>
-                  <div className="flex items-end pb-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" {...form3.register("acceptsInsurance")} className="w-4 h-4" />
-                      <div>
-                        <span className="text-sm font-semibold block" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Accepts insurance</span>
-                        <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Shown as a filter on member search</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
+                </label>
               </div>
 
               {submitError && (

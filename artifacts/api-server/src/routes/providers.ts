@@ -187,6 +187,7 @@ router.post("/providers", async (req, res) => {
       licenseState?: string;
       serviceRadiusMiles?: number;
       offersInPerson?: boolean;
+      modalityPricingRanges?: Array<{ modalityId: string; costMin?: number; costMax?: number }>;
     };
 
     const [created] = await db
@@ -217,12 +218,20 @@ router.post("/providers", async (req, res) => {
       .returning();
 
     if (Array.isArray(modalityIds) && modalityIds.length > 0) {
+      const pricingMap = new Map(
+        (rawBody.modalityPricingRanges ?? []).map((r) => [r.modalityId, r]),
+      );
       await db.insert(providerModalities).values(
-        modalityIds.map((mId, idx) => ({
-          providerId,
-          modalityId: mId,
-          isPrimary: idx === 0,
-        })),
+        modalityIds.map((mId, idx) => {
+          const pr = pricingMap.get(mId);
+          return {
+            providerId,
+            modalityId: mId,
+            isPrimary: idx === 0,
+            costMin: pr?.costMin ?? null,
+            costMax: pr?.costMax ?? null,
+          };
+        }),
       );
     }
 

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { AuthUser } from "@workspace/api-client-react";
 
-interface AuthState {
+export interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -10,7 +10,7 @@ interface AuthState {
   refresh: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthState | null>(null);
+export const AuthContext = createContext<AuthState | null>(null);
 
 async function fetchAuthUser(): Promise<AuthUser | null> {
   try {
