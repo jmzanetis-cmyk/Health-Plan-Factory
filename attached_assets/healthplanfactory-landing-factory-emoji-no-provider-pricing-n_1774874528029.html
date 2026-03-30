@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HealthPlanFactory — Budget-first wellness plans built around real life</title>
+<meta name="description" content="Build a budget-first wellness plan around your goals, preferences, and monthly spend. Discover providers, compare modalities, and assemble a practical routine in minutes."/>
+<meta name="theme-color" content="#1b2d4f"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:       #1b2d4f;
+  --navy-mid:   #243a62;
+  --navy-light: #2f4a7a;
+  --navy-10:    rgba(27,45,79,0.08);
+  --navy-20:    rgba(27,45,79,0.15);
+  --navy-40:    rgba(27,45,79,0.4);
+  --navy-60:    rgba(27,45,79,0.6);
+  --warm-white: #fafaf8;
+  --off-white:  #f4f2ee;
+  --parchment:  #edeae3;
+  --amber:      #b8892a;
+  --amber-light:#d4a44c;
+  --amber-pale: #fdf5e6;
+  --amber-10:   rgba(184,137,42,0.12);
+  --sage:       #3d6b52;
+  --sage-pale:  #eaf2ec;
+  --rose:       #e07060;
+  --sky:        #5b9bd5;
+  --text-secondary: #4a5e7a;
+  --text-muted:     #8496b0;
+  --border:         rgba(27,45,79,0.1);
+  --border-strong:  rgba(27,45,79,0.2);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--warm-white);color:var(--navy);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(250,250,248,0.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 3rem;height:68px;
+}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--navy);text-decoration:none;display:flex;align-items:center;gap:6px}
+.logo-factory{font-style:italic;color:var(--amber)}
+.logo-gear{font-size:1rem;animation:spin 8s linear infinite;display:inline-block;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.nav-links{display:flex;gap:2.5rem}
+.nav-links a{font-size:.84rem;font-weight:500;color:var(--text-secondary);text-decoration:none;transition:color .15s}
+.nav-links a:hover{color:var(--navy)}
+.btn-nav{background:var(--navy);color:white;font-family:'Outfit',sans-serif;font-size:.84rem;font-weight:600;padding:.55rem 1.35rem;border-radius:6px;text-decoration:none;transition:all .2s}
+.btn-nav:hover{background:var(--navy-light);transform:translateY(-1px)}
+
+/* ── HERO ── */
+.hero{
+  padding:7rem 3rem 0;
+  background:var(--warm-white);
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4rem;
+  align-items:center;
+  min-height:90vh;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Subtle dot grid background */
+.hero::before{
+  content:'';
+  position:absolute;inset:0;
+  background-image:radial-gradient(var(--navy-10) 1px,transparent 1px);
+  background-size:24px 24px;
+  pointer-events:none;
+}
+
+.hero-left{position:relative;z-index:1}
+
+.hero-pill{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:var(--amber-pale);border:1px solid var(--amber-10);
+  border-radius:100px;padding:.4rem 1rem;
+  font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:1.75rem;
+}
+.hero-pill::before{content:'HPF';font-size:.75rem}
+
+h1{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(3rem,5vw,5rem);font-weight:700;
+  line-height:1.08;letter-spacing:-.02em;
+  color:var(--navy);margin-bottom:1.5rem;
+}
+h1 em{font-style:italic;color:var(--amber)}
+
+.hero-body{
+  font-size:1.05rem;font-weight:300;color:var(--text-secondary);
+  line-height:1.8;max-width:460px;margin-bottom:2.5rem;
+}
+.hero-body strong{color:var(--navy);font-weight:600}
+
+.hero-actions{display:flex;gap:.875rem;flex-wrap:wrap;margin-bottom:2.5rem}
+.btn-primary{
+  background:var(--navy);color:white;font-family:'Outfit',sans-serif;
+  font-size:.92rem;font-weight:600;padding:.9rem 2rem;border-radius:6px;
+  text-decoration:none;border:none;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(27,45,79,0.25);letter-spacing:.01em;
+}
+.btn-primary:hover{background:var(--navy-light);transform:translateY(-2px);box-shadow:0 8px 24px rgba(27,45,79,0.3)}
+.btn-ghost{
+  background:transparent;color:var(--navy);font-family:'Outfit',sans-serif;
+  font-size:.92rem;font-weight:500;padding:.9rem 1.75rem;border-radius:6px;
+  text-decoration:none;border:1.5px solid var(--border-strong);cursor:pointer;transition:all .2s;
+}
+.btn-ghost:hover{border-color:var(--navy);background:var(--navy-10)}
+
+.trust-badges{display:flex;gap:1.5rem;flex-wrap:wrap}
+.tb{
+  display:flex;align-items:center;gap:.4rem;
+  font-size:.75rem;font-weight:500;color:var(--text-secondary);
+}
+.tb-icon{
+  width:22px;height:22px;border-radius:6px;background:var(--sage-pale);
+  display:flex;align-items:center;justify-content:center;font-size:.7rem;
+}
+
+/* ── HERO RIGHT - Factory Illustration ── */
+.hero-right{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  padding-bottom:0;
+}
+
+.factory-wrapper{
+  position:relative;width:100%;max-width:480px;
+}
+
+/* Speech bubble */
+.speech-bubble{
+  position:absolute;top:-18px;right:10px;z-index:10;
+  background:white;border:2px solid var(--navy);border-radius:16px;
+  padding:.6rem 1rem;font-size:.78rem;font-weight:600;color:var(--navy);
+  white-space:nowrap;
+  box-shadow:3px 3px 0 var(--navy);
+  animation:bobble 3s ease-in-out infinite;
+}
+.speech-bubble::after{
+  content:'';position:absolute;bottom:-10px;left:24px;
+  border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid var(--navy);
+}
+.speech-bubble::before{
+  content:'';position:absolute;bottom:-7px;left:26px;
+  border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid white;z-index:1;
+}
+@keyframes bobble{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* The main factory SVG illustration */
+.factory-svg{width:100%;height:auto;display:block;filter:drop-shadow(0 16px 40px rgba(27,45,79,0.15))}
+
+/* Mini plan card floating below illustration */
+.mini-plan{
+  background:white;border:1.5px solid var(--border);border-radius:14px;
+  padding:1.25rem 1.5rem;width:100%;max-width:480px;
+  box-shadow:0 8px 32px rgba(27,45,79,0.1);
+  animation:floatUp 6s ease-in-out infinite;
+}
+@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+.mp-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.875rem}
+.mp-items{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem}
+.mp-item{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.65rem .875rem;background:var(--off-white);border-radius:8px;
+  border-left:3px solid transparent;
+}
+.mp-item.a{border-left-color:var(--amber)}
+.mp-item.b{border-left-color:var(--sage)}
+.mp-item.c{border-left-color:var(--sky)}
+.mp-emoji{font-size:1rem;flex-shrink:0}
+.mp-name{font-size:.82rem;font-weight:600;color:var(--navy);flex:1}
+.mp-freq{font-size:.7rem;color:var(--text-muted)}
+.mp-cost{font-family:'DM Mono',monospace;font-size:.82rem;font-weight:500;color:var(--navy)}
+.mp-hsa{font-size:.6rem;font-weight:700;color:var(--sage);background:var(--sage-pale);padding:.1rem .35rem;border-radius:3px}
+.mp-total{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.75rem .875rem;background:var(--navy);border-radius:8px;
+}
+.mp-total-l{font-size:.75rem;color:rgba(255,255,255,.5)}
+.mp-total-r{font-family:'DM Mono',monospace;font-size:.9rem;font-weight:500;color:white}
+.mp-bar{margin-top:.875rem}
+.mp-bar-top{display:flex;justify-content:space-between;font-size:.68rem;color:var(--text-muted);margin-bottom:.35rem}
+.mp-bar-top strong{color:var(--navy);font-weight:600}
+.bar-track{height:5px;background:var(--off-white);border-radius:100px;overflow:hidden}
+.bar-fill{height:100%;width:87%;background:linear-gradient(90deg,var(--navy),var(--amber));border-radius:100px;animation:barGrow 1.4s .5s ease-out both}
+@keyframes barGrow{from{width:0}to{width:87%}}
+
+/* ── TRUST BAR ── */
+.trust-bar{
+  background:var(--navy);padding:.875rem 3rem;
+  display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap;
+}
+.tbi{display:flex;align-items:center;gap:.5rem;font-size:.75rem;font-weight:500;color:rgba(255,255,255,.65)}
+.tbi span{font-size:.875rem}
+
+/* ── SECTION COMMONS ── */
+.section-tag{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:1rem;
+}
+.section-tag::before{content:'';width:20px;height:1.5px;background:var(--amber)}
+.section-h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2rem,3.5vw,3.2rem);font-weight:700;line-height:1.1;
+  letter-spacing:-.015em;color:var(--navy);max-width:520px;margin-bottom:3.5rem;
+}
+.section-h2 em{font-style:italic;color:var(--amber)}
+
+/* ── HOW IT WORKS ── */
+.how{padding:6rem 3rem;background:var(--off-white);border-top:1px solid var(--border)}
+
+/* Conveyor belt visual connector */
+.steps-container{position:relative}
+.conveyor{
+  position:absolute;top:40px;left:10%;right:10%;
+  height:3px;
+  background:repeating-linear-gradient(90deg,var(--navy-20) 0,var(--navy-20) 12px,transparent 12px,transparent 20px);
+  border-radius:2px;
+  animation:conveyor 2s linear infinite;
+}
+@keyframes conveyor{from{background-position:0 0}to{background-position:32px 0}}
+
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;position:relative;z-index:1}
+.step{
+  background:white;border:1px solid var(--border);border-radius:16px;
+  padding:1.75rem 1.5rem;text-align:center;
+  transition:all .25s;cursor:default;
+}
+.step:hover{transform:translateY(-6px);box-shadow:0 12px 32px rgba(27,45,79,0.1);border-color:var(--amber-light)}
+.step-num{
+  width:44px;height:44px;border-radius:50%;
+  background:var(--navy);color:white;
+  font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.25rem;
+  transition:all .25s;
+}
+.step:hover .step-num{background:var(--amber)}
+.step-icon{font-size:1.75rem;margin-bottom:.875rem}
+.step-title{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:.5rem}
+.step-desc{font-size:.82rem;font-weight:300;color:var(--text-secondary);line-height:1.65}
+
+/* ── FACTORY FEATURE SECTION ── */
+.features{
+  padding:6rem 3rem;background:var(--navy);
+  position:relative;overflow:hidden;
+}
+.features::before{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;
+}
+/* Tiny animated gears decoration */
+.gear-deco{
+  position:absolute;right:3rem;top:3rem;
+  font-size:4rem;opacity:.06;
+  animation:spin 20s linear infinite;
+}
+.gear-deco2{
+  position:absolute;left:5rem;bottom:4rem;
+  font-size:6rem;opacity:.04;
+  animation:spin 30s linear infinite reverse;
+}
+
+.features .section-tag{color:var(--amber-light)}
+.features .section-tag::before{background:var(--amber-light)}
+.features .section-h2{color:white;margin-bottom:3rem}
+.features .section-h2 em{color:var(--amber-light)}
+
+.mod-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.625rem;
+  position:relative;z-index:1;
+}
+.mod-tile{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:1.1rem 1rem;transition:all .2s;cursor:default;
+}
+.mod-tile:hover{background:rgba(255,255,255,.1);border-color:rgba(184,137,42,.4);transform:translateY(-3px)}
+.mt-icon{font-size:1.3rem;margin-bottom:.45rem}
+.mt-name{font-size:.8rem;font-weight:500;color:rgba(255,255,255,.88);margin-bottom:.3rem;line-height:1.3}
+.mt-badge{font-size:.6rem;font-weight:600;padding:.12rem .4rem;border-radius:4px;display:inline-block}
+.mb-s{background:rgba(61,107,82,.5);color:#82c99a}
+.mb-m{background:rgba(184,137,42,.25);color:#e4b94e}
+
+/* ── PROBLEM SECTION ── */
+.problem{padding:6rem 3rem;background:var(--warm-white);border-top:1px solid var(--border)}
+.problem-inner{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;margin-bottom:4rem}
+.problem-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(5rem,10vw,8.5rem);font-weight:700;
+  color:var(--navy);line-height:1;letter-spacing:-.03em;position:relative;display:inline-block;
+}
+.problem-num::after{content:'';position:absolute;bottom:8px;left:0;right:0;height:4px;background:var(--amber);border-radius:2px}
+.problem-num-label{font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-top:.875rem}
+.problem-copy h3{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:700;color:var(--navy);margin-bottom:1rem;line-height:1.2}
+.problem-copy p{font-size:.92rem;font-weight:300;color:var(--text-secondary);line-height:1.8;margin-bottom:.875rem}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+.stat-tile{
+  background:white;border:1px solid var(--border);border-radius:12px;padding:1.5rem;
+  position:relative;overflow:hidden;
+}
+.stat-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--navy),var(--amber))}
+.st-num{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:var(--navy);line-height:1;margin-bottom:.5rem}
+.st-desc{font-size:.8rem;font-weight:300;color:var(--text-secondary);line-height:1.55}
+
+/* ── PROVIDERS ── */
+.providers{padding:6rem 3rem;background:var(--off-white);border-top:1px solid var(--border)}
+.providers-inner{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+.providers h2{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,3.2vw,3rem);font-weight:700;color:var(--navy);line-height:1.1;margin-bottom:.875rem;letter-spacing:-.015em}
+.providers h2 em{font-style:italic;color:var(--amber)}
+.providers-sub{font-size:.92rem;font-weight:300;color:var(--text-secondary);line-height:1.75;margin-bottom:2rem}
+.benefit-rows{margin-bottom:2.5rem}
+.benefit-row{display:flex;gap:1rem;align-items:flex-start;padding:1rem 0;border-bottom:1px solid var(--border)}
+.benefit-row:first-child{border-top:1px solid var(--border)}
+.br-icon{width:36px;height:36px;border-radius:8px;background:var(--amber-pale);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;border:1px solid var(--amber-10)}
+.br-title{font-size:.88rem;font-weight:600;color:var(--navy);margin-bottom:2px}
+.br-desc{font-size:.8rem;font-weight:300;color:var(--text-secondary);line-height:1.5}
+.provider-card{background:white;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 8px 32px rgba(27,45,79,.08)}
+.pc-top{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);padding:1.5rem;display:flex;gap:1rem;align-items:flex-start}
+.pc-avatar{width:52px;height:52px;border-radius:12px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:700;color:white;flex-shrink:0}
+.pc-name{font-weight:600;font-size:.95rem;color:white;margin-bottom:2px}
+.pc-creds{font-size:.75rem;color:rgba(255,255,255,.6);margin-bottom:4px}
+.pc-stars{font-size:.75rem;color:var(--amber-light)}
+.pc-body{padding:1.25rem 1.5rem}
+.pc-rows{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.25rem}
+.pc-row{display:flex;justify-content:space-between;font-size:.8rem}
+.pc-row .k{color:var(--text-muted)}
+.pc-row .v{color:var(--navy);font-weight:500}
+.pc-badge{display:flex;align-items:center;gap:.5rem;background:var(--amber-pale);border:1px solid var(--amber-10);border-radius:8px;padding:.7rem .875rem;font-size:.78rem;color:var(--amber)}
+.pc-badge strong{font-weight:700;color:var(--navy)}
+
+/* ── PRICING ── */
+.pricing{padding:6rem 3rem;background:var(--parchment);border-top:1px solid var(--border)}
+.pricing-head{text-align:center;margin-bottom:4rem}
+.pricing-head .section-h2{margin:0 auto .875rem;text-align:center;max-width:100%}
+.pricing-sub{font-size:.88rem;font-weight:300;color:var(--text-secondary);max-width:440px;margin:0 auto;line-height:1.7}
+.pricing-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;max-width:920px;margin:0 auto}
+.pc2{background:white;border:1px solid var(--border);border-radius:14px;padding:2rem;position:relative;transition:all .2s}
+.pc2:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(27,45,79,.1)}
+.pc2.featured{background:var(--navy);border-color:transparent;box-shadow:0 16px 48px rgba(27,45,79,.28)}
+.featured-tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--amber);color:white;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.3rem 1rem;border-radius:100px;white-space:nowrap}
+.pc2-tier{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1.25rem}
+.pc2.featured .pc2-tier{color:rgba(255,255,255,.4)}
+.pc2-amt{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:700;color:var(--navy);line-height:1;margin-bottom:.35rem}
+.pc2.featured .pc2-amt{color:white}
+.pc2-per{font-size:.8rem;color:var(--text-muted);font-weight:300}
+.pc2.featured .pc2-per{color:rgba(255,255,255,.4)}
+.pc2-desc{font-size:.82rem;font-weight:300;color:var(--text-secondary);margin:.875rem 0 1.5rem;line-height:1.55;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.pc2.featured .pc2-desc{color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.1)}
+.pc2-features{list-style:none;margin-bottom:2rem}
+.pc2-features li{display:flex;gap:.625rem;align-items:flex-start;font-size:.83rem;font-weight:300;color:var(--text-secondary);padding:.45rem 0;line-height:1.45;border-bottom:1px solid var(--border)}
+.pc2.featured .pc2-features li{color:rgba(255,255,255,.65);border-color:rgba(255,255,255,.1)}
+.pc2-features li:last-child{border:none}
+.pc2-features li::before{content:'Included';font-size:.72rem;font-weight:700;color:var(--sage);flex-shrink:0;margin-top:2px}
+.pc2.featured .pc2-features li::before{color:var(--amber-light)}
+.pc2-btn{display:block;width:100%;text-align:center;padding:.875rem;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:all .2s;letter-spacing:.01em}
+.btn-nv{background:var(--navy);color:white}.btn-nv:hover{background:var(--navy-light)}
+.btn-am{background:var(--amber);color:white}.btn-am:hover{background:var(--amber-light);transform:translateY(-1px)}
+.btn-ol{background:transparent;color:var(--navy);border:1.5px solid var(--border-strong)}.btn-ol:hover{background:var(--navy-10);border-color:var(--navy)}
+
+/* ── TESTIMONIALS ── */
+.testimonials{padding:5rem 3rem;background:var(--warm-white);border-top:1px solid var(--border)}
+.t-head{text-align:center;margin-bottom:3rem}
+.t-stars{font-size:1.2rem;color:var(--amber);margin-bottom:.5rem;letter-spacing:2px}
+.t-tagline{font-size:.8rem;font-weight:500;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase}
+.t-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.testimonial{background:white;border:1px solid var(--border);border-radius:14px;padding:1.75rem;transition:all .2s}
+.testimonial:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(27,45,79,.08)}
+.t-s{color:var(--amber);font-size:.85rem;margin-bottom:.875rem}
+.t-q{font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:400;font-style:italic;color:var(--navy);line-height:1.6;margin-bottom:1.25rem}
+.t-auth{display:flex;align-items:center;gap:.75rem}
+.t-av{width:36px;height:36px;border-radius:50%;background:var(--parchment);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;color:var(--navy)}
+.t-name{font-size:.82rem;font-weight:600;color:var(--navy)}
+.t-desc{font-size:.74rem;color:var(--text-muted)}
+
+/* ── FINAL CTA ── */
+.final{padding:7rem 3rem;background:var(--navy);text-align:center;position:relative;overflow:hidden}
+.final::before{content:'';position:absolute;top:-40%;left:50%;transform:translateX(-50%);width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(184,137,42,.12) 0%,transparent 65%);pointer-events:none}
+.final::after{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+.final-inner{position:relative;z-index:1}
+.final-eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--amber-light);margin-bottom:1.5rem}
+.final-eyebrow::before,.final-eyebrow::after{content:'';width:24px;height:1px;background:var(--amber-light)}
+.final h2{font-family:'Cormorant Garamond',serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:700;color:white;line-height:1.08;letter-spacing:-.02em;max-width:640px;margin:0 auto 1.25rem}
+.final h2 em{font-style:italic;color:var(--amber-light)}
+.final-sub{font-size:.95rem;font-weight:300;color:rgba(255,255,255,.55);max-width:400px;margin:0 auto 2.75rem;line-height:1.75}
+.btn-white{display:inline-flex;align-items:center;gap:.5rem;background:white;color:var(--navy);font-family:'Outfit',sans-serif;font-size:.92rem;font-weight:600;padding:1rem 2.25rem;border-radius:8px;text-decoration:none;border:none;cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(0,0,0,.25);letter-spacing:.01em}
+.btn-white:hover{background:var(--off-white);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+.final-note{margin-top:1.25rem;font-size:.73rem;color:rgba(255,255,255,.3)}
+
+/* ── FOOTER ── */
+footer{background:#111d30;padding:2.5rem 3rem}
+.footer-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:2rem;padding-bottom:2rem;margin-bottom:2rem;border-bottom:1px solid rgba(255,255,255,.07)}
+.footer-logo{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:700;color:rgba(255,255,255,.85)}
+.footer-logo em{font-style:italic;color:var(--amber-light)}
+.footer-tagline{font-size:.75rem;color:rgba(255,255,255,.3);margin-top:.25rem;font-weight:300}
+.footer-links{display:flex;gap:1.75rem;flex-wrap:wrap;align-items:center}
+.footer-links a{font-size:.8rem;color:rgba(255,255,255,.4);text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:rgba(255,255,255,.8)}
+.footer-disc{font-size:.7rem;color:rgba(255,255,255,.2);line-height:1.6;max-width:680px}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.hero-pill{animation:fadeUp .5s .05s ease both}
+h1{animation:fadeUp .6s .12s ease both}
+.hero-body{animation:fadeUp .6s .2s ease both}
+.hero-actions{animation:fadeUp .6s .28s ease both}
+.trust-badges{animation:fadeUp .6s .36s ease both}
+.hero-right{animation:fadeUp .7s .18s ease both}
+
+/* ── DISCLAIMER STYLES ── */
+.sticky-disclaimer{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(27,45,79,0.97);backdrop-filter:blur(8px);border-top:2px solid rgba(184,137,42,0.4);padding:.65rem 3rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:.69rem;color:rgba(255,255,255,0.65);line-height:1.4}
+.sticky-disclaimer a{color:var(--amber-light);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;flex-shrink:0}
+.sticky-disclaimer strong{color:rgba(255,255,255,.9)}
+.sticky-disc-close{background:none;border:1px solid rgba(255,255,255,.2);cursor:pointer;color:rgba(255,255,255,.5);font-size:.75rem;flex-shrink:0;transition:all .15s;padding:.2rem .6rem;border-radius:4px;font-family:'Outfit',sans-serif}
+.sticky-disc-close:hover{color:white;border-color:rgba(255,255,255,.5)}
+body{padding-bottom:48px}
+
+.is-not{padding:5rem 3rem;background:var(--amber-pale);border-top:3px solid var(--amber);border-bottom:3px solid var(--amber)}
+.is-not-head{text-align:center;margin-bottom:3rem}
+.is-not-head h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.75rem,3vw,2.5rem);font-weight:700;color:var(--navy);margin-bottom:.5rem}
+.is-not-head p{font-size:.88rem;color:var(--text-secondary);max-width:500px;margin:0 auto;line-height:1.6}
+.is-not-inner{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:2.5rem}
+.is-not-col h3{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;padding-bottom:.875rem;border-bottom:2px solid}
+.is-col h3{color:var(--sage);border-color:var(--sage)}
+.not-col h3{color:#b91c1c;border-color:#b91c1c}
+.is-not-list{list-style:none;display:flex;flex-direction:column;gap:.7rem}
+.is-not-list li{display:flex;align-items:flex-start;gap:.625rem;font-size:.86rem;color:var(--navy);line-height:1.55}
+.is-not-list li::before{font-size:.9rem;flex-shrink:0;margin-top:1px;font-weight:700}
+.is-col li::before{content:'Included';color:var(--sage)}
+.not-col li::before{content:'Not included';color:#b91c1c}
+.is-not-note{max-width:860px;margin:2rem auto 0;font-size:.78rem;color:var(--text-secondary);text-align:center;line-height:1.65;padding-top:1.5rem;border-top:1px solid rgba(184,137,42,0.3)}
+.is-not-note strong{color:var(--navy)}
+
+.emergency-banner{background:#7f1d1d;padding:1.1rem 3rem;display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap}
+.eb-text{font-size:.82rem;font-weight:600;color:white;display:flex;align-items:center;gap:.5rem}
+.eb-text span{font-size:1rem}
+.eb-btn{background:white;color:#7f1d1d;font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:700;padding:.4rem .95rem;border-radius:5px;text-decoration:none;letter-spacing:.02em;transition:all .15s;white-space:nowrap}
+.eb-btn:hover{background:#fee2e2}
+.eb-btn.b2{background:#fecaca;color:#7f1d1d}
+
+.hsa-note{background:var(--amber-pale);border:1px solid var(--amber-10);border-radius:8px;padding:.875rem 1.1rem;font-size:.76rem;color:var(--navy);line-height:1.65;margin-top:.75rem}
+.hsa-note strong{font-weight:600;color:var(--amber)}
+
+.provider-disc-note{font-size:.74rem;color:var(--text-muted);line-height:1.6;padding:.875rem;background:var(--off-white);border-radius:8px;border:1px solid var(--border);margin-top:1rem}
+
+.regimen-disc{background:var(--sage-pale);border:1px solid rgba(61,107,82,0.2);border-left:4px solid var(--sage);border-radius:8px;padding:1rem 1.25rem;font-size:.8rem;color:#2d5240;line-height:1.65;margin-top:1rem}
+
+.full-disclaimer{padding:4.5rem 3rem;background:var(--off-white);border-top:1px solid var(--border)}
+.full-disclaimer-inner{max-width:820px;margin:0 auto}
+.full-disclaimer h3{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:var(--navy);margin-bottom:2rem;display:flex;align-items:center;gap:.625rem}
+.disc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+.disc-block{margin-bottom:1.5rem}
+.disc-block h4{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:.5rem}
+.disc-block p{font-size:.82rem;color:var(--text-secondary);line-height:1.75}
+.disc-block p+p{margin-top:.5rem}
+.disc-block a{color:var(--amber);text-decoration:underline;text-underline-offset:2px}
+.disc-emergency{background:#fef2f2;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:8px;padding:1.1rem 1.25rem;font-size:.82rem;color:#7f1d1d;line-height:1.7;margin-bottom:1.5rem}
+.disc-emergency strong{font-weight:700;color:#dc2626}
+.disc-date{font-size:.72rem;color:var(--text-muted);padding-top:1rem;border-top:1px solid var(--border);margin-top:1rem}
+
+/* ── RESPONSIVE ── */
+@media(max-width:960px){
+  nav{padding:0 1.5rem}
+  .nav-links{display:none}
+  .hero{grid-template-columns:1fr;min-height:auto;padding:7rem 1.5rem 3rem;gap:3rem}
+  .steps{grid-template-columns:1fr 1fr}
+  .conveyor{display:none}
+  .problem-inner{grid-template-columns:1fr;gap:2.5rem}
+  .stat-row{grid-template-columns:1fr}
+  .sticky-disclaimer{padding:.65rem 1.5rem;flex-wrap:wrap}
+  .is-not-inner{grid-template-columns:1fr}
+  .emergency-banner{gap:1rem;padding:1rem 1.5rem}
+  .disc-grid{grid-template-columns:1fr}
+  .full-disclaimer{padding:3rem 1.5rem}
+  .is-not{padding:3.5rem 1.5rem}
+  .providers-inner{grid-template-columns:1fr}
+  .pricing-cards{grid-template-columns:1fr;max-width:400px}
+  .t-grid{grid-template-columns:1fr}
+  .trust-bar{gap:1.5rem;padding:.875rem 1.5rem}
+  section,.how,.features,.problem,.providers,.pricing,.testimonials,.final{padding:4rem 1.5rem}
+  footer{padding:2rem 1.5rem}
+  .footer-top{flex-direction:column}
+}
+@media(max-width:600px){
+  .steps{grid-template-columns:1fr}
+  .hero-actions{flex-direction:column}
+  .trust-badges{flex-direction:column;gap:.875rem}
+}
+
+.icon-svg{width:1em;height:1em;display:inline-block;vertical-align:middle;fill:currentColor}
+.logo-gear,.building-factory,.tb-icon,.mp-emoji,.build-step-icon,.pi-emoji,.lock-icon,.mip-emoji,.tl-gear,.gear-deco,.gear-deco2,.br-icon{display:inline-flex;align-items:center;justify-content:center}
+.logo-gear .icon-svg,.tl-gear .icon-svg,.gear-deco .icon-svg,.gear-deco2 .icon-svg{width:1.05em;height:1.05em}
+.tb-icon .icon-svg,.mp-emoji .icon-svg,.build-step-icon .icon-svg,.pi-emoji .icon-svg,.lock-icon .icon-svg,.mip-emoji .icon-svg,.br-icon .icon-svg{width:1.05em;height:1.05em}
+
+</style>
+</head>
+<body>
+
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.3 2h3.4l.5 2.1c.5.2 1 .4 1.5.6l2-1.1 2.4 2.4-1.1 2c.2.5.4 1 .6 1.5L22 10.3v3.4l-2.1.5c-.2.5-.4 1-.6 1.5l1.1 2-2.4 2.4-2-1.1c-.5.2-1 .4-1.5.6l-.5 2.1h-3.4l-.5-2.1c-.5-.2-1-.4-1.5-.6l-2 1.1-2.4-2.4 1.1-2c-.2-.5-.4-1-.6-1.5L2 13.7v-3.4l2.1-.5c.2-.5.4-1 .6-1.5l-1.1-2 2.4-2.4 2 1.1c.5-.2 1-.4 1.5-.6L10.3 2Zm1.7 6.1a3.9 3.9 0 1 0 0 7.8 3.9 3.9 0 0 0 0-7.8Z" fill="currentColor"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2 4.5 5v6.2c0 4.8 3 9.2 7.5 10.8 4.5-1.6 7.5-6 7.5-10.8V5L12 2Zm0 4.1 4 1.6v3.5c0 3.3-1.8 6.3-4 7.5-2.2-1.2-4-4.2-4-7.5V7.7l4-1.6Z" fill="currentColor"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m9.2 16.6-4.1-4.1 1.8-1.8 2.3 2.3 7-7 1.8 1.8-8.8 8.8Z" fill="currentColor"/></symbol>
+    <symbol id="i-card" viewBox="0 0 24 24"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-11Zm2.5 0v1.2h13V6.5h-13Zm0 4v7h13v-7h-13Z" fill="currentColor"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M19.5 3.5c-7.7.2-13 4.7-13 11.4 0 3.2 2.4 5.6 5.6 5.6 6.7 0 11.2-5.3 11.4-13Zm-8.9 12.3c1.7-2.9 4.4-5.4 7.6-7.1-2.1 2.4-4.1 4.8-5.5 7.6-.8 1.5-1.2 2.8-1.4 4.2-.5-.8-.7-1.7-.7-2.7 0-.7 0-1.3.2-2Z" fill="currentColor"/></symbol>
+    <symbol id="i-lotus" viewBox="0 0 24 24"><path d="M12 6c1.5 1.4 2.4 3.1 2.4 5 0 1.6-.6 3.1-1.8 4.3 2-.2 3.8-1.2 5-2.8-1.7-1.4-2.9-3.6-3.1-5.8-1 .2-1.8.6-2.5 1.3ZM9.5 7c-.2 2.2-1.4 4.4-3.1 5.8 1.2 1.6 3 2.6 5 2.8-1.2-1.2-1.8-2.7-1.8-4.3 0-1.9.9-3.6 2.4-5-.7-.7-1.5-1.1-2.5-1.3ZM4.3 14.6c2 .7 3.9 1 5.7 1 .6 1.8 1.3 3.3 2 4.4.7-1.1 1.4-2.6 2-4.4 1.8 0 3.8-.3 5.7-1-1.6 3.1-4.6 5.4-7.7 5.4s-6.1-2.3-7.7-5.4Z" fill="currentColor"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24"><path d="M15.4 4.1c-.6.8-1.6 1.5-2.6 1.4-.1-1 .3-2 .9-2.7.7-.8 1.8-1.4 2.8-1.5.1 1-.4 2-.9 2.8ZM18 13.4c0 3.6-2.4 7.2-4.8 7.2-1 0-1.7-.6-2.8-.6s-1.9.6-2.9.6c-2.5 0-4.5-3.5-4.5-7 0-3.6 2.2-5.5 4.2-5.5 1.1 0 2.1.7 2.8.7.7 0 1.9-.8 3.3-.8 1.1 0 3 .5 4.2 2.3-2 .9-3.5 2.7-3.5 5.1Z" fill="currentColor"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M10.75 4h2.5v6.75H20v2.5h-6.75V20h-2.5v-6.75H4v-2.5h6.75V4Z" fill="currentColor"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m15.5 4 5 2v14l-5-2-7 2-5-2V4l5 2 7-2Zm-7 4.1-2.5-1v10.8l2.5 1V8.1Zm2.5-.1v10.8l4-1.2V6.8L11 8Z" fill="currentColor"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M6 4h2.5v6H6V4Zm9.5 0H18v16h-2.5V4ZM10.8 8.8h8.7v2.4h-8.7V8.8ZM4.5 12.8h8.7v2.4H4.5v-2.4Zm3 0H10V20H7.5v-7.2Z" fill="currentColor"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><path d="M21 8.5h-3.3c.5-.6.8-1.3.8-2 0-1.7-1.3-3-3-3-1.5 0-2.6.9-3.5 2.4-.9-1.5-2-2.4-3.5-2.4-1.7 0-3 1.3-3 3 0 .7.3 1.4.8 2H3v4h1.5v7H19.5v-7H21v-4Zm-7.6 0c.7-1.6 1.4-2.6 2.1-2.6.4 0 .8.4.8.8 0 .9-1.2 1.5-2.9 1.8Zm-2.8 0c-1.7-.3-2.9-.9-2.9-1.8 0-.4.4-.8.8-.8.7 0 1.4 1 2.1 2.6ZM6.8 12.5h4v4.5h-4v-4.5Zm6.4 0h4v4.5h-4v-4.5Z" fill="currentColor"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2.8 19h18.4L12 3Zm-1.2 5.5h2.4v5.7h-2.4V8.5Zm0 7.3h2.4v2.2h-2.4v-2.2Z" fill="currentColor"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3Zm8 1.8V8h3.2L14 4.8ZM9 11h6v1.8H9V11Zm0 3.5h6v1.8H9v-1.8Z" fill="currentColor"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M7 10V7.5a5 5 0 0 1 10 0V10h1.5A1.5 1.5 0 0 1 20 11.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5v-8A1.5 1.5 0 0 1 5.5 10H7Zm2.5 0h5V7.5a2.5 2.5 0 0 0-5 0V10Z" fill="currentColor"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 5 13h5l-1 9 8-11h-5l1-9Z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+
+<!-- V1: PERSISTENT STICKY DISCLAIMER BAR -->
+<div class="sticky-disclaimer" id="stickyDisc">
+  <div>
+    <strong>Important:</strong> HealthPlanFactory is a wellness optimization platform — not a medical provider, diagnostic tool, or substitute for professional medical care.
+    This is not medical advice. For emergencies call <strong>911</strong>. For mental health crisis call <strong>988</strong>.
+    <a href="#full-disclaimer">Full disclaimer ↓</a>
+  </div>
+  <button class="sticky-disc-close">Dismiss Close</button>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="./healthplanfactory-landing-clean.html" class="logo" aria-label="HealthPlanFactory home">
+    HealthPlan<span class="logo-factory">Factory</span>
+    <span class="logo-gear" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-gear"></use></svg></span>
+  </a>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#modalities">What's included</a>
+    <a href="#providers">For providers</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <a href="./healthplanfactory-intake-factory-emoji.html" class="btn-nav">Build my plan →</a>
+</nav>
+
+<main>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-pill">Your personalized wellness plan</div>
+    <h1>A health plan<br/>built around<br/><em>your life.</em></h1>
+    <p class="hero-body">
+      Tell us your budget, your conditions, and your goals.
+      HealthPlanFactory assembles a <strong>prioritized, costed wellness plan</strong>
+      — fitted to what you can actually spend, not what an insurer decided.
+    </p>
+    <div class="hero-actions">
+      <a href="./healthplanfactory-intake-factory-emoji.html" class="btn-primary">Build my plan free →</a>
+      <a href="mailto:hello@healthplanfactory.com?subject=Founding%20Provider%20Application" class="btn-ghost">Join as a provider</a>
+    </div>
+    <div class="trust-badges">
+      <div class="tb"><div class="tb-icon" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-shield"></use></svg></div>🏭 Privacy-first intake</div>
+      <div class="tb"><div class="tb-icon" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-check"></use></svg></div>🧾 No credit card</div>
+      <div class="tb"><div class="tb-icon" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-card"></use></svg></div>⚙️ Some services may qualify for HSA/FSA</div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <!-- Speech bubble -->
+    <div class="factory-wrapper">
+      <div class="speech-bubble">In progress Building your plan now...</div>
+
+      <!-- THE FACTORY ILLUSTRATION (hand-crafted SVG) -->
+      <svg class="factory-svg" viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Sky gradient -->
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#e8f4fd"/>
+            <stop offset="100%" stop-color="#f4f2ee"/>
+          </linearGradient>
+          <!-- Smoke animation -->
+          <style>
+            .smoke1{animation:smokeRise 3s ease-in-out infinite}
+            .smoke2{animation:smokeRise 3s 1s ease-in-out infinite}
+            .smoke3{animation:smokeRise 3s 2s ease-in-out infinite}
+            @keyframes smokeRise{
+              0%{transform:translateY(0) scaleX(1);opacity:.5}
+              100%{transform:translateY(-40px) scaleX(1.4);opacity:0}
+            }
+            .gear-anim{animation:gearSpin 4s linear infinite;transform-origin:50% 50%}
+            .gear-anim2{animation:gearSpin 4s linear infinite reverse;transform-origin:50% 50%}
+            @keyframes gearSpin{to{transform:rotate(360deg)}}
+            .conveyor-belt{animation:beltMove 1.5s linear infinite}
+            @keyframes beltMove{from{stroke-dashoffset:0}to{stroke-dashoffset:-20}}
+            .window-blink{animation:blink 4s ease-in-out infinite}
+            @keyframes blink{0%,90%,100%{opacity:1}95%{opacity:0.3}}
+          
+.icon-svg{width:1em;height:1em;display:inline-block;vertical-align:middle;fill:currentColor}
+.logo-gear,.building-factory,.tb-icon,.mp-emoji,.build-step-icon,.pi-emoji,.lock-icon,.mip-emoji,.tl-gear,.gear-deco,.gear-deco2,.br-icon{display:inline-flex;align-items:center;justify-content:center}
+.logo-gear .icon-svg,.tl-gear .icon-svg,.gear-deco .icon-svg,.gear-deco2 .icon-svg{width:1.05em;height:1.05em}
+.tb-icon .icon-svg,.mp-emoji .icon-svg,.build-step-icon .icon-svg,.pi-emoji .icon-svg,.lock-icon .icon-svg,.mip-emoji .icon-svg,.br-icon .icon-svg{width:1.05em;height:1.05em}
+
+</style>
+          <clipPath id="smokeClip"><rect x="0" y="0" width="480" height="200"/></clipPath>
+        </defs>
+
+        <!-- Sky background -->
+        <rect width="480" height="320" fill="url(#sky)" rx="16"/>
+
+        <!-- Ground -->
+        <rect x="0" y="260" width="480" height="60" fill="#e8dfc8" rx="0"/>
+        <rect x="0" y="256" width="480" height="8" fill="#d4c9b0"/>
+
+        <!-- === SMOKE CLOUDS === -->
+        <g clip-path="url(#smokeClip)">
+          <circle class="smoke1" cx="140" cy="95" r="14" fill="rgba(180,200,220,0.6)"/>
+          <circle class="smoke1" cx="148" cy="90" r="10" fill="rgba(180,200,220,0.5)"/>
+          <circle class="smoke2" cx="210" cy="85" r="12" fill="rgba(180,200,220,0.6)"/>
+          <circle class="smoke2" cx="218" cy="80" r="9" fill="rgba(180,200,220,0.5)"/>
+          <circle class="smoke3" cx="280" cy="80" r="11" fill="rgba(180,200,220,0.5)"/>
+        </g>
+
+        <!-- === MAIN FACTORY BUILDING === -->
+        <!-- Main body -->
+        <rect x="60" y="150" width="360" height="110" fill="#1b2d4f" rx="4"/>
+        <!-- Roof / top edge -->
+        <rect x="60" y="146" width="360" height="8" fill="#243a62" rx="2"/>
+
+        <!-- Left wing (shorter) -->
+        <rect x="40" y="180" width="40" height="80" fill="#243a62" rx="2"/>
+        <!-- Right wing -->
+        <rect x="400" y="170" width="40" height="90" fill="#243a62" rx="2"/>
+
+        <!-- === CHIMNEYS === -->
+        <!-- Chimney 1 -->
+        <rect x="120" y="100" width="24" height="55" fill="#2f4a7a" rx="3"/>
+        <rect x="116" y="96" width="32" height="10" fill="#3a5a8a" rx="2"/>
+        <!-- Chimney 2 -->
+        <rect x="190" y="88" width="24" height="62" fill="#2f4a7a" rx="3"/>
+        <rect x="186" y="84" width="32" height="10" fill="#3a5a8a" rx="2"/>
+        <!-- Chimney 3 -->
+        <rect x="260" y="82" width="20" height="68" fill="#2f4a7a" rx="3"/>
+        <rect x="256" y="78" width="28" height="10" fill="#3a5a8a" rx="2"/>
+
+        <!-- === WINDOWS (glowing amber) === -->
+        <!-- Row 1 -->
+        <rect x="80" y="165" width="28" height="20" fill="#fdf5e6" rx="3" opacity=".9"/>
+        <rect x="80" y="165" width="28" height="20" fill="#b8892a" rx="3" opacity=".3"/>
+        <rect x="80" y="165" width="13" height="20" fill="none" stroke="#b8892a" stroke-width=".5" rx="3"/>
+
+        <rect x="120" y="165" width="28" height="20" fill="#fdf5e6" rx="3" opacity=".9"/>
+        <rect x="120" y="165" width="28" height="20" fill="#b8892a" rx="3" opacity=".3"/>
+
+        <rect class="window-blink" x="160" y="165" width="28" height="20" fill="#fdf5e6" rx="3" opacity=".9"/>
+        <rect class="window-blink" x="160" y="165" width="28" height="20" fill="#b8892a" rx="3" opacity=".3"/>
+
+        <rect x="200" y="165" width="28" height="20" fill="#fdf5e6" rx="3" opacity=".9"/>
+        <rect x="240" y="165" width="28" height="20" fill="#fdf5e6" rx="3" opacity=".9"/>
+        <rect x="280" y="165" width="28" height="20" fill="#fdf5e6" rx="3" opacity=".9"/>
+        <rect x="320" y="165" width="28" height="20" fill="#fdf5e6" rx="3" opacity=".9"/>
+        <rect x="360" y="165" width="28" height="20" fill="#fdf5e6" rx="3" opacity=".9"/>
+
+        <!-- Row 2 (smaller) -->
+        <rect x="90" y="200" width="18" height="14" fill="#fdf5e6" rx="2" opacity=".7"/>
+        <rect x="130" y="200" width="18" height="14" fill="#fdf5e6" rx="2" opacity=".7"/>
+        <rect x="170" y="200" width="18" height="14" fill="#fdf5e6" rx="2" opacity=".7"/>
+        <rect x="210" y="200" width="18" height="14" fill="#fdf5e6" rx="2" opacity=".7"/>
+        <rect x="250" y="200" width="18" height="14" fill="#fdf5e6" rx="2" opacity=".7"/>
+        <rect x="290" y="200" width="18" height="14" fill="#fdf5e6" rx="2" opacity=".7"/>
+        <rect x="330" y="200" width="18" height="14" fill="#fdf5e6" rx="2" opacity=".7"/>
+        <rect x="370" y="200" width="18" height="14" fill="#fdf5e6" rx="2" opacity=".7"/>
+
+        <!-- === MAIN DOOR === -->
+        <rect x="200" y="220" width="50" height="40" fill="#243a62" rx="4"/>
+        <rect x="204" y="224" width="42" height="32" fill="#1a2840" rx="3"/>
+        <!-- Door handle -->
+        <circle cx="240" cy="242" r="3" fill="#b8892a"/>
+        <!-- Door arch -->
+        <path d="M200 224 Q225 208 250 224" fill="none" stroke="#b8892a" stroke-width="2"/>
+
+        <!-- === GEAR SYSTEM (on side of building) === -->
+        <!-- Big gear -->
+        <g transform="translate(390, 220)" class="gear-anim">
+          <circle r="22" fill="none" stroke="#b8892a" stroke-width="4"/>
+          <circle r="14" fill="#1b2d4f"/>
+          <circle r="4" fill="#b8892a"/>
+          <!-- Gear teeth -->
+          <rect x="-4" y="-26" width="8" height="8" rx="1" fill="#b8892a"/>
+          <rect x="-4" y="18" width="8" height="8" rx="1" fill="#b8892a"/>
+          <rect x="-26" y="-4" width="8" height="8" rx="1" fill="#b8892a"/>
+          <rect x="18" y="-4" width="8" height="8" rx="1" fill="#b8892a"/>
+          <rect x="-20" y="-20" width="7" height="7" rx="1" fill="#b8892a" transform="rotate(45)"/>
+          <rect x="13" y="-20" width="7" height="7" rx="1" fill="#b8892a" transform="rotate(45)"/>
+        </g>
+        <!-- Small gear -->
+        <g transform="translate(368, 205)" class="gear-anim2">
+          <circle r="14" fill="none" stroke="#d4a44c" stroke-width="3"/>
+          <circle r="8" fill="#1b2d4f"/>
+          <circle r="2.5" fill="#d4a44c"/>
+          <rect x="-2.5" y="-17" width="5" height="6" rx="1" fill="#d4a44c"/>
+          <rect x="-2.5" y="11" width="5" height="6" rx="1" fill="#d4a44c"/>
+          <rect x="-17" y="-2.5" width="6" height="5" rx="1" fill="#d4a44c"/>
+          <rect x="11" y="-2.5" width="6" height="5" rx="1" fill="#d4a44c"/>
+        </g>
+
+        <!-- === CONVEYOR BELT / LOADING DOCK === -->
+        <rect x="60" y="248" width="120" height="12" fill="#2f4a7a" rx="3"/>
+        <!-- Belt lines -->
+        <line x1="70" y1="250" x2="70" y2="258" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+        <line x1="85" y1="250" x2="85" y2="258" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+        <line x1="100" y1="250" x2="100" y2="258" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+        <line x1="115" y1="250" x2="115" y2="258" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+        <line x1="130" y1="250" x2="130" y2="258" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+        <line x1="145" y1="250" x2="145" y2="258" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+        <line x1="160" y1="250" x2="160" y2="258" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+        <!-- Wheels -->
+        <circle cx="65" cy="254" r="6" fill="#243a62" stroke="#b8892a" stroke-width="2"/>
+        <circle cx="175" cy="254" r="6" fill="#243a62" stroke="#b8892a" stroke-width="2"/>
+
+        <!-- Small boxes on conveyor -->
+        <rect x="88" y="239" width="18" height="16" fill="#3d6b52" rx="2"/>
+        <rect x="90" y="241" width="14" height="4" fill="rgba(255,255,255,.3)" rx="1"/>
+
+        <rect x="115" y="241" width="14" height="14" fill="#b8892a" rx="2"/>
+        <text x="122" y="251" font-size="8" fill="white" text-anchor="middle" font-family="Arial">Rx</text>
+
+        <!-- === SIGN === -->
+        <rect x="155" y="134" width="120" height="28" fill="#b8892a" rx="4"/>
+        <text x="215" y="153" font-size="10" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial, sans-serif">HEALTH PLAN FACTORY</text>
+
+        <!-- === CUTE WORKER CHARACTER (tiny, waving) === -->
+        <!-- Body -->
+        <circle cx="310" cy="243" r="8" fill="#fdf5e6" stroke="#1b2d4f" stroke-width="1.5"/>
+        <!-- Hard hat -->
+        <rect x="303" y="232" width="14" height="5" fill="#b8892a" rx="2"/>
+        <rect x="302" y="236" width="16" height="3" fill="#d4a44c" rx="1"/>
+        <!-- Eyes -->
+        <circle cx="307" cy="242" r="1.2" fill="#1b2d4f"/>
+        <circle cx="313" cy="242" r="1.2" fill="#1b2d4f"/>
+        <!-- Smile -->
+        <path d="M307 246 Q310 249 313 246" fill="none" stroke="#1b2d4f" stroke-width="1"/>
+        <!-- Body/uniform -->
+        <rect x="304" y="251" width="12" height="14" fill="#2f4a7a" rx="2"/>
+        <!-- Waving arm -->
+        <line x1="316" y1="254" x2="326" y2="248" stroke="#fdf5e6" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="328" cy="247" r="3" fill="#fdf5e6" stroke="#1b2d4f" stroke-width="1"/>
+        <!-- Other arm -->
+        <line x1="304" y1="255" x2="296" y2="259" stroke="#fdf5e6" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Legs -->
+        <line x1="307" y1="265" x2="305" y2="275" stroke="#1b2d4f" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="313" y1="265" x2="315" y2="275" stroke="#1b2d4f" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Feet -->
+        <ellipse cx="304" cy="276" rx="4" ry="2" fill="#1b2d4f"/>
+        <ellipse cx="316" cy="276" rx="4" ry="2" fill="#1b2d4f"/>
+
+        <!-- === HEALTH ICON OUTPUTS ON CONVEYOR === -->
+        <!-- Plus sign on box -->
+        <rect x="88" y="239" width="18" height="16" fill="#3d6b52" rx="2"/>
+        <rect x="95.5" y="242" width="3" height="10" fill="white" rx="1"/>
+        <rect x="91" y="245.5" width="10" height="3" fill="white" rx="1"/>
+
+        <!-- Decorative clouds in sky -->
+        <ellipse cx="60" cy="60" rx="25" ry="12" fill="white" opacity=".7"/>
+        <ellipse cx="78" cy="55" rx="18" ry="10" fill="white" opacity=".7"/>
+        <ellipse cx="380" cy="50" rx="22" ry="10" fill="white" opacity=".6"/>
+        <ellipse cx="395" cy="45" rx="15" ry="8" fill="white" opacity=".6"/>
+
+        <!-- Sun (small, peeking) -->
+        <circle cx="430" cy="40" r="18" fill="#fdf5e6" opacity=".8"/>
+        <circle cx="430" cy="40" r="12" fill="#fdf0c0" opacity=".9"/>
+        <!-- Sun rays -->
+        <line x1="430" y1="18" x2="430" y2="14" stroke="#e8c84a" stroke-width="2" stroke-linecap="round"/>
+        <line x1="448" y1="22" x2="451" y2="19" stroke="#e8c84a" stroke-width="2" stroke-linecap="round"/>
+        <line x1="454" y1="40" x2="458" y2="40" stroke="#e8c84a" stroke-width="2" stroke-linecap="round"/>
+        <line x1="448" y1="58" x2="451" y2="61" stroke="#e8c84a" stroke-width="2" stroke-linecap="round"/>
+        <line x1="412" y1="22" x2="409" y2="19" stroke="#e8c84a" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Mini plan card -->
+    <div class="mini-plan">
+      <div class="mp-label">Your plan — assembled &amp; ready</div>
+      <div class="mp-items">
+        <div class="mp-item a">
+          <div class="mp-emoji" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-leaf"></use></svg></div>
+          <div style="flex:1">
+            <div class="mp-name">Massage Therapy</div>
+            <div class="mp-freq">2Close monthly · Back pain</div>
+          </div>
+          <div class="mp-cost">$80</div>
+          <div class="mp-hsa">HSA Included</div>
+        </div>
+        <div class="mp-item b">
+          <div class="mp-emoji" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-lotus"></use></svg></div>
+          <div style="flex:1">
+            <div class="mp-name">Yoga · 4-class pack</div>
+            <div class="mp-freq">Weekly · Stress relief</div>
+          </div>
+          <div class="mp-cost">$40</div>
+        </div>
+        <div class="mp-item c">
+          <div class="mp-emoji" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-apple"></use></svg></div>
+          <div style="flex:1">
+            <div class="mp-name">Meditation app</div>
+            <div class="mp-freq">Daily · Mindfulness</div>
+          </div>
+          <div class="mp-cost">$15</div>
+        </div>
+      </div>
+      <div class="mp-total">
+        <div class="mp-total-l">Monthly total</div>
+        <div class="mp-total-r">$135 / $150</div>
+      </div>
+      <div class="mp-bar">
+        <div class="mp-bar-top"><span>Budget used</span><strong>90% — $15 remaining</strong></div>
+        <div class="bar-track"><div class="bar-fill"></div></div>
+      </div>
+      <!-- V3: Inline regimen disclaimer -->
+      <div class="regimen-disc">
+        This sample plan is for illustrative purposes only. It is not medical advice, a diagnosis, or a treatment plan. Always consult your physician before beginning any new wellness regimen.
+      </div>
+      <!-- V5: HSA/FSA note -->
+      <div class="hsa-note">
+        <strong>HSA/FSA note:</strong> Some modalities <em>may be</em> eligible depending on your plan. A Letter of Medical Necessity from a physician may be required. Consult your plan administrator — eligibility is not guaranteed.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="tbi"><span>Guide</span> Wellness guide — not a medical provider</div>
+  <div class="tbi"><span>Start</span> Build your personalized plan before upgrading</div>
+  <div class="tbi"><span>Billing</span> ⚙️ Some services may qualify for HSA/FSA options</div>
+  <div class="tbi"><span>Important</span> Emergency: call 911</div>
+</div>
+
+<!-- V4: EMERGENCY RESOURCES BANNER -->
+<div class="emergency-banner">
+  <div class="eb-text"><span>Important</span> Medical or mental health emergency?</div>
+  <a href="tel:911" class="eb-btn">Call 911 — Medical Emergency</a>
+  <a href="tel:988" class="eb-btn b2">Call / Text 988 — Mental Health Crisis</a>
+  <a href="sms:741741?body=HOME" class="eb-btn b2">Text HOME to 741741 — Crisis Text Line</a>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="section-tag">How it works</div>
+  <h2 class="section-h2">Four steps off the <em>factory floor.</em></h2>
+  <div class="steps-container">
+    <div class="conveyor"></div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-icon">Start</div>
+        <div class="step-title">Set your budget</div>
+        <p class="step-desc">Tell us what you can realistically spend. $50 or $500. We build around what's real.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-icon">Care</div>
+        <div class="step-title">Share your health picture</div>
+        <p class="step-desc">Conditions, goals, preferences in plain English. No jargon, no judgment.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-icon">Fast</div>
+        <div class="step-title">Your plan is assembled</div>
+        <p class="step-desc">AI ranks modalities by evidence, fits them to your exact budget. Every dollar explained.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-icon">Match</div>
+        <div class="step-title">Find providers &amp; build your routine</div>
+        <p class="step-desc">Browse local providers, compare your options, build a weekly routine, and track your progress.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODALITIES -->
+<section class="features" id="modalities">
+  <div class="gear-deco" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-gear"></use></svg></div>
+  <div class="gear-deco2" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#i-gear"></use></svg></div>
+  <div class="section-tag">What comes off the line</div>
+  <h2 class="section-h2" style="max-width:560px">Every modality ranked by <em>clinical evidence.</em></h2>
+  <div class="mod-grid">
+    <div class="mod-tile"><div class="mt-icon">🏭</div><div class="mt-name">Massage Therapy</div><span class="mt-badge mb-s">Strong</span></div>
+    <div class="mod-tile"><div class="mt-icon">⚙️</div><div class="mt-name">Yoga</div><span class="mt-badge mb-s">Strong</span></div>
+    <div class="mod-tile"><div class="mt-icon">🧰</div><div class="mt-name">Pilates</div><span class="mt-badge mb-s">Strong</span></div>
+    <div class="mod-tile"><div class="mt-icon">🏗️</div><div class="mt-name">Chiropractic</div><span class="mt-badge mb-m">Moderate</span></div>
+    <div class="mod-tile"><div class="mt-icon">🔩</div><div class="mt-name">Acupuncture</div><span class="mt-badge mb-m">Moderate</span></div>
+    <div class="mod-tile"><div class="mt-icon">🛠️</div><div class="mt-name">Physical Therapy</div><span class="mt-badge mb-s">Strong</span></div>
+    <div class="mod-tile"><div class="mt-icon">🚧</div><div class="mt-name">Personal Training</div><span class="mt-badge mb-s">Strong</span></div>
+    <div class="mod-tile"><div class="mt-icon">📦</div><div class="mt-name">Registered Dietitian</div><span class="mt-badge mb-s">Strong</span></div>
+    <div class="mod-tile"><div class="mt-icon">🧪</div><div class="mt-name">Nutrition Coach</div><span class="mt-badge mb-m">Moderate</span></div>
+    <div class="mod-tile"><div class="mt-icon">🏢</div><div class="mt-name">Meditation / MBSR</div><span class="mt-badge mb-s">Strong</span></div>
+    <div class="mod-tile"><div class="mt-icon">📋</div><div class="mt-name">Telehealth</div><span class="mt-badge mb-s">Strong</span></div>
+    <div class="mod-tile"><div class="mt-icon">🏬</div><div class="mt-name">DPC Physician</div><span class="mt-badge mb-s">Strong</span></div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem">
+  <div class="section-tag">Why this exists</div>
+  <div class="problem-inner">
+    <div>
+      <div class="problem-num">28M</div>
+      <div class="problem-num-label">Americans without health insurance</div>
+    </div>
+    <div class="problem-copy">
+      <h3>Most people receive their health plan the same way they receive junk mail.</h3>
+      <p>Passively. From an organization that doesn't know them. Fitted to a budget that isn't theirs. The result: 28 million uninsured, 100 million underinsured, and a country where people skip the chiropractor and end up in the ER.</p>
+      <p>HealthPlanFactory exists because the system won't fix itself.</p>
+    </div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-tile"><div class="st-num">1 in 4</div><div class="st-desc">rural adults skipped care last year because of cost</div></div>
+    <div class="stat-tile"><div class="st-num">$800+</div><div class="st-desc">average ER visit for what a chiropractor handles at $65</div></div>
+    <div class="stat-tile"><div class="st-num">$0</div><div class="st-desc">what it costs to build your plan on HealthPlanFactory</div></div>
+  </div>
+</section>
+
+<!-- V2: IS / IS NOT SECTION -->
+<section class="is-not" id="disclaimer-summary">
+  <div class="is-not-head">
+    <h2>What HealthPlanFactory is — and isn't</h2>
+    <p>We believe transparency builds trust. Here's exactly what you're getting, and what you're not.</p>
+  </div>
+  <div class="is-not-inner">
+    <div class="is-not-col is-col">
+      <h3>Included HealthPlanFactory IS</h3>
+      <ul class="is-not-list">
+        <li>A wellness optimization and care navigation platform</li>
+        <li>A tool to help you understand your options across 47+ modalities</li>
+        <li>A budget-aware plan builder that ranks recommendations by evidence</li>
+        <li>A marketplace to find and book vetted local wellness providers</li>
+        <li>A complement to your existing medical care</li>
+        <li>A way to unlock HSA/FSA spending on eligible wellness services</li>
+        <li>A resource that always refers emergencies to 911 immediately</li>
+      </ul>
+    </div>
+    <div class="is-not-col not-col">
+      <h3>Not included HealthPlanFactory is NOT</h3>
+      <ul class="is-not-list">
+        <li>A licensed medical provider or healthcare organization</li>
+        <li>A diagnostic tool — we do not identify or name medical conditions</li>
+        <li>A treatment provider — we do not prescribe, cure, or treat anything</li>
+        <li>A replacement for your physician, specialist, or therapist</li>
+        <li>A mental health crisis service — call 988 for crisis support</li>
+        <li>A guarantee that any modality will work for your specific situation</li>
+        <li>A source of medical advice, diagnosis, or clinical opinion</li>
+      </ul>
+    </div>
+  </div>
+  <div class="is-not-note">
+    <strong>Always keep your physician informed of your wellness activities.</strong>
+    HealthPlanFactory is designed to complement your care — never to replace conversations
+    with your doctor, specialist, or licensed mental health provider.
+    If you have a medical concern, please contact a licensed healthcare professional.
+    For medical emergencies, call 911 immediately.
+    <br/><a href="#full-disclaimer" style="color:var(--amber);text-decoration:underline;text-underline-offset:2px">Read our full medical disclaimer ↓</a>
+  </div>
+</section>
+
+
+<!-- FINAL CTA -->
+<section class="final">
+  <div class="final-inner">
+    <div class="final-eyebrow">Get started today</div>
+    <h2>A plan built around<br/><em>your life.</em> Not theirs.</h2>
+    <p class="final-sub">Your budget. Your conditions. Your goals. Built in minutes. Upgrade when you’re ready.</p>
+    <a href="./healthplanfactory-intake-factory-emoji.html" class="btn-white">Build my plan free — no card needed →</a>
+    <div class="final-note">🧾 No credit card · Cancel anytime · Booking always free</div>
+  </div>
+</section>
+
+<!-- V7: FULL DISCLAIMER SECTION -->
+<section class="full-disclaimer" id="full-disclaimer">
+  <div class="full-disclaimer-inner">
+    <h3>Notice Medical Disclaimer &amp; Important Notices</h3>
+
+    <div class="disc-emergency">
+      <strong>Important Medical Emergency:</strong> If you are experiencing a medical emergency, stop and call <strong>911</strong> immediately. HealthPlanFactory cannot assist with emergencies and is not a substitute for emergency services.<br/>
+      <strong>MB Mental Health Crisis:</strong> If you or someone you know is in mental health crisis, call or text <strong>988</strong> (Suicide &amp; Crisis Lifeline) or text HOME to <strong>741741</strong> (Crisis Text Line). These services are free and available 24/7.
+    </div>
+
+    <div class="disc-grid">
+      <div class="disc-block">
+        <h4>Not a Medical Provider</h4>
+        <p>HealthPlanFactory is a wellness optimization and care navigation platform. It is not a licensed medical provider, hospital, clinic, or healthcare organization. HealthPlanFactory does not employ physicians, nurses, therapists, or any licensed clinical staff in connection with your wellness plan.</p>
+      </div>
+      <div class="disc-block">
+        <h4>Not Medical Advice</h4>
+        <p>Nothing on HealthPlanFactory — including AI-generated wellness plans, provider recommendations, or any written content — constitutes medical advice, a clinical opinion, a diagnosis, or a treatment plan. All content is for informational and wellness planning purposes only.</p>
+      </div>
+      <div class="disc-block">
+        <h4>Not a Diagnostic Tool</h4>
+        <p>HealthPlanFactory does not diagnose medical conditions. We ask about your health picture to personalize your wellness plan — not to assess, identify, or name any medical condition. If you believe you have a medical condition, consult a licensed healthcare provider.</p>
+      </div>
+      <div class="disc-block">
+        <h4>Consult Your Physician</h4>
+        <p>Always consult your physician or licensed healthcare provider before beginning any new wellness regimen, especially if you have a chronic condition, are pregnant, are taking prescription medications, or have recently had surgery or an injury. Keep your provider informed of all wellness activities.</p>
+      </div>
+      <div class="disc-block">
+        <h4>Provider Relationships</h4>
+        <p>Wellness providers and physicians listed on HealthPlanFactory are independent practitioners. HealthPlanFactory is a referral marketplace only — it does not supervise, direct, employ, or guarantee the services of any listed provider. The professional relationship is between you and your chosen provider directly.</p>
+      </div>
+      <div class="disc-block">
+        <h4>HSA / FSA Eligibility</h4>
+        <p>Some wellness services may be eligible for reimbursement through HSA or FSA accounts depending on your specific plan. HealthPlanFactory uses the word "may be eligible" intentionally — eligibility is not guaranteed and depends on your plan administrator's determination. A Letter of Medical Necessity from a licensed physician may be required. Consult your plan administrator or tax advisor before making HSA/FSA claims.</p>
+      </div>
+      <div class="disc-block">
+        <h4>AI-Generated Plans</h4>
+        <p>Wellness plans on HealthPlanFactory are generated by AI based on the information you provide. AI outputs are for wellness guidance only and are not reviewed or approved by licensed medical professionals before delivery. Results may vary. HealthPlanFactory does not warrant that any AI recommendation is appropriate for your specific medical situation.</p>
+      </div>
+      <div class="disc-block">
+        <h4>Mental Health</h4>
+        <p>HealthPlanFactory is not a mental health platform and does not provide therapy, counseling, or psychiatric services. For mental health support, please contact a licensed mental health professional. In a crisis, call or text <strong>988</strong> (Suicide &amp; Crisis Lifeline) or text HOME to <strong>741741</strong>.</p>
+      </div>
+    </div>
+
+    <div class="disc-block">
+      <h4>Limitation of Liability</h4>
+      <p>To the fullest extent permitted by law, HealthPlanFactory, its affiliates, officers, and employees shall not be liable for any health outcomes, injuries, or adverse effects arising from the use of this platform or any wellness services booked through it. Use of HealthPlanFactory is at your own risk. Request our current Terms of Service or Privacy Policy at <a href="mailto:hello@healthplanfactory.com">hello@healthplanfactory.com</a>.</p>
+    </div>
+
+    <div class="disc-block">
+      <h4>Accuracy of Information</h4>
+      <p>HealthPlanFactory makes reasonable efforts to ensure the accuracy of wellness information presented on the platform. However, the field of wellness and integrative medicine evolves rapidly. Information may not reflect the most current research. Always verify important health information with a licensed professional.</p>
+    </div>
+
+    <div class="disc-date">
+      This disclaimer was last updated March 2026. HealthPlanFactory is a product of Zanetis Holdings LLC.
+      For questions, contact <a href="mailto:hello@healthplanfactory.com">hello@healthplanfactory.com</a>.
+      <a href="mailto:hello@healthplanfactory.com?subject=Privacy%20Policy%20Request">Privacy Policy</a> · <a href="mailto:hello@healthplanfactory.com?subject=Terms%20of%20Service%20Request">Terms of Service</a> · <a href="mailto:hello@healthplanfactory.com?subject=Provider%20Terms%20Request">Provider Terms</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-logo">HealthPlan<em>Factory</em></div>
+      <div class="footer-tagline">Build the health plan you actually need. HPF</div>
+    </div>
+    <div class="footer-links">
+      <a href="#how">How it works</a>
+      <a href="#providers">For providers</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#full-disclaimer">Disclaimer</a>
+      <a href="mailto:hello@healthplanfactory.com?subject=Privacy%20Policy%20Request">Privacy</a>
+      <a href="mailto:hello@healthplanfactory.com?subject=Terms%20of%20Service%20Request">Terms</a>
+      <a href="mailto:hello@healthplanfactory.com">Contact</a>
+    </div>
+  </div>
+  <div class="footer-disc">
+    HealthPlanFactory is a wellness optimization and care navigation platform, not a licensed medical provider. Nothing on this platform constitutes medical advice, diagnosis, or treatment. Always consult a licensed healthcare provider before beginning any wellness regimen. For medical emergencies call 911. For mental health crisis call or text 988. HSA/FSA eligibility is not guaranteed — consult your plan administrator. Provider relationships are independent of HealthPlanFactory. AI-generated plans are for wellness guidance only. © 2026 Zanetis Holdings LLC. <a href="#full-disclaimer" style="color:rgba(212,164,76,0.7);text-decoration:underline">Full medical disclaimer</a>
+  </div>
+</footer>
+</main>
+
+<script>
+const stickyClose = document.querySelector(".sticky-disc-close");
+if (stickyClose) {
+  stickyClose.addEventListener("click", () => {
+    const bar = document.getElementById("stickyDisc");
+    if (bar) {
+      bar.style.display = "none";
+      document.body.style.paddingBottom = "0";
+    }
+  });
+}
+</script>
+
+</body>
+</html>

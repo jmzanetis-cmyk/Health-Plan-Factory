@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HealthPlanFactory — Build your plan</title>
+<meta name="description" content="Build a budget-first wellness plan based on your goals, preferences, and monthly budget. Preview matched wellness providers and a practical care roadmap."/>
+<meta name="theme-color" content="#1b2d4f"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1b2d4f;--navy-mid:#243a62;--navy-light:#2f4a7a;
+  --navy-10:rgba(27,45,79,0.08);--navy-20:rgba(27,45,79,0.15);
+  --warm-white:#fafaf8;--off-white:#f4f2ee;--parchment:#edeae3;
+  --amber:#b8892a;--amber-light:#d4a44c;--amber-pale:#fdf5e6;--amber-10:rgba(184,137,42,0.12);
+  --sage:#3d6b52;--sage-pale:#eaf2ec;
+  --rose:#dc2626;--rose-pale:#fef2f2;
+  --sky:#3b82f6;--sky-pale:#eff6ff;
+  --text-2:#4a5e7a;--text-3:#8496b0;
+  --border:rgba(27,45,79,0.1);--border-s:rgba(27,45,79,0.2);
+  --radius:12px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--warm-white);color:var(--navy);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(250,250,248,.96);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:60px;
+}
+.tl{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:700;color:var(--navy);text-decoration:none}
+.tl em{font-style:italic;color:var(--amber)}
+.tl-gear{display:inline-block;animation:spin 8s linear infinite;margin-left:4px;font-size:.9rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.topbar-disc{font-size:.68rem;color:var(--text-3);max-width:400px;line-height:1.4;display:none}
+@media(min-width:700px){.topbar-disc{display:block}}
+.topbar-help{font-size:.8rem;color:var(--text-2);text-decoration:none;font-weight:500;padding:.4rem .875rem;border:1px solid var(--border-s);border-radius:6px;transition:all .15s}
+.topbar-help:hover{background:var(--navy-10);color:var(--navy)}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh;padding-top:60px}
+.screen.active{display:flex;flex-direction:column}
+
+/* ── PROGRESS BAR ── */
+.progress-wrap{background:var(--off-white);border-bottom:1px solid var(--border);padding:.875rem 2rem;display:flex;align-items:center;gap:1.5rem}
+.progress-steps{display:flex;gap:.5rem;align-items:center;flex:1}
+.ps{
+  display:flex;align-items:center;gap:.4rem;
+  font-size:.72rem;font-weight:600;letter-spacing:.04em;
+  color:var(--text-3);transition:all .2s;
+}
+.ps.done{color:var(--sage)}
+.ps.active{color:var(--navy)}
+.ps-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--border-s);transition:all .2s;flex-shrink:0;
+}
+.ps.done .ps-dot{background:var(--sage)}
+.ps.active .ps-dot{background:var(--navy);transform:scale(1.3)}
+.ps-line{flex:1;height:1px;background:var(--border);max-width:32px}
+.ps.done .ps-line{background:var(--sage)}
+.progress-pct{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-3);white-space:nowrap}
+
+/* ── INTAKE SCREEN ── */
+.intake-body{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:2rem;
+}
+.intake-card{
+  background:white;border:1px solid var(--border);border-radius:20px;
+  padding:3rem;width:100%;max-width:540px;
+  box-shadow:0 8px 40px rgba(27,45,79,.1);
+  animation:slideUp .4s ease both;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+.q-step{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:.75rem}
+.q-title{font-family:'Cormorant Garamond',serif;font-size:1.75rem;font-weight:700;color:var(--navy);line-height:1.15;margin-bottom:.5rem}
+.q-sub{font-size:.88rem;color:var(--text-2);line-height:1.6;margin-bottom:2rem}
+
+/* Inputs */
+.field{margin-bottom:1.25rem}
+.field label{display:block;font-size:.78rem;font-weight:600;color:var(--navy);margin-bottom:.4rem;letter-spacing:.01em}
+.field input,.field select,.field textarea{
+  width:100%;padding:.8rem 1rem;
+  border:1.5px solid var(--border-s);border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:.9rem;color:var(--navy);
+  background:var(--warm-white);transition:border-color .15s;
+  outline:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
+.field textarea{resize:vertical;min-height:80px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+/* Chip selects */
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
+.chip{
+  padding:.45rem .875rem;border-radius:100px;
+  border:1.5px solid var(--border-s);
+  font-size:.8rem;font-weight:500;color:var(--text-2);
+  cursor:pointer;transition:all .15s;user-select:none;
+  background:white;
+}
+.chip:hover{border-color:var(--navy);color:var(--navy)}
+.chip.selected{background:var(--navy);border-color:var(--navy);color:white}
+.chip.selected.amber{background:var(--amber);border-color:var(--amber)}
+
+/* Budget slider */
+.budget-display{
+  text-align:center;margin-bottom:1.5rem;
+  font-family:'DM Mono',monospace;font-size:2.5rem;font-weight:500;color:var(--navy);
+}
+.budget-display sup{font-size:1.2rem;vertical-align:super}
+.budget-label{font-size:.72rem;color:var(--text-3);text-align:center;margin-top:.25rem}
+input[type=range]{
+  width:100%;appearance:none;height:6px;
+  background:linear-gradient(90deg,var(--navy) 0%,var(--navy) 50%,var(--parchment) 50%);
+  border-radius:100px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--navy);border:3px solid white;
+  box-shadow:0 2px 8px rgba(27,45,79,.3);cursor:pointer;
+}
+
+/* Navigation buttons */
+.q-nav{display:flex;justify-content:space-between;align-items:center;margin-top:2rem}
+.btn-back{
+  background:transparent;color:var(--text-2);border:1.5px solid var(--border-s);
+  padding:.7rem 1.4rem;border-radius:8px;font-family:'Outfit',sans-serif;
+  font-size:.88rem;font-weight:500;cursor:pointer;transition:all .15s;
+}
+.btn-back:hover{border-color:var(--navy);color:var(--navy)}
+.btn-next{
+  background:var(--navy);color:white;border:none;
+  padding:.75rem 2rem;border-radius:8px;font-family:'Outfit',sans-serif;
+  font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 14px rgba(27,45,79,.25);letter-spacing:.01em;
+  display:flex;align-items:center;gap:.5rem;
+}
+.btn-next:hover{background:var(--navy-light);transform:translateY(-1px);box-shadow:0 6px 20px rgba(27,45,79,.3)}
+.btn-next:disabled{opacity:.4;pointer-events:none;transform:none}
+.field-note{font-size:.72rem;color:var(--text-3);margin-top:.45rem}
+.input-error{border-color:var(--rose) !important;background:var(--rose-pale) !important}
+
+/* Disclaimer at bottom of intake */
+.intake-disc{
+  max-width:540px;width:100%;margin:0 auto;
+  padding:1rem 0 2rem;
+  font-size:.7rem;color:var(--text-3);text-align:center;line-height:1.6;
+}
+
+/* ── BUILDING SCREEN ── */
+#screen-building{
+  background:var(--navy);
+  align-items:center;justify-content:center;
+  padding:2rem;
+}
+.building-inner{text-align:center;max-width:480px}
+.building-factory{font-size:5rem;margin-bottom:1.5rem;display:block;animation:factoryBob 2s ease-in-out infinite}
+@keyframes factoryBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.building-h{font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:700;color:white;margin-bottom:.75rem;line-height:1.15}
+.building-h em{font-style:italic;color:var(--amber-light)}
+.building-sub{font-size:.9rem;color:rgba(255,255,255,.55);margin-bottom:3rem;line-height:1.7}
+.build-steps{display:flex;flex-direction:column;gap:.875rem;text-align:left;margin-bottom:2.5rem}
+.build-step{
+  display:flex;align-items:center;gap:.875rem;
+  padding:.875rem 1.25rem;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;
+  font-size:.85rem;color:rgba(255,255,255,.6);
+  transition:all .4s;
+}
+.build-step.done{background:rgba(61,107,82,.2);border-color:rgba(61,107,82,.3);color:rgba(255,255,255,.9)}
+.build-step.active{background:rgba(184,137,42,.15);border-color:rgba(184,137,42,.3);color:white}
+.build-step-icon{font-size:1.1rem;flex-shrink:0;width:28px;text-align:center}
+.build-step-check{margin-left:auto;font-size:.9rem;opacity:0;transition:opacity .3s}
+.build-step.done .build-step-check{opacity:1}
+.build-spinner{
+  width:40px;height:40px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.15);
+  border-top-color:var(--amber-light);
+  margin:0 auto;
+  animation:rotate 1s linear infinite;
+}
+@keyframes rotate{to{transform:rotate(360deg)}}
+.building-disc{font-size:.68rem;color:rgba(255,255,255,.25);margin-top:2rem;line-height:1.6;max-width:400px;margin-left:auto;margin-right:auto}
+
+/* ── PLAN SCREEN ── */
+#screen-plan{background:var(--warm-white)}
+.plan-header{
+  background:var(--navy);padding:2rem 2rem 1.5rem;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.plan-header-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem}
+.plan-member{color:white}
+.plan-name{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;margin-bottom:2px}
+.plan-sub{font-size:.8rem;color:rgba(255,255,255,.5)}
+.plan-meta{display:flex;gap:.75rem;flex-wrap:wrap}
+.plan-badge{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+  border-radius:6px;padding:.35rem .75rem;
+  font-size:.75rem;font-weight:500;color:rgba(255,255,255,.8);
+  display:flex;align-items:center;gap:.35rem;
+}
+.plan-badge.amber{background:rgba(184,137,42,.2);border-color:rgba(184,137,42,.3);color:var(--amber-light)}
+.plan-unlock-all{
+  background:var(--amber);color:white;border:none;
+  padding:.75rem 1.5rem;border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:700;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+  box-shadow:0 4px 14px rgba(184,137,42,.4);
+}
+.plan-unlock-all:hover{background:var(--amber-light);transform:translateY(-1px)}
+.plan-disc-bar{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:.75rem 1rem;
+  font-size:.72rem;color:rgba(255,255,255,.4);line-height:1.5;
+}
+.plan-disc-bar strong{color:rgba(255,255,255,.65)}
+.plan-disc-bar a{color:var(--amber-light);text-decoration:underline;text-underline-offset:2px}
+
+/* Plan body */
+.plan-body{padding:2rem;max-width:900px;margin:0 auto}
+.plan-body-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
+.plan-body-title{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--navy)}
+.budget-bar-wrap{background:white;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem}
+.bb-labels{display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-2);margin-bottom:.5rem}
+.bb-labels strong{color:var(--navy);font-weight:600}
+.bb-track{height:8px;background:var(--off-white);border-radius:100px;overflow:hidden}
+.bb-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--navy),var(--amber));transition:width .8s ease}
+.bb-note{font-size:.72rem;color:var(--text-3);margin-top:.4rem}
+
+/* Plan items */
+.plan-items{display:flex;flex-direction:column;gap:1rem}
+.plan-item{
+  background:white;border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;transition:all .2s;
+}
+.plan-item:hover{box-shadow:0 4px 20px rgba(27,45,79,.08)}
+
+.pi-top{
+  padding:1.25rem 1.5rem;
+  display:flex;align-items:flex-start;gap:1rem;
+  cursor:default;
+}
+.pi-rank{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--navy);color:white;
+  font-family:'DM Mono',monospace;font-size:.72rem;font-weight:500;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.pi-rank.unlocked{background:var(--sage)}
+.pi-emoji{font-size:1.6rem;flex-shrink:0;line-height:1}
+.pi-info{flex:1;min-width:0}
+.pi-name{font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:.2rem}
+.pi-tagline{font-size:.8rem;color:var(--text-2);margin-bottom:.5rem;line-height:1.4}
+.pi-tags{display:flex;gap:.4rem;flex-wrap:wrap}
+.pi-tag{
+  font-size:.62rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;
+}
+.tag-evidence-s{background:rgba(61,107,82,.12);color:var(--sage)}
+.tag-evidence-m{background:rgba(184,137,42,.12);color:var(--amber)}
+.tag-hsa{background:var(--sky-pale);color:var(--sky)}
+.tag-freq{background:var(--navy-10);color:var(--navy-light)}
+.pi-right{display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;flex-shrink:0}
+.pi-cost{font-family:'DM Mono',monospace;font-size:.95rem;font-weight:500;color:var(--navy)}
+.pi-cost-label{font-size:.68rem;color:var(--text-3)}
+
+/* The "why" box */
+.pi-why{
+  padding:.875rem 1.5rem 1rem;
+  border-top:1px solid var(--border);
+  background:var(--off-white);
+  font-size:.82rem;color:var(--text-2);line-height:1.7;
+}
+.pi-why em{font-style:italic;color:var(--navy);font-weight:500}
+
+/* LOCKED state */
+.pi-locked{
+  padding:1.25rem 1.5rem;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  flex-wrap:wrap;
+}
+.pi-locked-info{display:flex;align-items:center;gap:.75rem}
+.lock-icon{
+  width:40px;height:40px;border-radius:10px;
+  background:var(--parchment);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  flex-shrink:0;
+}
+.lock-text strong{display:block;font-size:.85rem;font-weight:600;color:var(--navy);margin-bottom:2px}
+.lock-text span{font-size:.75rem;color:var(--text-2)}
+.lock-providers{
+  display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;
+}
+.lock-prov-blur{
+  background:var(--parchment);border:1px solid var(--border);
+  border-radius:8px;padding:.4rem .75rem;
+  font-size:.78rem;color:transparent;
+  text-shadow:0 0 8px rgba(27,45,79,.5);
+  user-select:none;white-space:nowrap;
+  filter:blur(4px);
+}
+.btn-unlock{
+  background:var(--navy);color:white;border:none;
+  padding:.65rem 1.4rem;border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:.84rem;font-weight:700;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+  box-shadow:0 3px 12px rgba(27,45,79,.25);
+  display:flex;align-items:center;gap:.4rem;flex-shrink:0;
+}
+.btn-unlock:hover{background:var(--amber);transform:translateY(-1px);box-shadow:0 5px 18px rgba(184,137,42,.4)}
+.btn-unlock .price{
+  background:rgba(255,255,255,.2);border-radius:4px;
+  padding:.1rem .4rem;font-size:.72rem;
+}
+
+/* UNLOCKED providers grid */
+.pi-providers{
+  padding:1.25rem 1.5rem 1.5rem;
+  border-top:1px solid var(--border);
+  background:var(--off-white);
+}
+.pi-providers-head{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:1rem;
+}
+.pip-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.pip-count{font-size:.72rem;color:var(--text-3)}
+.providers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem}
+.prov-card{
+  background:white;border:1px solid var(--border);border-radius:10px;
+  padding:1rem;transition:all .2s;cursor:pointer;
+}
+.prov-card:hover{border-color:var(--amber);box-shadow:0 4px 16px rgba(27,45,79,.08);transform:translateY(-2px)}
+.prov-top{display:flex;gap:.625rem;align-items:flex-start;margin-bottom:.625rem}
+.prov-avatar{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--parchment);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cormorant Garamond',serif;font-weight:700;font-size:.9rem;color:var(--navy);
+  flex-shrink:0;
+}
+.prov-name{font-size:.85rem;font-weight:600;color:var(--navy);line-height:1.2}
+.prov-creds{font-size:.7rem;color:var(--text-3);margin-top:1px}
+.prov-stars{font-size:.7rem;color:var(--amber);margin-top:2px}
+.prov-meta{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.625rem}
+.prov-meta-pill{
+  font-size:.65rem;font-weight:500;color:var(--text-2);
+  background:var(--off-white);border-radius:4px;padding:.15rem .45rem;
+}
+.prov-hsa{color:var(--sage);background:var(--sage-pale)}
+.btn-book{
+  display:block;width:100%;text-align:center;
+  background:var(--navy);color:white;border:none;
+  padding:.6rem;border-radius:7px;
+  font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.btn-book:hover{background:var(--amber)}
+
+/* Unlock bundle upsell */
+.bundle-upsell{
+  background:linear-gradient(135deg,var(--amber-pale),white);
+  border:1.5px solid var(--amber);border-radius:14px;
+  padding:1.5rem;margin:1.25rem 0;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+}
+.bu-left{}
+.bu-tag{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:.3rem}
+.bu-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:.25rem}
+.bu-desc{font-size:.8rem;color:var(--text-2)}
+.bu-savings{
+  background:var(--amber);color:white;
+  font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:4px;
+  display:inline-block;margin-top:.35rem;
+}
+.btn-bundle{
+  background:var(--amber);color:white;border:none;
+  padding:.8rem 1.75rem;border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:700;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+  box-shadow:0 4px 14px rgba(184,137,42,.35);
+}
+.btn-bundle:hover{background:var(--amber-light);transform:translateY(-1px)}
+
+/* Plan footer disclaimer */
+.plan-footer-disc{
+  max-width:900px;margin:2rem auto 0;padding:1.5rem;
+  background:white;border:1px solid var(--border);border-radius:12px;
+  font-size:.74rem;color:var(--text-3);line-height:1.7;
+}
+.plan-footer-disc strong{color:var(--navy);font-weight:600}
+.plan-footer-disc a{color:var(--amber);text-decoration:underline;text-underline-offset:2px}
+
+/* ── PAYMENT MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(27,45,79,.6);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:white;border-radius:20px;width:100%;max-width:440px;
+  padding:2rem;box-shadow:0 24px 80px rgba(27,45,79,.25);
+  transform:translateY(20px);transition:transform .25s;
+}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:700;color:var(--navy);line-height:1.2}
+.modal-close{background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-3);padding:.25rem;transition:color .15s}
+.modal-close:hover{color:var(--navy)}
+.modal-item-preview{
+  background:var(--off-white);border:1px solid var(--border);border-radius:10px;
+  padding:1rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.875rem;
+}
+.mip-emoji{font-size:1.5rem}
+.mip-name{font-weight:600;font-size:.95rem;color:var(--navy)}
+.mip-desc{font-size:.78rem;color:var(--text-2)}
+.mip-price{margin-left:auto;font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:500;color:var(--navy);flex-shrink:0}
+.modal-what-you-get{margin-bottom:1.5rem}
+.mwyg-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:.625rem}
+.mwyg-list{list-style:none;display:flex;flex-direction:column;gap:.4rem}
+.mwyg-list li{font-size:.83rem;color:var(--text-2);display:flex;align-items:flex-start;gap:.5rem;line-height:1.45}
+.mwyg-list li::before{content:'✓';color:var(--sage);font-weight:700;font-size:.75rem;margin-top:2px;flex-shrink:0}
+.card-input-mock{
+  background:var(--off-white);border:1.5px solid var(--border-s);border-radius:8px;
+  padding:.875rem 1rem;margin-bottom:1rem;
+  font-size:.85rem;color:var(--text-3);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-input-mock span{font-size:1rem}
+.btn-pay{
+  width:100%;background:var(--navy);color:white;border:none;
+  padding:1rem;border-radius:10px;
+  font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(27,45,79,.25);
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+}
+.btn-pay:hover{background:var(--navy-light);transform:translateY(-1px)}
+.btn-pay.processing{background:var(--text-3);pointer-events:none}
+.modal-disc{font-size:.68rem;color:var(--text-3);text-align:center;margin-top:.875rem;line-height:1.5}
+.modal-disc a{color:var(--amber);text-decoration:underline;text-underline-offset:2px}
+.secure-badges{display:flex;justify-content:center;gap:1rem;margin-top:.625rem}
+.sb{font-size:.65rem;color:var(--text-3);display:flex;align-items:center;gap:.3rem}
+
+/* ── SUCCESS TOAST ── */
+.toast{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:600;
+  background:var(--navy);color:white;
+  padding:.875rem 1.25rem;border-radius:10px;
+  font-size:.85rem;font-weight:500;
+  box-shadow:0 8px 32px rgba(27,45,79,.3);
+  display:flex;align-items:center;gap:.625rem;
+  transform:translateY(80px);opacity:0;transition:all .3s;
+  pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* Responsive */
+@media(max-width:600px){
+  .intake-card{padding:1.75rem}
+  .plan-header{padding:1.25rem}
+  .plan-body{padding:1.25rem}
+  .providers-grid{grid-template-columns:1fr}
+  .pi-locked{flex-direction:column;align-items:flex-start}
+  .bundle-upsell{flex-direction:column}
+  .topbar{padding:0 1.25rem}
+  .field-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="./healthplanfactory-landing-clean.html" class="tl" aria-label="HealthPlanFactory home">HealthPlan<em>Factory</em><span class="tl-gear">⚙️</span></a>
+  <div class="topbar-disc">Not medical advice · Not a diagnostic tool · For emergencies call 911</div>
+  <a href="./healthplanfactory-landing-clean.html#full-disclaimer" class="topbar-help">? Disclaimer</a>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✅ Step unlocked — providers revealed!</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 1: INTAKE
+════════════════════════════════════ -->
+<div class="screen active" id="screen-intake">
+
+  <!-- Progress bar -->
+  <div class="progress-wrap">
+    <div class="progress-steps">
+      <div class="ps active" id="ps1"><div class="ps-dot"></div><span>About you</span></div>
+      <div class="ps-line"></div>
+      <div class="ps" id="ps2"><div class="ps-dot"></div><span>Your health</span></div>
+      <div class="ps-line"></div>
+      <div class="ps" id="ps3"><div class="ps-dot"></div><span>Your goals</span></div>
+      <div class="ps-line"></div>
+      <div class="ps" id="ps4"><div class="ps-dot"></div><span>Budget</span></div>
+      <div class="ps-line"></div>
+      <div class="ps" id="ps5"><div class="ps-dot"></div><span>Preferences</span></div>
+    </div>
+    <div class="progress-pct" id="progress-pct">Step 1 of 5</div>
+  </div>
+
+  <div class="intake-body">
+
+    <!-- Q1: About you -->
+    <div class="intake-card" id="q1">
+      <div class="q-step">Step 1 of 5 · About you</div>
+      <div class="q-title">Let's start with the basics.</div>
+      <div class="q-sub">We'll use your location to find providers within your commutable area.</div>
+      <div class="field">
+        <label>Your first name</label>
+        <input type="text" id="inp-name" placeholder="e.g. Sarah" autocomplete="given-name"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>ZIP code</label>
+          <input type="text" id="inp-zip" placeholder="e.g. 07030" maxlength="5" inputmode="numeric"/>
+        </div>
+        <div class="field">
+          <label>Max commute</label>
+          <select id="inp-commute">
+            <option value="5">Within 5 miles</option>
+            <option value="10" selected>Within 10 miles</option>
+            <option value="25">Within 25 miles</option>
+            <option value="50">Within 50 miles</option>
+            <option value="telehealth">Telehealth only</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Age range</label>
+        <div class="chips">
+          <div class="chip" data-group="age">Under 25</div>
+          <div class="chip" data-group="age">25–34</div>
+          <div class="chip" data-group="age">35–44</div>
+          <div class="chip" data-group="age">45–54</div>
+          <div class="chip" data-group="age">55–64</div>
+          <div class="chip" data-group="age">65+</div>
+        </div>
+      </div>
+      <div class="field-note" id="q1-note">Enter your first name and a 5-digit ZIP code to continue.</div>
+      <div class="q-nav">
+        <div></div>
+        <button class="btn-next" id="q1-next" onclick="goToQ(2)" disabled>Continue →</button>
+      </div>
+    </div>
+
+    <!-- Q2: Health picture -->
+    <div class="intake-card" id="q2" style="display:none">
+      <div class="q-step">Step 2 of 5 · Your health picture</div>
+      <div class="q-title">What's going on with your health?</div>
+      <div class="q-sub">Select all that apply. This information stays private and helps us build the right plan for you.</div>
+      <div class="field">
+        <label>Current conditions or concerns <span style="font-weight:300;color:var(--text-3)">(select all that apply)</span></label>
+        <div class="chips" style="margin-top:.75rem">
+          <div class="chip" data-group="cond">Back pain</div>
+          <div class="chip" data-group="cond">Neck pain</div>
+          <div class="chip" data-group="cond">Joint pain</div>
+          <div class="chip" data-group="cond">Chronic pain</div>
+          <div class="chip" data-group="cond">Anxiety</div>
+          <div class="chip" data-group="cond">Chronic stress</div>
+          <div class="chip" data-group="cond">Sleep issues</div>
+          <div class="chip" data-group="cond">Low energy</div>
+          <div class="chip" data-group="cond">Burnout</div>
+          <div class="chip" data-group="cond">Pre-diabetes</div>
+          <div class="chip" data-group="cond">High blood pressure</div>
+          <div class="chip" data-group="cond">Digestive issues</div>
+          <div class="chip" data-group="cond">Weight management</div>
+          <div class="chip" data-group="cond">Post-injury recovery</div>
+          <div class="chip" data-group="cond">Poor posture</div>
+          <div class="chip" data-group="cond">Hormonal imbalance</div>
+          <div class="chip" data-group="cond">No specific condition</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Insurance status</label>
+        <div class="chips">
+          <div class="chip" data-group="ins">Insured</div>
+          <div class="chip" data-group="ins">Uninsured</div>
+          <div class="chip" data-group="ins">Underinsured</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Do you have an HSA or FSA account?</label>
+        <div class="chips">
+          <div class="chip" data-group="hsa">Yes — I have HSA</div>
+          <div class="chip" data-group="hsa">Yes — I have FSA</div>
+          <div class="chip" data-group="hsa">No</div>
+          <div class="chip" data-group="hsa">Not sure</div>
+        </div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-back" onclick="goToQ(1)">← Back</button>
+        <button class="btn-next" onclick="goToQ(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Q3: Goals -->
+    <div class="intake-card" id="q3" style="display:none">
+      <div class="q-step">Step 3 of 5 · Your wellness goals</div>
+      <div class="q-title">What matters most to you?</div>
+      <div class="q-sub">Pick your top 3. We'll build your plan around these priorities.</div>
+      <div class="field">
+        <div class="chips" style="margin-top:.25rem">
+          <div class="chip" data-group="goal">Reduce pain</div>
+          <div class="chip" data-group="goal">Reduce stress</div>
+          <div class="chip" data-group="goal">More energy</div>
+          <div class="chip" data-group="goal">Better sleep</div>
+          <div class="chip" data-group="goal">Lose weight</div>
+          <div class="chip" data-group="goal">Build strength</div>
+          <div class="chip" data-group="goal">Improve flexibility</div>
+          <div class="chip" data-group="goal">Prevent disease</div>
+          <div class="chip" data-group="goal">Better nutrition</div>
+          <div class="chip" data-group="goal">Mental clarity</div>
+          <div class="chip" data-group="goal">Recover from injury</div>
+          <div class="chip" data-group="goal">Build a routine</div>
+        </div>
+      </div>
+      <div id="goal-hint" style="font-size:.75rem;color:var(--text-3);margin-top:.625rem;display:none">
+        ✓ Great — your top priorities are locked in.
+      </div>
+      <div class="field" style="margin-top:1.25rem">
+        <label>Anything else you want us to know? <span style="font-weight:300;color:var(--text-3)">(optional)</span></label>
+        <textarea id="inp-notes" placeholder="e.g. I had a herniated disc last year and have been cleared by my doctor to start gentle exercise..."></textarea>
+      </div>
+      <div class="q-nav">
+        <button class="btn-back" onclick="goToQ(2)">← Back</button>
+        <button class="btn-next" onclick="goToQ(4)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Q4: Budget -->
+    <div class="intake-card" id="q4" style="display:none">
+      <div class="q-step">Step 4 of 5 · Your budget</div>
+      <div class="q-title">What can you spend on wellness each month?</div>
+      <div class="q-sub">Be realistic — we build around what's actual, not ideal. Your plan will never exceed this amount.</div>
+      <div class="budget-display"><sup>$</sup><span id="budget-num">150</span></div>
+      <div class="budget-label">per month · you can adjust this anytime</div>
+      <input type="range" min="25" max="500" value="150" step="5" id="budget-slider" style="margin:1.5rem 0"
+             oninput="document.getElementById('budget-num').textContent=this.value;updateBudgetSlider(this)"/>
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text-3);margin-top:-.5rem;margin-bottom:1.5rem">
+        <span>$25/mo</span><span>$500/mo</span>
+      </div>
+      <div class="field">
+        <label>How do you prefer to receive care?</label>
+        <div class="chips">
+          <div class="chip selected" data-group="format">In-person</div>
+          <div class="chip" data-group="format">Virtual / telehealth</div>
+          <div class="chip" data-group="format">Both work for me</div>
+        </div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-back" onclick="goToQ(3)">← Back</button>
+        <button class="btn-next" onclick="goToQ(5)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Q5: Preferences + consent -->
+    <div class="intake-card" id="q5" style="display:none">
+      <div class="q-step">Step 5 of 5 · Almost done</div>
+      <div class="q-title">A few final preferences.</div>
+      <div class="q-sub">Then we'll build your personalized plan.</div>
+      <div class="field">
+        <label>Which of these are you open to? <span style="font-weight:300;color:var(--text-3)">(all selected by default)</span></label>
+        <div class="chips" style="margin-top:.5rem">
+          <div class="chip selected amber" data-group="open">Massage</div>
+          <div class="chip selected amber" data-group="open">Acupuncture</div>
+          <div class="chip selected amber" data-group="open">Chiropractic</div>
+          <div class="chip selected amber" data-group="open">Yoga / Pilates</div>
+          <div class="chip selected amber" data-group="open">Personal training</div>
+          <div class="chip selected amber" data-group="open">Nutrition coaching</div>
+          <div class="chip selected amber" data-group="open">Meditation</div>
+          <div class="chip selected amber" data-group="open">Physical therapy</div>
+          <div class="chip selected amber" data-group="open">DPC Physician</div>
+        </div>
+      </div>
+      <div style="background:var(--amber-pale);border:1px solid var(--amber-10);border-left:3px solid var(--amber);border-radius:8px;padding:1.1rem;margin:1.5rem 0;font-size:.79rem;color:var(--navy);line-height:1.7">
+        <strong style="display:block;margin-bottom:.35rem">⚖️ Important: Please read before continuing</strong>
+        HealthPlanFactory is a <strong>wellness optimization platform</strong> — not a medical provider, diagnostic tool, or substitute for professional healthcare. Your plan is not medical advice, a diagnosis, or a treatment plan.<br/><br/>
+        Always consult your physician before starting any new wellness regimen, especially if you have chronic conditions. For medical emergencies, call <strong>911</strong>. For mental health crisis, call or text <strong>988</strong>.
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:.75rem;cursor:pointer;font-size:.82rem;color:var(--navy);line-height:1.55">
+        <input type="checkbox" id="consent-check" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:var(--navy)"/>
+        I understand HealthPlanFactory is a wellness navigation tool, not a substitute for medical care, diagnosis, or treatment. I will consult my physician for medical concerns.
+      </label>
+      <div class="q-nav" style="margin-top:1.75rem">
+        <button class="btn-back" onclick="goToQ(4)">← Back</button>
+        <button class="btn-next" id="btn-build" onclick="startBuild()" disabled>Build my plan ⚙️</button>
+      </div>
+    </div>
+
+  </div><!-- /intake-body -->
+
+  <div class="intake-disc">
+    HealthPlanFactory is not a medical provider. Nothing here constitutes medical advice or diagnosis.
+    Always consult a licensed physician for medical concerns. Emergency: call 911.
+    <a href="./healthplanfactory-landing-clean.html#full-disclaimer" style="color:var(--amber)">Full disclaimer</a>
+  </div>
+
+</div><!-- /screen-intake -->
+
+
+<!-- ════════════════════════════════════
+     SCREEN 2: BUILDING
+════════════════════════════════════ -->
+<div class="screen" id="screen-building">
+  <div class="building-inner">
+    <span class="building-factory">🏭</span>
+    <h2 class="building-h">Building your plan,<br/><em>right now.</em></h2>
+    <p class="building-sub">Our AI is searching providers near you, ranking options by evidence, and fitting everything to your budget. This usually takes a few seconds.</p>
+    <div class="build-steps">
+      <div class="build-step" id="bs1">
+        <div class="build-step-icon">📍</div>
+        <span>Scanning providers within your area</span>
+        <span class="build-step-check">✓</span>
+      </div>
+      <div class="build-step" id="bs2">
+        <div class="build-step-icon">🧬</div>
+        <span>Matching modalities to your conditions</span>
+        <span class="build-step-check">✓</span>
+      </div>
+      <div class="build-step" id="bs3">
+        <div class="build-step-icon">💰</div>
+        <span>Fitting everything to your $<span id="build-budget">150</span>/month budget</span>
+        <span class="build-step-check">✓</span>
+      </div>
+      <div class="build-step" id="bs4">
+        <div class="build-step-icon">⚖️</div>
+        <span>Ranking by clinical evidence strength</span>
+        <span class="build-step-check">✓</span>
+      </div>
+      <div class="build-step" id="bs5">
+        <div class="build-step-icon">📋</div>
+        <span>Assembling your personalized plan</span>
+        <span class="build-step-check">✓</span>
+      </div>
+    </div>
+    <div class="build-spinner" id="build-spinner"></div>
+    <div class="building-disc">
+      HealthPlanFactory is not a medical provider. Your plan is a wellness guide, not medical advice or a diagnosis. Providers are independently listed. For emergencies call 911.
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     SCREEN 3: PLAN REVEAL
+════════════════════════════════════ -->
+<div class="screen" id="screen-plan">
+
+  <!-- Plan header -->
+  <div class="plan-header">
+    <div class="plan-header-top">
+      <div class="plan-member">
+        <div class="plan-name" id="plan-member-name">Sarah's Wellness Plan</div>
+        <div class="plan-sub" id="plan-member-sub">Hoboken, NJ · 10mi radius · Back pain, Anxiety · $150/month</div>
+      </div>
+      <button class="plan-unlock-all" onclick="openBundleModal()">
+        🔓 Unlock all steps — save 40%
+      </button>
+    </div>
+    <div class="plan-meta">
+      <div class="plan-badge">⚙️ <span id="plan-item-count">5</span> steps assembled</div>
+      <div class="plan-badge"><span id="plan-provider-count">14</span> providers found nearby</div>
+      <div class="plan-badge amber">Budget: $<span id="plan-budget-used">142</span> / $<span id="plan-budget-total">150</span>/mo</div>
+    </div>
+    <div style="margin-top:1rem">
+      <div class="plan-disc-bar">
+        <strong>⚖️ Wellness plan — not medical advice.</strong> This plan helps you explore wellness options. It is not a diagnosis, treatment plan, or prescription. Always consult your physician before starting any new wellness regimen. <strong>Emergency: call 911.</strong> Mental health crisis: <strong>call or text 988.</strong>
+        <a href="#disclaimer">Full disclaimer</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plan body -->
+  <div class="plan-body">
+
+    <div class="plan-body-head">
+      <div class="plan-body-title">Your personalized wellness plan</div>
+      <div style="font-size:.78rem;color:var(--text-3)">Unlock each step to see providers near you</div>
+    </div>
+
+    <!-- Budget bar -->
+    <div class="budget-bar-wrap">
+      <div class="bb-labels">
+        <span>Monthly budget allocation</span>
+        <strong>$<span id="bb-used">142</span> of $<span id="bb-total">150</span>/month</strong>
+      </div>
+      <div class="bb-track"><div class="bb-fill" id="bb-fill" style="width:95%"></div></div>
+      <div class="bb-note">$<span id="bb-remaining">8</span> remaining · Phase 2 items available when budget allows</div>
+    </div>
+
+    <!-- Plan items will be injected here -->
+    <div class="plan-items" id="plan-items-list"></div>
+
+    <!-- Plan footer disclaimer -->
+    <div class="plan-footer-disc" id="disclaimer">
+      <strong>⚖️ Medical Disclaimer</strong><br/>
+      This wellness plan is generated by AI based on the information you provided. It is for wellness guidance and planning purposes only — it is <strong>not medical advice, a clinical diagnosis, or a treatment plan</strong>. HealthPlanFactory is not a licensed medical provider. Results may vary. No wellness modality is guaranteed to address your specific health situation.<br/><br/>
+      <strong>Always consult your physician</strong> before beginning any new wellness regimen, especially if you have chronic conditions, take prescription medications, or have recently had surgery or an injury. Providers listed are independent practitioners — HealthPlanFactory is a referral marketplace only.<br/><br/>
+      <strong>HSA/FSA:</strong> Eligible modalities are marked. Eligibility is not guaranteed — it depends on your specific plan and may require a Letter of Medical Necessity from your physician. Consult your plan administrator.<br/><br/>
+      <strong>Emergency:</strong> For medical emergencies call <strong>911</strong>. For mental health crisis call or text <strong>988</strong>. Text HOME to <strong>741741</strong> for the Crisis Text Line. HealthPlanFactory cannot assist with emergencies.<br/><br/>
+      © 2026 Zanetis Holdings LLC · <a href="mailto:hello@healthplanfactory.com?subject=Terms%20of%20Service%20Request">Terms</a> · <a href="mailto:hello@healthplanfactory.com?subject=Privacy%20Policy%20Request">Privacy</a> · <a href="./healthplanfactory-landing-clean.html#full-disclaimer">Full Disclaimer</a>
+    </div>
+
+  </div><!-- /plan-body -->
+</div><!-- /screen-plan -->
+
+
+<!-- ════════════════════════════════════
+     PAYMENT MODAL
+════════════════════════════════════ -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Unlock this step</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-item-preview" id="modal-item-preview">
+      <div class="mip-emoji" id="modal-emoji">🤲</div>
+      <div>
+        <div class="mip-name" id="modal-name">Massage Therapy</div>
+        <div class="mip-desc" id="modal-desc">See all matched providers near you</div>
+      </div>
+      <div class="mip-price" id="modal-price">$2</div>
+    </div>
+    <div class="modal-what-you-get">
+      <div class="mwyg-title">What you get when you unlock</div>
+      <ul class="mwyg-list">
+        <li>All providers near you offering this modality</li>
+        <li>Their exact prices, availability, and ratings</li>
+        <li>Direct in-app booking — no phone calls needed</li>
+        <li>HSA/FSA eligibility flagged automatically</li>
+        <li>Yours forever — unlock once, access always</li>
+      </ul>
+    </div>
+    <div class="card-input-mock">
+      <span>💳 Card ending in 4242 · Stripe secure</span>
+      <span>🔒</span>
+    </div>
+    <button class="btn-pay" id="pay-btn" onclick="processPayment()">
+      <span>🔓</span> Pay <span id="modal-pay-amt">$2</span> · Unlock now
+    </button>
+    <div class="modal-disc">
+      Secure payment via Stripe. This is a one-time unlock — not a subscription.<br/>
+      Unlocking providers does not constitute a booking or medical referral.<br/>
+      <a href="mailto:hello@healthplanfactory.com?subject=Terms%20of%20Service%20Request">Terms</a> · <a href="mailto:hello@healthplanfactory.com?subject=Privacy%20Policy%20Request">Privacy</a> · <a href="mailto:hello@healthplanfactory.com?subject=Refund%20Policy%20Request">Refund policy</a>
+    </div>
+    <div class="secure-badges">
+      <div class="sb">🔒 SSL encrypted</div>
+      <div class="sb">💳 Powered by Stripe</div>
+      <div class="sb">✓ One-time charge</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════ -->
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let currentQ = 1;
+let currentUnlockItem = null;
+let unlockedItems = new Set();
+let memberName = '';
+let memberBudget = 150;
+
+// ── Plan data ───────────────────────────────────────────────────────────────
+const planItems = [
+  {
+    id: 1,
+    emoji: '🤲',
+    name: 'Massage Therapy',
+    tagline: 'For back pain relief and stress reduction',
+    tags: ['Strong evidence','HSA eligible','2× monthly'],
+    tagClasses: ['tag-evidence-s','tag-hsa','tag-freq'],
+    cost: '$80',
+    costLabel: '/month',
+    why: 'Based on your reported back pain and stress, massage therapy is the highest-priority modality. <em>Research consistently shows significant reduction in chronic lower back pain</em> with bi-monthly sessions. It also directly supports your stress reduction goal and has the strongest evidence base of all manual therapies.',
+    price: 2,
+    providers: [
+      {initials:'JS',name:'Jane Smith, LMT',creds:'Licensed Massage Therapist',stars:'★★★★★ 4.9',pills:['$70–90/session','2.1 mi','HSA ✓','Mon–Sat'],hsa:true},
+      {initials:'MR',name:'Maria Rodriguez, LMT',creds:'Licensed Massage Therapist',stars:'★★★★☆ 4.7',pills:['$65–80/session','3.4 mi','HSA ✓','Tue–Sun'],hsa:true},
+      {initials:'TW',name:'The Wellness Loft',creds:'4 therapists available',stars:'★★★★★ 4.8',pills:['$75/session','1.8 mi','HSA ✓','7 days'],hsa:true},
+    ]
+  },
+  {
+    id: 2,
+    emoji: '🧘',
+    name: 'Yoga — Weekly Classes',
+    tagline: 'For anxiety, flexibility, and stress management',
+    tags: ['Strong evidence','4× monthly','Low impact'],
+    tagClasses: ['tag-evidence-s','tag-freq','tag-evidence-m'],
+    cost: '$40',
+    costLabel: '/month',
+    why: 'Your anxiety and stress goals are strongly supported by a consistent yoga practice. <em>Clinical studies show yoga reduces cortisol levels and anxiety scores within 8 weeks</em>. A 4-class monthly pack at most studios fits within your budget and provides the frequency needed for real results.',
+    price: 2,
+    providers: [
+      {initials:'SY',name:'Sunrise Yoga Studio',creds:'RYT-500 instructors',stars:'★★★★★ 4.9',pills:['$12/class','0.9 mi','Drop-in OK','7 days'],hsa:false},
+      {initials:'BW',name:'Balance & Breathe',creds:'Specializes in therapeutic yoga',stars:'★★★★☆ 4.6',pills:['$15/class','2.2 mi','Beginner friendly','Mon–Fri'],hsa:false},
+      {initials:'YU',name:'YogaUnion Hoboken',creds:'6 class styles available',stars:'★★★★★ 4.8',pills:['$10/class pack','1.5 mi','Online + in-person','Daily'],hsa:false},
+    ]
+  },
+  {
+    id: 3,
+    emoji: '🧠',
+    name: 'Meditation & Mindfulness App',
+    tagline: 'For daily anxiety and sleep management',
+    tags: ['Strong evidence','Daily practice','HSA may apply'],
+    tagClasses: ['tag-evidence-s','tag-freq','tag-hsa'],
+    cost: '$15',
+    costLabel: '/month',
+    why: '<em>MBSR (Mindfulness-Based Stress Reduction) has the strongest evidence base of any non-pharmacological anxiety intervention.</em> A daily 10–15 minute practice through a guided app builds the habit at a fraction of in-person class costs, and complements your yoga practice powerfully.',
+    price: 1,
+    providers: [
+      {initials:'HH',name:'Headspace',creds:'MBSR-based guided meditation',stars:'★★★★★ 4.8',pills:['$12.99/month','Telehealth','HSA may apply','Anytime'],hsa:true},
+      {initials:'CA',name:'Calm',creds:'Sleep + anxiety programs',stars:'★★★★★ 4.8',pills:['$14.99/month','Telehealth','Offline access','Anytime'],hsa:false},
+      {initials:'IN',name:'Insight Timer',creds:'Free + premium guided sessions',stars:'★★★★☆ 4.7',pills:['$9.99/month','Telehealth','10,000+ sessions','Anytime'],hsa:false},
+    ]
+  },
+  {
+    id: 4,
+    emoji: '🥗',
+    name: 'Nutrition Coaching — 1 Session',
+    tagline: 'For energy, weight management, and nutrition goals',
+    tags: ['Strong evidence','Monthly check-in','HSA eligible'],
+    tagClasses: ['tag-evidence-s','tag-freq','tag-hsa'],
+    cost: '$0',
+    costLabel: '(included — first session free)',
+    why: 'Your energy and weight management goals are directly impacted by nutrition. <em>A registered dietitian or certified nutrition coach can identify dietary patterns contributing to fatigue</em> and build a practical plan around your schedule. One session per month maintains accountability within your budget.',
+    price: 2,
+    providers: [
+      {initials:'AL',name:'Amanda Lee, RDN',creds:'Registered Dietitian Nutritionist',stars:'★★★★★ 4.9',pills:['First session free','3.1 mi','HSA ✓','Virtual OK'],hsa:true},
+      {initials:'NC',name:'NutriCoach NJ',creds:'NASM Certified Nutrition Coaches',stars:'★★★★☆ 4.6',pills:['$85/session','2.8 mi','HSA ✓','Evening slots'],hsa:true},
+    ]
+  },
+  {
+    id: 5,
+    emoji: '👨‍⚕️',
+    name: 'Direct Primary Care Physician',
+    tagline: 'Medical anchor — coordinates your full wellness picture',
+    tags: ['Strong evidence','Medical anchor','HSA eligible (2026)'],
+    tagClasses: ['tag-evidence-s','tag-evidence-m','tag-hsa'],
+    cost: '$0',
+    costLabel: '(within budget — recommended)',
+    why: '<em>Having a personal DPC physician as your "medical anchor" transforms your wellness plan from a collection of services into coordinated care.</em> Your DPC doctor monitors your progress, can write a Letter of Medical Necessity (unlocking HSA/FSA coverage for massage and PT), and ensures your wellness activities are appropriate for your health picture. As of January 2026, DPC memberships under $150/month allow HSA contributions.',
+    price: 3,
+    providers: [
+      {initials:'DR',name:'Dr. Rebecca Santos, MD',creds:'Direct Primary Care · Family Medicine',stars:'★★★★★ 5.0',pills:['$75/month membership','4.2 mi','HSA ✓ (2026)','Accepting patients'],hsa:true},
+      {initials:'DP',name:'Jersey DPC',creds:'Direct Primary Care Practice',stars:'★★★★★ 4.9',pills:['$89/month','2.9 mi','HSA ✓','Same-day available'],hsa:true},
+    ]
+  }
+];
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function goToQ(n) {
+  document.getElementById('q' + currentQ).style.display = 'none';
+  document.getElementById('q' + n).style.display = 'block';
+  document.getElementById('q' + n).style.animation = 'none';
+  setTimeout(() => { document.getElementById('q' + n).style.animation = 'slideUp .35s ease both'; }, 10);
+
+  // Update progress steps
+  for (let i = 1; i <= 5; i++) {
+    const ps = document.getElementById('ps' + i);
+    ps.classList.remove('active','done');
+    if (i < n) ps.classList.add('done');
+    if (i === n) ps.classList.add('active');
+  }
+  document.getElementById('progress-pct').textContent = 'Step ' + n + ' of 5';
+  currentQ = n;
+
+  // Handle consent checkbox enabling submit
+  if (n === 5) {
+    document.getElementById('consent-check').addEventListener('change', function() {
+      document.getElementById('btn-build').disabled = !this.checked;
+    });
+  }
+}
+
+// ── Chips (single select per group, multi for cond/goal/open) ───────────────
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', function() {
+    const group = this.dataset.group;
+    const isMulti = ['cond','goal','open'].includes(group);
+    const isAmber = group === 'open';
+
+    if (isMulti) {
+      if (group === 'goal') {
+        const selected = document.querySelectorAll('.chip[data-group="goal"].selected');
+        if (!this.classList.contains('selected') && selected.length >= 3) return;
+        this.classList.toggle('selected');
+        const count = document.querySelectorAll('.chip[data-group="goal"].selected').length;
+        document.getElementById('goal-hint').style.display = count >= 1 ? 'block' : 'none';
+      } else {
+        this.classList.toggle('selected');
+        if (isAmber) this.classList.toggle('amber', this.classList.contains('selected'));
+      }
+    } else {
+      document.querySelectorAll('.chip[data-group="' + group + '"]').forEach(c => {
+        c.classList.remove('selected','amber');
+      });
+      this.classList.add('selected');
+    }
+  });
+});
+
+// ── Budget slider ────────────────────────────────────────────────────────────
+function updateBudgetSlider(el) {
+  const pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+  el.style.background = `linear-gradient(90deg, var(--navy) 0%, var(--navy) ${pct}%, var(--parchment) ${pct}%)`;
+  memberBudget = parseInt(el.value);
+  document.getElementById('build-budget').textContent = el.value;
+}
+
+// ── Start build ──────────────────────────────────────────────────────────────
+function startBuild() {
+  memberName = document.getElementById('inp-name').value.trim() || 'Your';
+  memberBudget = parseInt(document.getElementById('budget-slider').value);
+
+  // Switch to building screen
+  document.getElementById('screen-intake').classList.remove('active');
+  document.getElementById('screen-building').classList.add('active');
+
+  // Animate build steps
+  const steps = ['bs1','bs2','bs3','bs4','bs5'];
+  const delays = [800, 2000, 3200, 4400, 5600];
+
+  steps.forEach((id, i) => {
+    setTimeout(() => {
+      // Mark previous as done
+      if (i > 0) {
+        const prev = document.getElementById(steps[i-1]);
+        prev.classList.remove('active');
+        prev.classList.add('done');
+      }
+      document.getElementById(id).classList.add('active');
+    }, delays[i]);
+  });
+
+  // Final step done + show plan
+  setTimeout(() => {
+    const last = document.getElementById('bs5');
+    last.classList.remove('active');
+    last.classList.add('done');
+    document.getElementById('build-spinner').style.display = 'none';
+  }, 7000);
+
+  setTimeout(() => {
+    showPlan();
+  }, 8000);
+}
+
+// ── Show plan ────────────────────────────────────────────────────────────────
+function showPlan() {
+  document.getElementById('screen-building').classList.remove('active');
+  document.getElementById('screen-plan').classList.add('active');
+
+  // Personalize header
+  const firstName = memberName || 'Your';
+  document.getElementById('plan-member-name').textContent = firstName + (firstName.endsWith('s') ? "'" : "'s") + ' Wellness Plan';
+
+  const zip = document.getElementById('inp-zip').value || 'your area';
+  const radius = document.getElementById('inp-commute').value;
+  const budget = memberBudget;
+  document.getElementById('plan-member-sub').textContent =
+    zip + ' · ' + (radius === 'telehealth' ? 'Telehealth' : radius + 'mi radius') +
+    ' · Back pain, Anxiety · $' + budget + '/month';
+
+  document.getElementById('plan-item-count').textContent = planItems.length;
+  document.getElementById('plan-budget-used').textContent = Math.round(budget * 0.95);
+  document.getElementById('plan-budget-total').textContent = budget;
+  document.getElementById('bb-used').textContent = Math.round(budget * 0.95);
+  document.getElementById('bb-total').textContent = budget;
+  document.getElementById('bb-remaining').textContent = Math.round(budget * 0.05);
+  document.getElementById('plan-budget-total').textContent = budget;
+
+  renderPlanItems();
+}
+
+// ── Render plan items ────────────────────────────────────────────────────────
+function renderPlanItems() {
+  const list = document.getElementById('plan-items-list');
+  list.innerHTML = '';
+
+  planItems.forEach((item, idx) => {
+    const isUnlocked = unlockedItems.has(item.id);
+    const div = document.createElement('div');
+    div.className = 'plan-item';
+    div.id = 'item-' + item.id;
+
+    // Top row
+    const tagsHtml = item.tags.map((t,i) =>
+      `<span class="pi-tag ${item.tagClasses[i]}">${t}</span>`).join('');
+
+    // Locked providers preview (blurred names)
+    const blurredNames = ['Sarah K.','Marcus T.','Dr. Patel','The Studio','WellCo NJ'];
+    const blurredHtml = blurredNames.slice(0,3).map(n =>
+      `<div class="lock-prov-blur">${n}</div>`).join('');
+
+    const lockedSection = isUnlocked ? '' : `
+      <div class="pi-locked" id="locked-${item.id}">
+        <div class="pi-locked-info">
+          <div class="lock-icon">🔒</div>
+          <div class="lock-text">
+            <strong>${item.providers.length} providers found near you</strong>
+            <span>Prices, availability &amp; booking — unlock to see</span>
+          </div>
+          <div class="lock-providers">${blurredHtml}</div>
+        </div>
+        <button class="btn-unlock" onclick="openModal(${item.id})">
+          🔓 Unlock <span class="price">$${item.price}</span>
+        </button>
+      </div>`;
+
+    const unlockedSection = isUnlocked ? renderProviders(item) : '';
+
+    // Bundle upsell after first unlock
+    const showUpsell = isUnlocked && idx === 0 && unlockedItems.size === 1 ? `
+      <div class="bundle-upsell">
+        <div class="bu-left">
+          <div class="bu-tag">💡 Save more</div>
+          <div class="bu-title">Unlock your remaining ${planItems.length - 1} steps at once</div>
+          <div class="bu-desc">Individual price: $${planItems.slice(1).reduce((a,i)=>a+i.price,0)} · Bundle price: $${Math.round(planItems.slice(1).reduce((a,i)=>a+i.price,0)*0.6)}</div>
+          <span class="bu-savings">Save 40% with the bundle</span>
+        </div>
+        <button class="btn-bundle" onclick="openBundleModal()">Get the bundle →</button>
+      </div>` : '';
+
+    div.innerHTML = `
+      <div class="pi-top">
+        <div class="pi-rank ${isUnlocked ? 'unlocked' : ''}">0${item.id}</div>
+        <div class="pi-emoji">${item.emoji}</div>
+        <div class="pi-info">
+          <div class="pi-name">${item.name}</div>
+          <div class="pi-tagline">${item.tagline}</div>
+          <div class="pi-tags">${tagsHtml}</div>
+        </div>
+        <div class="pi-right">
+          <div class="pi-cost">${item.cost}</div>
+          <div class="pi-cost-label">${item.costLabel}</div>
+        </div>
+      </div>
+      <div class="pi-why">${item.why}</div>
+      ${lockedSection}
+      ${showUpsell}
+      ${unlockedSection}
+    `;
+    list.appendChild(div);
+  });
+}
+
+function renderProviders(item) {
+  const cards = item.providers.map(p => `
+    <div class="prov-card">
+      <div class="prov-top">
+        <div class="prov-avatar">${p.initials}</div>
+        <div>
+          <div class="prov-name">${p.name}</div>
+          <div class="prov-creds">${p.creds}</div>
+          <div class="prov-stars">${p.stars}</div>
+        </div>
+      </div>
+      <div class="prov-meta">
+        ${p.pills.map((pill,i) => `<span class="prov-meta-pill ${i===2&&p.hsa?'prov-hsa':''}">${pill}</span>`).join('')}
+      </div>
+      <button class="btn-book" onclick="handleBook('${p.name}')">Book a session →</button>
+    </div>
+  `).join('');
+
+  return `
+    <div class="pi-providers">
+      <div class="pi-providers-head">
+        <div class="pip-title">✓ ${item.providers.length} providers near you — unlocked</div>
+        <div class="pip-count">Tap to book directly</div>
+      </div>
+      <div class="providers-grid">${cards}</div>
+      <div style="font-size:.7rem;color:var(--text-3);margin-top:.875rem;line-height:1.55">
+        ⚖️ These providers are independently listed on HealthPlanFactory. Booking does not constitute a medical referral. HealthPlanFactory is a referral marketplace, not a medical provider. The provider relationship is between you and the provider directly.
+      </div>
+    </div>
+  `;
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function openModal(itemId) {
+  currentUnlockItem = planItems.find(i => i.id === itemId);
+  if (!currentUnlockItem) return;
+  document.getElementById('modal-emoji').textContent = currentUnlockItem.emoji;
+  document.getElementById('modal-name').textContent = currentUnlockItem.name;
+  document.getElementById('modal-desc').textContent =
+    'See all ' + currentUnlockItem.providers.length + ' matched providers near you';
+  document.getElementById('modal-price').textContent = '$' + currentUnlockItem.price;
+  document.getElementById('modal-pay-amt').textContent = '$' + currentUnlockItem.price;
+  document.getElementById('pay-btn').classList.remove('processing');
+  document.getElementById('pay-btn').innerHTML =
+    `<span>🔓</span> Pay $${currentUnlockItem.price} · Unlock now`;
+  document.getElementById('payment-modal').classList.add('open');
+}
+
+function openBundleModal() {
+  const remaining = planItems.filter(i => !unlockedItems.has(i.id));
+  const total = remaining.reduce((a, i) => a + i.price, 0);
+  const bundlePrice = Math.round(total * 0.6);
+  currentUnlockItem = {
+    id: 'bundle',
+    emoji: '⚡',
+    name: 'Unlock all remaining steps',
+    providers: remaining,
+    price: bundlePrice
+  };
+  document.getElementById('modal-emoji').textContent = '⚡';
+  document.getElementById('modal-name').textContent = 'Bundle: unlock all ' + remaining.length + ' remaining steps';
+  document.getElementById('modal-desc').textContent = 'Save 40% vs unlocking individually ($' + total + ' → $' + bundlePrice + ')';
+  document.getElementById('modal-price').textContent = '$' + bundlePrice;
+  document.getElementById('modal-pay-amt').textContent = '$' + bundlePrice;
+  document.getElementById('pay-btn').classList.remove('processing');
+  document.getElementById('pay-btn').innerHTML =
+    `<span>🔓</span> Pay $${bundlePrice} · Unlock all steps`;
+  document.getElementById('payment-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('payment-modal').classList.remove('open');
+  currentUnlockItem = null;
+}
+
+function processPayment() {
+  if (!currentUnlockItem) return;
+  const btn = document.getElementById('pay-btn');
+  btn.classList.add('processing');
+  btn.innerHTML = '⏳ Processing...';
+
+  setTimeout(() => {
+    closeModal();
+    if (currentUnlockItem.id === 'bundle') {
+      // Unlock all remaining
+      planItems.forEach(i => unlockedItems.add(i.id));
+    } else {
+      unlockedItems.add(currentUnlockItem.id);
+    }
+    renderPlanItems();
+    showToast();
+    // Scroll to the unlocked item
+    if (currentUnlockItem.id !== 'bundle') {
+      setTimeout(() => {
+        const el = document.getElementById('item-' + currentUnlockItem.id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, 1800);
+}
+
+function showToast() {
+  const toast = document.getElementById('toast');
+  const count = unlockedItems.size;
+  toast.textContent = count === planItems.length
+    ? '🎉 All steps unlocked — your full plan is ready!'
+    : '✅ Step unlocked — ' + count + ' of ' + planItems.length + ' revealed';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+function handleBook(provName) {
+  window.location.href = 'mailto:hello@healthplanfactory.com?subject=' + encodeURIComponent('Booking request: ' + provName) + '&body=' + encodeURIComponent('Hi HealthPlanFactory,%0D%0A%0D%0AI would like to request booking details for ' + provName + '.%0D%0A%0D%0AMember name: ' + (memberName || 'Not provided') + '%0D%0AZIP: ' + (document.getElementById('inp-zip').value || 'Not provided') + '%0D%0ABudget: $' + memberBudget + '/month%0D%0A%0D%0AThank you.');
+}
+
+// Close modal on overlay click
+document.getElementById('payment-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Keyboard close
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function getSelected(group) {
+  return Array.from(document.querySelectorAll('.chip[data-group="' + group + '"].selected')).map(el => el.textContent.trim());
+}
+
+function validateQ1() {
+  const nameEl = document.getElementById('inp-name');
+  const zipEl = document.getElementById('inp-zip');
+  const nextBtn = document.getElementById('q1-next');
+  const note = document.getElementById('q1-note');
+  const nameOk = nameEl.value.trim().length >= 2;
+  const zipOk = /^\d{5}$/.test(zipEl.value.trim());
+  nameEl.classList.toggle('input-error', nameEl.value.trim().length > 0 && !nameOk);
+  zipEl.classList.toggle('input-error', zipEl.value.trim().length > 0 && !zipOk);
+  nextBtn.disabled = !(nameOk && zipOk);
+  if (!nameOk || !zipOk) {
+    note.textContent = 'Enter your first name and a valid 5-digit ZIP code to continue.';
+  } else {
+    note.textContent = 'Looks good — continue to the next step.';
+  }
+}
+
+document.getElementById('inp-name').addEventListener('input', validateQ1);
+document.getElementById('inp-zip').addEventListener('input', validateQ1);
+validateQ1();
+
+const originalShowPlan = showPlan;
+showPlan = function() {
+  originalShowPlan();
+
+  const conditions = getSelected('cond');
+  const goals = getSelected('goal');
+  const openTo = getSelected('open');
+  const zip = document.getElementById('inp-zip').value || 'your area';
+  const radius = document.getElementById('inp-commute').value;
+  const budget = memberBudget;
+  const summaryConditions = conditions.length ? conditions.slice(0, 2).join(', ') : 'General wellness';
+  document.getElementById('plan-member-sub').textContent =
+    zip + ' · ' + (radius === 'telehealth' ? 'Telehealth' : radius + 'mi radius') +
+    ' · ' + summaryConditions + ' · $' + budget + '/month';
+
+  const filteredCount = planItems.reduce((acc, item) => {
+    const matchesOpen = !openTo.length || openTo.some(label => item.name.toLowerCase().includes(label.toLowerCase()) || item.tagline.toLowerCase().includes(label.toLowerCase()));
+    return acc + (matchesOpen ? item.providers.length : Math.max(2, item.providers.length - 1));
+  }, 0);
+  document.getElementById('plan-provider-count').textContent = filteredCount;
+
+  if (goals.length) {
+    document.querySelector('.bb-note').textContent = '$' + Math.round(budget * 0.05) + ' remaining · Prioritized around: ' + goals.slice(0, 3).join(', ');
+  }
+};
+
+</script>
+
+</body>
+</html>
