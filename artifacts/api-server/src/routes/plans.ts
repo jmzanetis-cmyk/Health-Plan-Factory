@@ -4,8 +4,10 @@ import { plans, planItems, memberIntakes, modalities } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import {
   GeneratePlanBody,
+  GetPlanParams,
   GetPlanResponse,
   UpdatePlanBody,
+  UpdatePlanParams,
   UpdatePlanResponse,
 } from "@workspace/api-zod";
 import { runPlanEngine } from "../lib/serverPlanEngine";
@@ -82,13 +84,18 @@ router.post("/plans/generate", async (req, res) => {
 
 router.get("/plans/:id", async (req, res) => {
   try {
-    const [plan] = await db.select().from(plans).where(eq(plans.id, req.params.id));
+    const params = GetPlanParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid params", details: params.error.flatten() });
+      return;
+    }
+    const [plan] = await db.select().from(plans).where(eq(plans.id, params.data.id));
     if (!plan) {
       res.status(404).json({ error: "Plan not found" });
       return;
     }
 
-    const items = await db.select().from(planItems).where(eq(planItems.planId, req.params.id));
+    const items = await db.select().from(planItems).where(eq(planItems.planId, params.data.id));
 
     res.json(GetPlanResponse.parse({ plan, items }));
   } catch (err: unknown) {
@@ -99,6 +106,11 @@ router.get("/plans/:id", async (req, res) => {
 
 router.patch("/plans/:id", async (req, res) => {
   try {
+    const params = UpdatePlanParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid params", details: params.error.flatten() });
+      return;
+    }
     const body = UpdatePlanBody.safeParse(req.body);
     if (!body.success) {
       res.status(400).json({ error: "Validation error", details: body.error.flatten() });
@@ -111,7 +123,7 @@ router.patch("/plans/:id", async (req, res) => {
     const [updated] = await db
       .update(plans)
       .set(updates)
-      .where(eq(plans.id, req.params.id))
+      .where(eq(plans.id, params.data.id))
       .returning();
 
     if (!updated) {

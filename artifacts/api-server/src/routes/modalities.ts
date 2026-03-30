@@ -8,8 +8,10 @@ import {
   ListModalitiesResponse,
   ListModalitiesResponseItem,
   CreateModalityBody,
+  GetAdminModalityParams,
   GetAdminModalityResponse,
   UpdateAdminModalityBody,
+  UpdateAdminModalityParams,
   UpdateAdminModalityResponse,
 } from "@workspace/api-zod";
 
@@ -72,10 +74,15 @@ router.post("/modalities", async (req, res) => {
 
 router.get("/admin/modalities/:id", async (req, res) => {
   try {
+    const params = GetAdminModalityParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid params", details: params.error.flatten() });
+      return;
+    }
     const [row] = await db
       .select()
       .from(modalities)
-      .where(eq(modalities.id, req.params.id));
+      .where(eq(modalities.id, params.data.id));
     if (!row) {
       res.status(404).json({ error: "Modality not found" });
       return;
@@ -89,6 +96,11 @@ router.get("/admin/modalities/:id", async (req, res) => {
 
 router.patch("/admin/modalities/:id", async (req, res) => {
   try {
+    const params = UpdateAdminModalityParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid params", details: params.error.flatten() });
+      return;
+    }
     const body = UpdateAdminModalityBody.safeParse(req.body);
     if (!body.success) {
       res.status(400).json({ error: "Validation error", details: body.error.flatten() });
@@ -98,7 +110,7 @@ router.patch("/admin/modalities/:id", async (req, res) => {
     const [updated] = await db
       .update(modalities)
       .set({ ...body.data, updatedAt: new Date() })
-      .where(eq(modalities.id, req.params.id))
+      .where(eq(modalities.id, params.data.id))
       .returning();
 
     if (!updated) {

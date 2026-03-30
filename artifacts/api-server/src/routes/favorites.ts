@@ -4,6 +4,7 @@ import { favorites } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import {
   AddFavoriteBody,
+  ListFavoritesQueryParams,
   ListFavoritesResponse,
   ListFavoritesResponseItem,
 } from "@workspace/api-zod";
@@ -12,11 +13,12 @@ const router: IRouter = Router();
 
 router.get("/favorites", async (req, res) => {
   try {
-    const profileId = req.query.profileId as string | undefined;
-    if (!profileId) {
-      res.status(400).json({ error: "profileId query param is required" });
+    const query = ListFavoritesQueryParams.safeParse(req.query);
+    if (!query.success) {
+      res.status(400).json({ error: "Invalid query params", details: query.error.flatten() });
       return;
     }
+    const { profileId } = query.data;
     const rows = await db.select().from(favorites).where(eq(favorites.profileId, profileId));
     res.json(ListFavoritesResponse.parse(rows));
   } catch (err: unknown) {
@@ -75,11 +77,12 @@ router.post("/favorites", async (req, res) => {
 
 router.delete("/favorites/:providerId", async (req, res) => {
   try {
-    const profileId = req.query.profileId as string | undefined;
-    if (!profileId) {
-      res.status(400).json({ error: "profileId query param is required" });
+    const query = ListFavoritesQueryParams.safeParse(req.query);
+    if (!query.success) {
+      res.status(400).json({ error: "Invalid query params", details: query.error.flatten() });
       return;
     }
+    const { profileId } = query.data;
 
     const deleted = await db
       .delete(favorites)

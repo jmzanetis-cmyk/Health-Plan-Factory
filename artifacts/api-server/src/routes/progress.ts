@@ -4,6 +4,7 @@ import { planProgressLogs } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
 import {
   CreateProgressLogBody,
+  ListProgressQueryParams,
   ListProgressResponse,
   ListProgressResponseItem,
 } from "@workspace/api-zod";
@@ -12,15 +13,13 @@ const router: IRouter = Router();
 
 router.get("/progress", async (req, res) => {
   try {
-    const profileId = req.query.profileId as string | undefined;
-    if (!profileId) {
-      res.status(400).json({ error: "profileId query param is required" });
+    const query = ListProgressQueryParams.safeParse(req.query);
+    if (!query.success) {
+      res.status(400).json({ error: "Invalid query params", details: query.error.flatten() });
       return;
     }
 
-    const planId = req.query.planId as string | undefined;
-    const limitParam = req.query.limit;
-    const limit = limitParam ? parseInt(String(limitParam)) : 50;
+    const { profileId, planId, limit = 50 } = query.data;
 
     let rows = planId
       ? await db

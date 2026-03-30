@@ -6,8 +6,10 @@ import {
   ListProvidersQueryParams,
   ListProvidersResponse,
   CreateProviderBody,
+  GetAdminProviderParams,
   GetAdminProviderResponse,
   UpdateAdminProviderBody,
+  UpdateAdminProviderParams,
   UpdateAdminProviderResponse,
 } from "@workspace/api-zod";
 
@@ -64,8 +66,8 @@ router.get("/providers", async (req, res) => {
       const userCoords = ZIP_COORDS[zipCode];
       if (userCoords) {
         rows = rows.filter((p) => {
-          // Always include telehealth providers when filtering by location
-          if (p.offersTelehealth && !zipCode) return true;
+          // Telehealth providers are always included when radius filtering (no physical location needed)
+          if (p.offersTelehealth) return true;
           if (!p.lat || !p.lng) return false;
           const dist = haversineDistanceMiles(
             userCoords.lat,
@@ -169,7 +171,12 @@ router.post("/providers", async (req, res) => {
 
 router.get("/admin/providers/:id", async (req, res) => {
   try {
-    const [row] = await db.select().from(providers).where(eq(providers.id, req.params.id));
+    const params = GetAdminProviderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid params", details: params.error.flatten() });
+      return;
+    }
+    const [row] = await db.select().from(providers).where(eq(providers.id, params.data.id));
     if (!row) {
       res.status(404).json({ error: "Provider not found" });
       return;
@@ -183,6 +190,11 @@ router.get("/admin/providers/:id", async (req, res) => {
 
 router.patch("/admin/providers/:id", async (req, res) => {
   try {
+    const params = UpdateAdminProviderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid params", details: params.error.flatten() });
+      return;
+    }
     const body = UpdateAdminProviderBody.safeParse(req.body);
     if (!body.success) {
       res.status(400).json({ error: "Validation error", details: body.error.flatten() });
@@ -192,7 +204,7 @@ router.patch("/admin/providers/:id", async (req, res) => {
     const [updated] = await db
       .update(providers)
       .set({ status: body.data.status, updatedAt: new Date() })
-      .where(eq(providers.id, req.params.id))
+      .where(eq(providers.id, params.data.id))
       .returning();
 
     if (!updated) {
