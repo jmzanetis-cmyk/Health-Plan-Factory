@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 const MODALITIES = [
@@ -1020,7 +1020,7 @@ export default function Landing() {
 
           <p className="text-xs mt-6 pt-4" style={{ color: "var(--text-muted)", borderTop: "1px solid rgba(27,45,79,0.1)", fontFamily: "var(--app-font-sans)" }}>
             Last updated: {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })} ·{" "}
-            <Link href="/legal" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>
+            <Link to="/legal" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>
               View full legal disclaimer
             </Link>
           </p>

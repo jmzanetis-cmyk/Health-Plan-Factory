@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 
 export default function SignIn() {
@@ -48,7 +48,7 @@ export default function SignIn() {
 
           <p className="text-center text-xs mt-6" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             Don't have an account?{" "}
-            <Link href="/sign-up" className="no-underline font-semibold" style={{ color: "var(--hpf-amber)" }}>
+            <Link to="/sign-up" className="no-underline font-semibold" style={{ color: "var(--hpf-amber)" }}>
               Build your plan free
             </Link>
           </p>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Logo } from "./Logo";
 
@@ -12,7 +12,7 @@ const navLinks = [
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [location] = useLocation();
+  const location = useLocation();
 
   return (
     <>
@@ -31,10 +31,10 @@ export function Navbar() {
           {navLinks.map((link) => (
             <Link
               key={link.href}
-              href={link.href}
+              to={link.href}
               className="text-sm font-medium transition-colors no-underline"
               style={{
-                color: location === link.href ? "var(--navy)" : "var(--text-secondary)",
+                color: location.pathname === link.href ? "var(--navy)" : "var(--text-secondary)",
                 fontFamily: "var(--app-font-sans)",
               }}
             >
@@ -46,22 +46,20 @@ export function Navbar() {
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/sign-in"
+            to="/sign-in"
             className="text-sm font-medium no-underline transition-colors"
             style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
             Sign In
           </Link>
           <Link
-            href="/sign-up"
-            className="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-white no-underline transition-all hover:-translate-y-px"
+            to="/sign-up"
+            className="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-white no-underline transition-all"
             style={{
               background: "var(--navy)",
               fontFamily: "var(--app-font-sans)",
               boxShadow: "0 2px 8px rgba(27,45,79,0.2)",
             }}
-            onMouseEnter={(e) => ((e.target as HTMLElement).style.background = "var(--navy-light)")}
-            onMouseLeave={(e) => ((e.target as HTMLElement).style.background = "var(--navy)")}
           >
             Build My Plan →
           </Link>
@@ -88,7 +86,7 @@ export function Navbar() {
             {navLinks.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 className="text-lg font-medium py-3 border-b no-underline transition-colors"
                 style={{
                   color: "var(--navy)",
@@ -101,7 +99,7 @@ export function Navbar() {
               </Link>
             ))}
             <Link
-              href="/sign-in"
+              to="/sign-in"
               className="text-lg font-medium py-3 border-b no-underline"
               style={{ color: "var(--text-secondary)", borderColor: "rgba(27,45,79,0.08)" }}
               onClick={() => setMobileOpen(false)}
@@ -110,7 +108,7 @@ export function Navbar() {
             </Link>
             <div className="pt-6">
               <Link
-                href="/sign-up"
+                to="/sign-up"
                 className="block w-full text-center px-6 py-3.5 rounded-lg text-base font-semibold text-white no-underline"
                 style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
                 onClick={() => setMobileOpen(false)}

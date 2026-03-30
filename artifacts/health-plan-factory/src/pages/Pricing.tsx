@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 const TIERS = [
   {
@@ -83,7 +83,7 @@ export default function Pricing() {
                     </li>
                   ))}
                 </ul>
-                <Link href={tier.ctaHref} className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: tier.featured ? "var(--hpf-amber)" : "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                <Link to={tier.ctaHref} className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: tier.featured ? "var(--hpf-amber)" : "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
                   {tier.cta}
                 </Link>
               </div>

@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 const MODS = [
   { emoji: "🧘", name: "Yoga / Mind-Body", badge: "Moderate", conditions: "Stress, anxiety, flexibility, chronic pain" },

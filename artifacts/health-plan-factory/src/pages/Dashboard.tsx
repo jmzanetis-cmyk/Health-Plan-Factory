@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   return (
@@ -13,7 +13,7 @@ export default function Dashboard() {
               Your personalized wellness plan
             </p>
           </div>
-          <Link href="/onboarding" className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+          <Link to="/onboarding" className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
             Build my plan
           </Link>
         </div>

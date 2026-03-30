@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Logo } from "./Logo";
 
 const footerLinks = [
@@ -31,11 +31,9 @@ export function Footer() {
           {footerLinks.map((link) => (
             <Link
               key={link.href}
-              href={link.href}
+              to={link.href}
               className="text-xs no-underline transition-colors"
               style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--app-font-sans)" }}
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.8)")}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.4)")}
             >
               {link.label}
             </Link>
@@ -53,18 +51,18 @@ export function Footer() {
         HSA/FSA eligibility is determined by your plan administrator — consult your plan documents before assuming eligibility.
         Provider listings are for informational purposes only. HealthPlanFactory does not endorse, verify credentials of, or guarantee results from
         any listed provider. Use of this platform is subject to our{" "}
-        <Link href="/terms" className="no-underline transition-colors" style={{ color: "rgba(184,137,42,0.6)", textDecoration: "underline" }}>
+        <Link to="/terms" className="no-underline" style={{ color: "rgba(184,137,42,0.6)", textDecoration: "underline" }}>
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" className="no-underline transition-colors" style={{ color: "rgba(184,137,42,0.6)", textDecoration: "underline" }}>
+        <Link to="/privacy" className="no-underline" style={{ color: "rgba(184,137,42,0.6)", textDecoration: "underline" }}>
           Privacy Policy
         </Link>
         .
       </p>
 
       <p className="text-xs mt-4" style={{ color: "rgba(255,255,255,0.15)", fontFamily: "var(--app-font-sans)" }}>
-        © {new Date().getFullYear()} HealthPlanFactory. All rights reserved.
+        © {new Date().getFullYear()} Zanetis Holdings LLC. All rights reserved.
       </p>
     </footer>
   );

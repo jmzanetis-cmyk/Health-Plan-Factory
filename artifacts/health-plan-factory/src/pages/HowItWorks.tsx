@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export default function HowItWorks() {
   return (
@@ -13,7 +13,7 @@ export default function HowItWorks() {
         </p>
         <div className="rounded-2xl p-8 text-center" style={{ background: "var(--off-white)", border: "1px solid rgba(27,45,79,0.08)" }}>
           <p className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-            Full page coming soon — in the meantime, <Link href="/sign-up" className="no-underline font-semibold" style={{ color: "var(--hpf-amber)" }}>build your plan</Link> to experience the process firsthand.
+            Full page coming soon — in the meantime, <Link to="/sign-up" className="no-underline font-semibold" style={{ color: "var(--hpf-amber)" }}>build your plan</Link> to experience the process firsthand.
           </p>
         </div>
       </div>

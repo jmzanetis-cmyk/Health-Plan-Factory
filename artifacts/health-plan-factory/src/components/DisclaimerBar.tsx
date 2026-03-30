@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function DisclaimerBar() {
   const [dismissed, setDismissed] = useState(false);
@@ -22,7 +22,7 @@ export function DisclaimerBar() {
         This is not medical advice. For emergencies call{" "}
         <strong className="text-white/90">911</strong>. For mental health crisis call{" "}
         <strong className="text-white/90">988</strong>.{" "}
-        <Link href="/legal" className="text-[#d4a44c] underline underline-offset-2 hover:text-[#b8892a] transition-colors whitespace-nowrap">
+        <Link to="/legal" className="text-[#d4a44c] underline underline-offset-2 hover:text-[#b8892a] transition-colors whitespace-nowrap">
           Full disclaimer ↓
         </Link>
       </p>

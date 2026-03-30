@@ -1,9 +1,9 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/Layout";
-import NotFound from "@/pages/not-found";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 import Landing from "@/pages/Landing";
 import HowItWorks from "@/pages/HowItWorks";
@@ -37,52 +37,56 @@ import AdminProviders from "@/pages/admin/Providers";
 import AdminModalities from "@/pages/admin/Modalities";
 import AdminSettings from "@/pages/admin/Settings";
 
+import NotFound from "@/pages/not-found";
+
 const queryClient = new QueryClient();
 
-function Router() {
+const base = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
+
+function AppRoutes() {
   return (
-    <Switch>
+    <Routes>
       {/* Public / marketing */}
-      <Route path="/" component={() => <Layout><Landing /></Layout>} />
-      <Route path="/how-it-works" component={() => <Layout><HowItWorks /></Layout>} />
-      <Route path="/modalities" component={() => <Layout><Modalities /></Layout>} />
-      <Route path="/for-providers" component={() => <Layout><ForProviders /></Layout>} />
-      <Route path="/pricing" component={() => <Layout><Pricing /></Layout>} />
-      <Route path="/faq" component={() => <Layout><FAQ /></Layout>} />
-      <Route path="/legal" component={() => <Layout><Legal /></Layout>} />
-      <Route path="/privacy" component={() => <Layout><Privacy /></Layout>} />
-      <Route path="/terms" component={() => <Layout><Terms /></Layout>} />
-      <Route path="/contact" component={() => <Layout><Contact /></Layout>} />
+      <Route path="/" element={<Layout><Landing /></Layout>} />
+      <Route path="/how-it-works" element={<Layout><HowItWorks /></Layout>} />
+      <Route path="/modalities" element={<Layout><Modalities /></Layout>} />
+      <Route path="/for-providers" element={<Layout><ForProviders /></Layout>} />
+      <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
+      <Route path="/faq" element={<Layout><FAQ /></Layout>} />
+      <Route path="/legal" element={<Layout><Legal /></Layout>} />
+      <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
+      <Route path="/terms" element={<Layout><Terms /></Layout>} />
+      <Route path="/contact" element={<Layout><Contact /></Layout>} />
 
       {/* Auth */}
-      <Route path="/sign-in" component={() => <Layout hideFooter><SignIn /></Layout>} />
-      <Route path="/sign-up" component={() => <Layout hideFooter><SignUp /></Layout>} />
+      <Route path="/sign-in" element={<Layout hideFooter><SignIn /></Layout>} />
+      <Route path="/sign-up" element={<Layout hideFooter><SignUp /></Layout>} />
 
-      {/* Member app */}
-      <Route path="/dashboard" component={() => <Layout><Dashboard /></Layout>} />
-      <Route path="/onboarding" component={() => <Layout hideFooter><Onboarding /></Layout>} />
-      <Route path="/plan" component={() => <Layout><Plan /></Layout>} />
-      <Route path="/providers" component={() => <Layout><Providers /></Layout>} />
-      <Route path="/bookmarks" component={() => <Layout><Bookmarks /></Layout>} />
-      <Route path="/progress" component={() => <Layout><Progress /></Layout>} />
-      <Route path="/profile" component={() => <Layout><Profile /></Layout>} />
+      {/* Member app — protected */}
+      <Route path="/dashboard" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
+      <Route path="/onboarding" element={<Layout hideFooter><ProtectedRoute><Onboarding /></ProtectedRoute></Layout>} />
+      <Route path="/plan" element={<Layout><ProtectedRoute><Plan /></ProtectedRoute></Layout>} />
+      <Route path="/providers" element={<Layout><ProtectedRoute><Providers /></ProtectedRoute></Layout>} />
+      <Route path="/bookmarks" element={<Layout><ProtectedRoute><Bookmarks /></ProtectedRoute></Layout>} />
+      <Route path="/progress" element={<Layout><ProtectedRoute><Progress /></ProtectedRoute></Layout>} />
+      <Route path="/profile" element={<Layout><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
 
-      {/* Provider routes */}
-      <Route path="/provider/dashboard" component={() => <Layout><ProviderDashboard /></Layout>} />
-      <Route path="/provider/signup" component={() => <Layout><ProviderSignup /></Layout>} />
-      <Route path="/provider/profile" component={() => <Layout><ProviderProfile /></Layout>} />
-      <Route path="/provider/leads" component={() => <Layout><ProviderLeads /></Layout>} />
+      {/* Provider routes — protected */}
+      <Route path="/provider/dashboard" element={<Layout><ProtectedRoute role="provider"><ProviderDashboard /></ProtectedRoute></Layout>} />
+      <Route path="/provider/signup" element={<Layout><ProviderSignup /></Layout>} />
+      <Route path="/provider/profile" element={<Layout><ProtectedRoute role="provider"><ProviderProfile /></ProtectedRoute></Layout>} />
+      <Route path="/provider/leads" element={<Layout><ProtectedRoute role="provider"><ProviderLeads /></ProtectedRoute></Layout>} />
 
-      {/* Admin routes */}
-      <Route path="/admin/dashboard" component={() => <Layout><AdminDashboard /></Layout>} />
-      <Route path="/admin/users" component={() => <Layout><AdminUsers /></Layout>} />
-      <Route path="/admin/providers" component={() => <Layout><AdminProviders /></Layout>} />
-      <Route path="/admin/modalities" component={() => <Layout><AdminModalities /></Layout>} />
-      <Route path="/admin/settings" component={() => <Layout><AdminSettings /></Layout>} />
+      {/* Admin routes — protected */}
+      <Route path="/admin/dashboard" element={<Layout><ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute></Layout>} />
+      <Route path="/admin/users" element={<Layout><ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute></Layout>} />
+      <Route path="/admin/providers" element={<Layout><ProtectedRoute role="admin"><AdminProviders /></ProtectedRoute></Layout>} />
+      <Route path="/admin/modalities" element={<Layout><ProtectedRoute role="admin"><AdminModalities /></ProtectedRoute></Layout>} />
+      <Route path="/admin/settings" element={<Layout><ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute></Layout>} />
 
       {/* 404 */}
-      <Route component={NotFound} />
-    </Switch>
+      <Route path="*" element={<Layout><NotFound /></Layout>} />
+    </Routes>
   );
 }
 
@@ -90,9 +94,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <BrowserRouter basename={base}>
+          <AppRoutes />
+        </BrowserRouter>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

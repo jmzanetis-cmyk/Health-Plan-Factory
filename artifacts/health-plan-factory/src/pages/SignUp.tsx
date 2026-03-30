@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 
 export default function SignUp() {
@@ -45,13 +45,13 @@ export default function SignUp() {
 
           <p className="text-center text-xs mt-4 leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             By creating an account you agree to our{" "}
-            <Link href="/terms" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>Terms</Link> and{" "}
-            <Link href="/privacy" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>Privacy Policy</Link>.
+            <Link to="/terms" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>Terms</Link> and{" "}
+            <Link to="/privacy" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>Privacy Policy</Link>.
           </p>
 
           <p className="text-center text-xs mt-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             Already have an account?{" "}
-            <Link href="/sign-in" className="no-underline font-semibold" style={{ color: "var(--hpf-amber)" }}>Sign in</Link>
+            <Link to="/sign-in" className="no-underline font-semibold" style={{ color: "var(--hpf-amber)" }}>Sign in</Link>
           </p>
         </div>
 
