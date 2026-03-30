@@ -1,3 +1,5 @@
+export * from "./auth";
+
 import {
   pgTable,
   text,

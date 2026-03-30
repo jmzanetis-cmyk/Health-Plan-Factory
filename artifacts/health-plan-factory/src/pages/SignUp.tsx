@@ -1,7 +1,21 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
+import { useAuth } from "@workspace/replit-auth-web";
 
 export default function SignUp() {
+  const { login, isAuthenticated, isLoading, user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      const dest =
+        user?.role === "admin" ? "/admin/dashboard" :
+        user?.role === "provider" ? "/provider/dashboard" : "/onboarding";
+      navigate(dest, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, user]);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-16" style={{ background: "var(--warm-white)" }}>
       <div className="w-full max-w-md">
@@ -18,46 +32,54 @@ export default function SignUp() {
         </div>
 
         <div className="rounded-2xl p-8" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", boxShadow: "0 8px 32px rgba(27,45,79,0.08)" }}>
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>First name</label>
-                <input type="text" placeholder="Alex" className="w-full px-4 py-3 rounded-lg text-sm border outline-none" style={{ border: "1px solid rgba(27,45,79,0.15)", background: "var(--warm-white)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Last name</label>
-                <input type="text" placeholder="Smith" className="w-full px-4 py-3 rounded-lg text-sm border outline-none" style={{ border: "1px solid rgba(27,45,79,0.15)", background: "var(--warm-white)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Email address</label>
-              <input type="email" placeholder="you@example.com" className="w-full px-4 py-3 rounded-lg text-sm border outline-none" style={{ border: "1px solid rgba(27,45,79,0.15)", background: "var(--warm-white)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Password</label>
-              <input type="password" placeholder="••••••••" className="w-full px-4 py-3 rounded-lg text-sm border outline-none" style={{ border: "1px solid rgba(27,45,79,0.15)", background: "var(--warm-white)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }} />
+          <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.12)" }}>
+            <div className="flex flex-col gap-2">
+              {["AI-powered personalized health plan", "Budget-aware provider matching", "Progress tracking & accountability coach"].map((f) => (
+                <div key={f} className="flex items-center gap-2.5">
+                  <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--sage)" }}>
+                    <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <span className="text-xs" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>{f}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <button className="w-full py-3.5 rounded-lg text-sm font-semibold text-white" style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
-            Create account & build my plan →
+          <button
+            onClick={login}
+            disabled={isLoading}
+            className="w-full py-3.5 rounded-lg text-sm font-semibold text-white transition-all flex items-center justify-center gap-3"
+            style={{
+              background: isLoading ? "rgba(27,45,79,0.4)" : "var(--navy)",
+              fontFamily: "var(--app-font-sans)",
+              cursor: isLoading ? "not-allowed" : "pointer",
+              border: "none",
+            }}
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
+                <rect x="13" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
+                <rect x="3" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
+                <rect x="13" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
+              </svg>
+            )}
+            Get started with Replit →
           </button>
 
           <p className="text-center text-xs mt-4 leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-            By creating an account you agree to our{" "}
-            <Link to="/terms" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>Terms</Link> and{" "}
-            <Link to="/privacy" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>Privacy Policy</Link>.
+            By continuing you agree to our{" "}
+            <a href="/terms" className="no-underline" style={{ color: "var(--hpf-amber)" }}>Terms</a> and{" "}
+            <a href="/privacy" className="no-underline" style={{ color: "var(--hpf-amber)" }}>Privacy Policy</a>.
           </p>
 
-          <p className="text-center text-xs mt-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+          <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             Already have an account?{" "}
-            <Link to="/sign-in" className="no-underline font-semibold" style={{ color: "var(--hpf-amber)" }}>Sign in</Link>
+            <button onClick={login} className="font-semibold" style={{ color: "var(--hpf-amber)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>Sign in</button>
           </p>
         </div>
-
-        <p className="text-center text-xs mt-6" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-          Authentication coming soon — this is a preview stub.
-        </p>
       </div>
     </div>
   );

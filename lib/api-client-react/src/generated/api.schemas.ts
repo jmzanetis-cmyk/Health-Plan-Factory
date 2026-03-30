@@ -230,9 +230,60 @@ export interface UpsertAdminSettingBody {
   value?: unknown;
 }
 
+export type AuthUserRole =
+  | (typeof AuthUserRole)[keyof typeof AuthUserRole]
+  | null;
+
+export const AuthUserRole = {
+  member: "member",
+  provider: "provider",
+  admin: "admin",
+} as const;
+
+export interface AuthUser {
+  id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  role?: AuthUserRole;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
+export interface MobileTokenExchangeRequest {
+  /** @minLength 1 */
+  code: string;
+  /** @minLength 1 */
+  code_verifier: string;
+  /** @minLength 1 */
+  redirect_uri: string;
+  /** @minLength 1 */
+  state: string;
+  /** @minLength 1 */
+  nonce?: string;
+}
+
+export interface MobileTokenExchangeSuccess {
+  token: string;
+}
+
+export interface AuthLogoutSuccess {
+  success: boolean;
+}
+
 export type ListModalitiesParams = {
   category?: string;
   isActive?: boolean;
+};
+
+export type ListIntakesParams = {
+  /**
+   * Filter intakes by member profile ID
+   */
+  profileId?: string;
 };
 
 export type ListProvidersParams = {
@@ -256,4 +307,13 @@ export type ListProgressParams = {
   profileId: string;
   planId?: string;
   limit?: number;
+};
+
+export type BeginBrowserLoginParams = {
+  returnTo?: string;
+};
+
+export type HandleBrowserLoginCallbackParams = {
+  code?: string;
+  state?: string;
 };

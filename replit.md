@@ -91,14 +91,25 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### `lib/replit-auth-web` (`@workspace/replit-auth-web`)
+
+React hook library for Replit Auth integration in the frontend. Exposes `useAuth()` hook and `AuthUser` type.
+
+- `useAuth()` — fetches `GET /api/auth/user`, exposes `{ user, isLoading, isAuthenticated, login(), logout() }`
+- `login()` — redirects to `/api/login?returnTo=<current path>`
+- `logout()` — redirects to `/api/logout`
+- `AuthUser` re-exported from `@workspace/api-client-react` (Replit OIDC claims: id, email, firstName, lastName, profileImageUrl, role)
+- **tsconfig**: `composite: true` required for frontend project references; uses `moduleResolution: bundler`
+
 ### `artifacts/health-plan-factory` (`@workspace/health-plan-factory`)
 
 React + Vite frontend for the **Health Plan Factory** product — a premium editorial wellness optimization platform.
 
+- **Auth**: Replit Auth via `@workspace/replit-auth-web`; `useAuth()` hook used in Navbar, ProtectedRoute, SignIn, SignUp, provider pages
 - **Brand tokens** (in `src/index.css`): `--navy #1b2d4f`, `--hpf-amber #b8892a`, `--amber-light #d4a44c`, `--sage #3d6b52`, `--warm-white #fafaf8`
 - **Fonts**: Cormorant Garamond (serif headings), Outfit (body sans), DM Mono (prices/data/mono)
 - **Router**: React Router v7 with `BASE_URL` base path
-- **Components**: `Logo`, `Navbar`, `Footer`, `DisclaimerBar`, `Layout` shell, `ProtectedRoute`
+- **Components**: `Logo`, `Navbar` (auth-aware avatar/dropdown), `Footer`, `DisclaimerBar`, `Layout` shell, `ProtectedRoute` (real auth + role guard)
 - **Page routes** (all wired in `src/App.tsx`):
   - Public: `/`, `/how-it-works`, `/modalities`, `/for-providers`, `/pricing`, `/faq`, `/legal`, `/privacy`, `/terms`, `/contact`
   - Auth: `/sign-in`, `/sign-up`
