@@ -55,9 +55,10 @@ function scoreModality(modality: Modality, intake: IntakeData): number {
   }
 
   // Rule 2: back pain + posture goals → manual/movement structural care
+  // Includes acupuncture per scenario: back pain + posture + moderate budget → PT/Pilates/massage/acupuncture
   const hasBackOrPosture =
     intake.conditions.includes("back-pain") || intake.goals.includes("posture");
-  if (hasBackOrPosture && ["physical-therapy", "pilates", "massage", "chiropractic"].includes(modality.id)) {
+  if (hasBackOrPosture && ["physical-therapy", "pilates", "massage", "chiropractic", "acupuncture"].includes(modality.id)) {
     score += 5;
   }
 
@@ -66,16 +67,19 @@ function scoreModality(modality: Modality, intake: IntakeData): number {
     score += 3;
   }
 
-  // Rule 4: sedentary + fitness goals → exercise-based priority
+  // Rule 4: fitness + accountability preference → personal training + Pilates (accountability-gated)
   const hasFitnessNeed =
     intake.conditions.includes("sedentary") || intake.goals.includes("fitness");
-  if (hasFitnessNeed && ["personal-training", "pilates", "yoga"].includes(modality.id)) {
-    score += 4;
+  const wantsAccountability = intake.preferences.includes("high-accountability");
+  if (hasFitnessNeed && wantsAccountability && ["personal-training", "pilates"].includes(modality.id)) {
+    score += 6;
+  } else if (hasFitnessNeed && ["personal-training", "pilates"].includes(modality.id)) {
+    score += 3;
   }
 
-  // Rule 5: preventive / comprehensive goals → DPC + RD as foundation
+  // Rule 5: preventive / comprehensive goals → DPC + telehealth + RD as foundation
   const isPreventive = intake.goals.includes("preventive") || intake.goals.includes("nutrition");
-  if (isPreventive && ["dpc", "registered-dietitian"].includes(modality.id)) {
+  if (isPreventive && ["dpc", "telehealth", "registered-dietitian"].includes(modality.id)) {
     score += 4;
   }
 

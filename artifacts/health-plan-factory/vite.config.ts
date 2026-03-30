@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
@@ -54,5 +54,11 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+  },
+  test: {
+    environment: "node",
+    alias: {
+      "@": path.resolve(import.meta.dirname, "src"),
+    },
   },
 });

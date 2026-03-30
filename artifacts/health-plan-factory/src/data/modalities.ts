@@ -64,7 +64,7 @@ export const MODALITIES: Modality[] = [
     goals: ["posture", "mobility", "fitness", "recovery"],
     conditions: ["back-pain", "poor-flexibility", "sedentary"],
     preferenceMatch: ["exercise-based", "in-person", "high-accountability"],
-    exclusionIds: [],
+    exclusionIds: ["mobility-limits"],
   },
   {
     id: "chiropractic",
@@ -80,7 +80,7 @@ export const MODALITIES: Modality[] = [
     goals: ["pain-relief", "mobility", "posture"],
     conditions: ["back-pain", "neck-pain", "poor-flexibility"],
     preferenceMatch: ["clinically-guided", "in-person"],
-    exclusionIds: ["no-chiro"],
+    exclusionIds: ["no-chiro", "pregnancy-safe"],
   },
   {
     id: "acupuncture",
@@ -96,7 +96,7 @@ export const MODALITIES: Modality[] = [
     goals: ["pain-relief", "stress-reduction", "sleep"],
     conditions: ["back-pain", "neck-pain", "stress", "anxiety"],
     preferenceMatch: ["clinically-guided", "in-person", "recovery-based"],
-    exclusionIds: ["no-needles"],
+    exclusionIds: ["no-needles", "pregnancy-safe"],
   },
   {
     id: "physical-therapy",
@@ -128,7 +128,7 @@ export const MODALITIES: Modality[] = [
     goals: ["fitness", "energy", "recovery", "posture"],
     conditions: ["sedentary", "recovery-needs"],
     preferenceMatch: ["exercise-based", "high-accountability", "in-person"],
-    exclusionIds: ["no-hiit"],
+    exclusionIds: ["no-hiit", "mobility-limits", "pregnancy-safe"],
   },
   {
     id: "registered-dietitian",
