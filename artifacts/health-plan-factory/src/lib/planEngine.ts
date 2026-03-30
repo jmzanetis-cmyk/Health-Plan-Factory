@@ -111,16 +111,20 @@ function estimateFrequency(modality: Modality, budget: number): { frequency: str
   }
 
   // For session-based, scale with budget
-  const typicalStr = modality.typicalFrequency; // e.g. "2×/month"
-  const match = typicalStr.match(/(\d+)/);
-  const typicalSessions = match ? parseInt(match[1]) : 2;
+  const typicalStr = modality.typicalFrequency; // e.g. "2×/month" or "3×/week"
+  const match = typicalStr.match(/(\d+).*?(week|month)/i);
+  const rawCount = match ? parseInt(match[1]) : 2;
+  const isWeekly = match ? match[2].toLowerCase() === "week" : false;
+  // Convert to monthly: weekly × 4.3 (average weeks per month)
+  const typicalSessions = isWeekly ? Math.round(rawCount * 4.3) : rawCount;
 
   const costPerSession = midCost;
   const canAffordSessions = Math.max(1, Math.floor((budget * 0.35) / costPerSession));
   const sessions = Math.min(typicalSessions, canAffordSessions);
 
   const monthlyCost = Math.round(sessions * costPerSession);
-  const frequency = sessions === 1 ? "1×/month" : sessions <= 4 ? `${sessions}×/month` : `${Math.ceil(sessions / 4)}×/week`;
+  // Display as weekly if >= 4 sessions/month, otherwise monthly
+  const frequency = sessions === 1 ? "1×/month" : sessions <= 4 ? `${sessions}×/month` : `${Math.ceil(sessions / 4.3).toFixed(0)}×/week`;
 
   return { frequency, monthlyCost };
 }

@@ -45,7 +45,7 @@ describe("planEngine – named scenario rules", () => {
       ["physical-therapy", "massage", "acupuncture", "pilates"].includes(id)
     );
     // At least 2 of the structural modalities appear in top 4
-    expect(backModality.length).toBeGreaterThanOrEqual(1);
+    expect(backModality.length).toBeGreaterThanOrEqual(2);
   });
 
   it("Scenario 3: fitness + high-accountability → personal-training or pilates are #1 or #2", () => {
