@@ -129,6 +129,7 @@ export const providers = pgTable(
     offersInPerson: boolean("offers_in_person").notNull().default(true),
     serviceRadiusMiles: integer("service_radius_miles"),
     costPerSession: integer("cost_per_session"),
+    rejectionReason: text("rejection_reason"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
