@@ -2,7 +2,12 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { profiles, providers, plans, adminSettings } from "@workspace/db";
 import { eq, gte, count } from "drizzle-orm";
-import { UpsertAdminSettingBody } from "@workspace/api-zod";
+import {
+  UpsertAdminSettingBody,
+  GetAdminStatsResponse,
+  ListAdminSettingsResponse,
+  UpsertAdminSettingResponse,
+} from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -22,13 +27,15 @@ router.get("/admin/stats", async (req, res) => {
       .from(profiles)
       .where(gte(profiles.createdAt, thirtyDaysAgo));
 
-    res.json({
-      totalMembers: totalMembers.count,
-      totalProviders: totalProviders.count,
-      totalPlans: totalPlans.count,
-      pendingProviders: pendingProviders.count,
-      recentSignups: recentSignups.count,
-    });
+    res.json(
+      GetAdminStatsResponse.parse({
+        totalMembers: totalMembers.count,
+        totalProviders: totalProviders.count,
+        totalPlans: totalPlans.count,
+        pendingProviders: pendingProviders.count,
+        recentSignups: recentSignups.count,
+      }),
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
@@ -38,9 +45,10 @@ router.get("/admin/stats", async (req, res) => {
 router.get("/admin/settings", async (req, res) => {
   try {
     const rows = await db.select().from(adminSettings);
-    res.json(rows);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(ListAdminSettingsResponse.parse(rows));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -62,7 +70,7 @@ router.patch("/admin/settings", async (req, res) => {
       })
       .returning();
 
-    res.json(upserted);
+    res.json(UpsertAdminSettingResponse.parse(upserted));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

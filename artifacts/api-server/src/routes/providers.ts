@@ -4,11 +4,44 @@ import { providers, providerModalities } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   ListProvidersQueryParams,
+  ListProvidersResponse,
   CreateProviderBody,
+  GetAdminProviderResponse,
   UpdateAdminProviderBody,
+  UpdateAdminProviderResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+
+// Haversine distance in miles between two lat/lng points
+function haversineDistanceMiles(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 3958.8;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Static lat/lng lookup for US zip codes (demo coverage)
+const ZIP_COORDS: Record<string, { lat: number; lng: number }> = {
+  "78701": { lat: 30.2672, lng: -97.7431 },
+  "78704": { lat: 30.2531, lng: -97.7621 },
+  "60601": { lat: 41.8827, lng: -87.6233 },
+  "90001": { lat: 33.9731, lng: -118.2479 },
+  "10001": { lat: 40.7484, lng: -74.0044 },
+  "80202": { lat: 39.7537, lng: -104.9942 },
+  "98101": { lat: 47.6062, lng: -122.3321 },
+};
 
 router.get("/providers", async (req, res) => {
   try {
@@ -18,7 +51,7 @@ router.get("/providers", async (req, res) => {
       return;
     }
 
-    const { modalityId, zipCode, telehealth } = query.data;
+    const { modalityId, zipCode, radius, telehealth } = query.data;
 
     let rows = await db.select().from(providers).where(eq(providers.status, "approved"));
 
@@ -26,10 +59,27 @@ router.get("/providers", async (req, res) => {
       rows = rows.filter((p) => p.offersTelehealth);
     }
 
-    // Zip + radius: without a geocoding service we filter by exact zip match.
-    // When zip provided, include providers in same zip or providers with no zip on record.
-    // radius param is documented but requires lat/lng geocoding to apply precisely.
-    if (zipCode) {
+    if (zipCode && radius) {
+      // Use Haversine if we have lat/lng for the user's zip
+      const userCoords = ZIP_COORDS[zipCode];
+      if (userCoords) {
+        rows = rows.filter((p) => {
+          // Always include telehealth providers when filtering by location
+          if (p.offersTelehealth && !zipCode) return true;
+          if (!p.lat || !p.lng) return false;
+          const dist = haversineDistanceMiles(
+            userCoords.lat,
+            userCoords.lng,
+            parseFloat(p.lat),
+            parseFloat(p.lng),
+          );
+          return dist <= Number(radius);
+        });
+      } else {
+        // Unknown zip: fall back to exact zip match
+        rows = rows.filter((p) => !p.zipCode || p.zipCode === zipCode);
+      }
+    } else if (zipCode) {
       rows = rows.filter((p) => !p.zipCode || p.zipCode === zipCode);
     }
 
@@ -54,9 +104,10 @@ router.get("/providers", async (req, res) => {
     const offset = query.data.offset ?? 0;
     rows = rows.slice(Number(offset), Number(offset) + Number(limit));
 
-    res.json(rows);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(ListProvidersResponse.parse(rows));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -85,6 +136,8 @@ router.post("/providers", async (req, res) => {
         city: providerData.city ?? null,
         state: providerData.state ?? null,
         zipCode: providerData.zipCode ?? null,
+        lat: null,
+        lng: null,
         phone: providerData.phone ?? null,
         website: providerData.website ?? null,
         avatarUrl: null,
@@ -107,7 +160,7 @@ router.post("/providers", async (req, res) => {
       );
     }
 
-    res.status(201).json(created);
+    res.status(201).json(GetAdminProviderResponse.parse(created));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
@@ -121,9 +174,10 @@ router.get("/admin/providers/:id", async (req, res) => {
       res.status(404).json({ error: "Provider not found" });
       return;
     }
-    res.json(row);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(GetAdminProviderResponse.parse(row));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -145,9 +199,10 @@ router.patch("/admin/providers/:id", async (req, res) => {
       res.status(404).json({ error: "Provider not found" });
       return;
     }
-    res.json(updated);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(UpdateAdminProviderResponse.parse(updated));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 

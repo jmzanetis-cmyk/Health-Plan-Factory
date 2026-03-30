@@ -2,7 +2,11 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { planProgressLogs } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
-import { CreateProgressLogBody } from "@workspace/api-zod";
+import {
+  CreateProgressLogBody,
+  ListProgressResponse,
+  ListProgressResponseItem,
+} from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -31,9 +35,10 @@ router.get("/progress", async (req, res) => {
           .orderBy(desc(planProgressLogs.createdAt));
 
     rows = rows.slice(0, limit);
-    res.json(rows);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(ListProgressResponse.parse(rows));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -59,7 +64,7 @@ router.post("/progress", async (req, res) => {
       })
       .returning();
 
-    res.status(201).json(created);
+    res.status(201).json(ListProgressResponseItem.parse(created));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

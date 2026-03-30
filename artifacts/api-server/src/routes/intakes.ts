@@ -2,7 +2,11 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { memberIntakes } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { CreateIntakeBody } from "@workspace/api-zod";
+import {
+  CreateIntakeBody,
+  ListIntakesResponse,
+  ListIntakesResponseItem,
+} from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -12,9 +16,10 @@ router.get("/intakes", async (req, res) => {
     const rows = profileId
       ? await db.select().from(memberIntakes).where(eq(memberIntakes.profileId, profileId))
       : await db.select().from(memberIntakes);
-    res.json(rows);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(ListIntakesResponse.parse(rows));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -43,7 +48,7 @@ router.post("/intakes", async (req, res) => {
       })
       .returning();
 
-    res.status(201).json(created);
+    res.status(201).json(ListIntakesResponseItem.parse(created));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

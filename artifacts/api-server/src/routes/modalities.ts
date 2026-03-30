@@ -5,8 +5,12 @@ import { eq } from "drizzle-orm";
 import type { Modality } from "@workspace/db";
 import {
   ListModalitiesQueryParams,
+  ListModalitiesResponse,
+  ListModalitiesResponseItem,
   CreateModalityBody,
+  GetAdminModalityResponse,
   UpdateAdminModalityBody,
+  UpdateAdminModalityResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -27,9 +31,10 @@ router.get("/modalities", async (req, res) => {
       return true;
     });
 
-    res.json(filtered);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(ListModalitiesResponse.parse(filtered));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -58,7 +63,7 @@ router.post("/modalities", async (req, res) => {
       } as Modality)
       .returning();
 
-    res.status(201).json(created);
+    res.status(201).json(ListModalitiesResponseItem.parse(created));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
@@ -75,9 +80,10 @@ router.get("/admin/modalities/:id", async (req, res) => {
       res.status(404).json({ error: "Modality not found" });
       return;
     }
-    res.json(row);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(GetAdminModalityResponse.parse(row));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -99,9 +105,10 @@ router.patch("/admin/modalities/:id", async (req, res) => {
       res.status(404).json({ error: "Modality not found" });
       return;
     }
-    res.json(updated);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(UpdateAdminModalityResponse.parse(updated));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 

@@ -2,7 +2,12 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { plans, planItems, memberIntakes, modalities } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { GeneratePlanBody, UpdatePlanBody } from "@workspace/api-zod";
+import {
+  GeneratePlanBody,
+  GetPlanResponse,
+  UpdatePlanBody,
+  UpdatePlanResponse,
+} from "@workspace/api-zod";
 import { runPlanEngine } from "../lib/serverPlanEngine";
 
 const router: IRouter = Router();
@@ -68,7 +73,7 @@ router.post("/plans/generate", async (req, res) => {
       ? await db.insert(planItems).values(itemValues).returning()
       : [];
 
-    res.status(201).json({ plan, items: savedItems });
+    res.status(201).json(GetPlanResponse.parse({ plan, items: savedItems }));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
@@ -85,9 +90,10 @@ router.get("/plans/:id", async (req, res) => {
 
     const items = await db.select().from(planItems).where(eq(planItems.planId, req.params.id));
 
-    res.json({ plan, items });
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(GetPlanResponse.parse({ plan, items }));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
@@ -113,9 +119,10 @@ router.patch("/plans/:id", async (req, res) => {
       return;
     }
 
-    res.json(updated);
-  } catch {
-    res.status(500).json({ error: "Internal server error" });
+    res.json(UpdatePlanResponse.parse(updated));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 
