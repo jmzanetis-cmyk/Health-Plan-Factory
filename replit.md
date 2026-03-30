@@ -91,6 +91,24 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### `artifacts/health-plan-factory` (`@workspace/health-plan-factory`)
+
+React + Vite frontend for the **Health Plan Factory** product — a premium editorial wellness optimization platform.
+
+- **Brand tokens** (in `src/index.css`): `--navy #1b2d4f`, `--amber #b8892a`, `--sage #3d6b52`, `--warm-white #fafaf8`
+- **Fonts**: Cormorant Garamond (serif headings), Outfit (body sans), DM Mono (prices/data)
+- **Router**: Wouter with `BASE_URL` base path
+- **Components**: `Logo`, `Navbar` (fixed, responsive, mobile hamburger), `Footer`, `DisclaimerBar` (sticky, dismissible), `Layout` shell
+- **Page routes** (all wired in `src/App.tsx`):
+  - Public: `/`, `/how-it-works`, `/modalities`, `/for-providers`, `/pricing`, `/faq`, `/legal`, `/privacy`, `/terms`, `/contact`
+  - Auth: `/sign-in`, `/sign-up`
+  - Member: `/dashboard`, `/onboarding`, `/plan`, `/providers`, `/bookmarks`, `/progress`, `/profile`
+  - Provider: `/provider/dashboard`, `/provider/signup`, `/provider/profile`, `/provider/leads`
+  - Admin: `/admin/dashboard`, `/admin/users`, `/admin/providers`, `/admin/modalities`, `/admin/settings`
+- All pages wrapped in `<Layout>` (Navbar + Footer + DisclaimerBar)
+- Disclaimer bar with 911/988/741741 crisis numbers sitewide
+- `pnpm --filter @workspace/health-plan-factory run dev` — Vite dev server
+
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Health Plan Factory"
+version = "1.0.0"
+id = "artifacts/health-plan-factory"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25647
+
+[services.development]
+run = "pnpm --filter @workspace/health-plan-factory run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/health-plan-factory", "run", "build" ]
+publicDir = "artifacts/health-plan-factory/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25647"
+BASE_PATH = "/"
