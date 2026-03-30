@@ -333,7 +333,6 @@ export default function Landing() {
           { icon: "✓", text: "Evidence-led modality library" },
           { icon: "✓", text: "12 wellness modalities" },
           { icon: "✓", text: "HSA/FSA tracking included" },
-          { icon: "✓", text: "Works alongside your existing coverage" },
           { icon: "✓", text: "Budget-aware by design" },
         ].map((item) => (
           <div key={item.text} className="flex items-center gap-2 text-xs font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>
@@ -642,7 +641,7 @@ export default function Landing() {
                 Most people want a wellness plan. Very few have one that fits their actual life.
               </h3>
               <p className="text-sm font-light leading-relaxed mb-3" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                Insurance covers what breaks. HealthPlanFactory is built for everything that prevents the break — massage, yoga, nutrition, sleep, acupuncture, and more — organized around your budget, not your deductible.
+                Most wellness spending happens outside the clinic — massage, yoga, nutrition, sleep, acupuncture, and more. HealthPlanFactory organizes it all around your actual budget, so you can actually follow through.
               </p>
               <p className="text-sm font-light leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
                 We built the tool we wished existed: practical, evidence-informed, and priced for how real people actually live.
@@ -1145,7 +1144,7 @@ function FactoryIllustration() {
       <rect x="86" y="219" width="16" height="14" fill="#3d6b52" rx="2" />
       <rect x="88" y="221" width="12" height="4" fill="rgba(255,255,255,.3)" rx="1" />
       <rect x="112" y="221" width="13" height="13" fill="#b8892a" rx="2" />
-      <text x="118" y="230" fontSize="7" fill="white" textAnchor="middle" fontFamily="Arial">Rx</text>
+      <text x="118" y="230" fontSize="7" fill="white" textAnchor="middle" fontFamily="Arial">✓</text>
 
       {/* Worker character */}
       <circle cx="310" cy="225" r="7" fill="#fdf5e6" stroke="#1b2d4f" strokeWidth="1.5" />
