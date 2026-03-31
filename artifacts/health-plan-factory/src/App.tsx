@@ -86,8 +86,9 @@ function AppRoutes() {
           Auth gate is deferred to pay-per-reveal unlock (Stripe) and provider booking. */}
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/plan" element={<Plan />} />
-      {/* Providers is public — unauthenticated users can browse; auth is gated internally for bookmarks/contact */}
+      {/* Providers / Discover — both routes are public; auth gated internally for bookmarks/contact */}
       <Route path="/providers" element={<Layout><Providers /></Layout>} />
+      <Route path="/discover" element={<Layout><Providers /></Layout>} />
       <Route path="/bookmarks" element={<Layout><ProtectedRoute><Bookmarks /></ProtectedRoute></Layout>} />
       <Route path="/progress" element={<Layout><ProtectedRoute><Progress /></ProtectedRoute></Layout>} />
       <Route path="/profile" element={<Layout><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />

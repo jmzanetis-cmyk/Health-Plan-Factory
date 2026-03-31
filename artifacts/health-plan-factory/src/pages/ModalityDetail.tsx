@@ -398,7 +398,7 @@ export default function ModalityDetail() {
               </p>
             </div>
             <Link
-              to={`/providers?modality=${modality.id}`}
+              to={`/discover?modality=${modality.id}`}
               style={{ display: "inline-flex", alignItems: "center", gap: 8, background: amber, color: "white", padding: "11px 22px", borderRadius: 9, fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 14, textDecoration: "none", whiteSpace: "nowrap" }}
             >
               Find providers <ArrowRight size={14} />
