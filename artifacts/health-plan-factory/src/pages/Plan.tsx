@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@workspace/replit-auth-web";
 import { type Plan, type PlanItem, planSchema, deserializePlan } from "@/lib/planEngine";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
 import { type EvidenceLevel } from "@/data/modalities";
@@ -54,7 +55,7 @@ interface LmnContext {
   estimatedAnnualSavingsCents: number;
 }
 
-function ModalityCard({ item, rank, lmnContext }: { item: PlanItem; rank: number; lmnContext?: LmnContext }) {
+function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanItem; rank: number; lmnContext?: LmnContext; unusedCredits?: number }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -221,27 +222,37 @@ function ModalityCard({ item, rank, lmnContext }: { item: PlanItem; rank: number
           <div style={{
             padding: "1rem",
             borderRadius: 10,
-            border: "1.5px dashed rgba(27,45,79,0.2)",
-            background: "rgba(27,45,79,0.02)",
+            border: unusedCredits && unusedCredits > 0
+              ? "1.5px solid rgba(184,137,42,0.35)"
+              : "1.5px dashed rgba(27,45,79,0.2)",
+            background: unusedCredits && unusedCredits > 0
+              ? "rgba(184,137,42,0.05)"
+              : "rgba(27,45,79,0.02)",
             display: "flex",
             alignItems: "center",
             gap: "0.75rem",
           }}>
-            <span style={{ fontSize: "1.25rem" }}>🔒</span>
+            <span style={{ fontSize: "1.25rem" }}>{unusedCredits && unusedCredits > 0 ? "🎁" : "🔒"}</span>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 2 }}>
                 See vetted providers near you
               </p>
-              <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                Unlock for {item.modality.category === "medical" ? "$3" : item.modality.category === "telehealth" ? "$1" : "$2"} · HSA-eligible providers flagged
-              </p>
+              {unusedCredits && unusedCredits > 0 ? (
+                <p style={{ fontSize: "0.72rem", color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
+                  1 referral credit applied — $2.00 discount
+                </p>
+              ) : (
+                <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                  Unlock for {item.modality.category === "medical" ? "$3" : item.modality.category === "telehealth" ? "$1" : "$2"} · HSA-eligible providers flagged
+                </p>
+              )}
             </div>
             <Link
               to="/sign-up"
               style={{
                 padding: "0.5rem 0.875rem",
                 borderRadius: 8,
-                background: "var(--navy)",
+                background: unusedCredits && unusedCredits > 0 ? "var(--hpf-amber)" : "var(--navy)",
                 color: "white",
                 fontSize: "0.75rem",
                 fontWeight: 600,
@@ -250,7 +261,7 @@ function ModalityCard({ item, rank, lmnContext }: { item: PlanItem; rank: number
                 whiteSpace: "nowrap",
               }}
             >
-              Unlock
+              {unusedCredits && unusedCredits > 0 ? "Unlock Free" : "Unlock"}
             </Link>
           </div>
         </div>
@@ -287,9 +298,24 @@ function DeprioritizedCard({ item }: { item: PlanItem }) {
 
 export default function Plan() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [intake, setIntake] = useState<IntakeData | null>(null);
   const [lmnEligibleIds, setLmnEligibleIds] = useState<Set<string>>(new Set());
+  const [unusedCreditsCents, setUnusedCreditsCents] = useState(0);
+
+  // Fetch unused referral credits when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch(`${BASE}/api/credits/mine`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data && typeof data.unusedCreditsCents === "number") {
+          setUnusedCreditsCents(data.unusedCreditsCents);
+        }
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   // Fetch LMN-eligible modality IDs for personalized physician callout
   useEffect(() => {
@@ -526,7 +552,7 @@ export default function Plan() {
                   ),
                 };
               }
-              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} />;
+              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} unusedCredits={unusedCreditsCents} />;
             })}
           </div>
         </div>
@@ -630,6 +656,23 @@ export default function Plan() {
           }}>
             Find vetted providers,<br />unlock your full plan
           </h2>
+          {unusedCreditsCents > 0 ? (
+            <div style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              background: "rgba(184,137,42,0.2)",
+              border: "1px solid rgba(184,137,42,0.4)",
+              borderRadius: 8,
+              padding: "0.4rem 0.875rem",
+              marginBottom: "1rem",
+            }}>
+              <span style={{ fontSize: "0.85rem" }}>🎁</span>
+              <span style={{ fontSize: "0.75rem", color: "var(--amber-light)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
+                1 referral credit applied — ${(unusedCreditsCents / 100).toFixed(2)} discount
+              </span>
+            </div>
+          ) : null}
           <p style={{
             fontSize: "0.8rem",
             color: "rgba(255,255,255,0.55)",
@@ -639,7 +682,9 @@ export default function Plan() {
             maxWidth: 380,
             margin: "0 auto 1.5rem",
           }}>
-            Save your plan, book appointments, and get AI accountability coaching — starting at $1 to unlock a provider list.
+            {unusedCreditsCents > 0
+              ? "Your referral credit covers your first provider unlock — sign up to redeem it."
+              : "Save your plan, book appointments, and get AI accountability coaching — starting at $1 to unlock a provider list."}
           </p>
 
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>

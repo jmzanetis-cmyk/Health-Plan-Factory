@@ -1320,6 +1320,165 @@ paths:
         '404':
           description: Referral code not found.
 
+  /referrals/track:
+    post:
+      operationId: postReferralTrack
+      tags: [referrals]
+      summary: Explicitly track a referral event (e.g. first plan generated)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                referralCode:
+                  type: string
+                  description: The referral code to track against.
+                event:
+                  type: string
+                  description: The event type (e.g. "plan_generated").
+              required: [referralCode]
+      responses:
+        '200':
+          description: Track event recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /referrals/new-credit-since/{timestamp}:
+    get:
+      operationId: getReferralNewCreditSince
+      tags: [referrals]
+      summary: Check if the member has received any new credits since a given timestamp (for polling notifications)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: timestamp
+          in: path
+          required: true
+          description: ISO 8601 timestamp — return credits created after this moment
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: New credits (if any) since the provided timestamp.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasNew:
+                    type: boolean
+                  newCredits:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MemberCreditRow'
+                  referrerName:
+                    type: string
+                    nullable: true
+                    description: Display name of the referrer if a new credit was rewarded
+                required: [hasNew, newCredits]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /providers/unlock:
+    post:
+      operationId: postProviderUnlock
+      tags: [providers]
+      summary: Apply a referral credit to unlock a provider listing
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                providerId:
+                  type: string
+                modalityCategory:
+                  type: string
+                  enum: [telehealth, medical, wellness, fitness]
+              required: [providerId]
+      responses:
+        '200':
+          description: Unlock result — whether a credit was applied and the net charge.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  used_credit:
+                    type: boolean
+                  credit_applied_cents:
+                    type: integer
+                  amount_charged_cents:
+                    type: integer
+                  amount_charged_formatted:
+                    type: string
+                  providerId:
+                    type: string
+                  message:
+                    type: string
+                required: [used_credit, credit_applied_cents, amount_charged_cents, amount_charged_formatted, providerId, message]
+        '400':
+          description: Missing or invalid providerId.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/referral-stats:
+    get:
+      operationId: getAdminReferralStats
+      tags: [admin]
+      summary: Get referral program statistics (admin only)
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Aggregated referral program metrics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalReferrals:
+                    type: integer
+                  rewardedReferrals:
+                    type: integer
+                  pendingReferrals:
+                    type: integer
+                  conversionRate:
+                    type: integer
+                    description: Percentage of referrals that resulted in a reward (0-100)
+                  totalCreditsIssued:
+                    type: integer
+                  creditsUsed:
+                    type: integer
+                  totalCreditsCentsIssued:
+                    type: integer
+                  totalCreditsCentsUsed:
+                    type: integer
+                  totalCreditsIssuedFormatted:
+                    type: string
+                  totalCreditsUsedFormatted:
+                    type: string
+                required: [totalReferrals, rewardedReferrals, pendingReferrals, conversionRate, totalCreditsIssued, creditsUsed, totalCreditsCentsIssued, totalCreditsCentsUsed, totalCreditsIssuedFormatted, totalCreditsUsedFormatted]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /credits/mine:
     get:
       operationId: getCreditsMine

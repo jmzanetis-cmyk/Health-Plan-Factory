@@ -1374,6 +1374,87 @@ export const PostReferralRegisterResponse = zod.object({
 });
 
 /**
+ * @summary Explicitly track a referral event (e.g. first plan generated)
+ */
+export const PostReferralTrackBody = zod.object({
+  referralCode: zod.string().describe("The referral code to track against."),
+  event: zod
+    .string()
+    .optional()
+    .describe('The event type (e.g. \"plan_generated\").'),
+});
+
+export const PostReferralTrackResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
+ * @summary Check if the member has received any new credits since a given timestamp (for polling notifications)
+ */
+export const GetReferralNewCreditSinceParams = zod.object({
+  timestamp: zod
+    .date()
+    .describe("ISO 8601 timestamp — return credits created after this moment"),
+});
+
+export const GetReferralNewCreditSinceResponse = zod.object({
+  hasNew: zod.boolean(),
+  newCredits: zod.array(
+    zod.object({
+      id: zod.string(),
+      profileId: zod.string(),
+      source: zod.enum(["referral", "promo"]),
+      amountCents: zod.number(),
+      used: zod.boolean(),
+      referralId: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      usedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+  referrerName: zod
+    .string()
+    .nullish()
+    .describe("Display name of the referrer if a new credit was rewarded"),
+});
+
+/**
+ * @summary Apply a referral credit to unlock a provider listing
+ */
+export const PostProviderUnlockBody = zod.object({
+  providerId: zod.string(),
+  modalityCategory: zod
+    .enum(["telehealth", "medical", "wellness", "fitness"])
+    .optional(),
+});
+
+export const PostProviderUnlockResponse = zod.object({
+  used_credit: zod.boolean(),
+  credit_applied_cents: zod.number(),
+  amount_charged_cents: zod.number(),
+  amount_charged_formatted: zod.string(),
+  providerId: zod.string(),
+  message: zod.string(),
+});
+
+/**
+ * @summary Get referral program statistics (admin only)
+ */
+export const GetAdminReferralStatsResponse = zod.object({
+  totalReferrals: zod.number(),
+  rewardedReferrals: zod.number(),
+  pendingReferrals: zod.number(),
+  conversionRate: zod
+    .number()
+    .describe("Percentage of referrals that resulted in a reward (0-100)"),
+  totalCreditsIssued: zod.number(),
+  creditsUsed: zod.number(),
+  totalCreditsCentsIssued: zod.number(),
+  totalCreditsCentsUsed: zod.number(),
+  totalCreditsIssuedFormatted: zod.string(),
+  totalCreditsUsedFormatted: zod.string(),
+});
+
+/**
  * @summary Get member's unused credit balance and history
  */
 export const GetCreditsMineResponse = zod.object({

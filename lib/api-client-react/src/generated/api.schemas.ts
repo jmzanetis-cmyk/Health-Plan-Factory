@@ -852,3 +852,59 @@ export type PostReferralRegister200 = {
   message?: string;
   alreadyRegistered?: boolean;
 };
+
+export type PostReferralTrackBody = {
+  /** The referral code to track against. */
+  referralCode: string;
+  /** The event type (e.g. "plan_generated"). */
+  event?: string;
+};
+
+export type PostReferralTrack200 = {
+  ok?: boolean;
+};
+
+export type GetReferralNewCreditSince200 = {
+  hasNew: boolean;
+  newCredits: MemberCreditRow[];
+  /** Display name of the referrer if a new credit was rewarded */
+  referrerName?: string | null;
+};
+
+export type PostProviderUnlockBodyModalityCategory =
+  (typeof PostProviderUnlockBodyModalityCategory)[keyof typeof PostProviderUnlockBodyModalityCategory];
+
+export const PostProviderUnlockBodyModalityCategory = {
+  telehealth: "telehealth",
+  medical: "medical",
+  wellness: "wellness",
+  fitness: "fitness",
+} as const;
+
+export type PostProviderUnlockBody = {
+  providerId: string;
+  modalityCategory?: PostProviderUnlockBodyModalityCategory;
+};
+
+export type PostProviderUnlock200 = {
+  used_credit: boolean;
+  credit_applied_cents: number;
+  amount_charged_cents: number;
+  amount_charged_formatted: string;
+  providerId: string;
+  message: string;
+};
+
+export type GetAdminReferralStats200 = {
+  totalReferrals: number;
+  rewardedReferrals: number;
+  pendingReferrals: number;
+  /** Percentage of referrals that resulted in a reward (0-100) */
+  conversionRate: number;
+  totalCreditsIssued: number;
+  creditsUsed: number;
+  totalCreditsCentsIssued: number;
+  totalCreditsCentsUsed: number;
+  totalCreditsIssuedFormatted: string;
+  totalCreditsUsedFormatted: string;
+};

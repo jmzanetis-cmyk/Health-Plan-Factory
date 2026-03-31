@@ -39,8 +39,11 @@ import type {
   EnrollStatusResponse,
   ErrorResponse,
   FavoriteRecord,
+  ForbiddenResponse,
   GeneratePlanBody,
+  GetAdminReferralStats200,
   GetEmployerDashboard200,
+  GetReferralNewCreditSince200,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
   InsightsResponse,
@@ -60,7 +63,11 @@ import type {
   ModalityRule,
   PlanRecord,
   PlanWithItems,
+  PostProviderUnlock200,
+  PostProviderUnlockBody,
   PostReferralRegister200,
+  PostReferralTrack200,
+  PostReferralTrackBody,
   ProgressLogRecord,
   ProviderRecord,
   RecordModalitySession201,
@@ -4825,6 +4832,352 @@ export const usePostReferralRegister = <
 > => {
   return useMutation(getPostReferralRegisterMutationOptions(options));
 };
+
+/**
+ * @summary Explicitly track a referral event (e.g. first plan generated)
+ */
+export const getPostReferralTrackUrl = () => {
+  return `/api/referrals/track`;
+};
+
+export const postReferralTrack = async (
+  postReferralTrackBody: PostReferralTrackBody,
+  options?: RequestInit,
+): Promise<PostReferralTrack200> => {
+  return customFetch<PostReferralTrack200>(getPostReferralTrackUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(postReferralTrackBody),
+  });
+};
+
+export const getPostReferralTrackMutationOptions = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postReferralTrack>>,
+    TError,
+    { data: BodyType<PostReferralTrackBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postReferralTrack>>,
+  TError,
+  { data: BodyType<PostReferralTrackBody> },
+  TContext
+> => {
+  const mutationKey = ["postReferralTrack"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postReferralTrack>>,
+    { data: BodyType<PostReferralTrackBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postReferralTrack(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostReferralTrackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postReferralTrack>>
+>;
+export type PostReferralTrackMutationBody = BodyType<PostReferralTrackBody>;
+export type PostReferralTrackMutationError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Explicitly track a referral event (e.g. first plan generated)
+ */
+export const usePostReferralTrack = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postReferralTrack>>,
+    TError,
+    { data: BodyType<PostReferralTrackBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof postReferralTrack>>,
+  TError,
+  { data: BodyType<PostReferralTrackBody> },
+  TContext
+> => {
+  return useMutation(getPostReferralTrackMutationOptions(options));
+};
+
+/**
+ * @summary Check if the member has received any new credits since a given timestamp (for polling notifications)
+ */
+export const getGetReferralNewCreditSinceUrl = (timestamp: string) => {
+  return `/api/referrals/new-credit-since/${timestamp}`;
+};
+
+export const getReferralNewCreditSince = async (
+  timestamp: string,
+  options?: RequestInit,
+): Promise<GetReferralNewCreditSince200> => {
+  return customFetch<GetReferralNewCreditSince200>(
+    getGetReferralNewCreditSinceUrl(timestamp),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetReferralNewCreditSinceQueryKey = (timestamp: string) => {
+  return [`/api/referrals/new-credit-since/${timestamp}`] as const;
+};
+
+export const getGetReferralNewCreditSinceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReferralNewCreditSince>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(
+  timestamp: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReferralNewCreditSince>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetReferralNewCreditSinceQueryKey(timestamp);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReferralNewCreditSince>>
+  > = ({ signal }) =>
+    getReferralNewCreditSince(timestamp, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!timestamp,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReferralNewCreditSince>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReferralNewCreditSinceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReferralNewCreditSince>>
+>;
+export type GetReferralNewCreditSinceQueryError =
+  ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Check if the member has received any new credits since a given timestamp (for polling notifications)
+ */
+
+export function useGetReferralNewCreditSince<
+  TData = Awaited<ReturnType<typeof getReferralNewCreditSince>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(
+  timestamp: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReferralNewCreditSince>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReferralNewCreditSinceQueryOptions(
+    timestamp,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Apply a referral credit to unlock a provider listing
+ */
+export const getPostProviderUnlockUrl = () => {
+  return `/api/providers/unlock`;
+};
+
+export const postProviderUnlock = async (
+  postProviderUnlockBody: PostProviderUnlockBody,
+  options?: RequestInit,
+): Promise<PostProviderUnlock200> => {
+  return customFetch<PostProviderUnlock200>(getPostProviderUnlockUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(postProviderUnlockBody),
+  });
+};
+
+export const getPostProviderUnlockMutationOptions = <
+  TError = ErrorType<void | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postProviderUnlock>>,
+    TError,
+    { data: BodyType<PostProviderUnlockBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postProviderUnlock>>,
+  TError,
+  { data: BodyType<PostProviderUnlockBody> },
+  TContext
+> => {
+  const mutationKey = ["postProviderUnlock"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postProviderUnlock>>,
+    { data: BodyType<PostProviderUnlockBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postProviderUnlock(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostProviderUnlockMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postProviderUnlock>>
+>;
+export type PostProviderUnlockMutationBody = BodyType<PostProviderUnlockBody>;
+export type PostProviderUnlockMutationError =
+  ErrorType<void | UnauthorizedResponse>;
+
+/**
+ * @summary Apply a referral credit to unlock a provider listing
+ */
+export const usePostProviderUnlock = <
+  TError = ErrorType<void | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postProviderUnlock>>,
+    TError,
+    { data: BodyType<PostProviderUnlockBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof postProviderUnlock>>,
+  TError,
+  { data: BodyType<PostProviderUnlockBody> },
+  TContext
+> => {
+  return useMutation(getPostProviderUnlockMutationOptions(options));
+};
+
+/**
+ * @summary Get referral program statistics (admin only)
+ */
+export const getGetAdminReferralStatsUrl = () => {
+  return `/api/admin/referral-stats`;
+};
+
+export const getAdminReferralStats = async (
+  options?: RequestInit,
+): Promise<GetAdminReferralStats200> => {
+  return customFetch<GetAdminReferralStats200>(getGetAdminReferralStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminReferralStatsQueryKey = () => {
+  return [`/api/admin/referral-stats`] as const;
+};
+
+export const getGetAdminReferralStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminReferralStats>>,
+  TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminReferralStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminReferralStatsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAdminReferralStats>>
+  > = ({ signal }) => getAdminReferralStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminReferralStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminReferralStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminReferralStats>>
+>;
+export type GetAdminReferralStatsQueryError = ErrorType<
+  UnauthorizedResponse | ForbiddenResponse
+>;
+
+/**
+ * @summary Get referral program statistics (admin only)
+ */
+
+export function useGetAdminReferralStats<
+  TData = Awaited<ReturnType<typeof getAdminReferralStats>>,
+  TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminReferralStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminReferralStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get member's unused credit balance and history

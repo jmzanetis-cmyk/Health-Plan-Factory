@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { LayoutDashboard, MapPin, TrendingUp, BookmarkIcon, Plus, ArrowRight, Loader2, DollarSign, Sparkles, AlertTriangle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -82,6 +83,7 @@ function SkeletonBlock({ h = 16, w = "100%" }: { h?: number; w?: string }) {
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
   const [progressLogs, setProgressLogs] = useState<ProgressLog[]>([]);
@@ -91,6 +93,7 @@ export default function Dashboard() {
   const [lmnEligibleCount, setLmnEligibleCount] = useState(0);
   const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
   const [referralWelcome, setReferralWelcome] = useState(false);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
 
   // Auto-register referral code stored when the user landed on the marketing site
   useEffect(() => {
@@ -103,10 +106,33 @@ export default function Dashboard() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ referralCode: refCode }),
     })
-      .then((r) => {
-        if (r.ok) {
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d) {
           localStorage.removeItem("hpf_ref_code");
           setReferralWelcome(true);
+          if (d.referrerFirstName) setReferrerName(d.referrerFirstName);
+        }
+      })
+      .catch(() => {});
+  }, [user]);
+
+  // Check if the referrer has earned a new credit since last dashboard visit (non-blocking toast)
+  useEffect(() => {
+    if (!user) return;
+    const lastCheckKey = "hpf_credit_check_ts";
+    const lastCheck = localStorage.getItem(lastCheckKey) ?? new Date(0).toISOString();
+    const now = new Date().toISOString();
+    localStorage.setItem(lastCheckKey, now);
+
+    fetch(`${BASE}/api/referrals/new-credit-since/${encodeURIComponent(lastCheck)}`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d?.hasNewCredit && d.count > 0) {
+          toast({
+            title: "Referral reward earned!",
+            description: `Your referral just earned you ${d.newCreditsFormatted} in modality unlock credits.`,
+          });
         }
       })
       .catch(() => {});
@@ -227,10 +253,12 @@ export default function Dashboard() {
             <span className="text-3xl flex-shrink-0">🎁</span>
             <div className="flex-1">
               <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--app-font-sans)" }}>
-                Welcome! You have a $2.00 credit waiting
+                {referrerName
+                  ? `${referrerName} invited you to HealthPlanFactory — your first modality unlock is on them`
+                  : "Welcome! You have a $2.00 credit waiting"}
               </p>
               <p className="text-xs mt-0.5 text-white" style={{ fontFamily: "var(--app-font-sans)", opacity: 0.8 }}>
-                Your friend referred you to HealthPlanFactory. Build your first wellness plan and your $2.00 unlock credit will be applied automatically.
+                Build your first wellness plan and your $2.00 unlock credit will be applied automatically at checkout.
               </p>
             </div>
             <Link

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { profiles, providers, plans, adminSettings, modalities } from "@workspace/db";
-import { eq, gte, count, desc, asc } from "drizzle-orm";
+import { profiles, providers, plans, adminSettings, modalities, referrals, memberCredits } from "@workspace/db";
+import { eq, gte, count, desc, asc, sql } from "drizzle-orm";
 import {
   UpsertAdminSettingBody,
   GetAdminStatsResponse,
@@ -267,6 +267,57 @@ router.patch("/admin/settings", async (req, res) => {
       .returning();
 
     res.json(UpsertAdminSettingResponse.parse(upserted));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * GET /admin/referral-stats
+ * Returns referral program statistics for the admin dashboard.
+ */
+router.get("/admin/referral-stats", async (req, res) => {
+  try {
+    const [totalReferrals] = await db.select({ count: count() }).from(referrals);
+    const [rewardedReferrals] = await db
+      .select({ count: count() })
+      .from(referrals)
+      .where(eq(referrals.status, "rewarded"));
+    const [pendingReferrals] = await db
+      .select({ count: count() })
+      .from(referrals)
+      .where(eq(referrals.status, "pending"));
+    const [totalCredits] = await db.select({ count: count() }).from(memberCredits);
+    const [usedCredits] = await db
+      .select({ count: count() })
+      .from(memberCredits)
+      .where(eq(memberCredits.used, true));
+    const [totalCreditsCents] = await db
+      .select({ total: sql<number>`coalesce(sum(amount_cents), 0)` })
+      .from(memberCredits);
+    const [usedCreditsCents] = await db
+      .select({ total: sql<number>`coalesce(sum(amount_cents), 0)` })
+      .from(memberCredits)
+      .where(eq(memberCredits.used, true));
+
+    const conversionRate =
+      totalReferrals.count > 0
+        ? Math.round((rewardedReferrals.count / totalReferrals.count) * 100)
+        : 0;
+
+    res.json({
+      totalReferrals: totalReferrals.count,
+      rewardedReferrals: rewardedReferrals.count,
+      pendingReferrals: pendingReferrals.count,
+      conversionRate,
+      totalCreditsIssued: totalCredits.count,
+      creditsUsed: usedCredits.count,
+      totalCreditsCentsIssued: Number(totalCreditsCents.total),
+      totalCreditsCentsUsed: Number(usedCreditsCents.total),
+      totalCreditsIssuedFormatted: `$${(Number(totalCreditsCents.total) / 100).toFixed(2)}`,
+      totalCreditsUsedFormatted: `$${(Number(usedCreditsCents.total) / 100).toFixed(2)}`,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials } from "@workspace/db";
+import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   ListProvidersQueryParams,
@@ -346,6 +346,76 @@ router.get("/admin/providers/:id", async (req, res) => {
       return;
     }
     res.json(GetAdminProviderResponse.parse(row));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /api/providers/unlock
+ * Applies a member credit to "unlock" (record intent to contact) a provider.
+ * If the member has unused referral credits, uses one ($2) and returns used_credit: true.
+ * Otherwise returns used_credit: false and the price to charge at checkout.
+ *
+ * Body: { providerId: string, modalityCategory?: string }
+ */
+router.post("/providers/unlock", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const profileId = req.user!.id;
+  const { providerId, modalityCategory } = req.body as {
+    providerId?: string;
+    modalityCategory?: string;
+  };
+
+  if (!providerId) {
+    res.status(400).json({ error: "providerId is required" });
+    return;
+  }
+
+  try {
+    // Determine price tier ($1 telehealth, $3 medical, $2 default)
+    const priceCents = modalityCategory === "telehealth" ? 100
+      : modalityCategory === "medical" ? 300
+      : 200;
+
+    // Check for unused credits
+    const credits = await db
+      .select()
+      .from(memberCredits)
+      .where(and(eq(memberCredits.profileId, profileId), eq(memberCredits.used, false)))
+      .orderBy(memberCredits.createdAt);
+
+    if (credits.length > 0) {
+      // Apply the first unused credit
+      const credit = credits[0];
+      await db
+        .update(memberCredits)
+        .set({ used: true, usedAt: new Date() })
+        .where(eq(memberCredits.id, credit.id));
+
+      res.json({
+        used_credit: true,
+        credit_applied_cents: credit.amountCents,
+        amount_charged_cents: Math.max(0, priceCents - credit.amountCents),
+        amount_charged_formatted: `$${(Math.max(0, priceCents - credit.amountCents) / 100).toFixed(2)}`,
+        providerId,
+        message: `1 referral credit applied — $${(credit.amountCents / 100).toFixed(2)} discount`,
+      });
+    }
+
+    // No credits — return checkout required info
+    res.json({
+      used_credit: false,
+      credit_applied_cents: 0,
+      amount_charged_cents: priceCents,
+      amount_charged_formatted: `$${(priceCents / 100).toFixed(2)}`,
+      providerId,
+      message: "No credits available — payment required at checkout",
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

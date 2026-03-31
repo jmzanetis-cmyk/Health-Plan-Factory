@@ -12,8 +12,9 @@ import {
   referrals,
   memberCredits,
   plans,
+  memberIntakes,
 } from "@workspace/db";
-import { eq, and, desc, not, isNull } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 const router = Router();
@@ -164,7 +165,7 @@ router.post("/referrals/register", async (req: Request, res: Response) => {
 
     // Find the referring member by code (case-insensitive)
     const [referrer] = await db
-      .select({ id: profiles.id })
+      .select({ id: profiles.id, displayName: profiles.displayName, email: profiles.email })
       .from(profiles)
       .where(eq(profiles.referralCode, referralCode.trim().toUpperCase()))
       .limit(1);
@@ -182,7 +183,9 @@ router.post("/referrals/register", async (req: Request, res: Response) => {
       .limit(1);
 
     if (existing.length > 0) {
-      res.json({ message: "Referral already registered", alreadyRegistered: true });
+      // Still return referrer name for the welcome banner even if already registered
+      const referrerFirstName = referrer.displayName?.split(" ")[0] ?? null;
+      res.json({ message: "Referral already registered", alreadyRegistered: true, referrerFirstName });
       return;
     }
 
@@ -199,7 +202,9 @@ router.post("/referrals/register", async (req: Request, res: Response) => {
       })
       .returning();
 
-    res.json({ message: "Referral registered", referral });
+    // Return referrer's first name for the welcome banner
+    const referrerFirstName = referrer.displayName?.split(" ")[0] ?? null;
+    res.json({ message: "Referral registered", referral, referrerFirstName });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
@@ -239,7 +244,10 @@ router.get("/credits/mine", async (req: Request, res: Response) => {
 
 /**
  * Exported helper — called from plans route when a plan is first generated.
- * If the member was referred and has a pending referral, rewards the referrer.
+ * Triggers reward when:
+ *  1. The referred member has a pending referral, AND
+ *  2. They have completed an intake (memberIntakes row exists), AND
+ *  3. This is their first generated plan.
  */
 export async function maybeRewardReferrer(referredMemberId: string): Promise<void> {
   // Check if this member was referred and has a pending referral
@@ -256,21 +264,32 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
 
   if (!pendingReferral) return;
 
+  // Check intake completion — member must have submitted their health intake
+  const [intake] = await db
+    .select({ id: memberIntakes.id })
+    .from(memberIntakes)
+    .where(eq(memberIntakes.profileId, referredMemberId))
+    .limit(1);
+
+  if (!intake) return; // intake not yet completed — reward deferred
+
   // Check if the referred member already had a plan before this one
   // (reward only triggers on their FIRST plan)
-  const existingPlans = await db
-    .select({ id: plans.id })
+  const [{ planCount }] = await db
+    .select({ planCount: count(plans.id) })
     .from(plans)
     .where(eq(plans.profileId, referredMemberId));
 
   // If more than one plan exists (the plan being created is already in DB), skip
-  if (existingPlans.length > 1) return;
+  if ((planCount ?? 0) > 1) return;
 
   // Mark referral as rewarded
   await db
     .update(referrals)
     .set({ status: "rewarded", rewardedAt: new Date() })
     .where(eq(referrals.id, pendingReferral.id));
+
+  const now = new Date();
 
   // Award $2 (200 cents) unlock credit to the referrer
   await db.insert(memberCredits).values({
@@ -280,10 +299,10 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
     amountCents: 200,
     used: false,
     referralId: pendingReferral.id,
-    createdAt: new Date(),
+    createdAt: now,
   });
 
-  // Award $2 welcome credit to the referred member (one free unlock for them)
+  // Award $2 welcome credit to the referred member (one free modality unlock for them)
   await db.insert(memberCredits).values({
     id: randomUUID(),
     profileId: referredMemberId,
@@ -291,8 +310,73 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
     amountCents: 200,
     used: false,
     referralId: pendingReferral.id,
-    createdAt: new Date(),
+    createdAt: now,
   });
+
+  console.info(
+    `[referral] Rewarded referrer ${pendingReferral.referrerId} for referred member ${referredMemberId}`
+  );
 }
+
+/**
+ * POST /api/referrals/track
+ * Alias for the reward trigger — can also be called explicitly from the frontend
+ * after the referred member generates their first plan. Idempotent.
+ * Body: (none — uses the authenticated member's ID)
+ */
+router.post("/referrals/track", async (req: Request, res: Response) => {
+  if (!requireAuth(req, res)) return;
+  const profileId = req.user!.id;
+  try {
+    await maybeRewardReferrer(profileId);
+    res.json({ message: "ok" });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * GET /api/referrals/new-credit-since/:timestamp
+ * Returns whether the member has earned a new referral credit since the given ISO timestamp.
+ * Used by the Dashboard to display a toast when the referrer earns a reward.
+ */
+router.get("/referrals/new-credit-since/:timestamp", async (req: Request, res: Response) => {
+  if (!requireAuth(req, res)) return;
+  const profileId = req.user!.id;
+  const timestamp = Array.isArray(req.params.timestamp) ? req.params.timestamp[0] : req.params.timestamp;
+
+  try {
+    const since = new Date(timestamp);
+    if (isNaN(since.getTime())) {
+      res.status(400).json({ error: "Invalid timestamp" });
+      return;
+    }
+
+    const credits = await db
+      .select({ id: memberCredits.id, amountCents: memberCredits.amountCents, createdAt: memberCredits.createdAt })
+      .from(memberCredits)
+      .where(
+        and(
+          eq(memberCredits.profileId, profileId),
+          eq(memberCredits.source, "referral"),
+          eq(memberCredits.used, false)
+        )
+      );
+
+    const newCredits = credits.filter((c) => new Date(c.createdAt) > since);
+    const totalNewCents = newCredits.reduce((s, c) => s + c.amountCents, 0);
+
+    res.json({
+      hasNewCredit: newCredits.length > 0,
+      newCreditsCents: totalNewCents,
+      newCreditsFormatted: `$${(totalNewCents / 100).toFixed(2)}`,
+      count: newCredits.length,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
 
 export default router;

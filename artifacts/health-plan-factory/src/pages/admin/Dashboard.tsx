@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Stethoscope, FileText, Clock, TrendingUp, Loader2 } from "lucide-react";
+import { Users, Stethoscope, FileText, Clock, TrendingUp, Loader2, Gift, Percent, CreditCard } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -12,6 +12,17 @@ interface Stats {
   pendingProviders: number;
   recentSignups: number;
   activeModalities?: number;
+}
+
+interface ReferralStats {
+  totalReferrals: number;
+  rewardedReferrals: number;
+  pendingReferrals: number;
+  conversionRate: number;
+  totalCreditsIssued: number;
+  creditsUsed: number;
+  totalCreditsIssuedFormatted: string;
+  totalCreditsUsedFormatted: string;
 }
 
 interface WeeklyData {
@@ -36,6 +47,19 @@ function StatCard({ label, value, icon, loading, to }: { label: string; value: n
           View details →
         </Link>
       )}
+    </div>
+  );
+}
+
+function ReferralStatTile({ label, value, icon, sub }: { label: string; value: string | number; icon: React.ReactNode; sub?: string }) {
+  return (
+    <div className="p-4 rounded-xl flex flex-col gap-2" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.15)" }}>
+      <div className="flex items-center gap-2">
+        <span style={{ color: "var(--hpf-amber)" }}>{icon}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.07em" }}>{label}</span>
+      </div>
+      <span className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>{value}</span>
+      {sub && <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{sub}</span>}
     </div>
   );
 }
@@ -73,8 +97,10 @@ export function AdminNav({ active }: { active: string }) {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [referralLoading, setReferralLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(true);
 
   useEffect(() => {
@@ -87,6 +113,11 @@ export default function AdminDashboard() {
       setLoading(false);
       setChartLoading(false);
     }).catch(() => { setLoading(false); setChartLoading(false); });
+
+    fetch(`${BASE}/api/admin/referral-stats`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => { setReferralStats(data); setReferralLoading(false); })
+      .catch(() => setReferralLoading(false));
   }, []);
 
   return (
@@ -111,6 +142,50 @@ export default function AdminDashboard() {
           <StatCard label="Pending" value={stats?.pendingProviders ?? 0} icon={<Clock size={18} />} loading={loading} to="/admin/providers" />
           <StatCard label="30d Signups" value={stats?.recentSignups ?? 0} icon={<TrendingUp size={18} />} loading={loading} />
           <StatCard label="Modalities" value={stats?.activeModalities ?? 0} icon={<Loader2 size={18} />} loading={loading} to="/admin/modalities" />
+        </div>
+
+        {/* Referral program stats */}
+        <div className="p-6 rounded-2xl mb-8" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+          <div className="flex items-center gap-2 mb-5">
+            <Gift size={18} style={{ color: "var(--hpf-amber)" }} />
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+              Referral Program
+            </h2>
+          </div>
+          {referralLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-24 rounded-xl animate-pulse" style={{ background: "rgba(27,45,79,0.04)" }} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <ReferralStatTile
+                label="Total Referrals"
+                value={referralStats?.totalReferrals ?? 0}
+                icon={<Users size={14} />}
+                sub={`${referralStats?.pendingReferrals ?? 0} pending`}
+              />
+              <ReferralStatTile
+                label="Rewarded"
+                value={referralStats?.rewardedReferrals ?? 0}
+                icon={<Gift size={14} />}
+                sub="completed + rewarded"
+              />
+              <ReferralStatTile
+                label="Conversion Rate"
+                value={`${referralStats?.conversionRate ?? 0}%`}
+                icon={<Percent size={14} />}
+                sub="referrals → completions"
+              />
+              <ReferralStatTile
+                label="Credits Issued"
+                value={referralStats?.totalCreditsIssuedFormatted ?? "$0.00"}
+                icon={<CreditCard size={14} />}
+                sub={`${referralStats?.totalCreditsUsedFormatted ?? "$0.00"} redeemed`}
+              />
+            </div>
+          )}
         </div>
 
         {/* Weekly signups chart */}

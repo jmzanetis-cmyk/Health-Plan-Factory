@@ -8,7 +8,8 @@ import { AuthProvider } from "@workspace/replit-auth-web";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
-/** Silently captures ?ref=CODE from any URL and stores it in localStorage for post-auth registration */
+/** Silently captures ?ref=CODE from any URL and stores it in localStorage for post-auth registration.
+ *  Must live inside <BrowserRouter> but outside <Routes> so it runs on every page visit. */
 function ReferralCapture() {
   const [searchParams] = useSearchParams();
   useEffect(() => {
@@ -18,6 +19,15 @@ function ReferralCapture() {
     }
   }, [searchParams]);
   return null;
+}
+
+function AppContent() {
+  return (
+    <>
+      <ReferralCapture />
+      <AppRoutes />
+    </>
+  );
 }
 
 import Landing from "@/pages/Landing";
@@ -73,8 +83,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
 function AppRoutes() {
   return (
     <Routes>
-      {/* Capture ?ref= from any URL and store in localStorage */}
-      <Route path="*" element={<ReferralCapture />} />
       {/* Public / marketing */}
       <Route path="/" element={<Layout><Landing /></Layout>} />
       <Route path="/how-it-works" element={<Layout><HowItWorks /></Layout>} />
@@ -145,7 +153,7 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <BrowserRouter basename={base}>
-              <AppRoutes />
+              <AppContent />
             </BrowserRouter>
             <Toaster />
           </AuthProvider>
