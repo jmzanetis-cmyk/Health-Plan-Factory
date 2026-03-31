@@ -466,7 +466,7 @@ export const GetCurrentAuthUserResponse = zod.object({
       firstName: zod.string().nullish(),
       lastName: zod.string().nullish(),
       profileImageUrl: zod.string().nullish(),
-      role: zod.enum(["member", "provider", "admin"]).nullish(),
+      role: zod.enum(["member", "provider", "admin", "employer"]).nullish(),
     }),
     zod.null(),
   ]),

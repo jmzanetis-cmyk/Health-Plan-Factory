@@ -64,14 +64,20 @@ export default function Dashboard() {
     if (!user) return;
     const code = sessionStorage.getItem("hpf_employer_code");
     if (!code) return;
-    sessionStorage.removeItem("hpf_employer_code");
-
+    // Do NOT remove from sessionStorage until we confirm successful redemption
     fetch(`${BASE}/api/employer/redeem-code`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
-    }).catch(() => {});
+      body: JSON.stringify({ inviteCode: code }),
+    })
+      .then((r) => {
+        if (r.ok) {
+          // Only clear once the server accepted it
+          sessionStorage.removeItem("hpf_employer_code");
+        }
+      })
+      .catch(() => {});
   }, [user]);
 
   useEffect(() => {

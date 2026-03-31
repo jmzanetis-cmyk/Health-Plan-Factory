@@ -14,4 +14,5 @@ export const AuthUserRole = {
   member: "member",
   provider: "provider",
   admin: "admin",
+  employer: "employer",
 } as const;

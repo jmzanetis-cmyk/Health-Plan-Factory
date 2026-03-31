@@ -263,6 +263,7 @@ router.get("/callback", async (req: Request, res: Response) => {
   if (destination === "/") {
     if (userInfo.role === "provider") destination = "/provider/dashboard";
     else if (userInfo.role === "admin") destination = "/admin/dashboard";
+    else if (userInfo.role === "employer") destination = "/employer/dashboard";
     else destination = "/dashboard";
   }
 
