@@ -2,17 +2,27 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import type { AuthUser } from "@workspace/replit-auth-web";
 
+type AllowedRole = "member" | "provider" | "admin" | "employer";
+
 interface ProtectedRouteProps {
-  role?: "member" | "provider" | "admin";
+  role?: AllowedRole;
   children: React.ReactNode;
 }
 
-function hasRequiredRole(user: AuthUser | null, required: "member" | "provider" | "admin"): boolean {
+function hasRequiredRole(user: AuthUser | null, required: AllowedRole): boolean {
   if (!user) return false;
   if (required === "member") return true;
   if (required === "admin") return user.role === "admin";
   if (required === "provider") return user.role === "provider" || user.role === "admin";
+  if (required === "employer") return user.role === "employer" || user.role === "admin";
   return false;
+}
+
+function roleFallback(user: AuthUser | null, required: AllowedRole): string {
+  if (required === "admin") return user?.role === "provider" ? "/provider/dashboard" : "/dashboard";
+  if (required === "provider") return "/provider/signup";
+  if (required === "employer") return "/employer";
+  return "/dashboard";
 }
 
 export function ProtectedRoute({ role = "member", children }: ProtectedRouteProps) {
@@ -40,14 +50,7 @@ export function ProtectedRoute({ role = "member", children }: ProtectedRouteProp
   }
 
   if (!hasRequiredRole(user, role)) {
-    if (role === "admin") {
-      const fallback = user?.role === "provider" ? "/provider/dashboard" : "/dashboard";
-      return <Navigate to={fallback} replace />;
-    }
-    if (role === "provider") {
-      return <Navigate to="/provider/signup" replace />;
-    }
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={roleFallback(user, role)} replace />;
   }
 
   return <>{children}</>;

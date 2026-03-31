@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db } from "@workspace/db";
 import {
   employers,
@@ -303,19 +303,19 @@ router.post("/employer/redeem-code", requireEmployerAuth, async (req: any, res) 
       return;
     }
 
+    // Enforce single employer per member (unique DB constraint on profileId)
     const existing = await db
-      .select({ id: employerMembers.id })
+      .select({ id: employerMembers.id, employerId: employerMembers.employerId })
       .from(employerMembers)
-      .where(
-        and(
-          eq(employerMembers.employerId, employer.id),
-          eq(employerMembers.profileId, profileId)
-        )
-      )
+      .where(eq(employerMembers.profileId, profileId))
       .limit(1);
 
     if (existing.length > 0) {
-      res.status(409).json({ error: "Already enrolled with this employer" });
+      if (existing[0].employerId === employer.id) {
+        res.status(409).json({ error: "Already enrolled with this employer" });
+      } else {
+        res.status(409).json({ error: "Already enrolled in a different employer wellness programme. Contact support to switch." });
+      }
       return;
     }
 
@@ -743,13 +743,7 @@ router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req
 
 router.post(
   "/employer/billing/webhook",
-  // Stripe requires the raw body for signature verification
-  (req: any, res, next) => {
-    // If body is already a Buffer (raw body middleware configured), use it
-    // Otherwise fall through — signature verification will fail gracefully
-    next();
-  },
-  async (req: any, res) => {
+  async (req: Request, res: Response) => {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!stripe || !webhookSecret) {
@@ -757,11 +751,12 @@ router.post(
       return;
     }
 
+    // req.body is a raw Buffer here because app.ts mounts express.raw() for this route
+    // before express.json(). This is required for Stripe signature verification.
     let event: Stripe.Event;
     try {
       const sig = req.headers["stripe-signature"] as string;
-      const rawBody = req.rawBody ?? req.body;
-      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+      event = stripe.webhooks.constructEvent(req.body as Buffer, sig, webhookSecret);
     } catch (err) {
       console.error("Stripe webhook signature verification failed:", err);
       res.status(400).json({ error: "Webhook signature invalid" });
@@ -771,13 +766,14 @@ router.post(
     try {
       switch (event.type) {
         case "invoice.payment_succeeded": {
-          // Use `any` cast — the subscription field path varies across Stripe API versions
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const invoice = event.data.object as any;
-          const subId: string | null =
-            typeof invoice.subscription === "string"
-              ? invoice.subscription
-              : invoice.parent?.subscription_details?.subscription ?? null;
+          const invoice = event.data.object as Stripe.Invoice;
+          // In API version 2026-03-25.dahlia, subscription is accessed via invoice.parent
+          const parent = invoice.parent;
+          let subId: string | null = null;
+          if (parent?.type === "subscription_details" && parent.subscription_details) {
+            const sub = parent.subscription_details.subscription;
+            subId = typeof sub === "string" ? sub : sub.id;
+          }
           if (subId && typeof invoice.customer === "string") {
             await db
               .update(employers)
@@ -790,7 +786,6 @@ router.post(
           const invoice = event.data.object as Stripe.Invoice;
           if (typeof invoice.customer === "string") {
             console.warn("Invoice payment failed for Stripe customer:", invoice.customer);
-            // Optionally set status to pending — business decision
           }
           break;
         }

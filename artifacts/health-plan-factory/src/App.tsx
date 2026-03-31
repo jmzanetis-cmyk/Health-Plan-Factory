@@ -99,9 +99,9 @@ function AppRoutes() {
 
       {/* Employer routes */}
       <Route path="/employer" element={<Layout><EmployerPortal /></Layout>} />
-      <Route path="/employer/dashboard" element={<Layout><ProtectedRoute><EmployerDashboard /></ProtectedRoute></Layout>} />
-      <Route path="/employer/members" element={<Layout><ProtectedRoute><EmployerMembers /></ProtectedRoute></Layout>} />
-      <Route path="/employer/settings" element={<Layout><ProtectedRoute><EmployerSettings /></ProtectedRoute></Layout>} />
+      <Route path="/employer/dashboard" element={<Layout><ProtectedRoute role="employer"><EmployerDashboard /></ProtectedRoute></Layout>} />
+      <Route path="/employer/members" element={<Layout><ProtectedRoute role="employer"><EmployerMembers /></ProtectedRoute></Layout>} />
+      <Route path="/employer/settings" element={<Layout><ProtectedRoute role="employer"><EmployerSettings /></ProtectedRoute></Layout>} />
 
       {/* 404 */}
       <Route path="*" element={<Layout><NotFound /></Layout>} />

@@ -394,7 +394,8 @@ export const employerMembers = pgTable(
   (t) => [
     uniqueIndex("employer_members_pk").on(t.employerId, t.profileId),
     index("employer_members_employer_idx").on(t.employerId),
-    index("employer_members_profile_idx").on(t.profileId),
+    // One active employer per member — enforced at DB level
+    uniqueIndex("employer_members_profile_idx").on(t.profileId),
   ],
 );
 
