@@ -159,3 +159,13 @@ React + Vite frontend for the **Health Plan Factory** product — a premium edit
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+## GitHub Integration
+
+The project is mirrored to GitHub at **https://github.com/jmzanetis-cmyk/Health-Plan-Factory** (private repo, owner: `jmzanetis-cmyk`).
+
+The GitHub OAuth connection is wired via the Replit integrations system (GitHub connector, linked in `.replit`). Because the agent shell environment blocks interactive HTTPS git authentication, the initial push was performed using the **GitHub Git Data API** (blobs → tree → commit → ref update). Future pushes from the Replit UI or a developer workstation can use standard `git push origin main`.
+
+### Mobile App Icon Note
+
+`artifacts/health-plan-mobile/assets/images/icon.png` was resized from **1024×1024 to 512×512** (Task #13) to work within the Replit connectors proxy's ~1 MB request body limit during the initial GitHub push. The 512×512 size is fully functional for development and Expo preview builds. For App Store submission (iOS recommends 1024×1024), replace the icon with a higher-resolution original and push via standard git.
