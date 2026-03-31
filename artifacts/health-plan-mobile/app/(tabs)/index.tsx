@@ -107,16 +107,16 @@ export default function HomeScreen() {
   const [routines, setRoutines] = useState<RoutineItem[]>(QUICK_ROUTINES);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (Platform.OS !== "web") {
-      setupNotifications();
-    }
-  }, []);
-
   const entries = progressData ?? [];
   const streak = calculateStreak(entries);
   const wellnessScore = calculateWellnessScore(entries);
   const trialDaysLeft = getDaysLeftInTrial();
+
+  useEffect(() => {
+    if (Platform.OS !== "web" && entries.length >= 0) {
+      setupNotifications({ streak, trialDaysLeft });
+    }
+  }, [streak, trialDaysLeft]);
 
   async function onRefresh() {
     setRefreshing(true);

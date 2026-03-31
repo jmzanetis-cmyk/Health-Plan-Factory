@@ -23,11 +23,14 @@ import {
   useListModalities,
 } from "@workspace/api-client-react";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
+import { interceptEmergencyText } from "@/lib/emergencyCheck";
 
 function formatDate(dateStr: string) {
   try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
   } catch {
     return "";
   }
@@ -35,28 +38,44 @@ function formatDate(dateStr: string) {
 
 function formatTime(dateStr: string) {
   try {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    return new Date(dateStr).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   } catch {
     return "";
   }
 }
 
-const RATING_LABELS = ["", "Rough", "Low", "Okay", "Good", "Great"];
 const RATING_ICONS = ["", "😣", "😕", "😐", "🙂", "😄"];
+const RATING_LABELS = ["", "Rough", "Low", "Okay", "Good", "Great"];
 const SLEEP_OPTIONS = ["< 5h", "5-6h", "6-7h", "7-8h", "8-9h", "9h+"];
+
+function encodeMetrics(sleep: number, energy: number, pain: number): string {
+  return `[sleep:${SLEEP_OPTIONS[sleep]}][energy:${energy}][pain:${pain}]`;
+}
+
+function decodeMetric(note: string | null | undefined, key: string): string | null {
+  if (!note) return null;
+  const m = note.match(new RegExp(`\\[${key}:([^\\]]+)\\]`));
+  return m ? m[1] : null;
+}
+
+function cleanNote(note: string | null | undefined): string {
+  if (!note) return "";
+  return note.replace(/\[[^\]]+\]/g, "").trim();
+}
 
 function MiniInsightChart({ entries }: { entries: ProgressLogRecord[] }) {
   const recent = [...entries].slice(0, 10).reverse();
   if (recent.length < 2) return null;
   const maxH = 48;
-  const w = 28;
 
   return (
     <View style={chartStyles.container}>
-      <Text style={chartStyles.title}>Rating Trend</Text>
+      <Text style={chartStyles.title}>Rating Trend (last {recent.length} entries)</Text>
       <View style={chartStyles.bars}>
-        {recent.map((e, i) => {
+        {recent.map((e) => {
           const val = e.rating ?? 0;
           const h = val > 0 ? (val / 5) * maxH : 4;
           const color = val >= 4 ? COLORS.sage : val >= 3 ? COLORS.amber : COLORS.rose;
@@ -91,21 +110,21 @@ const chartStyles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   title: {
-    fontFamily: "serif",
-    fontSize: 14,
+    fontFamily: "sans-serif",
+    fontSize: 13,
+    fontWeight: "600" as const,
     color: COLORS.navy,
     marginBottom: SPACING.md,
-    fontWeight: "600" as const,
   },
   bars: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 4,
-    height: 60,
+    height: 64,
   },
-  barCol: { alignItems: "center", gap: 4 },
-  bar: { width: 20, borderRadius: 4, minHeight: 4 },
-  barLabel: { fontSize: 12 },
+  barCol: { flex: 1, alignItems: "center", gap: 4, justifyContent: "flex-end" },
+  bar: { width: "100%", borderRadius: 4, minHeight: 4 },
+  barLabel: { fontSize: 12, textAlign: "center" },
   legend: {
     flexDirection: "row",
     alignItems: "center",
@@ -124,6 +143,8 @@ export default function JournalScreen() {
   const profileId = authData?.user?.id ?? "";
 
   const [rating, setRating] = useState(3);
+  const [energy, setEnergy] = useState(3);
+  const [pain, setPain] = useState(2);
   const [sleepIdx, setSleepIdx] = useState(3);
   const [note, setNote] = useState("");
   const [selectedModalityId, setSelectedModalityId] = useState<string | null>(null);
@@ -147,14 +168,19 @@ export default function JournalScreen() {
     setRefreshing(false);
   }
 
+  function handleNoteChange(text: string) {
+    setNote(text);
+    interceptEmergencyText(text);
+  }
+
   function submitEntry() {
     if (!profileId) {
       Alert.alert("Not signed in");
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const sleepNote = `[sleep:${SLEEP_OPTIONS[sleepIdx]}]`;
-    const fullNote = note.trim() ? `${sleepNote} ${note.trim()}` : sleepNote;
+    const metaPrefix = encodeMetrics(sleepIdx, energy, pain);
+    const fullNote = note.trim() ? `${metaPrefix} ${note.trim()}` : metaPrefix;
 
     createLog(
       {
@@ -163,7 +189,6 @@ export default function JournalScreen() {
           rating,
           note: fullNote,
           modalityId: selectedModalityId ?? undefined,
-          planId: undefined,
           sessionDate: new Date().toISOString().split("T")[0],
         },
       },
@@ -171,6 +196,8 @@ export default function JournalScreen() {
         onSuccess: () => {
           setNote("");
           setRating(3);
+          setEnergy(3);
+          setPain(2);
           setSleepIdx(3);
           setSelectedModalityId(null);
           setShowForm(false);
@@ -184,18 +211,6 @@ export default function JournalScreen() {
 
   const entries = progress ?? [];
   const showChart = entries.length >= 5;
-
-  function parseSleep(note?: string | null): string | null {
-    if (!note) return null;
-    const m = note.match(/\[sleep:([^\]]+)\]/);
-    return m ? m[1] : null;
-  }
-
-  function parseNote(note?: string | null): string {
-    if (!note) return "";
-    return note.replace(/\[sleep:[^\]]+\]\s*/, "").trim();
-  }
-
   const popularModalities = (modalities ?? []).slice(0, 6);
 
   return (
@@ -223,7 +238,7 @@ export default function JournalScreen() {
           <View style={styles.formCard}>
             <Text style={styles.formHeading}>How are you doing?</Text>
 
-            <Text style={styles.sectionLabel}>Overall Session Rating</Text>
+            <Text style={styles.sectionLabel}>Overall Rating</Text>
             <View style={styles.ratingRow}>
               {[1, 2, 3, 4, 5].map((v) => (
                 <TouchableOpacity
@@ -243,19 +258,55 @@ export default function JournalScreen() {
               ))}
             </View>
 
+            <View style={styles.sliderGroup}>
+              <View style={styles.sliderRow}>
+                <Feather name="zap" size={14} color={COLORS.amber} />
+                <Text style={styles.sliderTitle}>Energy</Text>
+                <Text style={styles.sliderValue}>{energy}/5</Text>
+              </View>
+              <Slider
+                value={energy}
+                minimumValue={1}
+                maximumValue={5}
+                step={1}
+                onValueChange={setEnergy}
+                minimumTrackTintColor={COLORS.amber}
+                maximumTrackTintColor={COLORS.border}
+                thumbTintColor={COLORS.amber}
+              />
+            </View>
+
+            <View style={styles.sliderGroup}>
+              <View style={styles.sliderRow}>
+                <Feather name="activity" size={14} color={COLORS.rose} />
+                <Text style={styles.sliderTitle}>Pain / Discomfort</Text>
+                <Text style={styles.sliderValue}>{pain}/5</Text>
+              </View>
+              <Slider
+                value={pain}
+                minimumValue={1}
+                maximumValue={5}
+                step={1}
+                onValueChange={setPain}
+                minimumTrackTintColor={COLORS.rose}
+                maximumTrackTintColor={COLORS.border}
+                thumbTintColor={COLORS.rose}
+              />
+            </View>
+
             <Text style={styles.sectionLabel}>Sleep Last Night</Text>
-            <View style={styles.sleepRow}>
+            <View style={styles.chipRow}>
               {SLEEP_OPTIONS.map((opt, idx) => (
                 <TouchableOpacity
                   key={opt}
-                  style={[styles.sleepChip, sleepIdx === idx && styles.sleepChipActive]}
+                  style={[styles.chip, sleepIdx === idx && styles.chipActive]}
                   onPress={() => {
                     setSleepIdx(idx);
                     Haptics.selectionAsync();
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.sleepText, sleepIdx === idx && styles.sleepTextActive]}>
+                  <Text style={[styles.chipText, sleepIdx === idx && styles.chipTextActive]}>
                     {opt}
                   </Text>
                 </TouchableOpacity>
@@ -265,24 +316,24 @@ export default function JournalScreen() {
             {popularModalities.length > 0 && (
               <>
                 <Text style={styles.sectionLabel}>Modality Practiced (optional)</Text>
-                <View style={styles.modalityRow}>
+                <View style={styles.chipRow}>
                   {popularModalities.map((m) => (
                     <TouchableOpacity
                       key={m.id}
                       style={[
-                        styles.modalityChip,
-                        selectedModalityId === m.id && styles.modalityChipActive,
+                        styles.chip,
+                        selectedModalityId === m.id && styles.chipSage,
                       ]}
                       onPress={() =>
                         setSelectedModalityId((prev) => (prev === m.id ? null : m.id))
                       }
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.modalityEmoji}>{m.emoji ?? "🌿"}</Text>
+                      <Text style={styles.chipEmoji}>{m.emoji ?? "🌿"}</Text>
                       <Text
                         style={[
-                          styles.modalityText,
-                          selectedModalityId === m.id && styles.modalityTextActive,
+                          styles.chipText,
+                          selectedModalityId === m.id && styles.chipTextSage,
                         ]}
                       >
                         {m.name}
@@ -298,7 +349,7 @@ export default function JournalScreen() {
               placeholder="Add a note (optional)..."
               placeholderTextColor={COLORS.textLight}
               value={note}
-              onChangeText={setNote}
+              onChangeText={handleNoteChange}
               multiline
               maxLength={500}
             />
@@ -333,11 +384,14 @@ export default function JournalScreen() {
         ) : (
           <View style={styles.entryList}>
             {entries.map((entry) => {
-              const sleepLabel = parseSleep(entry.note);
-              const cleanNote = parseNote(entry.note);
+              const sleepLabel = decodeMetric(entry.note, "sleep");
+              const energyVal = decodeMetric(entry.note, "energy");
+              const painVal = decodeMetric(entry.note, "pain");
+              const clean = cleanNote(entry.note);
               const ratingVal = entry.rating ?? 0;
               const ratingColor =
                 ratingVal >= 4 ? COLORS.sage : ratingVal >= 3 ? COLORS.amber : COLORS.rose;
+
               return (
                 <View key={entry.id} style={styles.entryCard}>
                   <View style={styles.entryMeta}>
@@ -354,20 +408,42 @@ export default function JournalScreen() {
                       </View>
                     )}
                   </View>
-                  {sleepLabel && (
-                    <View style={styles.sleepTag}>
-                      <Feather name="moon" size={12} color={COLORS.navy} />
-                      <Text style={styles.sleepTagText}>Sleep: {sleepLabel}</Text>
-                    </View>
-                  )}
-                  {cleanNote ? (
-                    <Text style={styles.entryNote}>{cleanNote}</Text>
+                  <View style={styles.metaChips}>
+                    {sleepLabel && (
+                      <View style={styles.metaChip}>
+                        <Feather name="moon" size={11} color={COLORS.navy} />
+                        <Text style={styles.metaChipText}>{sleepLabel}</Text>
+                      </View>
+                    )}
+                    {energyVal && (
+                      <View style={styles.metaChip}>
+                        <Feather name="zap" size={11} color={COLORS.amber} />
+                        <Text style={styles.metaChipText}>Energy {energyVal}/5</Text>
+                      </View>
+                    )}
+                    {painVal && (
+                      <View style={styles.metaChip}>
+                        <Feather name="activity" size={11} color={COLORS.rose} />
+                        <Text style={styles.metaChipText}>Pain {painVal}/5</Text>
+                      </View>
+                    )}
+                  </View>
+                  {clean ? (
+                    <Text style={styles.entryNote}>{clean}</Text>
                   ) : null}
                 </View>
               );
             })}
           </View>
         )}
+
+        <View style={styles.disclaimer}>
+          <Text style={styles.disclaimerText}>
+            Journal entries are for personal tracking only. This is not medical advice.
+            If you are in crisis, call or text 988.
+          </Text>
+        </View>
+
         <View style={{ height: 120 }} />
       </ScrollView>
     </View>
@@ -411,7 +487,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: "sans-serif",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600" as const,
     color: COLORS.textMuted,
     textTransform: "uppercase",
@@ -432,23 +508,34 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     gap: 4,
   },
-  ratingBtnActive: {
-    borderColor: COLORS.amber,
-    backgroundColor: COLORS.amberPale,
-  },
+  ratingBtnActive: { borderColor: COLORS.amber, backgroundColor: COLORS.amberPale },
   ratingEmoji: { fontSize: 20 },
-  ratingLabel: {
-    fontFamily: "sans-serif",
-    fontSize: 10,
-    color: COLORS.textMuted,
-  },
+  ratingLabel: { fontFamily: "sans-serif", fontSize: 10, color: COLORS.textMuted },
   ratingLabelActive: { color: COLORS.amber },
-  sleepRow: {
+  sliderGroup: { gap: SPACING.xs },
+  sliderRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SPACING.xs,
+    alignItems: "center",
+    gap: SPACING.sm,
   },
-  sleepChip: {
+  sliderTitle: {
+    fontFamily: "sans-serif",
+    fontSize: 13,
+    color: COLORS.navy,
+    flex: 1,
+    fontWeight: "500" as const,
+  },
+  sliderValue: {
+    fontFamily: "sans-serif",
+    fontSize: 13,
+    color: COLORS.textMuted,
+    fontWeight: "600" as const,
+  },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs + 2,
     borderRadius: RADIUS.full,
@@ -456,43 +543,12 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     backgroundColor: COLORS.warm,
   },
-  sleepChipActive: {
-    borderColor: COLORS.navy,
-    backgroundColor: COLORS.navy10,
-  },
-  sleepText: {
-    fontFamily: "sans-serif",
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  sleepTextActive: { color: COLORS.navy, fontWeight: "600" as const },
-  modalityRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SPACING.xs,
-  },
-  modalityChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: SPACING.xs + 2,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.warm,
-  },
-  modalityChipActive: {
-    borderColor: COLORS.sage,
-    backgroundColor: COLORS.sagePale,
-  },
-  modalityEmoji: { fontSize: 14 },
-  modalityText: {
-    fontFamily: "sans-serif",
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  modalityTextActive: { color: COLORS.sage, fontWeight: "600" as const },
+  chipActive: { borderColor: COLORS.navy, backgroundColor: COLORS.navy10 },
+  chipSage: { borderColor: COLORS.sage, backgroundColor: COLORS.sagePale },
+  chipEmoji: { fontSize: 13 },
+  chipText: { fontFamily: "sans-serif", fontSize: 12, color: COLORS.textMuted },
+  chipTextActive: { color: COLORS.navy, fontWeight: "600" as const },
+  chipTextSage: { color: COLORS.sage, fontWeight: "600" as const },
   noteInput: {
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -518,7 +574,7 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
     color: COLORS.white,
   },
-  loadingState: { flex: 1, alignItems: "center", paddingTop: SPACING.xxxl },
+  loadingState: { alignItems: "center", paddingTop: SPACING.xxxl },
   emptyState: {
     alignItems: "center",
     paddingTop: SPACING.xxxl * 2,
@@ -533,10 +589,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-  entryList: {
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.sm,
-  },
+  entryList: { paddingHorizontal: SPACING.xl, gap: SPACING.sm },
   entryCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
@@ -556,12 +609,7 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
     color: COLORS.navy,
   },
-  entryTime: {
-    fontFamily: "sans-serif",
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
+  entryTime: { fontFamily: "sans-serif", fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
   ratingTag: {
     flexDirection: "row",
     alignItems: "center",
@@ -576,17 +624,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600" as const,
   },
-  sleepTag: {
+  metaChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SPACING.xs,
+  },
+  metaChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: SPACING.xs,
+    gap: 4,
     backgroundColor: COLORS.navy10,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 3,
     borderRadius: RADIUS.full,
-    alignSelf: "flex-start",
   },
-  sleepTagText: {
+  metaChipText: {
     fontFamily: "sans-serif",
     fontSize: 11,
     color: COLORS.navy,
@@ -597,5 +649,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textMuted,
     lineHeight: 18,
+  },
+  disclaimer: {
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.lg,
+    paddingTop: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  disclaimerText: {
+    fontFamily: "sans-serif",
+    fontSize: 11,
+    color: COLORS.textLight,
+    lineHeight: 16,
+    textAlign: "center",
   },
 });

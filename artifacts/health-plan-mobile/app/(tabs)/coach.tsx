@@ -17,6 +17,7 @@ import { fetch } from "expo/fetch";
 import { COLORS, SPACING, RADIUS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
+import { interceptEmergencyText } from "@/lib/emergencyCheck";
 
 interface Message {
   id: string;
@@ -263,7 +264,10 @@ export default function CoachScreen() {
             placeholder="Ask your coach..."
             placeholderTextColor={COLORS.textLight}
             value={input}
-            onChangeText={setInput}
+            onChangeText={(text) => {
+              setInput(text);
+              interceptEmergencyText(text);
+            }}
             multiline
             maxLength={1000}
             returnKeyType="send"
