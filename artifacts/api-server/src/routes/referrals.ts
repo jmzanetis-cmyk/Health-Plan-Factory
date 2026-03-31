@@ -195,7 +195,9 @@ router.post("/referrals/register", async (req: Request, res: Response) => {
       return;
     }
 
-    // Create the pending referral and increment referrer's referralCount atomically
+    // Create the pending referral and increment referrer's referralCount atomically.
+    // onConflictDoNothing ensures the DB unique constraint on referred_member_id acts
+    // as the final safety net against concurrent/duplicate registration attempts.
     const [referral] = await db.transaction(async (tx) => {
       const [created] = await tx
         .insert(referrals)
@@ -207,11 +209,15 @@ router.post("/referrals/register", async (req: Request, res: Response) => {
           status: "pending",
           createdAt: new Date(),
         })
+        .onConflictDoNothing()
         .returning();
-      await tx
-        .update(profiles)
-        .set({ referralCount: sql`referral_count + 1`, updatedAt: new Date() })
-        .where(eq(profiles.id, referrer.id));
+      // Only increment referralCount if the row was actually inserted
+      if (created) {
+        await tx
+          .update(profiles)
+          .set({ referralCount: sql`referral_count + 1`, updatedAt: new Date() })
+          .where(eq(profiles.id, referrer.id));
+      }
       return [created];
     });
 
@@ -293,8 +299,9 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
     .from(plans)
     .where(eq(plans.profileId, referredMemberId));
 
-  // If more than one plan exists (the plan being created is already in DB), skip
-  if ((planCount ?? 0) > 1) return;
+  // Reward only when the member's FIRST plan has been generated (planCount === 1)
+  if ((planCount ?? 0) < 1) return; // no plan generated yet — wait for first plan
+  if ((planCount ?? 0) > 1) return; // member had a prior plan — already rewarded or ineligible
 
   // ── Single-winner guard: atomically transition pending → rewarded ──
   // Only the first concurrent caller wins; subsequent calls get an empty array.

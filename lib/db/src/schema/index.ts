@@ -555,7 +555,8 @@ export const referrals = pgTable(
   },
   (t) => [
     index("referrals_referrer_idx").on(t.referrerId),
-    index("referrals_referred_member_idx").on(t.referredMemberId),
+    // One referral row per referred member — prevents double-registration
+    uniqueIndex("referrals_referred_member_unique_idx").on(t.referredMemberId),
   ],
 );
 

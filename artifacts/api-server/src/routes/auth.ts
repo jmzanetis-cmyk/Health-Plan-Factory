@@ -60,19 +60,24 @@ async function processReferralCookie(profileId: string, refCode: string | undefi
       .from(referrals).where(eq(referrals.referredMemberId, profileId)).limit(1);
     if (existing) return;
 
-    // Atomically insert referral + increment referralCount
+    // Atomically insert referral + increment referralCount.
+    // onConflictDoNothing + conditional update ensures the DB unique constraint
+    // on referred_member_id is the authoritative guard against duplicate registration.
     await db.transaction(async (tx) => {
-      await tx.insert(referrals).values({
+      const [created] = await tx.insert(referrals).values({
         id: randomUUID(),
         referrerId: referrer.id,
         referredMemberId: profileId,
         code,
         status: "pending",
         createdAt: new Date(),
-      });
-      await tx.update(profiles)
-        .set({ referralCount: drizzleSql`referral_count + 1`, updatedAt: new Date() })
-        .where(eq(profiles.id, referrer.id));
+      }).onConflictDoNothing().returning({ id: referrals.id });
+      // Only increment referralCount if a new row was actually inserted
+      if (created) {
+        await tx.update(profiles)
+          .set({ referralCount: drizzleSql`referral_count + 1`, updatedAt: new Date() })
+          .where(eq(profiles.id, referrer.id));
+      }
     });
   } catch {
     // Swallowed — referral registration must not block login

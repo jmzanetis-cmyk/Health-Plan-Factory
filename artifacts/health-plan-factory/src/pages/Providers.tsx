@@ -100,8 +100,8 @@ export default function Providers() {
       // Fetch credit balance to show credit badge and discount in checkout modal
       fetch(`${BASE}/api/credits/mine`, { credentials: "include" })
         .then((r) => r.json())
-        .then((data: { totalCents: number }) => {
-          if (typeof data?.totalCents === "number") setUserCreditsCents(data.totalCents);
+        .then((data: { unusedCreditsCents: number }) => {
+          if (typeof data?.unusedCreditsCents === "number") setUserCreditsCents(data.unusedCreditsCents);
         })
         .catch(() => {});
     }
