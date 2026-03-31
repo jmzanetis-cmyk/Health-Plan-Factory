@@ -66,13 +66,15 @@ Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` 
 
 Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
+- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema; SSL is enabled automatically when `DATABASE_URL` contains `supabase.com`
 - `src/schema/index.ts` — barrel re-export of all models
 - `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
+- `drizzle.config.ts` — Drizzle Kit config; uses `SUPABASE_DATABASE_URL` if set, falls back to `DATABASE_URL`
 - Exports: `.` (pool, db, schema), `./schema` (schema only)
 
 Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+
+To push migrations to Supabase: set `SUPABASE_DATABASE_URL` to the Supabase session-mode pooler URL (`postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres`) and run `pnpm --filter @workspace/db run push`.
 
 ### `lib/api-spec` (`@workspace/api-spec`)
 
@@ -159,6 +161,41 @@ React + Vite frontend for the **Health Plan Factory** product — a premium edit
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+## Supabase Integration (Task #19)
+
+`@supabase/supabase-js` is installed in all three apps. Supabase clients are available as shared modules:
+
+- **API server** — `artifacts/api-server/src/lib/supabase.ts` exports a server-side admin client using `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS, for trusted server operations only)
+- **Web app** — `artifacts/health-plan-factory/src/lib/supabase.ts` exports a browser client using `import.meta.env.VITE_SUPABASE_URL` + `import.meta.env.VITE_SUPABASE_ANON_KEY`; these are injected at Vite build time via `define` in `vite.config.ts` from the `SUPABASE_URL`/`SUPABASE_ANON_KEY` server-side secrets
+- **Mobile app** — `artifacts/health-plan-mobile/lib/supabase.ts` exports a client using `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`; forwarded from secrets via the dev script in `package.json`
+
+### Required Secrets
+- `SUPABASE_URL` — project URL (`https://rlugmlnozbertfuonlwp.supabase.co`)
+- `SUPABASE_ANON_KEY` — public anon key (safe for browser/mobile)
+- `SUPABASE_SERVICE_ROLE_KEY` — service role key (server-side only, bypasses RLS)
+- `SUPABASE_DATABASE_URL` — full Postgres connection string for running Drizzle migrations; must use the session-mode pooler on port 6543: `postgresql://postgres.rlugmlnozbertfuonlwp:PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres`
+
+### Running Migrations Against Supabase
+
+**Network note:** Replit's network blocks outbound Postgres connections to Supabase's PgBouncer pooler (ports 5432 and 6543) and direct IPv6-only db hosts. Migrations cannot be run from within Replit.
+
+**Option 1 — Supabase SQL Editor (recommended from Replit):**
+1. Open `lib/db/supabase_schema.sql` (combined migration SQL, generated from all migration files)
+2. Go to Supabase Dashboard → SQL Editor
+3. Paste the contents and click Run
+
+**Option 2 — drizzle-kit push from local machine or CI:**
+Set `SUPABASE_DATABASE_URL` to the full pooler URL:
+```
+postgresql://postgres.rlugmlnozbertfuonlwp:PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+```
+Then run: `cd lib/db && SUPABASE_DATABASE_URL=<url> pnpm exec drizzle-kit push`
+
+**Verification:** After running migrations, confirm tables exist via Supabase Dashboard → Table Editor, or run:
+```sql
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;
+```
 
 ## GitHub Integration
 

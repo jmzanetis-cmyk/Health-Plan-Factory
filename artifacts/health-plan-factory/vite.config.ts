@@ -9,8 +9,19 @@ const port = rawPort ? Number(rawPort) : 5173;
 
 const basePath = process.env.BASE_PATH ?? "/";
 
+// Expose Supabase config to the browser via VITE_ env vars.
+// These are forwarded from the server-side secrets so the browser client can initialise.
+const supabaseDefines: Record<string, string> = {};
+if (process.env.SUPABASE_URL) {
+  supabaseDefines["import.meta.env.VITE_SUPABASE_URL"] = JSON.stringify(process.env.SUPABASE_URL);
+}
+if (process.env.SUPABASE_ANON_KEY) {
+  supabaseDefines["import.meta.env.VITE_SUPABASE_ANON_KEY"] = JSON.stringify(process.env.SUPABASE_ANON_KEY);
+}
+
 export default defineConfig({
   base: basePath,
+  define: supabaseDefines,
   plugins: [
     react(),
     tailwindcss(),
