@@ -202,8 +202,13 @@ export default function ModalityDetail() {
       <style>{`
         @media print {
           .no-print { display: none !important; }
+          .print-only { display: block !important; }
           .print-section { break-inside: avoid; }
           body { color: #000 !important; background: #fff !important; }
+          nav, header, footer { display: none !important; }
+        }
+        @media screen {
+          .print-only { display: none !important; }
         }
       `}</style>
 
@@ -393,7 +398,7 @@ export default function ModalityDetail() {
               </p>
             </div>
             <Link
-              to={`/discover?modality=${modality.id}`}
+              to={`/providers?modality=${modality.id}`}
               style={{ display: "inline-flex", alignItems: "center", gap: 8, background: amber, color: "white", padding: "11px 22px", borderRadius: 9, fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 14, textDecoration: "none", whiteSpace: "nowrap" }}
             >
               Find providers <ArrowRight size={14} />

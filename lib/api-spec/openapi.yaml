@@ -95,6 +95,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /modalities/{id}:
+    get:
+      operationId: getModalityById
+      tags: [modalities]
+      summary: Get a modality by ID (slug)
+      description: >
+        Returns full modality detail including evidence summary, meta description,
+        and related modality IDs. Used by the public /modalities/:slug evidence library page.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Modality detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModalityRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /modalities/{id}/sessions:
     post:
       operationId: recordModalitySession
@@ -1358,6 +1386,21 @@ components:
             type: string
         isActive:
           type: boolean
+        lmnEligible:
+          type: boolean
+        evidenceSummary:
+          type: string
+          nullable: true
+          description: AI-generated 300–500 word evidence summary for the public library page
+        metaDescription:
+          type: string
+          nullable: true
+          description: SEO meta description (140–160 chars)
+        relatedModalities:
+          type: array
+          items:
+            type: string
+          description: IDs of related modalities shown at the bottom of the detail page
         createdAt:
           type: string
           format: date-time
