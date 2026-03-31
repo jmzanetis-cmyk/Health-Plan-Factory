@@ -71,33 +71,16 @@ router.post("/progress", async (req, res) => {
     if (!canAccessProfile(req, res, body.data.profileId)) return;
 
     const sessionCostCents = body.data.sessionCostCents ?? 0;
+    const currentMonth = new Date().toISOString().slice(0, 7);
 
-    const [created] = await db
-      .insert(planProgressLogs)
-      .values({
-        id: crypto.randomUUID(),
-        profileId: body.data.profileId,
-        planId: body.data.planId ?? null,
-        modalityId: body.data.modalityId ?? null,
-        note: body.data.note ?? null,
-        rating: body.data.rating ?? null,
-        mood: body.data.mood ?? null,
-        pain: body.data.pain ?? null,
-        energy: body.data.energy ?? null,
-        sessionDate: body.data.sessionDate ? new Date(body.data.sessionDate) : null,
-        sessionCostCents: sessionCostCents > 0 ? sessionCostCents : null,
-        // employer-covered and out-of-pocket portions resolved after deduction below
-        createdAt: new Date(),
-      })
-      .returning();
+    // All writes (progress log + employer balance) run in one transaction so
+    // financial state is always consistent; any failure rolls everything back.
+    const [created] = await db.transaction(async (tx) => {
+      let employerCovered = 0;
+      let outOfPocket = sessionCostCents;
 
-    // Employer stipend deduction for covered modality sessions.
-    // Uses sessionCostCents when provided; falls back to monthlyBudget/4.
-    if (body.data.modalityId) {
-      try {
-        const currentMonth = new Date().toISOString().slice(0, 7);
-
-        const [link] = await db
+      if (body.data.modalityId) {
+        const [link] = await tx
           .select({
             id: employerMembers.id,
             employerId: employerMembers.employerId,
@@ -109,14 +92,8 @@ router.post("/progress", async (req, res) => {
           .where(eq(employerMembers.profileId, body.data.profileId))
           .limit(1);
 
-        let employerCovered = 0;
-        let outOfPocket = sessionCostCents;
-
         if (link) {
-          // ── Check employer coverage rules for this modality ──────────────
-          // If the employer has explicitly set covered=false for this modality,
-          // skip the deduction — the session cost is entirely the member's own.
-          const [rule] = await db
+          const [rule] = await tx
             .select({ covered: employerModalityRules.covered })
             .from(employerModalityRules)
             .where(
@@ -130,7 +107,6 @@ router.post("/progress", async (req, res) => {
           const isCovered = rule ? rule.covered : true; // default: covered
 
           if (isCovered) {
-            // Reset spent counter if it's a new budget month
             const effectiveSpent =
               link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
             const remaining = Math.max(0, link.monthlyBudget - effectiveSpent);
@@ -141,7 +117,7 @@ router.post("/progress", async (req, res) => {
             outOfPocket = deductCents - employerCovered;
 
             if (employerCovered > 0) {
-              await db
+              await tx
                 .update(employerMembers)
                 .set({
                   spentThisMonth: effectiveSpent + employerCovered,
@@ -150,23 +126,29 @@ router.post("/progress", async (req, res) => {
                 .where(eq(employerMembers.id, link.id));
             }
           }
-          // If !isCovered: entire session cost is out-of-pocket (already set above)
         }
-
-        // Persist the employer-covered / out-of-pocket split on the progress log
-        await db
-          .update(planProgressLogs)
-          .set({
-            employerCoveredCents: employerCovered,
-            outOfPocketCents: outOfPocket,
-          })
-          .where(eq(planProgressLogs.id, created.id));
-
-      } catch (deductErr) {
-        // Non-fatal — log but don't fail the progress log creation
-        console.error("Employer stipend deduction error:", deductErr);
       }
-    }
+
+      return tx
+        .insert(planProgressLogs)
+        .values({
+          id: crypto.randomUUID(),
+          profileId: body.data.profileId,
+          planId: body.data.planId ?? null,
+          modalityId: body.data.modalityId ?? null,
+          note: body.data.note ?? null,
+          rating: body.data.rating ?? null,
+          mood: body.data.mood ?? null,
+          pain: body.data.pain ?? null,
+          energy: body.data.energy ?? null,
+          sessionDate: body.data.sessionDate ? new Date(body.data.sessionDate) : null,
+          sessionCostCents: sessionCostCents > 0 ? sessionCostCents : null,
+          employerCoveredCents: employerCovered > 0 ? employerCovered : null,
+          outOfPocketCents: outOfPocket > 0 ? outOfPocket : null,
+          createdAt: new Date(),
+        })
+        .returning();
+    });
 
     res.status(201).json(ListProgressResponseItem.parse(created));
   } catch (err: unknown) {

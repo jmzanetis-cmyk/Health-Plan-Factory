@@ -51,6 +51,20 @@ function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// Enrollment routes are member-only: employers/admins must not enroll as employees.
+function requireMemberAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const role = req.user!.role;
+  if (role === "employer" || role === "admin") {
+    res.status(403).json({ error: "Enrollment is available to member accounts only" });
+    return;
+  }
+  next();
+}
+
 // ── Employer Signup ────────────────────────────────────────────────────────────
 
 const CreateEmployerBody = z.object({
@@ -242,15 +256,40 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req, res) => {
         .map(([modalityId, sessionCount]) => ({ modalityId, sessionCount }));
     }
 
+    // Build 6-month spend chart from actual employerCoveredCents in progress logs.
+    // This provides real historical spend, not just the current-month snapshot.
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const spendByMonth: Record<string, number> = {};
+    if (profileIds.length > 0) {
+      const spendRows = await db
+        .select({
+          month: sql<string>`to_char(${planProgressLogs.createdAt}, 'YYYY-MM')`,
+          totalCents: sql<number>`coalesce(sum(${planProgressLogs.employerCoveredCents}), 0)`,
+        })
+        .from(planProgressLogs)
+        .where(
+          and(
+            inArray(planProgressLogs.profileId, profileIds),
+            sql`${planProgressLogs.createdAt} >= ${sixMonthsAgo.toISOString()}`
+          )
+        )
+        .groupBy(sql`to_char(${planProgressLogs.createdAt}, 'YYYY-MM')`);
+
+      for (const row of spendRows) {
+        spendByMonth[row.month] = Number(row.totalCents);
+      }
+    }
+
     const monthlySpend: Array<{ month: string; totalCents: number }> = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
       const m = d.toISOString().slice(0, 7);
-      const spent = members
-        .filter((mem) => mem.budgetMonth === m)
-        .reduce((sum, mem) => sum + mem.spentThisMonth, 0);
-      monthlySpend.push({ month: m, totalCents: spent });
+      monthlySpend.push({ month: m, totalCents: spendByMonth[m] ?? 0 });
     }
 
     // K-anonymity floor: suppress utilization/wellness aggregates for small cohorts
@@ -384,7 +423,7 @@ router.get("/employer/members", requireEmployerAuth, async (req, res) => {
 
 const RedeemCodeBody = z.object({ inviteCode: z.string().min(1) });
 
-router.post("/employer/redeem-code", requireEmployerAuth, async (req, res) => {
+router.post("/employer/redeem-code", requireMemberAuth, async (req, res) => {
   const parsed = RedeemCodeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request" });
@@ -489,7 +528,7 @@ router.get("/employer/my-budget", requireEmployerAuth, async (req, res) => {
 
 // ── Employer Enroll Status (alias for my-budget, spec-required name) ─────────
 
-router.get("/employer/enroll-status", requireEmployerAuth, async (req, res) => {
+router.get("/employer/enroll-status", requireMemberAuth, async (req, res) => {
   try {
     const [link] = await db
       .select({
