@@ -31,8 +31,13 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
 
 // Raw body required for Stripe webhook signature verification — must come before express.json()
+// Both the employer billing webhook and the member/provider webhook need raw bodies.
 app.use(
   "/api/employer/billing/webhook",
+  express.raw({ type: "application/json" })
+);
+app.use(
+  "/api/providers/stripe-webhook",
   express.raw({ type: "application/json" })
 );
 

@@ -641,32 +641,57 @@ router.post(
     try {
       if (event.type === "checkout.session.completed") {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.metadata?.type !== "provider_unlock") {
-          res.json({ received: true });
-          return;
+        const sessionType = session.metadata?.type;
+
+        // ── Provider unlock confirmed by Stripe ──────────────────────────────
+        if (sessionType === "provider_unlock") {
+          if (session.payment_status !== "paid") {
+            res.json({ received: true });
+            return;
+          }
+          const { provider_id, member_id, credit_id } = session.metadata!;
+          if (provider_id && member_id) {
+            await db.insert(providerUnlocks).values({
+              id: randomUUID(),
+              memberId: member_id,
+              providerId: provider_id,
+              creditId: credit_id || null,
+              stripeSessionId: session.id,
+              amountCharged: session.amount_total ?? 0,
+            }).onConflictDoNothing();
+
+            // Idempotently mark referral credit as used — only after payment confirmed
+            if (credit_id) {
+              await db
+                .update(memberCredits)
+                .set({ used: true, usedAt: new Date() })
+                .where(and(eq(memberCredits.id, credit_id), eq(memberCredits.used, false)));
+            }
+          }
         }
-        if (session.payment_status !== "paid") {
-          res.json({ received: true });
-          return;
-        }
 
-        const { provider_id, member_id, credit_id } = session.metadata;
+        // ── Member subscription confirmed by Stripe ──────────────────────────
+        if (sessionType === "member_subscription") {
+          if (session.payment_status !== "paid") {
+            res.json({ received: true });
+            return;
+          }
+          const { member_id, credit_id } = session.metadata!;
 
-        if (provider_id && member_id) {
-          await db.insert(providerUnlocks).values({
-            id: randomUUID(),
-            memberId: member_id,
-            providerId: provider_id,
-            creditId: credit_id || null,
-            stripeSessionId: session.id,
-            amountCharged: session.amount_total ?? 0,
-          }).onConflictDoNothing();
-
-          if (credit_id) {
+          // Idempotently mark referral credit as used — only after subscription payment confirmed
+          if (member_id && credit_id) {
             await db
               .update(memberCredits)
               .set({ used: true, usedAt: new Date() })
               .where(and(eq(memberCredits.id, credit_id), eq(memberCredits.used, false)));
+          }
+
+          // Activate Plus subscription on the member's profile
+          if (member_id) {
+            await db
+              .update(profiles)
+              .set({ subscriptionStatus: "plus", updatedAt: new Date() })
+              .where(eq(profiles.id, member_id));
           }
         }
       }
@@ -758,14 +783,10 @@ router.post("/subscriptions/checkout", async (req, res) => {
       cancel_url: `${origin}/dashboard`,
     });
 
-    // Mark the credit as reserved (used=true) pre-emptively — if checkout is
-    // abandoned we accept the loss to avoid double-spend on retry.
-    if (credit && creditAppliedCents > 0) {
-      await db
-        .update(memberCredits)
-        .set({ used: true, usedAt: new Date() })
-        .where(and(eq(memberCredits.id, credit.id), eq(memberCredits.used, false)));
-    }
+    // Credit is NOT consumed here — it is marked as used only after Stripe
+    // confirms payment via the checkout.session.completed webhook or the
+    // unlock-status endpoint.  This prevents permanently burning credits on
+    // abandoned or failed checkout sessions.
 
     res.json({
       checkout_url: session.url,

@@ -1,4 +1,9 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@workspace/replit-auth-web";
+import { useToast } from "@/hooks/use-toast";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
 const TIERS = [
   {
@@ -10,6 +15,7 @@ const TIERS = [
     cta: "Get started free",
     ctaHref: "/sign-up",
     featured: false,
+    isPlus: false,
   },
   {
     tier: "Plus",
@@ -28,6 +34,7 @@ const TIERS = [
     cta: "Start 14-day free trial",
     ctaHref: "/sign-up?plan=plus",
     featured: true,
+    isPlus: true,
   },
   {
     tier: "Provider",
@@ -38,12 +45,141 @@ const TIERS = [
     cta: "Apply as a provider",
     ctaHref: "/provider/signup",
     featured: false,
+    isPlus: false,
   },
 ];
 
+interface CheckoutResult {
+  checkout_url?: string;
+  stripe_required?: boolean;
+  subscription_price_cents: number;
+  credit_applied_cents: number;
+  amount_charged_cents: number;
+  amount_charged_formatted: string;
+  message?: string;
+}
+
 export default function Pricing() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const [creditsCents, setCreditsCents] = useState(0);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutModal, setCheckoutModal] = useState<CheckoutResult | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`${BASE}/api/credits/mine`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: { unusedCreditsCents: number }) => {
+        if (typeof data?.unusedCreditsCents === "number") setCreditsCents(data.unusedCreditsCents);
+      })
+      .catch(() => {});
+  }, [user]);
+
+  const handlePlusCheckout = async () => {
+    if (!user) {
+      navigate("/sign-up?plan=plus");
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/subscriptions/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const data: CheckoutResult = await res.json();
+      setCheckoutModal(data);
+    } catch {
+      toast({ title: "Checkout error", description: "Network error. Please try again.", variant: "destructive" });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleConfirmCheckout = () => {
+    if (!checkoutModal) return;
+    if (checkoutModal.checkout_url) {
+      window.location.href = checkoutModal.checkout_url;
+    } else if (checkoutModal.stripe_required) {
+      toast({
+        title: "Stripe not yet configured",
+        description: "This is a demo environment. Set STRIPE_SECRET_KEY to enable live checkout.",
+        variant: "destructive",
+      });
+      setCheckoutModal(null);
+    }
+  };
+
   return (
     <div className="min-h-screen" style={{ background: "var(--parchment)" }}>
+      {/* ── Subscription Checkout Modal ── */}
+      {checkoutModal && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(27,45,79,0.55)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+          }}
+          onClick={() => setCheckoutModal(null)}
+        >
+          <div
+            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(27,45,79,0.22)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--navy)", marginBottom: "1rem" }}>
+              Upgrade to Plus
+            </h3>
+
+            <div style={{ background: "rgba(27,45,79,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(27,45,79,0.08)" }}>
+              <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Monthly subscription</span>
+                <span style={{ color: "var(--navy)", fontWeight: 600 }}>
+                  ${(checkoutModal.subscription_price_cents / 100).toFixed(2)}/mo
+                </span>
+              </div>
+              {checkoutModal.credit_applied_cents > 0 && (
+                <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
+                  <span style={{ color: "var(--hpf-amber)", fontWeight: 600 }}>🎁 Referral credit applied</span>
+                  <span style={{ color: "var(--hpf-amber)", fontWeight: 700 }}>
+                    −${(checkoutModal.credit_applied_cents / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(27,45,79,0.08)", fontFamily: "var(--app-font-sans)" }}>
+                <span style={{ color: "var(--navy)", fontWeight: 700 }}>Due today</span>
+                <span style={{ color: checkoutModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--navy)", fontWeight: 700 }}>
+                  {checkoutModal.amount_charged_cents === 0 ? "Free" : checkoutModal.amount_charged_formatted}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
+              {checkoutModal.stripe_required
+                ? "Stripe is not yet configured in this environment. Set STRIPE_SECRET_KEY to enable live checkout."
+                : "14-day free trial included. Cancel anytime. Referral credit is applied to your first invoice."}
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCheckoutModal(null)}
+                style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--navy)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(27,45,79,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmCheckout}
+                style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-amber)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                {checkoutModal.stripe_required ? "OK" : "Proceed to payment →"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-6 md:px-12 py-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
@@ -83,9 +219,28 @@ export default function Pricing() {
                     </li>
                   ))}
                 </ul>
-                <Link to={tier.ctaHref} className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: tier.featured ? "var(--hpf-amber)" : "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
-                  {tier.cta}
-                </Link>
+
+                {tier.isPlus ? (
+                  <div>
+                    <button
+                      onClick={handlePlusCheckout}
+                      disabled={checkoutLoading}
+                      className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white"
+                      style={{ background: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)", border: "none", cursor: checkoutLoading ? "wait" : "pointer", opacity: checkoutLoading ? 0.7 : 1 }}
+                    >
+                      {checkoutLoading ? "Loading…" : tier.cta}
+                    </button>
+                    {user && creditsCents > 0 && (
+                      <p className="text-center mt-2 text-xs font-semibold" style={{ color: "var(--hpf-amber)" }}>
+                        🎁 ${(creditsCents / 100).toFixed(2)} referral credit will be applied
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <Link to={tier.ctaHref} className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                    {tier.cta}
+                  </Link>
+                )}
               </div>
             ))}
           </div>
