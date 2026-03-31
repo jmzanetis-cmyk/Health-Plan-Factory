@@ -11,6 +11,7 @@ import {
   Switch,
   TextInput,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -261,7 +262,12 @@ export default function SettingsScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={COLORS.navy} />
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
+        <Image
+          source={require("../assets/logo.png")}
+          style={styles.headerLogo}
+          resizeMode="contain"
+          accessibilityLabel="Health Plan Factory – Settings"
+        />
         <View style={{ width: 36 }} />
       </View>
 
@@ -373,7 +379,10 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.navy10,
   },
-  title: { fontFamily: FONTS.heading, fontSize: 24, color: COLORS.navy },
+  headerLogo: {
+    width: 120,
+    height: 40,
+  },
   content: { paddingHorizontal: SPACING.xl, gap: SPACING.md },
   profileCard: {
     flexDirection: "row",
