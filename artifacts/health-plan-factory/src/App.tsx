@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@workspace/replit-auth-web";
@@ -47,6 +48,7 @@ import EmployerSettings from "@/pages/employer/EmployerSettings";
 
 import LmnGuide from "@/pages/LmnGuide";
 import HsaUnlock from "@/pages/HsaUnlock";
+import ModalityDetail from "@/pages/ModalityDetail";
 
 import NotFound from "@/pages/not-found";
 
@@ -61,6 +63,7 @@ function AppRoutes() {
       <Route path="/" element={<Layout><Landing /></Layout>} />
       <Route path="/how-it-works" element={<Layout><HowItWorks /></Layout>} />
       <Route path="/modalities" element={<Layout><Modalities /></Layout>} />
+      <Route path="/modalities/:slug" element={<Layout><ModalityDetail /></Layout>} />
       <Route path="/for-providers" element={<Layout><ForProviders /></Layout>} />
       <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
       <Route path="/faq" element={<Layout><FAQ /></Layout>} />
@@ -118,16 +121,18 @@ function AppRoutes() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <BrowserRouter basename={base}>
-            <AppRoutes />
-          </BrowserRouter>
-          <Toaster />
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <BrowserRouter basename={base}>
+              <AppRoutes />
+            </BrowserRouter>
+            <Toaster />
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 

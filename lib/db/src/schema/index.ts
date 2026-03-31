@@ -97,6 +97,9 @@ export const modalities = pgTable("modalities", {
   preferenceMatch: jsonb("preference_match").notNull().default([]).$type<string[]>(),
   exclusionIds: jsonb("exclusion_ids").notNull().default([]).$type<string[]>(),
   isActive: boolean("is_active").notNull().default(true),
+  evidenceSummary: text("evidence_summary"),
+  metaDescription: text("meta_description"),
+  relatedModalities: jsonb("related_modalities").notNull().default([]).$type<string[]>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

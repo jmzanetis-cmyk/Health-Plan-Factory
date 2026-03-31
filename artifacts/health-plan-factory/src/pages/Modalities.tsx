@@ -1,76 +1,203 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, Loader2 } from "lucide-react";
 
-const MODS = [
-  { emoji: "🧘", name: "Yoga / Mind-Body", badge: "Moderate", conditions: "Stress, anxiety, flexibility, chronic pain" },
-  { emoji: "💆", name: "Massage Therapy", badge: "Strong", conditions: "Chronic pain, stress, muscle tension" },
-  { emoji: "🥗", name: "Nutrition Coaching", badge: "Strong", conditions: "Weight, energy, metabolic health" },
-  { emoji: "🏃", name: "Personal Training", badge: "Moderate", conditions: "Fitness, strength, weight management" },
-  { emoji: "🧠", name: "Mental Wellness", badge: "Strong", conditions: "Anxiety, depression, stress management" },
-  { emoji: "💊", name: "Supplements", badge: "Emerging", conditions: "Deficiencies, immune support, sleep" },
-  { emoji: "🌿", name: "Acupuncture", badge: "Moderate", conditions: "Pain, nausea, migraines, fertility" },
-  { emoji: "🦴", name: "Chiropractic Care", badge: "Moderate", conditions: "Back pain, neck pain, alignment" },
-  { emoji: "🏊", name: "Physical Therapy", badge: "Strong", conditions: "Injury recovery, mobility, chronic pain" },
-  { emoji: "💤", name: "Sleep Optimization", badge: "Moderate", conditions: "Insomnia, energy, cognitive health" },
-  { emoji: "🔬", name: "Functional Medicine", badge: "Emerging", conditions: "Root-cause chronic conditions" },
-  { emoji: "📱", name: "App-Based Programs", badge: "Moderate", conditions: "Meditation, habit, fitness tracking" },
-];
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
+
+const navy = "#1b2d4f";
+const amber = "#b8892a";
+const sage = "#3d6b52";
+
+interface Modality {
+  id: string;
+  name: string;
+  emoji: string;
+  category: string;
+  evidenceLevel: "Strong" | "Moderate" | "Emerging" | null;
+  costLow: number;
+  costHigh: number;
+  hsaEligible: boolean;
+  lmnEligible: boolean;
+  conditions: string[];
+  description: string;
+  isActive: boolean;
+  evidenceSummary: string | null;
+  metaDescription: string | null;
+}
+
+const EVIDENCE_BADGE: Record<string, { bg: string; color: string }> = {
+  Strong: { bg: "rgba(61,107,82,0.12)", color: sage },
+  Moderate: { bg: "rgba(184,137,42,0.12)", color: amber },
+  Emerging: { bg: "rgba(91,155,213,0.12)", color: "#5b9bd5" },
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+  manual: "Manual Therapy",
+  movement: "Movement",
+  "mind-body": "Mind-Body",
+  nutrition: "Nutrition",
+  medical: "Medical",
+  telehealth: "Telehealth",
+};
 
 export default function Modalities() {
+  const [modalities, setModalities] = useState<Modality[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("all");
+
+  useEffect(() => {
+    fetch(`${BASE}/api/modalities?isActive=true`)
+      .then((r) => r.json())
+      .then((data: Modality[]) => {
+        setModalities(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const categories = ["all", ...Array.from(new Set(modalities.map((m) => m.category)))];
+  const filtered = filter === "all" ? modalities : modalities.filter((m) => m.category === filter);
+
   return (
-    <div className="min-h-screen" style={{ background: "var(--warm-white)" }}>
-      <div className="px-6 md:px-12 py-20" style={{ background: "var(--navy)" }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="section-tag" style={{ color: "var(--amber-light)" }}>What's included</div>
-          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.5rem,5vw,4rem)", fontWeight: 700, color: "white", letterSpacing: "-0.02em", marginBottom: "1rem" }}>
+    <div style={{ minHeight: "100vh", background: "var(--warm-white)" }}>
+      {/* Hero */}
+      <div style={{ background: navy, padding: "64px 24px 56px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
+          {/* Breadcrumb */}
+          <nav style={{ marginBottom: 20, display: "flex", gap: 6, alignItems: "center", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>
+            <Link to="/" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>Home</Link>
+            <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
+            <span style={{ color: "rgba(255,255,255,0.9)" }}>Modalities</span>
+          </nav>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(184,137,42,0.15)", border: "1px solid rgba(184,137,42,0.3)", borderRadius: 20, padding: "4px 14px", marginBottom: 16 }}>
+            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#d4a84b", textTransform: "uppercase", letterSpacing: "0.07em" }}>Evidence Library</span>
+          </div>
+          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2rem,5vw,3.5rem)", fontWeight: 700, color: "white", letterSpacing: "-0.02em", margin: "0 0 16px" }}>
             12 Evidence-Led Modalities
           </h1>
-          <p className="text-sm font-light leading-relaxed" style={{ color: "rgba(255,255,255,0.6)", maxWidth: "520px", fontFamily: "var(--app-font-sans)" }}>
-            Every modality in your plan is rated by evidence level and cross-referenced with your health conditions and budget.
+          <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 17, color: "rgba(255,255,255,0.65)", maxWidth: 560, lineHeight: 1.6, margin: 0 }}>
+            Every modality rated by research evidence and cross-referenced with your health conditions and budget.
           </p>
         </div>
       </div>
 
-      <div className="px-6 md:px-12 py-16">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {MODS.map((mod) => (
-              <div
-                key={mod.name}
-                className="rounded-xl p-5 flex items-start gap-4"
-                style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}
-              >
-                <span className="text-2xl flex-shrink-0">{mod.emoji}</span>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>{mod.name}</h3>
-                    <span
-                      className="text-xs font-semibold px-1.5 py-0.5 rounded"
-                      style={
-                        mod.badge === "Strong"
-                          ? { background: "var(--sage-pale)", color: "var(--sage)" }
-                          : mod.badge === "Moderate"
-                          ? { background: "var(--amber-pale)", color: "var(--hpf-amber)" }
-                          : { background: "#e0f0ff", color: "#5b9bd5" }
-                      }
-                    >
-                      {mod.badge}
-                    </span>
-                  </div>
-                  <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{mod.conditions}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 text-center">
-            <Link
-              to="/sign-up"
-              className="inline-flex items-center px-8 py-3.5 rounded-lg text-sm font-semibold text-white no-underline"
-              style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+      {/* Filter tabs */}
+      <div style={{ background: "white", borderBottom: "1px solid rgba(27,45,79,0.08)", position: "sticky", top: 0, zIndex: 10 }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px", display: "flex", gap: 4, overflowX: "auto" }}>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setFilter(cat)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "14px 16px",
+                fontFamily: "var(--app-font-sans)",
+                fontSize: 13,
+                fontWeight: filter === cat ? 700 : 500,
+                color: filter === cat ? navy : "var(--text-secondary)",
+                borderBottom: filter === cat ? `2px solid ${navy}` : "2px solid transparent",
+                whiteSpace: "nowrap",
+                textTransform: cat === "all" ? "none" : "none",
+              }}
             >
-              Build my plan with these modalities →
-            </Link>
+              {cat === "all" ? "All" : CATEGORY_LABEL[cat] ?? cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "48px 24px 80px" }}>
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+            <Loader2 size={28} className="animate-spin" style={{ color: navy }} />
           </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+            {filtered.map((m) => {
+              const badge = EVIDENCE_BADGE[m.evidenceLevel ?? "Emerging"];
+              return (
+                <Link
+                  key={m.id}
+                  to={`/modalities/${m.id}`}
+                  style={{ textDecoration: "none", display: "block" }}
+                >
+                  <div
+                    style={{
+                      background: "white",
+                      border: "1px solid rgba(27,45,79,0.08)",
+                      borderRadius: 14,
+                      padding: "24px 20px",
+                      height: "100%",
+                      transition: "box-shadow 0.15s, transform 0.15s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 20px rgba(27,45,79,0.1)";
+                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+                      (e.currentTarget as HTMLDivElement).style.transform = "none";
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                      <span style={{ fontSize: 32 }}>{m.emoji}</span>
+                      {badge && (
+                        <span style={{ background: badge.bg, color: badge.color, fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 20, fontFamily: "var(--app-font-sans)", whiteSpace: "nowrap" }}>
+                          {m.evidenceLevel}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: 18, fontWeight: 700, color: navy, margin: "0 0 8px" }}>
+                      {m.name}
+                    </h3>
+
+                    <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", margin: "0 0 16px", lineHeight: 1.5 }}>
+                      {m.description}
+                    </p>
+
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+                      <span style={{ fontFamily: "var(--app-font-mono, 'DM Mono', monospace)", fontSize: 12, color: navy, background: "rgba(27,45,79,0.06)", padding: "3px 8px", borderRadius: 6 }}>
+                        ${m.costLow}–${m.costHigh}/mo
+                      </span>
+                      {m.hsaEligible && (
+                        <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, color: sage, background: "rgba(61,107,82,0.1)", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>
+                          HSA/FSA
+                        </span>
+                      )}
+                      <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, color: "var(--text-muted)", background: "rgba(0,0,0,0.04)", padding: "3px 8px", borderRadius: 6 }}>
+                        {CATEGORY_LABEL[m.category] ?? m.category}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, color: amber, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
+                      Read evidence summary <ArrowRight size={13} />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* CTA */}
+        <div style={{ marginTop: 60, padding: "40px 32px", background: navy, borderRadius: 16, textAlign: "center" }}>
+          <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 26, color: "white", margin: "0 0 12px" }}>
+            Ready to build your personalized plan?
+          </h2>
+          <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, color: "rgba(255,255,255,0.65)", marginBottom: 24 }}>
+            Answer a few questions and get a plan from these modalities tailored to your goals and budget.
+          </p>
+          <Link
+            to="/sign-up"
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, background: amber, color: "white", padding: "13px 28px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 15, textDecoration: "none" }}
+          >
+            Build my plan free <ArrowRight size={16} />
+          </Link>
         </div>
       </div>
     </div>

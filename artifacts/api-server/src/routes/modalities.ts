@@ -84,6 +84,24 @@ router.post("/modalities", async (req, res) => {
   }
 });
 
+// ── Get Modality by ID (slug) — public ───────────────────────────────────────
+router.get("/modalities/:id", async (req, res) => {
+  try {
+    const [row] = await db
+      .select()
+      .from(modalities)
+      .where(eq(modalities.id, req.params.id));
+    if (!row) {
+      res.status(404).json({ error: "Modality not found" });
+      return;
+    }
+    res.json(row);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
 // ── Record Modality Session (explicit spend trigger for employer stipend) ──────
 // Dedicated endpoint for recording a modality session with employer deduction.
 // Progress log and balance update run in one transaction.
