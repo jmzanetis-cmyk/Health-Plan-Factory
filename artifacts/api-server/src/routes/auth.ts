@@ -1,5 +1,6 @@
 import * as oidc from "openid-client";
 import { Router, type IRouter, type Request, type Response } from "express";
+import crypto from "crypto";
 import {
   GetCurrentAuthUserResponse,
   ExchangeMobileAuthorizationCodeBody,
@@ -352,6 +353,179 @@ router.post("/mobile-auth/logout", async (req: Request, res: Response) => {
     await deleteSession(sid);
   }
   res.json(LogoutMobileSessionResponse.parse({ success: true }));
+});
+
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+const GITHUB_OAUTH_COOKIE_TTL = 10 * 60 * 1000;
+
+router.get("/auth/github/login", async (req: Request, res: Response) => {
+  if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+    res.redirect("/sign-in?error=github_not_configured");
+    return;
+  }
+
+  const state = crypto.randomBytes(16).toString("hex");
+  const returnTo = getSafeReturnTo(req.query.returnTo);
+  const origin = getOrigin(req);
+  const callbackUrl = `${origin}/api/auth/github/callback`;
+
+  res.cookie("gh_state", state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: GITHUB_OAUTH_COOKIE_TTL,
+  });
+  res.cookie("gh_return_to", returnTo, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: GITHUB_OAUTH_COOKIE_TTL,
+  });
+
+  const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
+  authorizeUrl.searchParams.set("client_id", GITHUB_CLIENT_ID);
+  authorizeUrl.searchParams.set("redirect_uri", callbackUrl);
+  authorizeUrl.searchParams.set("scope", "read:user user:email");
+  authorizeUrl.searchParams.set("state", state);
+
+  res.redirect(authorizeUrl.href);
+});
+
+router.get("/auth/github/callback", async (req: Request, res: Response) => {
+  if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+    res.redirect("/sign-in?error=github_not_configured");
+    return;
+  }
+
+  const { code, state } = req.query;
+  const expectedState = req.cookies?.gh_state;
+  const returnTo = getSafeReturnTo(req.cookies?.gh_return_to);
+
+  if (!code || !state || state !== expectedState) {
+    res.redirect("/sign-in?error=github_oauth_failed");
+    return;
+  }
+
+  res.clearCookie("gh_state", { path: "/" });
+  res.clearCookie("gh_return_to", { path: "/" });
+
+  try {
+    const origin = getOrigin(req);
+    const callbackUrl = `${origin}/api/auth/github/callback`;
+
+    const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        client_id: GITHUB_CLIENT_ID,
+        client_secret: GITHUB_CLIENT_SECRET,
+        code,
+        redirect_uri: callbackUrl,
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      throw new Error(`GitHub token exchange HTTP error: ${tokenRes.status}`);
+    }
+
+    const tokenData = await tokenRes.json() as { access_token?: string; error?: string };
+    if (!tokenData.access_token) {
+      throw new Error(tokenData.error ?? "No access token in GitHub response");
+    }
+
+    const [userRes, emailsRes] = await Promise.all([
+      fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }),
+      fetch("https://api.github.com/user/emails", {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }),
+    ]);
+
+    if (!userRes.ok) {
+      throw new Error(`GitHub user fetch HTTP error: ${userRes.status}`);
+    }
+
+    const githubUser = await userRes.json() as {
+      id: unknown;
+      login?: string;
+      name?: string;
+      avatar_url?: string;
+      email?: string;
+    };
+
+    if (typeof githubUser.id !== "number" || !Number.isFinite(githubUser.id) || githubUser.id <= 0) {
+      throw new Error("GitHub user response is missing a valid numeric id");
+    }
+
+    const githubId: number = githubUser.id;
+
+    const githubEmails: Array<{ email: string; primary: boolean; verified: boolean }> = emailsRes.ok
+      ? (await emailsRes.json() as Array<{ email: string; primary: boolean; verified: boolean }>)
+      : [];
+
+    const primaryEmail =
+      githubUser.email ||
+      githubEmails.find((e) => e.primary && e.verified)?.email ||
+      githubEmails[0]?.email ||
+      "";
+
+    const login = typeof githubUser.login === "string" ? githubUser.login : `github-${githubId}`;
+    const nameParts = (typeof githubUser.name === "string" && githubUser.name ? githubUser.name : login).split(" ");
+    const firstName = nameParts[0] ?? null;
+    const lastName = nameParts.slice(1).join(" ") || null;
+
+    const claims: Record<string, unknown> = {
+      sub: `github:${githubId}`,
+      email: primaryEmail,
+      first_name: firstName,
+      last_name: lastName,
+      profile_image_url: typeof githubUser.avatar_url === "string" ? githubUser.avatar_url : null,
+    };
+
+    const userInfo = await upsertUserAndProfile(claims);
+
+    const now = Math.floor(Date.now() / 1000);
+    const sessionData: SessionData = {
+      user: {
+        id: userInfo.id,
+        email: userInfo.email,
+        firstName: userInfo.firstName,
+        lastName: userInfo.lastName,
+        profileImageUrl: userInfo.profileImageUrl,
+      },
+      access_token: tokenData.access_token,
+      expires_at: now + 8 * 3600,
+    };
+
+    const sid = await createSession(sessionData);
+    setSessionCookie(res, sid);
+
+    let destination = returnTo;
+    if (destination === "/") {
+      if (userInfo.role === "provider") destination = "/provider/dashboard";
+      else if (userInfo.role === "admin") destination = "/admin/dashboard";
+      else if (userInfo.role === "employer") destination = "/employer/dashboard";
+      else destination = "/dashboard";
+    }
+
+    res.redirect(destination);
+  } catch (err) {
+    req.log?.error({ err }, "GitHub OAuth callback error");
+    res.redirect("/sign-in?error=github_oauth_failed");
+  }
 });
 
 export default router;
