@@ -25,8 +25,10 @@ import type {
   AdminUpdateEmployerBody,
   AuthLogoutSuccess,
   AuthUserEnvelope,
+  BadRequestResponse,
   BeginBrowserLoginParams,
   BillingCheckoutResponse,
+  CommsPrefsResponse,
   CreateEmployerBody,
   CreateIntakeBody,
   CreateModalityBody,
@@ -40,6 +42,8 @@ import type {
   ErrorResponse,
   FavoriteRecord,
   ForbiddenResponse,
+  GenerateMagicLinkBody,
+  GenerateMagicLinkResponse,
   GeneratePlanBody,
   GetAdminReferralStats200,
   GetEmployerDashboard200,
@@ -52,6 +56,7 @@ import type {
   ListIntakesParams,
   ListLmnEligibleModalities200,
   ListModalitiesParams,
+  ListNotificationLogParams,
   ListProgressParams,
   ListProvidersParams,
   LmnRequestResponse,
@@ -61,6 +66,7 @@ import type {
   MobileTokenExchangeSuccess,
   ModalityRecord,
   ModalityRule,
+  NotificationLogResponse,
   PlanRecord,
   PlanWithItems,
   PostProviderUnlock200,
@@ -80,6 +86,7 @@ import type {
   SetModalityRulesBody,
   StripeWebhookBody,
   UnauthorizedResponse,
+  UpdateCommsPrefsBody,
   UpdateEmployerBody,
   UpdateModalityBody,
   UpdatePlanBody,
@@ -5246,6 +5253,449 @@ export function useGetCreditsMine<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetCreditsMineQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Generate a signed magic link for passwordless actions
+ */
+export const getGenerateMagicLinkUrl = () => {
+  return `/api/magic-links/generate`;
+};
+
+export const generateMagicLink = async (
+  generateMagicLinkBody: GenerateMagicLinkBody,
+  options?: RequestInit,
+): Promise<GenerateMagicLinkResponse> => {
+  return customFetch<GenerateMagicLinkResponse>(getGenerateMagicLinkUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generateMagicLinkBody),
+  });
+};
+
+export const getGenerateMagicLinkMutationOptions = <
+  TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateMagicLink>>,
+    TError,
+    { data: BodyType<GenerateMagicLinkBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateMagicLink>>,
+  TError,
+  { data: BodyType<GenerateMagicLinkBody> },
+  TContext
+> => {
+  const mutationKey = ["generateMagicLink"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateMagicLink>>,
+    { data: BodyType<GenerateMagicLinkBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateMagicLink(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateMagicLinkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateMagicLink>>
+>;
+export type GenerateMagicLinkMutationBody = BodyType<GenerateMagicLinkBody>;
+export type GenerateMagicLinkMutationError = ErrorType<
+  BadRequestResponse | UnauthorizedResponse
+>;
+
+/**
+ * @summary Generate a signed magic link for passwordless actions
+ */
+export const useGenerateMagicLink = <
+  TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateMagicLink>>,
+    TError,
+    { data: BodyType<GenerateMagicLinkBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateMagicLink>>,
+  TError,
+  { data: BodyType<GenerateMagicLinkBody> },
+  TContext
+> => {
+  return useMutation(getGenerateMagicLinkMutationOptions(options));
+};
+
+/**
+ * @summary Validate and redeem a magic link token
+ */
+export const getRedeemMagicLinkUrl = (token: string) => {
+  return `/api/magic-links/redeem/${token}`;
+};
+
+export const redeemMagicLink = async (
+  token: string,
+  options?: RequestInit,
+): Promise<unknown> => {
+  return customFetch<unknown>(getRedeemMagicLinkUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getRedeemMagicLinkQueryKey = (token: string) => {
+  return [`/api/magic-links/redeem/${token}`] as const;
+};
+
+export const getRedeemMagicLinkQueryOptions = <
+  TData = Awaited<ReturnType<typeof redeemMagicLink>>,
+  TError = ErrorType<void | ErrorResponse>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof redeemMagicLink>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRedeemMagicLinkQueryKey(token);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof redeemMagicLink>>> = ({
+    signal,
+  }) => redeemMagicLink(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof redeemMagicLink>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type RedeemMagicLinkQueryResult = NonNullable<
+  Awaited<ReturnType<typeof redeemMagicLink>>
+>;
+export type RedeemMagicLinkQueryError = ErrorType<void | ErrorResponse>;
+
+/**
+ * @summary Validate and redeem a magic link token
+ */
+
+export function useRedeemMagicLink<
+  TData = Awaited<ReturnType<typeof redeemMagicLink>>,
+  TError = ErrorType<void | ErrorResponse>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof redeemMagicLink>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getRedeemMagicLinkQueryOptions(token, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the authenticated member's communication preferences
+ */
+export const getGetCommsPrefsUrl = () => {
+  return `/api/profile/comms-prefs`;
+};
+
+export const getCommsPrefs = async (
+  options?: RequestInit,
+): Promise<CommsPrefsResponse> => {
+  return customFetch<CommsPrefsResponse>(getGetCommsPrefsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCommsPrefsQueryKey = () => {
+  return [`/api/profile/comms-prefs`] as const;
+};
+
+export const getGetCommsPrefsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCommsPrefs>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCommsPrefs>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCommsPrefsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommsPrefs>>> = ({
+    signal,
+  }) => getCommsPrefs({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCommsPrefs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCommsPrefsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCommsPrefs>>
+>;
+export type GetCommsPrefsQueryError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Get the authenticated member's communication preferences
+ */
+
+export function useGetCommsPrefs<
+  TData = Awaited<ReturnType<typeof getCommsPrefs>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCommsPrefs>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCommsPrefsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update the authenticated member's communication preferences
+ */
+export const getUpdateCommsPrefsUrl = () => {
+  return `/api/profile/comms-prefs`;
+};
+
+export const updateCommsPrefs = async (
+  updateCommsPrefsBody: UpdateCommsPrefsBody,
+  options?: RequestInit,
+): Promise<CommsPrefsResponse> => {
+  return customFetch<CommsPrefsResponse>(getUpdateCommsPrefsUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCommsPrefsBody),
+  });
+};
+
+export const getUpdateCommsPrefsMutationOptions = <
+  TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommsPrefs>>,
+    TError,
+    { data: BodyType<UpdateCommsPrefsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCommsPrefs>>,
+  TError,
+  { data: BodyType<UpdateCommsPrefsBody> },
+  TContext
+> => {
+  const mutationKey = ["updateCommsPrefs"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCommsPrefs>>,
+    { data: BodyType<UpdateCommsPrefsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateCommsPrefs(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCommsPrefsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCommsPrefs>>
+>;
+export type UpdateCommsPrefsMutationBody = BodyType<UpdateCommsPrefsBody>;
+export type UpdateCommsPrefsMutationError = ErrorType<
+  BadRequestResponse | UnauthorizedResponse
+>;
+
+/**
+ * @summary Update the authenticated member's communication preferences
+ */
+export const useUpdateCommsPrefs = <
+  TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommsPrefs>>,
+    TError,
+    { data: BodyType<UpdateCommsPrefsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCommsPrefs>>,
+  TError,
+  { data: BodyType<UpdateCommsPrefsBody> },
+  TContext
+> => {
+  return useMutation(getUpdateCommsPrefsMutationOptions(options));
+};
+
+/**
+ * @summary Paginated admin view of all outbound notifications
+ */
+export const getListNotificationLogUrl = (
+  params?: ListNotificationLogParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/notification-log?${stringifiedParams}`
+    : `/api/admin/notification-log`;
+};
+
+export const listNotificationLog = async (
+  params?: ListNotificationLogParams,
+  options?: RequestInit,
+): Promise<NotificationLogResponse> => {
+  return customFetch<NotificationLogResponse>(
+    getListNotificationLogUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListNotificationLogQueryKey = (
+  params?: ListNotificationLogParams,
+) => {
+  return [`/api/admin/notification-log`, ...(params ? [params] : [])] as const;
+};
+
+export const getListNotificationLogQueryOptions = <
+  TData = Awaited<ReturnType<typeof listNotificationLog>>,
+  TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>,
+>(
+  params?: ListNotificationLogParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNotificationLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListNotificationLogQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listNotificationLog>>
+  > = ({ signal }) =>
+    listNotificationLog(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listNotificationLog>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListNotificationLogQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listNotificationLog>>
+>;
+export type ListNotificationLogQueryError = ErrorType<
+  UnauthorizedResponse | ForbiddenResponse
+>;
+
+/**
+ * @summary Paginated admin view of all outbound notifications
+ */
+
+export function useListNotificationLog<
+  TData = Awaited<ReturnType<typeof listNotificationLog>>,
+  TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>,
+>(
+  params?: ListNotificationLogParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNotificationLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListNotificationLogQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

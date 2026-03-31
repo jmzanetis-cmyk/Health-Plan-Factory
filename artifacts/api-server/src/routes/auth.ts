@@ -9,6 +9,8 @@ import {
 } from "@workspace/api-zod";
 import { db, profiles, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { sendNotification } from "../lib/comms";
+import { welcomeEmail } from "../emails/welcome";
 import {
   clearSession,
   getOidcConfig,
@@ -102,6 +104,24 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
       },
     })
     .returning();
+
+  const isNewProfile = profile.createdAt &&
+    Date.now() - new Date(profile.createdAt).getTime() < 30_000;
+
+  if (isNewProfile && email) {
+    const loginUrl = process.env.BASE_URL
+      ? `${process.env.BASE_URL}/dashboard`
+      : "/dashboard";
+    const { subject, html } = welcomeEmail({ displayName, loginUrl });
+    sendNotification({
+      profileId: id,
+      email,
+      type: "welcome",
+      subject,
+      html,
+      smsBody: `Welcome to Health Plan Factory! Log in at ${loginUrl} to get started.`,
+    }).catch(() => {});
+  }
 
   return { id, email, firstName, lastName, profileImageUrl, role: profile.role };
 }

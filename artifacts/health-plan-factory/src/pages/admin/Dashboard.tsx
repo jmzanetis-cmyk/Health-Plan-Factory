@@ -70,6 +70,7 @@ const navLinks = [
   { to: "/admin/providers", label: "Providers" },
   { to: "/admin/modalities", label: "Modalities" },
   { to: "/admin/employers", label: "Employers" },
+  { to: "/admin/messages", label: "Messages" },
   { to: "/admin/settings", label: "Settings" },
 ];
 

@@ -13,6 +13,9 @@ import employersRouter from "./employers";
 import lmnRouter from "./lmn";
 import insightsRouter from "./insights";
 import referralsRouter from "./referrals";
+import magicLinksRouter from "./magicLinks";
+import commsPrefsRouter from "./commsPrefs";
+import notificationLogRouter from "./notificationLog";
 
 const router: IRouter = Router();
 
@@ -30,5 +33,8 @@ router.use(employersRouter);
 router.use(lmnRouter);
 router.use(insightsRouter);
 router.use(referralsRouter);
+router.use(magicLinksRouter);
+router.use(commsPrefsRouter);
+router.use(notificationLogRouter);
 
 export default router;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Building2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Building2, Loader2, CheckCircle2, AlertCircle, Bell, Phone, Mail } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#1b2d4f";
@@ -20,6 +20,11 @@ interface EmployerBudget {
     remainingCents: number;
     budgetMonth: string;
   } | null;
+}
+
+interface CommsPrefs {
+  email: boolean;
+  sms: boolean;
 }
 
 function fmt(cents: number) {
@@ -175,6 +180,171 @@ function EmployerStipendSection() {
   );
 }
 
+function NotificationPrefsSection() {
+  const [prefs, setPrefs] = useState<CommsPrefs>({ email: true, sms: false });
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`${BASE}/api/profile/comms-prefs`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.prefs) setPrefs(d.prefs);
+        if (d.phone) setPhone(d.phone);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+    try {
+      const res = await fetch(`${BASE}/api/profile/comms-prefs`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...prefs, phone: phone || null }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `Error ${res.status}`);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{
+      background: "white",
+      border: "1.5px solid rgba(27,45,79,0.1)",
+      borderRadius: 12,
+      padding: 28,
+      marginBottom: 24,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <Bell size={18} color={navy} />
+        <h2 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 700, color: navy, margin: 0 }}>
+          Notification Preferences
+        </h2>
+      </div>
+
+      {loading ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <Loader2 size={20} className="animate-spin" style={{ color: navy }} />
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
+            Choose how you'd like to receive reminders, plan updates, and accountability nudges.
+          </p>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "12px 16px", borderRadius: 8, border: "1.5px solid rgba(27,45,79,0.1)", background: "rgba(27,45,79,0.02)" }}>
+            <input
+              type="checkbox"
+              checked={prefs.email}
+              onChange={(e) => setPrefs((p) => ({ ...p, email: e.target.checked }))}
+              style={{ width: 16, height: 16, cursor: "pointer" }}
+            />
+            <Mail size={15} color={navy} />
+            <div>
+              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, color: navy }}>Email notifications</div>
+              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>Reminders, plan updates, and weekly summaries</div>
+            </div>
+          </label>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "12px 16px", borderRadius: 8, border: "1.5px solid rgba(27,45,79,0.1)", background: "rgba(27,45,79,0.02)" }}>
+            <input
+              type="checkbox"
+              checked={prefs.sms}
+              onChange={(e) => setPrefs((p) => ({ ...p, sms: e.target.checked }))}
+              style={{ width: 16, height: 16, cursor: "pointer" }}
+            />
+            <Phone size={15} color={navy} />
+            <div>
+              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, color: navy }}>SMS notifications</div>
+              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>Text message reminders (requires phone number)</div>
+            </div>
+          </label>
+
+          {prefs.sms && (
+            <div>
+              <label style={{ display: "block", fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                Mobile phone number
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 555 000 0000"
+                style={{
+                  width: "100%",
+                  border: "1.5px solid rgba(27,45,79,0.18)",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontFamily: "var(--app-font-sans)",
+                  fontSize: 14,
+                  color: navy,
+                  outline: "none",
+                  background: "white",
+                  boxSizing: "border-box",
+                }}
+              />
+              <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+                Include country code, e.g. +1 for US
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div style={{ background: "rgba(220,53,53,0.08)", border: "1px solid rgba(220,53,53,0.2)", borderRadius: 8, padding: "10px 14px", color: "#c42b2b", fontFamily: "var(--app-font-sans)", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+              <AlertCircle size={14} /> {error}
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "flex-end" }}>
+            {saved && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, color: sage, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
+                <CheckCircle2 size={14} /> Saved
+              </div>
+            )}
+            <button
+              onClick={save}
+              disabled={saving}
+              style={{
+                background: saving ? "rgba(27,45,79,0.4)" : navy,
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                padding: "10px 20px",
+                fontFamily: "var(--app-font-sans)",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: saving ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              Save preferences
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Profile() {
   const { user, isLoading } = useAuth();
 
@@ -210,6 +380,11 @@ export default function Profile() {
             ))}
           </div>
         </div>
+
+        {/* Notification preferences */}
+        {(user?.role === "member" || user?.role === "provider") && (
+          <NotificationPrefsSection />
+        )}
 
         {/* Employer stipend — for member/employer roles */}
         {(user?.role === "member" || user?.role === "employer") && (

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "@workspace/db";
-import { planProgressLogs, employerMembers, employerModalityRules } from "@workspace/db";
+import { planProgressLogs, employerMembers, employerModalityRules, profiles, modalities } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
 import {
   CreateProgressLogBody,
@@ -8,6 +8,9 @@ import {
   ListProgressResponse,
   ListProgressResponseItem,
 } from "@workspace/api-zod";
+import { sendNotification, queueNotification } from "../lib/comms";
+import { sessionConfirmedEmail } from "../emails/session-confirmed";
+import { sessionReminderEmail } from "../emails/session-reminder";
 
 const router = Router();
 
@@ -150,6 +153,98 @@ router.post("/progress", async (req, res) => {
     });
 
     res.status(201).json(ListProgressResponseItem.parse(created));
+
+    // Fire-and-forget: send session-logged confirmation notification
+    ;(async () => {
+      try {
+        const [profile] = await db
+          .select({ email: profiles.email, displayName: profiles.displayName })
+          .from(profiles)
+          .where(eq(profiles.id, created.profileId))
+          .limit(1);
+
+        if (!profile?.email) return;
+
+        let modalityName = created.modalityId ?? "Wellness";
+        if (created.modalityId) {
+          const [mod] = await db
+            .select({ name: modalities.name })
+            .from(modalities)
+            .where(eq(modalities.id, created.modalityId))
+            .limit(1);
+          if (mod?.name) modalityName = mod.name;
+        }
+
+        const progressUrl = process.env.BASE_URL
+          ? `${process.env.BASE_URL}/progress`
+          : "/progress";
+
+        const { subject, html } = sessionConfirmedEmail({
+          displayName: profile.displayName,
+          modalityName,
+          sessionDate: created.sessionDate ? created.sessionDate.toISOString() : null,
+          note: created.note,
+          progressUrl,
+        });
+
+        await sendNotification({
+          profileId: created.profileId,
+          email: profile.email,
+          type: "session-confirmed",
+          subject,
+          html,
+          smsBody: `Health Plan Factory: Your ${modalityName} session has been logged. Keep up the great work!`,
+        });
+
+        // If a future session date was set, queue exact-time reminders
+        if (created.sessionDate && created.sessionDate > new Date()) {
+          const sessionDate = new Date(created.sessionDate);
+          const remind24h = new Date(sessionDate.getTime() - 24 * 60 * 60 * 1000);
+          const remind1h  = new Date(sessionDate.getTime() - 60 * 60 * 1000);
+          const now2 = new Date();
+
+          const { subject: s24, html: h24 } = sessionReminderEmail({
+            displayName: profile.displayName,
+            modalityName,
+            sessionDate,
+            timeframeLabel: "24 hours",
+            dashboardUrl: progressUrl,
+          });
+          const { subject: s1h, html: h1h } = sessionReminderEmail({
+            displayName: profile.displayName,
+            modalityName,
+            sessionDate,
+            timeframeLabel: "1 hour",
+            dashboardUrl: progressUrl,
+          });
+
+          if (remind24h > now2) {
+            await queueNotification({
+              profileId: created.profileId,
+              email: profile.email,
+              type: "session-reminder",
+              subject: s24,
+              html: h24,
+              smsBody: `Health Plan Factory: Your ${modalityName} session is in 24 hours. Good luck!`,
+              scheduledFor: remind24h,
+            });
+          }
+          if (remind1h > now2) {
+            await queueNotification({
+              profileId: created.profileId,
+              email: profile.email,
+              type: "session-reminder",
+              subject: s1h,
+              html: h1h,
+              smsBody: `Health Plan Factory: Your ${modalityName} session is in 1 hour. Good luck!`,
+              scheduledFor: remind1h,
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.error("[comms] post-session notification error:", notifErr);
+      }
+    })();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

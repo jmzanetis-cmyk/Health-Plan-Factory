@@ -16,6 +16,12 @@ import {
 } from "@workspace/db";
 import { eq, and, desc, count } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import { z } from "zod";
+import { sendEmail, sendNotification } from "../lib/comms";
+import { referralRewardEmail } from "../emails/referral-reward";
+import { referralInviteEmail } from "../emails/referral-invite";
+
+const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
 const router = Router();
 
@@ -316,7 +322,92 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
   console.info(
     `[referral] Rewarded referrer ${pendingReferral.referrerId} for referred member ${referredMemberId}`
   );
+
+  // Send a referral reward notification to the referrer (fire-and-forget)
+  ;(async () => {
+    try {
+      const [referrer] = await db
+        .select({ email: profiles.email, displayName: profiles.displayName })
+        .from(profiles)
+        .where(eq(profiles.id, pendingReferral.referrerId))
+        .limit(1);
+
+      const [referred] = await db
+        .select({ displayName: profiles.displayName })
+        .from(profiles)
+        .where(eq(profiles.id, referredMemberId))
+        .limit(1);
+
+      if (referrer?.email) {
+        const dashboardUrl = process.env.BASE_URL
+          ? `${process.env.BASE_URL}/dashboard`
+          : "/dashboard";
+        const { subject, html } = referralRewardEmail({
+          referrerName: referrer.displayName,
+          referredName: referred?.displayName ?? null,
+          creditAmountFormatted: "$2.00",
+          dashboardUrl,
+        });
+        await sendNotification({
+          profileId: pendingReferral.referrerId,
+          email: referrer.email,
+          type: "referral-reward",
+          subject,
+          html,
+          smsBody: `Health Plan Factory: Your referral earned you $2 in credits! Log in to use them.`,
+        });
+      }
+    } catch (err) {
+      console.error("[comms] referral reward notification error:", err);
+    }
+  })();
 }
+
+/**
+ * POST /api/referrals/send-invite
+ * Sends a referral invite email to a specified email address with a pre-filled signup link.
+ * Body: { inviteeEmail: string }
+ */
+router.post("/referrals/send-invite", async (req: Request, res: Response) => {
+  if (!requireAuth(req, res)) return;
+  const profileId = req.user!.id;
+
+  const body = z.object({ inviteeEmail: z.string().email() }).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Validation error", details: body.error.flatten() });
+    return;
+  }
+
+  try {
+    const referralCode = await ensureReferralCode(profileId);
+
+    const [profile] = await db
+      .select({ displayName: profiles.displayName })
+      .from(profiles)
+      .where(eq(profiles.id, profileId))
+      .limit(1);
+
+    const signupUrl = `${BASE_URL}/signup?ref=${encodeURIComponent(referralCode)}`;
+    const { subject, html } = referralInviteEmail({
+      referrerName: profile?.displayName ?? null,
+      referralCode,
+      signupUrl,
+    });
+
+    sendEmail(
+      profileId,
+      body.data.inviteeEmail,
+      subject,
+      html,
+      "referral-invite",
+    ).catch((err) => console.error("[comms] referral invite email error:", err));
+
+    res.json({ message: "Invite sent", referralCode, signupUrl });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
 
 /**
  * POST /api/referrals/track

@@ -11,6 +11,7 @@ import {
   index,
   uniqueIndex,
   jsonb,
+  uuid,
 } from "drizzle-orm/pg-core";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -66,6 +67,10 @@ export const profiles = pgTable(
     subscriptionStatus: text("subscription_status").default("free"), // free | plus | canceled
     lmnStatus: text("lmn_status").notNull().default("none"), // none | requested | received
     referralCode: text("referral_code"),               // unique shareable code, e.g. "HPF-ABCD1234"
+    phone: text("phone"),                               // for SMS notifications
+    communicationPrefs: jsonb("communication_prefs")
+      .$type<{ email: boolean; sms: boolean }>()
+      .default({ email: true, sms: false }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -558,6 +563,102 @@ export const insertReferralSchema = createInsertSchema(referrals).omit({
 });
 export type InsertReferral = InferInsertModel<typeof referrals>;
 export type Referral = InferSelectModel<typeof referrals>;
+
+// ── notification_log ──────────────────────────────────────────────────────────
+// Every sent (or attempted) transactional message: email or SMS.
+// Used for auditing, deduplication, and the admin message history view.
+
+export const notificationChannelEnum = pgEnum("notification_channel", [
+  "email",
+  "sms",
+]);
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "welcome",
+  "plan-ready",
+  "session-reminder",
+  "session-confirmed",
+  "payment-due",
+  "payment-confirmed",
+  "accountability-nudge",
+  "referral-invite",
+  "referral-reward",
+  "magic-link",
+  "weekly-summary",
+  "streak-at-risk",
+]);
+
+export const notificationStatusEnum = pgEnum("notification_status", [
+  "queued",
+  "sent",
+  "failed",
+]);
+
+export const notificationLog = pgTable(
+  "notification_log",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    channel: notificationChannelEnum("channel").notNull(),
+    type: notificationTypeEnum("type").notNull(),
+    status: notificationStatusEnum("status").notNull().default("queued"),
+    scheduledFor: timestamp("scheduled_for"),
+    sentAt: timestamp("sent_at"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("notification_log_profile_idx").on(t.profileId),
+    index("notification_log_type_idx").on(t.type),
+    index("notification_log_status_idx").on(t.status),
+  ],
+);
+
+export const insertNotificationLogSchema = createInsertSchema(notificationLog).omit({
+  createdAt: true,
+});
+export type InsertNotificationLog = InferInsertModel<typeof notificationLog>;
+export type NotificationLog = InferSelectModel<typeof notificationLog>;
+
+// ── magic_links ───────────────────────────────────────────────────────────────
+// Signed one-time-use tokens for passwordless actions (login, payment confirm,
+// appointment accept, accountability check-in). Each link has a TTL and is
+// consumed (usedAt set) on first redemption.
+
+export const magicLinkActionEnum = pgEnum("magic_link_action", [
+  "login",
+  "payment",
+  "appointment",
+  "accountability",
+]);
+
+export const magicLinks = pgTable(
+  "magic_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    action: magicLinkActionEnum("action").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("magic_links_profile_idx").on(t.profileId),
+    index("magic_links_expires_idx").on(t.expiresAt),
+  ],
+);
+
+export const insertMagicLinkSchema = createInsertSchema(magicLinks).omit({
+  createdAt: true,
+  usedAt: true,
+});
+export type InsertMagicLink = InferInsertModel<typeof magicLinks>;
+export type MagicLink = InferSelectModel<typeof magicLinks>;
 
 // ── member_credits ────────────────────────────────────────────────────────────
 // Redeemable credits earned by members. Each credit represents a fixed

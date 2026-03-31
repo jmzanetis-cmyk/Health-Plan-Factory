@@ -719,10 +719,115 @@ export interface CreditsMineResponse {
   credits: MemberCreditRow[];
 }
 
+export type GenerateMagicLinkBodyAction =
+  (typeof GenerateMagicLinkBodyAction)[keyof typeof GenerateMagicLinkBodyAction];
+
+export const GenerateMagicLinkBodyAction = {
+  login: "login",
+  payment: "payment",
+  appointment: "appointment",
+  accountability: "accountability",
+} as const;
+
+export type GenerateMagicLinkBodyPayload = { [key: string]: unknown };
+
+export interface GenerateMagicLinkBody {
+  action: GenerateMagicLinkBodyAction;
+  payload?: GenerateMagicLinkBodyPayload;
+  sendEmail?: boolean;
+}
+
+export interface GenerateMagicLinkResponse {
+  token: string;
+  url: string;
+  expiresAt: string;
+}
+
+export type CommsPrefsResponsePrefs = {
+  email: boolean;
+  sms: boolean;
+};
+
+export interface CommsPrefsResponse {
+  prefs: CommsPrefsResponsePrefs;
+  phone?: string | null;
+}
+
+export interface UpdateCommsPrefsBody {
+  email?: boolean;
+  sms?: boolean;
+  phone?: string | null;
+}
+
+export type NotificationType =
+  (typeof NotificationType)[keyof typeof NotificationType];
+
+export const NotificationType = {
+  welcome: "welcome",
+  "plan-ready": "plan-ready",
+  "session-reminder": "session-reminder",
+  "session-confirmed": "session-confirmed",
+  "payment-due": "payment-due",
+  "payment-confirmed": "payment-confirmed",
+  "accountability-nudge": "accountability-nudge",
+  "referral-invite": "referral-invite",
+  "referral-reward": "referral-reward",
+  "magic-link": "magic-link",
+  "weekly-summary": "weekly-summary",
+  "streak-at-risk": "streak-at-risk",
+} as const;
+
+export type NotificationLogEntryChannel =
+  (typeof NotificationLogEntryChannel)[keyof typeof NotificationLogEntryChannel];
+
+export const NotificationLogEntryChannel = {
+  email: "email",
+  sms: "sms",
+} as const;
+
+export type NotificationLogEntryStatus =
+  (typeof NotificationLogEntryStatus)[keyof typeof NotificationLogEntryStatus];
+
+export const NotificationLogEntryStatus = {
+  queued: "queued",
+  sent: "sent",
+  failed: "failed",
+} as const;
+
+export interface NotificationLogEntry {
+  id: string;
+  profileId: string;
+  channel: NotificationLogEntryChannel;
+  type: NotificationType;
+  status: NotificationLogEntryStatus;
+  scheduledFor?: string | null;
+  sentAt?: string | null;
+  createdAt: string;
+  email?: string | null;
+  displayName?: string | null;
+}
+
+export interface NotificationLogResponse {
+  entries: NotificationLogEntry[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 /**
  * Authentication required
  */
 export type UnauthorizedResponse = ErrorResponse;
+
+/**
+ * Insufficient permissions
+ */
+export type ForbiddenResponse = ErrorResponse;
+
+/**
+ * Validation error
+ */
+export type BadRequestResponse = ErrorResponse;
 
 export type ListModalitiesParams = {
   category?: string;
@@ -908,3 +1013,29 @@ export type GetAdminReferralStats200 = {
   totalCreditsIssuedFormatted: string;
   totalCreditsUsedFormatted: string;
 };
+
+export type ListNotificationLogParams = {
+  page?: number;
+  limit?: number;
+  profileId?: string;
+  type?: string;
+  status?: ListNotificationLogStatus;
+  channel?: ListNotificationLogChannel;
+};
+
+export type ListNotificationLogStatus =
+  (typeof ListNotificationLogStatus)[keyof typeof ListNotificationLogStatus];
+
+export const ListNotificationLogStatus = {
+  queued: "queued",
+  sent: "sent",
+  failed: "failed",
+} as const;
+
+export type ListNotificationLogChannel =
+  (typeof ListNotificationLogChannel)[keyof typeof ListNotificationLogChannel];
+
+export const ListNotificationLogChannel = {
+  email: "email",
+  sms: "sms",
+} as const;

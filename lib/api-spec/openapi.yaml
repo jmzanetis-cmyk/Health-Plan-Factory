@@ -34,6 +34,8 @@ tags:
     description: Letter of Medical Necessity (LMN) and HSA unlock flow
   - name: referrals
     description: Member referral program — share links, earn credits
+  - name: messaging
+    description: Transactional email, SMS, magic links, and communication preferences
 
 paths:
   /healthz:
@@ -1496,10 +1498,157 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /magic-links/generate:
+    post:
+      operationId: generateMagicLink
+      tags: [messaging]
+      summary: Generate a signed magic link for passwordless actions
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateMagicLinkBody'
+      responses:
+        '201':
+          description: Magic link generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateMagicLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /magic-links/redeem/{token}:
+    get:
+      operationId: redeemMagicLink
+      tags: [messaging]
+      summary: Validate and redeem a magic link token
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '302':
+          description: Token valid — redirects to the action destination (sets session cookie for login action)
+        '410':
+          description: Token is invalid, expired, or already used
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /profile/comms-prefs:
+    get:
+      operationId: getCommsPrefs
+      tags: [messaging]
+      summary: Get the authenticated member's communication preferences
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current communication preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommsPrefsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      operationId: updateCommsPrefs
+      tags: [messaging]
+      summary: Update the authenticated member's communication preferences
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommsPrefsBody'
+      responses:
+        '200':
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommsPrefsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/notification-log:
+    get:
+      operationId: listNotificationLog
+      tags: [admin, messaging]
+      summary: Paginated admin view of all outbound notifications
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: profileId
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [queued, sent, failed]
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [email, sms]
+      responses:
+        '200':
+          description: Paginated notification log entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationLogResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
 components:
   responses:
     Unauthorized:
       description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    BadRequest:
+      description: Validation error
       content:
         application/json:
           schema:
@@ -2773,3 +2922,124 @@ components:
           items:
             $ref: '#/components/schemas/MemberCreditRow'
       required: [unusedCreditsCents, unusedCreditsFormatted, hasCredits, credits]
+
+    # ─── Messaging Schemas ─────────────────────────────────────────────────────
+
+    GenerateMagicLinkBody:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [login, payment, appointment, accountability]
+        payload:
+          type: object
+          additionalProperties: true
+        sendEmail:
+          type: boolean
+          default: false
+
+    GenerateMagicLinkResponse:
+      type: object
+      required: [token, url, expiresAt]
+      properties:
+        token:
+          type: string
+          format: uuid
+        url:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    CommsPrefsResponse:
+      type: object
+      required: [prefs]
+      properties:
+        prefs:
+          type: object
+          required: [email, sms]
+          properties:
+            email:
+              type: boolean
+            sms:
+              type: boolean
+        phone:
+          type: string
+          nullable: true
+
+    UpdateCommsPrefsBody:
+      type: object
+      properties:
+        email:
+          type: boolean
+        sms:
+          type: boolean
+        phone:
+          type: string
+          nullable: true
+
+    NotificationType:
+      type: string
+      enum:
+        - welcome
+        - plan-ready
+        - session-reminder
+        - session-confirmed
+        - payment-due
+        - payment-confirmed
+        - accountability-nudge
+        - referral-invite
+        - referral-reward
+        - magic-link
+        - weekly-summary
+        - streak-at-risk
+
+    NotificationLogEntry:
+      type: object
+      required: [id, profileId, channel, type, status, createdAt]
+      properties:
+        id:
+          type: string
+        profileId:
+          type: string
+        channel:
+          type: string
+          enum: [email, sms]
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        status:
+          type: string
+          enum: [queued, sent, failed]
+        scheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        email:
+          type: string
+          nullable: true
+        displayName:
+          type: string
+          nullable: true
+
+    NotificationLogResponse:
+      type: object
+      required: [entries, total, page, limit]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationLogEntry'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer

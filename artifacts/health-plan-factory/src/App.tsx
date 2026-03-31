@@ -63,6 +63,7 @@ import AdminProviders from "@/pages/admin/Providers";
 import AdminModalities from "@/pages/admin/Modalities";
 import AdminSettings from "@/pages/admin/Settings";
 import AdminEmployers from "@/pages/admin/Employers";
+import AdminMessages from "@/pages/admin/Messages";
 
 import EmployerPortal from "@/pages/employer/EmployerPortal";
 import EmployerDashboard from "@/pages/employer/EmployerDashboard";
@@ -133,6 +134,7 @@ function AppRoutes() {
       <Route path="/admin/modalities" element={<Layout><ProtectedRoute role="admin"><AdminModalities /></ProtectedRoute></Layout>} />
       <Route path="/admin/settings" element={<Layout><ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute></Layout>} />
       <Route path="/admin/employers" element={<Layout><ProtectedRoute role="admin"><AdminEmployers /></ProtectedRoute></Layout>} />
+      <Route path="/admin/messages" element={<Layout><ProtectedRoute role="admin"><AdminMessages /></ProtectedRoute></Layout>} />
 
       {/* Employer routes */}
       <Route path="/employer" element={<Layout><EmployerPortal /></Layout>} />

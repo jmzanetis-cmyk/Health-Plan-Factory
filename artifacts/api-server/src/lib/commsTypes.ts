@@ -1,0 +1,13 @@
+export type NotificationType =
+  | "welcome"
+  | "plan-ready"
+  | "session-reminder"
+  | "session-confirmed"
+  | "payment-due"
+  | "payment-confirmed"
+  | "accountability-nudge"
+  | "referral-invite"
+  | "referral-reward"
+  | "magic-link"
+  | "weekly-summary"
+  | "streak-at-risk";

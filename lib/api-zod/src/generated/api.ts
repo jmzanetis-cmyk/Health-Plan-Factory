@@ -1474,3 +1474,97 @@ export const GetCreditsMineResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Generate a signed magic link for passwordless actions
+ */
+export const generateMagicLinkBodySendEmailDefault = false;
+
+export const GenerateMagicLinkBody = zod.object({
+  action: zod.enum(["login", "payment", "appointment", "accountability"]),
+  payload: zod.record(zod.string(), zod.unknown()).optional(),
+  sendEmail: zod.boolean().default(generateMagicLinkBodySendEmailDefault),
+});
+
+/**
+ * @summary Validate and redeem a magic link token
+ */
+export const RedeemMagicLinkParams = zod.object({
+  token: zod.coerce.string().uuid(),
+});
+
+/**
+ * @summary Get the authenticated member's communication preferences
+ */
+export const GetCommsPrefsResponse = zod.object({
+  prefs: zod.object({
+    email: zod.boolean(),
+    sms: zod.boolean(),
+  }),
+  phone: zod.string().nullish(),
+});
+
+/**
+ * @summary Update the authenticated member's communication preferences
+ */
+export const UpdateCommsPrefsBody = zod.object({
+  email: zod.boolean().optional(),
+  sms: zod.boolean().optional(),
+  phone: zod.string().nullish(),
+});
+
+export const UpdateCommsPrefsResponse = zod.object({
+  prefs: zod.object({
+    email: zod.boolean(),
+    sms: zod.boolean(),
+  }),
+  phone: zod.string().nullish(),
+});
+
+/**
+ * @summary Paginated admin view of all outbound notifications
+ */
+export const listNotificationLogQueryPageDefault = 1;
+export const listNotificationLogQueryLimitDefault = 50;
+
+export const ListNotificationLogQueryParams = zod.object({
+  page: zod.coerce.number().default(listNotificationLogQueryPageDefault),
+  limit: zod.coerce.number().default(listNotificationLogQueryLimitDefault),
+  profileId: zod.coerce.string().optional(),
+  type: zod.coerce.string().optional(),
+  status: zod.enum(["queued", "sent", "failed"]).optional(),
+  channel: zod.enum(["email", "sms"]).optional(),
+});
+
+export const ListNotificationLogResponse = zod.object({
+  entries: zod.array(
+    zod.object({
+      id: zod.string(),
+      profileId: zod.string(),
+      channel: zod.enum(["email", "sms"]),
+      type: zod.enum([
+        "welcome",
+        "plan-ready",
+        "session-reminder",
+        "session-confirmed",
+        "payment-due",
+        "payment-confirmed",
+        "accountability-nudge",
+        "referral-invite",
+        "referral-reward",
+        "magic-link",
+        "weekly-summary",
+        "streak-at-risk",
+      ]),
+      status: zod.enum(["queued", "sent", "failed"]),
+      scheduledFor: zod.coerce.date().nullish(),
+      sentAt: zod.coerce.date().nullish(),
+      createdAt: zod.coerce.date(),
+      email: zod.string().nullish(),
+      displayName: zod.string().nullish(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+});

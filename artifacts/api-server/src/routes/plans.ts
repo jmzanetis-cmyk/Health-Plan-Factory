@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { plans, planItems, memberIntakes, modalities } from "@workspace/db";
+import { plans, planItems, memberIntakes, modalities, profiles } from "@workspace/db";
 import { eq, desc, inArray } from "drizzle-orm";
 import { maybeRewardReferrer } from "./referrals";
 import {
@@ -12,6 +12,8 @@ import {
   UpdatePlanResponse,
 } from "@workspace/api-zod";
 import { runPlanEngine } from "../lib/serverPlanEngine";
+import { sendNotification } from "../lib/comms";
+import { planReadyEmail } from "../emails/plan-ready";
 
 const router: IRouter = Router();
 
@@ -79,9 +81,43 @@ router.post("/plans/generate", async (req, res) => {
     // Trigger referral reward if the member was referred and this is their first plan
     if (body.data.profileId) {
       maybeRewardReferrer(body.data.profileId).catch((err) => {
-        // Non-blocking — log but don't fail plan generation
         console.error("[referral] maybeRewardReferrer error:", err);
       });
+
+      // Send plan-ready notification (fire-and-forget)
+      const profileId = body.data.profileId;
+      const modalityCount = savedItems.length;
+      const monthlyBudget = Math.round(generated.totalMonthlyCost);
+      ;(async () => {
+        try {
+          const [profile] = await db
+            .select({ email: profiles.email, displayName: profiles.displayName })
+            .from(profiles)
+            .where(eq(profiles.id, profileId))
+            .limit(1);
+          if (profile?.email) {
+            const planUrl = process.env.BASE_URL
+              ? `${process.env.BASE_URL}/plan`
+              : "/plan";
+            const { subject, html } = planReadyEmail({
+              displayName: profile.displayName,
+              planUrl,
+              modalityCount,
+              monthlyBudget,
+            });
+            await sendNotification({
+              profileId,
+              email: profile.email,
+              type: "plan-ready",
+              subject,
+              html,
+              smsBody: `Health Plan Factory: Your personalized wellness plan with ${modalityCount} modalities is ready! Visit the app to view it.`,
+            });
+          }
+        } catch (err) {
+          console.error("[comms] plan-ready notification error:", err);
+        }
+      })();
     }
 
     res.status(201).json(GetPlanResponse.parse({ plan, items: savedItems }));

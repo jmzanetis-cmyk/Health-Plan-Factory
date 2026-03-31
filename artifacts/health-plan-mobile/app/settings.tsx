@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Platform,
   Linking,
   Alert,
+  Switch,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +18,14 @@ import { useRouter } from "expo-router";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
+import * as SecureStore from "expo-secure-store";
+
+function getMobileApiBase(): string {
+  if (process.env.EXPO_PUBLIC_DOMAIN) {
+    return `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
+  }
+  return "";
+}
 
 type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
 
@@ -26,6 +37,165 @@ interface SettingsRow {
   onPress?: () => void;
   danger?: boolean;
 }
+
+function NotificationPrefsSection() {
+  const [prefs, setPrefs] = useState({ email: true, sms: false });
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const apiBase = getMobileApiBase();
+
+  useEffect(() => {
+    (async () => {
+      const token = await SecureStore.getItemAsync("auth_session_token");
+      if (!token) { setLoading(false); return; }
+      try {
+        const res = await fetch(`${apiBase}/api/profile/comms-prefs`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const d = await res.json();
+        if (d.prefs) setPrefs(d.prefs);
+        if (d.phone) setPhone(d.phone);
+      } catch { /* ignore */ }
+      setLoading(false);
+    })();
+  }, []);
+
+  const save = async () => {
+    const token = await SecureStore.getItemAsync("auth_session_token");
+    if (!token) return;
+    setSaving(true);
+    try {
+      await fetch(`${apiBase}/api/profile/comms-prefs`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...prefs, phone: phone || null }),
+      });
+      Alert.alert("Saved", "Notification preferences updated.");
+    } catch {
+      Alert.alert("Error", "Failed to save preferences.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={{ padding: SPACING.lg, alignItems: "center" }}>
+        <ActivityIndicator color={COLORS.navy} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={notifStyles.card}>
+      <View style={notifStyles.row}>
+        <View style={notifStyles.icon}>
+          <Feather name="mail" size={16} color={COLORS.amber} />
+        </View>
+        <Text style={notifStyles.label}>Email notifications</Text>
+        <Switch
+          value={prefs.email}
+          onValueChange={(v) => setPrefs((p) => ({ ...p, email: v }))}
+          trackColor={{ false: COLORS.border, true: COLORS.navy }}
+          thumbColor={COLORS.white}
+        />
+      </View>
+      <View style={[notifStyles.row, notifStyles.rowBorder]}>
+        <View style={notifStyles.icon}>
+          <Feather name="message-square" size={16} color={COLORS.amber} />
+        </View>
+        <Text style={notifStyles.label}>SMS notifications</Text>
+        <Switch
+          value={prefs.sms}
+          onValueChange={(v) => setPrefs((p) => ({ ...p, sms: v }))}
+          trackColor={{ false: COLORS.border, true: COLORS.navy }}
+          thumbColor={COLORS.white}
+        />
+      </View>
+      {prefs.sms && (
+        <View style={[notifStyles.row, notifStyles.rowBorder]}>
+          <View style={notifStyles.icon}>
+            <Feather name="phone" size={16} color={COLORS.amber} />
+          </View>
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="+1 555 000 0000"
+            keyboardType="phone-pad"
+            style={notifStyles.phoneInput}
+          />
+        </View>
+      )}
+      <TouchableOpacity
+        style={notifStyles.saveBtn}
+        onPress={save}
+        disabled={saving}
+        activeOpacity={0.8}
+      >
+        {saving ? (
+          <ActivityIndicator size="small" color={COLORS.white} />
+        ) : (
+          <Text style={notifStyles.saveBtnText}>Save preferences</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const notifStyles = StyleSheet.create({
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: "hidden",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    padding: SPACING.lg,
+  },
+  rowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  icon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.amberPale,
+  },
+  label: {
+    fontFamily: FONTS.bodyMedium,
+    fontSize: 15,
+    color: COLORS.navy,
+    flex: 1,
+  },
+  phoneInput: {
+    flex: 1,
+    fontFamily: FONTS.body,
+    fontSize: 14,
+    color: COLORS.navy,
+  },
+  saveBtn: {
+    margin: SPACING.lg,
+    marginTop: SPACING.sm,
+    backgroundColor: COLORS.navy,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    alignItems: "center",
+  },
+  saveBtnText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 14,
+    color: COLORS.white,
+  },
+});
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -131,6 +301,9 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <Text style={styles.sectionLabel}>Notifications</Text>
+        <NotificationPrefsSection />
 
         <Text style={styles.sectionLabel}>Support</Text>
         <View style={styles.card}>

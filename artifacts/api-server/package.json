@@ -21,8 +21,10 @@
     "openid-client": "^6.8.2",
     "pino": "^9",
     "pino-http": "^10",
+    "resend": "^6.9.4",
     "serverless-http": "^4.0.0",
     "stripe": "^21.0.1",
+    "twilio": "^5.13.1",
     "zod": "catalog:"
   },
   "devDependencies": {
