@@ -39,6 +39,23 @@ export const ListModalitiesResponseItem = zod.object({
   preferenceMatch: zod.array(zod.string()),
   exclusionIds: zod.array(zod.string()),
   isActive: zod.boolean(),
+  lmnEligible: zod.boolean().optional(),
+  evidenceSummary: zod
+    .string()
+    .nullish()
+    .describe(
+      "AI-generated 300–500 word evidence summary for the public library page",
+    ),
+  metaDescription: zod
+    .string()
+    .nullish()
+    .describe("SEO meta description (140–160 chars)"),
+  relatedModalities: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "IDs of related modalities shown at the bottom of the detail page",
+    ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -62,6 +79,52 @@ export const CreateModalityBody = zod.object({
   conditions: zod.array(zod.string()).optional(),
   preferenceMatch: zod.array(zod.string()).optional(),
   exclusionIds: zod.array(zod.string()).optional(),
+});
+
+/**
+ * Returns full modality detail including evidence summary, meta description, and related modality IDs. Used by the public /modalities/:slug evidence library page.
+
+ * @summary Get a modality by ID (slug)
+ */
+export const GetModalityByIdParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetModalityByIdResponse = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  emoji: zod.string(),
+  category: zod.string(),
+  evidenceLevel: zod.string(),
+  costLow: zod.number(),
+  costHigh: zod.number(),
+  typicalFrequency: zod.string(),
+  hsaEligible: zod.boolean(),
+  description: zod.string(),
+  goals: zod.array(zod.string()),
+  conditions: zod.array(zod.string()),
+  preferenceMatch: zod.array(zod.string()),
+  exclusionIds: zod.array(zod.string()),
+  isActive: zod.boolean(),
+  lmnEligible: zod.boolean().optional(),
+  evidenceSummary: zod
+    .string()
+    .nullish()
+    .describe(
+      "AI-generated 300–500 word evidence summary for the public library page",
+    ),
+  metaDescription: zod
+    .string()
+    .nullish()
+    .describe("SEO meta description (140–160 chars)"),
+  relatedModalities: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "IDs of related modalities shown at the bottom of the detail page",
+    ),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 /**
@@ -384,6 +447,23 @@ export const GetAdminModalityResponse = zod.object({
   preferenceMatch: zod.array(zod.string()),
   exclusionIds: zod.array(zod.string()),
   isActive: zod.boolean(),
+  lmnEligible: zod.boolean().optional(),
+  evidenceSummary: zod
+    .string()
+    .nullish()
+    .describe(
+      "AI-generated 300–500 word evidence summary for the public library page",
+    ),
+  metaDescription: zod
+    .string()
+    .nullish()
+    .describe("SEO meta description (140–160 chars)"),
+  relatedModalities: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "IDs of related modalities shown at the bottom of the detail page",
+    ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -420,6 +500,23 @@ export const UpdateAdminModalityResponse = zod.object({
   preferenceMatch: zod.array(zod.string()),
   exclusionIds: zod.array(zod.string()),
   isActive: zod.boolean(),
+  lmnEligible: zod.boolean().optional(),
+  evidenceSummary: zod
+    .string()
+    .nullish()
+    .describe(
+      "AI-generated 300–500 word evidence summary for the public library page",
+    ),
+  metaDescription: zod
+    .string()
+    .nullish()
+    .describe("SEO meta description (140–160 chars)"),
+  relatedModalities: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "IDs of related modalities shown at the bottom of the detail page",
+    ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -559,6 +656,73 @@ export const ExchangeMobileAuthorizationCodeResponse = zod.object({
  */
 export const LogoutMobileSessionResponse = zod.object({
   success: zod.boolean(),
+});
+
+/**
+ * Returns the authenticated member's LMN status, LMN-eligible modalities from their most recent plan, estimated annual HSA/FSA savings, and the latest LMN request if any.
+
+ * @summary Get member LMN status and HSA savings opportunity
+ */
+export const GetLmnStatusResponse = zod.object({
+  lmnStatus: zod.enum(["none", "requested", "received"]),
+  eligibleItems: zod.array(
+    zod.object({
+      modalityId: zod.string(),
+      name: zod.string(),
+      emoji: zod.string(),
+      estimatedMonthlyCost: zod
+        .number()
+        .describe("Estimated monthly cost in cents"),
+    }),
+  ),
+  estimatedAnnualSavings: zod
+    .number()
+    .describe("Estimated annual HSA\/FSA savings in cents"),
+  hasActivePlan: zod.boolean(),
+  latestRequest: zod
+    .object({
+      id: zod.string(),
+      profileId: zod.string(),
+      planId: zod.string().nullish(),
+      status: zod.enum(["draft", "sent", "received"]),
+      draftMessage: zod.string(),
+      eligibleModalities: zod.array(zod.string()).optional(),
+      estimatedAnnualSavings: zod
+        .number()
+        .nullish()
+        .describe("Estimated annual savings in cents"),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    })
+    .nullish(),
+});
+
+/**
+ * Updates the member's lmnStatus to "received" and marks the latest LMN request as received. This activates "LMN on file" badges on eligible progress log entries.
+
+ * @summary Member self-reports their physician delivered the LMN
+ */
+export const MarkLmnReceivedResponse = zod.object({
+  lmnStatus: zod.enum(["received"]),
+});
+
+/**
+ * Public endpoint. Returns all active modalities flagged as LMN-eligible by an admin. Used by the plan page to show personalized physician callouts.
+
+ * @summary List all LMN-eligible modalities
+ */
+export const ListLmnEligibleModalitiesResponse = zod.object({
+  modalities: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      emoji: zod.string(),
+      category: zod.string(),
+      costLow: zod.number().nullish(),
+      costHigh: zod.number().nullish(),
+      description: zod.string().nullish(),
+    }),
+  ),
 });
 
 /**

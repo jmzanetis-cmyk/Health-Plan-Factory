@@ -22,6 +22,13 @@ export interface ModalityRecord {
   preferenceMatch: string[];
   exclusionIds: string[];
   isActive: boolean;
+  lmnEligible?: boolean;
+  /** AI-generated 300–500 word evidence summary for the public library page */
+  evidenceSummary?: string | null;
+  /** SEO meta description (140–160 chars) */
+  metaDescription?: string | null;
+  /** IDs of related modalities shown at the bottom of the detail page */
+  relatedModalities?: string[];
   createdAt: Date;
   updatedAt: Date;
 }

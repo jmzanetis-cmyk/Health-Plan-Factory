@@ -45,9 +45,13 @@ import type {
   IntakeRecord,
   ListFavoritesParams,
   ListIntakesParams,
+  ListLmnEligibleModalities200,
   ListModalitiesParams,
   ListProgressParams,
   ListProvidersParams,
+  LmnRequestResponse,
+  LmnStatusResponse,
+  MarkLmnReceived200,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
   ModalityRecord,
@@ -63,6 +67,7 @@ import type {
   RemoveFavoriteParams,
   SetModalityRulesBody,
   StripeWebhookBody,
+  UnauthorizedResponse,
   UpdateEmployerBody,
   UpdateModalityBody,
   UpdatePlanBody,
@@ -334,6 +339,95 @@ export const useCreateModality = <
 > => {
   return useMutation(getCreateModalityMutationOptions(options));
 };
+
+/**
+ * Returns full modality detail including evidence summary, meta description, and related modality IDs. Used by the public /modalities/:slug evidence library page.
+
+ * @summary Get a modality by ID (slug)
+ */
+export const getGetModalityByIdUrl = (id: string) => {
+  return `/api/modalities/${id}`;
+};
+
+export const getModalityById = async (
+  id: string,
+  options?: RequestInit,
+): Promise<ModalityRecord> => {
+  return customFetch<ModalityRecord>(getGetModalityByIdUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetModalityByIdQueryKey = (id: string) => {
+  return [`/api/modalities/${id}`] as const;
+};
+
+export const getGetModalityByIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getModalityById>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getModalityById>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetModalityByIdQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getModalityById>>> = ({
+    signal,
+  }) => getModalityById(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getModalityById>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetModalityByIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getModalityById>>
+>;
+export type GetModalityByIdQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a modality by ID (slug)
+ */
+
+export function useGetModalityById<
+  TData = Awaited<ReturnType<typeof getModalityById>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getModalityById>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetModalityByIdQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Dedicated spend-trigger endpoint for modality sessions. Employer stipend deduction and progress log creation run in a single transaction. employerCoveredCents reflects how much the employer covered (up to the member's remaining monthly balance); outOfPocketCents is the remainder.
@@ -2605,6 +2699,330 @@ export const useLogoutMobileSession = <
 > => {
   return useMutation(getLogoutMobileSessionMutationOptions(options));
 };
+
+/**
+ * Returns the authenticated member's LMN status, LMN-eligible modalities from their most recent plan, estimated annual HSA/FSA savings, and the latest LMN request if any.
+
+ * @summary Get member LMN status and HSA savings opportunity
+ */
+export const getGetLmnStatusUrl = () => {
+  return `/api/lmn/status`;
+};
+
+export const getLmnStatus = async (
+  options?: RequestInit,
+): Promise<LmnStatusResponse> => {
+  return customFetch<LmnStatusResponse>(getGetLmnStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLmnStatusQueryKey = () => {
+  return [`/api/lmn/status`] as const;
+};
+
+export const getGetLmnStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLmnStatus>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getLmnStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLmnStatusQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLmnStatus>>> = ({
+    signal,
+  }) => getLmnStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLmnStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLmnStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLmnStatus>>
+>;
+export type GetLmnStatusQueryError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Get member LMN status and HSA savings opportunity
+ */
+
+export function useGetLmnStatus<
+  TData = Awaited<ReturnType<typeof getLmnStatus>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getLmnStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLmnStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Creates a personalized draft Letter of Medical Necessity request for the authenticated member, populated with their plan's LMN-eligible modalities. Also updates member's lmnStatus to "requested" if currently "none". Called manually from the HSA unlock flow or automatically after booking an LMN-eligible (DPC/medical) session.
+
+ * @summary Create or refresh a draft LMN request
+ */
+export const getCreateLmnRequestUrl = () => {
+  return `/api/lmn/request`;
+};
+
+export const createLmnRequest = async (
+  options?: RequestInit,
+): Promise<LmnRequestResponse> => {
+  return customFetch<LmnRequestResponse>(getCreateLmnRequestUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCreateLmnRequestMutationOptions = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLmnRequest>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLmnRequest>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["createLmnRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLmnRequest>>,
+    void
+  > = () => {
+    return createLmnRequest(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLmnRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLmnRequest>>
+>;
+
+export type CreateLmnRequestMutationError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Create or refresh a draft LMN request
+ */
+export const useCreateLmnRequest = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLmnRequest>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLmnRequest>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCreateLmnRequestMutationOptions(options));
+};
+
+/**
+ * Updates the member's lmnStatus to "received" and marks the latest LMN request as received. This activates "LMN on file" badges on eligible progress log entries.
+
+ * @summary Member self-reports their physician delivered the LMN
+ */
+export const getMarkLmnReceivedUrl = () => {
+  return `/api/lmn/mark-received`;
+};
+
+export const markLmnReceived = async (
+  options?: RequestInit,
+): Promise<MarkLmnReceived200> => {
+  return customFetch<MarkLmnReceived200>(getMarkLmnReceivedUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getMarkLmnReceivedMutationOptions = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markLmnReceived>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markLmnReceived>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["markLmnReceived"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markLmnReceived>>,
+    void
+  > = () => {
+    return markLmnReceived(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkLmnReceivedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markLmnReceived>>
+>;
+
+export type MarkLmnReceivedMutationError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Member self-reports their physician delivered the LMN
+ */
+export const useMarkLmnReceived = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markLmnReceived>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markLmnReceived>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getMarkLmnReceivedMutationOptions(options));
+};
+
+/**
+ * Public endpoint. Returns all active modalities flagged as LMN-eligible by an admin. Used by the plan page to show personalized physician callouts.
+
+ * @summary List all LMN-eligible modalities
+ */
+export const getListLmnEligibleModalitiesUrl = () => {
+  return `/api/lmn/eligible-modalities`;
+};
+
+export const listLmnEligibleModalities = async (
+  options?: RequestInit,
+): Promise<ListLmnEligibleModalities200> => {
+  return customFetch<ListLmnEligibleModalities200>(
+    getListLmnEligibleModalitiesUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListLmnEligibleModalitiesQueryKey = () => {
+  return [`/api/lmn/eligible-modalities`] as const;
+};
+
+export const getListLmnEligibleModalitiesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLmnEligibleModalities>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listLmnEligibleModalities>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListLmnEligibleModalitiesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLmnEligibleModalities>>
+  > = ({ signal }) => listLmnEligibleModalities({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLmnEligibleModalities>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLmnEligibleModalitiesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLmnEligibleModalities>>
+>;
+export type ListLmnEligibleModalitiesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all LMN-eligible modalities
+ */
+
+export function useListLmnEligibleModalities<
+  TData = Awaited<ReturnType<typeof listLmnEligibleModalities>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listLmnEligibleModalities>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLmnEligibleModalitiesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Register a new employer wellness stipend account

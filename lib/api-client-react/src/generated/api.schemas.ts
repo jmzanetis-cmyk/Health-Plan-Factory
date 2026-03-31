@@ -5,6 +5,69 @@
  * Health Plan Factory API
  * OpenAPI spec version: 0.1.0
  */
+export interface LmnEligibleItem {
+  modalityId: string;
+  name: string;
+  emoji: string;
+  /** Estimated monthly cost in cents */
+  estimatedMonthlyCost: number;
+}
+
+export type LmnStatusResponseLmnStatus =
+  (typeof LmnStatusResponseLmnStatus)[keyof typeof LmnStatusResponseLmnStatus];
+
+export const LmnStatusResponseLmnStatus = {
+  none: "none",
+  requested: "requested",
+  received: "received",
+} as const;
+
+export type LmnRequestStatus =
+  (typeof LmnRequestStatus)[keyof typeof LmnRequestStatus];
+
+export const LmnRequestStatus = {
+  draft: "draft",
+  sent: "sent",
+  received: "received",
+} as const;
+
+export interface LmnRequest {
+  id: string;
+  profileId: string;
+  planId?: string | null;
+  status: LmnRequestStatus;
+  draftMessage: string;
+  eligibleModalities?: string[];
+  /** Estimated annual savings in cents */
+  estimatedAnnualSavings?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LmnStatusResponse {
+  lmnStatus: LmnStatusResponseLmnStatus;
+  eligibleItems: LmnEligibleItem[];
+  /** Estimated annual HSA/FSA savings in cents */
+  estimatedAnnualSavings: number;
+  hasActivePlan: boolean;
+  latestRequest?: LmnRequest | null;
+}
+
+export interface LmnRequestResponse {
+  request: LmnRequest;
+  lmnStatus: string;
+}
+
+export interface LmnEligibleModality {
+  id: string;
+  name: string;
+  emoji: string;
+  category: string;
+  costLow?: number | null;
+  costHigh?: number | null;
+  description?: string | null;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -32,6 +95,13 @@ export interface ModalityRecord {
   preferenceMatch: string[];
   exclusionIds: string[];
   isActive: boolean;
+  lmnEligible?: boolean;
+  /** AI-generated 300–500 word evidence summary for the public library page */
+  evidenceSummary?: string | null;
+  /** SEO meta description (140–160 chars) */
+  metaDescription?: string | null;
+  /** IDs of related modalities shown at the bottom of the detail page */
+  relatedModalities?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -528,6 +598,11 @@ export interface AdminUpdateEmployerBody {
   platformFeePercent?: number;
 }
 
+/**
+ * Authentication required
+ */
+export type UnauthorizedResponse = ErrorResponse;
+
 export type ListModalitiesParams = {
   category?: string;
   isActive?: boolean;
@@ -591,6 +666,21 @@ export type BeginBrowserLoginParams = {
 export type HandleBrowserLoginCallbackParams = {
   code?: string;
   state?: string;
+};
+
+export type MarkLmnReceived200LmnStatus =
+  (typeof MarkLmnReceived200LmnStatus)[keyof typeof MarkLmnReceived200LmnStatus];
+
+export const MarkLmnReceived200LmnStatus = {
+  received: "received",
+} as const;
+
+export type MarkLmnReceived200 = {
+  lmnStatus: MarkLmnReceived200LmnStatus;
+};
+
+export type ListLmnEligibleModalities200 = {
+  modalities: LmnEligibleModality[];
 };
 
 export type GetEmployerDashboard200Stats = {

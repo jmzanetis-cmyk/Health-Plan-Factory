@@ -1228,6 +1228,14 @@ paths:
           description: Employer not found.
 
 components:
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
   schemas:
     # ─── LMN Schemas ──────────────────────────────────────────────────────────
     LmnEligibleItem:
