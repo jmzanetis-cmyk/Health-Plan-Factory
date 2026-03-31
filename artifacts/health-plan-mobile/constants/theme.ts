@@ -44,3 +44,13 @@ export const SPACING = {
   xxl: 24,
   xxxl: 32,
 } as const;
+
+export const FONTS = {
+  heading: "CormorantGaramond_600SemiBold",
+  headingLight: "CormorantGaramond_400Regular",
+  body: "Outfit_400Regular",
+  bodyMedium: "Outfit_500Medium",
+  bodySemiBold: "Outfit_600SemiBold",
+  mono: "DMMono_400Regular",
+  monoMedium: "DMMono_500Medium",
+} as const;

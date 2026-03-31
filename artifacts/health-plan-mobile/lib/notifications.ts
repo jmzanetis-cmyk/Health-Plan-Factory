@@ -52,12 +52,16 @@ export async function scheduleWeeklyReview(): Promise<void> {
   });
 }
 
-export async function scheduleStreakAtRisk(currentStreak: number): Promise<void> {
-  if (Platform.OS === "web" || currentStreak < 2) return;
+export async function scheduleStreakAtRisk(
+  currentStreak: number,
+  hasEntryToday: boolean
+): Promise<void> {
+  if (Platform.OS === "web" || currentStreak < 1 || hasEntryToday) return;
   await Notifications.scheduleNotificationAsync({
+    identifier: "streak-at-risk",
     content: {
       title: `Don't break your ${currentStreak}-day streak!`,
-      body: "Log a check-in before midnight to keep your wellness streak alive.",
+      body: "No check-in yet today — log one before midnight to keep your streak alive.",
       data: { screen: "journal" },
     },
     trigger: {
@@ -129,6 +133,7 @@ export async function cancelAllNotifications(): Promise<void> {
 export async function setupNotifications(opts?: {
   streak?: number;
   trialDaysLeft?: number;
+  hasEntryToday?: boolean;
 }): Promise<boolean> {
   const granted = await requestNotificationPermissions();
   if (!granted) return false;
@@ -138,7 +143,9 @@ export async function setupNotifications(opts?: {
   await scheduleWeeklyReview();
   await scheduleBuddyCheckIn();
 
-  if (opts?.streak) await scheduleStreakAtRisk(opts.streak);
+  if (opts?.streak !== undefined) {
+    await scheduleStreakAtRisk(opts.streak, opts.hasEntryToday ?? false);
+  }
   if (opts?.trialDaysLeft !== undefined) await scheduleTrialCountdown(opts.trialDaysLeft);
 
   return true;

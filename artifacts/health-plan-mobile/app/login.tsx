@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/auth";
-import { COLORS, SPACING, RADIUS } from "@/constants/theme";
+import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 
 export default function LoginScreen() {
   const { login, isLoading } = useAuth();
@@ -27,12 +27,10 @@ export default function LoginScreen() {
     >
       <View style={styles.logoArea}>
         <Image
-          source={require("../assets/images/icon.png")}
+          source={require("../assets/logo.png")}
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.wordmark}>HealthPlan</Text>
-        <Text style={styles.wordmarkFactory}>FACTORY</Text>
         <Text style={styles.tagline}>Build the health plan you actually need.</Text>
       </View>
 
@@ -79,33 +77,18 @@ const styles = StyleSheet.create({
   },
   logoArea: {
     alignItems: "center",
-    gap: SPACING.sm,
+    gap: SPACING.lg,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: RADIUS.xl,
-    marginBottom: SPACING.md,
-  },
-  wordmark: {
-    fontFamily: "serif",
-    fontSize: 32,
-    color: COLORS.white,
-    letterSpacing: 1,
-  },
-  wordmarkFactory: {
-    fontFamily: "sans-serif",
-    fontSize: 13,
-    color: COLORS.amber,
-    letterSpacing: 6,
-    marginTop: -4,
+    width: 240,
+    height: 200,
+    marginBottom: SPACING.sm,
   },
   tagline: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 15,
     color: "rgba(255,255,255,0.6)",
     textAlign: "center",
-    marginTop: SPACING.sm,
     lineHeight: 22,
   },
   features: {
@@ -123,7 +106,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.amber,
   },
   featureText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 16,
     color: "rgba(255,255,255,0.85)",
   },
@@ -140,14 +123,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   loginBtnText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 16,
-    fontWeight: "600" as const,
     color: COLORS.white,
     letterSpacing: 0.3,
   },
   disclaimer: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 11,
     color: "rgba(255,255,255,0.4)",
     textAlign: "center",

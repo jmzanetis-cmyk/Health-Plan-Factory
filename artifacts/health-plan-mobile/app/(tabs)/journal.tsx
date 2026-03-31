@@ -15,7 +15,7 @@ import Slider from "@react-native-community/slider";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { COLORS, SPACING, RADIUS } from "@/constants/theme";
+import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import {
   useListProgress,
   useCreateProgressLog,
@@ -110,7 +110,7 @@ const chartStyles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   title: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     fontWeight: "600" as const,
     color: COLORS.navy,
@@ -133,7 +133,7 @@ const chartStyles = StyleSheet.create({
     flexWrap: "wrap",
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontFamily: "sans-serif", fontSize: 11, color: COLORS.textMuted },
+  legendText: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted },
 });
 
 export default function JournalScreen() {
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
   },
-  title: { fontFamily: "serif", fontSize: 28, color: COLORS.navy },
+  title: { fontFamily: FONTS.heading, fontSize: 28, color: COLORS.navy },
   addBtn: {
     backgroundColor: COLORS.navy,
     borderRadius: RADIUS.full,
@@ -480,15 +480,13 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   formHeading: {
-    fontFamily: "serif",
+    fontFamily: FONTS.heading,
     fontSize: 18,
     color: COLORS.navy,
-    fontWeight: "600" as const,
   },
   sectionLabel: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 11,
-    fontWeight: "600" as const,
     color: COLORS.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -510,7 +508,7 @@ const styles = StyleSheet.create({
   },
   ratingBtnActive: { borderColor: COLORS.amber, backgroundColor: COLORS.amberPale },
   ratingEmoji: { fontSize: 20 },
-  ratingLabel: { fontFamily: "sans-serif", fontSize: 10, color: COLORS.textMuted },
+  ratingLabel: { fontFamily: FONTS.body, fontSize: 10, color: COLORS.textMuted },
   ratingLabelActive: { color: COLORS.amber },
   sliderGroup: { gap: SPACING.xs },
   sliderRow: {
@@ -519,17 +517,15 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   sliderTitle: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodyMedium,
     fontSize: 13,
     color: COLORS.navy,
     flex: 1,
-    fontWeight: "500" as const,
   },
   sliderValue: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 13,
     color: COLORS.textMuted,
-    fontWeight: "600" as const,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
   chip: {
@@ -546,15 +542,15 @@ const styles = StyleSheet.create({
   chipActive: { borderColor: COLORS.navy, backgroundColor: COLORS.navy10 },
   chipSage: { borderColor: COLORS.sage, backgroundColor: COLORS.sagePale },
   chipEmoji: { fontSize: 13 },
-  chipText: { fontFamily: "sans-serif", fontSize: 12, color: COLORS.textMuted },
-  chipTextActive: { color: COLORS.navy, fontWeight: "600" as const },
-  chipTextSage: { color: COLORS.sage, fontWeight: "600" as const },
+  chipText: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted },
+  chipTextActive: { fontFamily: FONTS.bodySemiBold, color: COLORS.navy },
+  chipTextSage: { fontFamily: FONTS.bodySemiBold, color: COLORS.sage },
   noteInput: {
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     color: COLORS.text,
     minHeight: 72,
@@ -569,9 +565,8 @@ const styles = StyleSheet.create({
   },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 15,
-    fontWeight: "600" as const,
     color: COLORS.white,
   },
   loadingState: { alignItems: "center", paddingTop: SPACING.xxxl },
@@ -581,9 +576,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xxxl,
     gap: SPACING.md,
   },
-  emptyTitle: { fontFamily: "serif", fontSize: 20, color: COLORS.navy },
+  emptyTitle: { fontFamily: FONTS.heading, fontSize: 20, color: COLORS.navy },
   emptyText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     color: COLORS.textMuted,
     textAlign: "center",
@@ -604,12 +599,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   entryDate: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 14,
-    fontWeight: "600" as const,
     color: COLORS.navy,
   },
-  entryTime: { fontFamily: "sans-serif", fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  entryTime: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
   ratingTag: {
     flexDirection: "row",
     alignItems: "center",
@@ -620,9 +614,8 @@ const styles = StyleSheet.create({
   },
   ratingTagEmoji: { fontSize: 14 },
   ratingTagText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 12,
-    fontWeight: "600" as const,
   },
   metaChips: {
     flexDirection: "row",
@@ -639,13 +632,12 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
   },
   metaChipText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodyMedium,
     fontSize: 11,
     color: COLORS.navy,
-    fontWeight: "500" as const,
   },
   entryNote: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.textMuted,
     lineHeight: 18,
@@ -658,7 +650,7 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
   },
   disclaimerText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 11,
     color: COLORS.textLight,
     lineHeight: 16,

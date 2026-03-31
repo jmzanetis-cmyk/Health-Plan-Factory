@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { fetch } from "expo/fetch";
-import { COLORS, SPACING, RADIUS } from "@/constants/theme";
+import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import { interceptEmergencyText } from "@/lib/emergencyCheck";
@@ -316,12 +316,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: {
-    fontFamily: "serif",
+    fontFamily: FONTS.heading,
     fontSize: 18,
     color: COLORS.navy,
   },
   headerSub: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 11,
     color: COLORS.textMuted,
     marginTop: 1,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   bubbleText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     color: COLORS.navy,
     lineHeight: 20,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   chipText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 12,
     color: COLORS.navy,
   },
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     color: COLORS.navy,
     borderWidth: 1,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: { backgroundColor: COLORS.border },
   disclaimer: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 10,
     color: COLORS.textLight,
     textAlign: "center",

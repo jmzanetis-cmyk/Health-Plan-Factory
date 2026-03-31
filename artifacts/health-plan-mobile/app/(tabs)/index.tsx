@@ -13,11 +13,12 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Svg, { Circle } from "react-native-svg";
+import { useRouter } from "expo-router";
 import { useAuth } from "@/lib/auth";
-import { COLORS, SPACING, RADIUS } from "@/constants/theme";
+import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListProgress } from "@workspace/api-client-react";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
-import { setupNotifications } from "@/lib/notifications";
+import { setupNotifications, scheduleSessionReminder } from "@/lib/notifications";
 
 const RING_SIZE = 140;
 const RING_STROKE = 14;
@@ -95,6 +96,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const { user } = useAuth();
+  const router = useRouter();
 
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
@@ -111,12 +113,16 @@ export default function HomeScreen() {
   const streak = calculateStreak(entries);
   const wellnessScore = calculateWellnessScore(entries);
   const trialDaysLeft = getDaysLeftInTrial();
+  const todayStr = new Date().toDateString();
+  const hasEntryToday = entries.some(
+    (e) => new Date(e.createdAt).toDateString() === todayStr
+  );
 
   useEffect(() => {
-    if (Platform.OS !== "web" && entries.length >= 0) {
-      setupNotifications({ streak, trialDaysLeft });
+    if (Platform.OS !== "web") {
+      setupNotifications({ streak, trialDaysLeft, hasEntryToday });
     }
-  }, [streak, trialDaysLeft]);
+  }, [streak, trialDaysLeft, hasEntryToday]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -149,7 +155,7 @@ export default function HomeScreen() {
           <Text style={styles.name}>{firstName}</Text>
         </View>
         <View style={styles.badges}>
-          {trialDaysLeft > 0 && (
+          {trialDaysLeft > 0 && trialDaysLeft <= 7 && (
             <View style={styles.trialBadge}>
               <Text style={styles.trialText}>{trialDaysLeft}d trial</Text>
             </View>
@@ -158,6 +164,13 @@ export default function HomeScreen() {
             <Feather name="zap" size={14} color={COLORS.amber} />
             <Text style={styles.streakText}>{streak}d</Text>
           </View>
+          <TouchableOpacity
+            style={styles.settingsBtn}
+            onPress={() => router.push("/settings")}
+            activeOpacity={0.7}
+          >
+            <Feather name="settings" size={18} color={COLORS.navy} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -190,24 +203,42 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
         <View style={styles.sessionsCard}>
-          {UPCOMING_SESSIONS.map((session, idx) => (
-            <View
-              key={session.id}
-              style={[
-                styles.sessionRow,
-                idx < UPCOMING_SESSIONS.length - 1 && styles.sessionRowBorder,
-              ]}
-            >
-              <Text style={styles.sessionEmoji}>{session.emoji}</Text>
-              <View style={styles.sessionInfo}>
-                <Text style={styles.sessionName}>{session.name}</Text>
-                <Text style={styles.sessionTime}>{session.day} · {session.time}</Text>
+          {UPCOMING_SESSIONS.map((session, idx) => {
+            const sessionDate = new Date();
+            sessionDate.setDate(sessionDate.getDate() + (session.day === "Tomorrow" ? 1 : 3));
+            const [hours, minutes] = session.time.split(/[: ]/);
+            const isPM = session.time.includes("PM");
+            sessionDate.setHours(
+              (parseInt(hours) % 12) + (isPM ? 12 : 0),
+              parseInt(minutes ?? "0"),
+              0
+            );
+            return (
+              <View
+                key={session.id}
+                style={[
+                  styles.sessionRow,
+                  idx < UPCOMING_SESSIONS.length - 1 && styles.sessionRowBorder,
+                ]}
+              >
+                <Text style={styles.sessionEmoji}>{session.emoji}</Text>
+                <View style={styles.sessionInfo}>
+                  <Text style={styles.sessionName}>{session.name}</Text>
+                  <Text style={styles.sessionTime}>{session.day} · {session.time}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.remindBtn}
+                  onPress={() => {
+                    scheduleSessionReminder(session.name, sessionDate);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="bell" size={14} color={COLORS.amber} />
+                </TouchableOpacity>
               </View>
-              <View style={styles.sessionTag}>
-                <Text style={styles.sessionTagText}>{session.day}</Text>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </View>
 
@@ -302,13 +333,13 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxl,
   },
   greeting: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     color: COLORS.textMuted,
     letterSpacing: 0.2,
   },
-  name: { fontFamily: "serif", fontSize: 28, color: COLORS.navy, marginTop: 2 },
-  badges: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
+  name: { fontFamily: FONTS.heading, fontSize: 28, color: COLORS.navy, marginTop: 2 },
+  badges: { flexDirection: "row", alignItems: "center", gap: SPACING.sm, marginTop: 6 },
   trialBadge: {
     backgroundColor: COLORS.navy10,
     paddingHorizontal: SPACING.sm,
@@ -318,10 +349,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.navy20,
   },
   trialText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 11,
     color: COLORS.navy,
-    fontWeight: "600" as const,
   },
   streakBadge: {
     flexDirection: "row",
@@ -335,10 +365,17 @@ const styles = StyleSheet.create({
     borderColor: COLORS.amber10,
   },
   streakText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 13,
-    fontWeight: "600" as const,
     color: COLORS.amber,
+  },
+  settingsBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.navy10,
   },
   loadingRing: { height: 180, justifyContent: "center", alignItems: "center" },
   scoreSection: { alignItems: "center", marginBottom: SPACING.xxl, gap: SPACING.xl },
@@ -351,13 +388,12 @@ const styles = StyleSheet.create({
   },
   ringInner: { position: "absolute", alignItems: "center" },
   ringScore: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.mono,
     fontSize: 38,
-    fontWeight: "700" as const,
     lineHeight: 42,
   },
   ringLabel: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 10,
     color: COLORS.textMuted,
     letterSpacing: 0.5,
@@ -366,16 +402,15 @@ const styles = StyleSheet.create({
   scoreMeta: { flexDirection: "row", gap: SPACING.xl, alignItems: "center" },
   metaItem: { alignItems: "center" },
   metaValue: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.mono,
     fontSize: 20,
-    fontWeight: "700" as const,
     color: COLORS.navy,
   },
-  metaLabel: { fontFamily: "sans-serif", fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  metaLabel: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
   metaDivider: { width: 1, height: 32, backgroundColor: COLORS.border },
   section: { marginBottom: SPACING.xxl },
   sectionTitle: {
-    fontFamily: "serif",
+    fontFamily: FONTS.heading,
     fontSize: 20,
     color: COLORS.navy,
     marginBottom: SPACING.md,
@@ -398,23 +433,20 @@ const styles = StyleSheet.create({
   sessionEmoji: { fontSize: 20 },
   sessionInfo: { flex: 1 },
   sessionName: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 14,
-    fontWeight: "600" as const,
     color: COLORS.navy,
   },
-  sessionTime: { fontFamily: "sans-serif", fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-  sessionTag: {
+  sessionTime: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  remindBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: COLORS.amberPale,
-    borderRadius: RADIUS.full,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-  },
-  sessionTagText: {
-    fontFamily: "sans-serif",
-    fontSize: 11,
-    color: COLORS.amber,
-    fontWeight: "600" as const,
+    borderWidth: 1,
+    borderColor: COLORS.amber10,
   },
   routineCard: {
     backgroundColor: COLORS.white,
@@ -441,7 +473,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkboxDone: { backgroundColor: COLORS.sage, borderColor: COLORS.sage },
-  routineName: { fontFamily: "sans-serif", fontSize: 15, color: COLORS.navy, flex: 1 },
+  routineName: { fontFamily: FONTS.body, fontSize: 15, color: COLORS.navy, flex: 1 },
   routineNameDone: { color: COLORS.textMuted, textDecorationLine: "line-through" },
   streakCard: {
     flexDirection: "row",
@@ -456,12 +488,11 @@ const styles = StyleSheet.create({
   },
   streakCardText: { flex: 1 },
   streakCardTitle: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 15,
-    fontWeight: "600" as const,
     color: COLORS.amber,
   },
-  streakCardSub: { fontFamily: "sans-serif", fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
+  streakCardSub: { fontFamily: FONTS.body, fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
   completedBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -472,10 +503,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxl,
   },
   completedText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.bodyMedium,
     fontSize: 14,
     color: COLORS.sage,
-    fontWeight: "500" as const,
   },
   disclaimer: {
     marginTop: SPACING.xl,
@@ -485,7 +515,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   disclaimerText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 11,
     color: COLORS.textLight,
     lineHeight: 16,

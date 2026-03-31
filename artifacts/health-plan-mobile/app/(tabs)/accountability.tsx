@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS, SPACING, RADIUS } from "@/constants/theme";
+import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListProgress } from "@workspace/api-client-react";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
 import { setupNotifications } from "@/lib/notifications";
@@ -397,7 +397,7 @@ export default function AccountabilityScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.warm },
   header: { paddingHorizontal: SPACING.xl, paddingBottom: SPACING.lg },
-  title: { fontFamily: "serif", fontSize: 28, color: COLORS.navy },
+  title: { fontFamily: FONTS.heading, fontSize: 28, color: COLORS.navy },
   loadingState: { flex: 1, alignItems: "center", justifyContent: "center" },
   content: { paddingHorizontal: SPACING.xl, gap: SPACING.lg },
   checkInCard: {
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: SPACING.lg,
   },
-  checkInTitle: { fontFamily: "serif", fontSize: 18, color: COLORS.white },
+  checkInTitle: { fontFamily: FONTS.heading, fontSize: 18, color: COLORS.white },
   streakPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
   },
   streakPillText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 12,
     fontWeight: "600" as const,
     color: COLORS.amber,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   },
   dayDotFilled: { backgroundColor: COLORS.sage },
   dayDotToday: { borderWidth: 2, borderColor: COLORS.amber, backgroundColor: "transparent" },
-  dayLabel: { fontFamily: "sans-serif", fontSize: 11, color: "rgba(255,255,255,0.5)" },
+  dayLabel: { fontFamily: FONTS.body, fontSize: 11, color: "rgba(255,255,255,0.5)" },
   dayLabelToday: { color: COLORS.amber, fontWeight: "600" as const },
   statsRow: { flexDirection: "row", gap: SPACING.sm },
   statCard: {
@@ -453,15 +453,15 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   statValue: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 22,
     fontWeight: "700" as const,
     color: COLORS.navy,
   },
-  statLabel: { fontFamily: "sans-serif", fontSize: 11, color: COLORS.textMuted, textAlign: "center" },
+  statLabel: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted, textAlign: "center" },
   section: {},
   sectionTitle: {
-    fontFamily: "serif",
+    fontFamily: FONTS.heading,
     fontSize: 20,
     color: COLORS.navy,
     marginBottom: SPACING.md,
@@ -481,13 +481,13 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   commitTitle: {
-    fontFamily: "serif",
+    fontFamily: FONTS.heading,
     fontSize: 16,
     color: COLORS.navy,
     fontWeight: "600" as const,
   },
   commitCount: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.textMuted,
     fontWeight: "600" as const,
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkboxDone: { backgroundColor: COLORS.sage, borderColor: COLORS.sage },
-  commitLabel: { fontFamily: "sans-serif", fontSize: 14, color: COLORS.navy, flex: 1 },
+  commitLabel: { fontFamily: FONTS.body, fontSize: 14, color: COLORS.navy, flex: 1 },
   commitLabelDone: { color: COLORS.textLight, textDecorationLine: "line-through" },
   goalRow: { flexDirection: "row", alignItems: "center", gap: SPACING.md },
   goalIcon: {
@@ -529,13 +529,13 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   goalLabel: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.navy,
     fontWeight: "500" as const,
   },
   goalCount: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.textMuted,
     fontWeight: "600" as const,
@@ -574,18 +574,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buddyAvatarText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 16,
     fontWeight: "700" as const,
     color: COLORS.white,
   },
   buddyName: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     fontWeight: "600" as const,
     color: COLORS.white,
   },
-  buddyStatus: { fontFamily: "sans-serif", fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 },
+  buddyStatus: { fontFamily: FONTS.body, fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 },
   messageList: { padding: SPACING.md, gap: SPACING.sm },
   messageBubble: {
     maxWidth: "80%",
@@ -595,10 +595,10 @@ const styles = StyleSheet.create({
   },
   bubbleBuddy: { alignSelf: "flex-start", backgroundColor: COLORS.off },
   bubbleMe: { alignSelf: "flex-end", backgroundColor: COLORS.navy },
-  messageText: { fontFamily: "sans-serif", fontSize: 14, lineHeight: 19 },
+  messageText: { fontFamily: FONTS.body, fontSize: 14, lineHeight: 19 },
   messageTextBuddy: { color: COLORS.navy },
   messageTextMe: { color: COLORS.white },
-  messageTime: { fontFamily: "sans-serif", fontSize: 11, color: COLORS.textMuted },
+  messageTime: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted },
   buddyFooter: {
     flexDirection: "row",
     alignItems: "center",
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.off,
   },
-  buddyFooterText: { fontFamily: "sans-serif", fontSize: 11, color: COLORS.textMuted },
+  buddyFooterText: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted },
   reminderCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
@@ -633,10 +633,10 @@ const styles = StyleSheet.create({
   },
   reminderInfo: { flex: 1 },
   reminderTitle: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     fontWeight: "600" as const,
     color: COLORS.navy,
   },
-  reminderSub: { fontFamily: "sans-serif", fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  reminderSub: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
 });

@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
   Platform,
   ActivityIndicator,
@@ -14,9 +13,10 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS, SPACING, RADIUS } from "@/constants/theme";
+import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useListProviders, useListModalities } from "@workspace/api-client-react";
 import type { ProviderRecord, ModalityRecord } from "@workspace/api-client-react";
+import { EmergencyTextInput } from "@/components/EmergencyTextInput";
 
 function ProviderCard({ provider }: { provider: ProviderRecord }) {
   function handleContact() {
@@ -144,7 +144,7 @@ export default function DiscoverScreen() {
 
       <View style={styles.searchBar}>
         <Feather name="search" size={16} color={COLORS.textMuted} />
-        <TextInput
+        <EmergencyTextInput
           style={styles.searchInput}
           placeholder="Search providers..."
           placeholderTextColor={COLORS.textLight}
@@ -218,8 +218,8 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.warm },
   header: { paddingHorizontal: SPACING.xl, paddingBottom: SPACING.sm },
-  title: { fontFamily: "serif", fontSize: 28, color: COLORS.navy },
-  subtitle: { fontFamily: "sans-serif", fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
+  title: { fontFamily: FONTS.heading, fontSize: 28, color: COLORS.navy },
+  subtitle: { fontFamily: FONTS.body, fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 15,
     color: COLORS.text,
     paddingVertical: 0,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   filterChipActive: { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
   filterText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.textMuted,
   },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: SPACING.md,
   },
-  loadingText: { fontFamily: "sans-serif", fontSize: 14, color: COLORS.textMuted },
+  loadingText: { fontFamily: FONTS.body, fontSize: 14, color: COLORS.textMuted },
   listContent: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.sm, paddingBottom: 120, gap: SPACING.sm },
   emptyState: {
     alignItems: "center",
@@ -271,9 +271,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xxxl,
     gap: SPACING.md,
   },
-  emptyTitle: { fontFamily: "serif", fontSize: 20, color: COLORS.navy },
+  emptyTitle: { fontFamily: FONTS.heading, fontSize: 20, color: COLORS.navy },
   emptyText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     color: COLORS.textMuted,
     textAlign: "center",
@@ -296,20 +296,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 18,
     fontWeight: "700" as const,
     color: COLORS.white,
   },
   providerInfo: { flex: 1 },
   providerName: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 15,
     fontWeight: "600" as const,
     color: COLORS.navy,
   },
   providerLocation: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 2,
@@ -325,12 +325,12 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
   },
   tagText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 10,
     fontWeight: "600" as const,
   },
   providerBio: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.textMuted,
     lineHeight: 18,
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm + 2,
   },
   contactBtnText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     fontWeight: "600" as const,
     color: COLORS.white,

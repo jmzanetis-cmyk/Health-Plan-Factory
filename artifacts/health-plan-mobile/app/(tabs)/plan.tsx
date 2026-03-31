@@ -13,7 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
-import { COLORS, SPACING, RADIUS } from "@/constants/theme";
+import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListModalities } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
 
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingBottom: SPACING.lg,
   },
-  title: { fontFamily: "serif", fontSize: 28, color: COLORS.navy },
+  title: { fontFamily: FONTS.heading, fontSize: 28, color: COLORS.navy },
   planBadge: {
     backgroundColor: COLORS.sagePale,
     borderRadius: RADIUS.full,
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.sage + "30",
   },
   planBadgeText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 12,
     color: COLORS.sage,
     fontWeight: "600" as const,
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: SPACING.md,
   },
-  loadingText: { fontFamily: "sans-serif", fontSize: 14, color: COLORS.textMuted },
+  loadingText: { fontFamily: FONTS.body, fontSize: 14, color: COLORS.textMuted },
   emptyState: {
     flex: 1,
     alignItems: "center",
@@ -336,9 +336,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xxxl,
     gap: SPACING.md,
   },
-  emptyTitle: { fontFamily: "serif", fontSize: 22, color: COLORS.navy },
+  emptyTitle: { fontFamily: FONTS.heading, fontSize: 22, color: COLORS.navy },
   emptyText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 14,
     color: COLORS.textMuted,
     textAlign: "center",
@@ -356,13 +356,13 @@ const styles = StyleSheet.create({
   },
   summaryItem: { alignItems: "center" },
   summaryValue: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 20,
     fontWeight: "700" as const,
     color: COLORS.white,
   },
   summaryLabel: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 11,
     color: "rgba(255,255,255,0.6)",
     marginTop: 2,
@@ -382,16 +382,16 @@ const styles = StyleSheet.create({
   itemEmoji: { fontSize: 24 },
   itemInfo: { flex: 1 },
   itemName: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 15,
     fontWeight: "600" as const,
     color: COLORS.navy,
   },
   itemNameDeprio: { color: COLORS.textMuted },
-  itemFreq: { fontFamily: "sans-serif", fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  itemFreq: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   itemRight: { alignItems: "flex-end", gap: 4 },
   itemCost: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     fontWeight: "600" as const,
     color: COLORS.amber,
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderWidth: 1,
   },
-  badgeText: { fontFamily: "sans-serif", fontSize: 11, fontWeight: "600" as const },
+  badgeText: { fontFamily: FONTS.body, fontSize: 11, fontWeight: "600" as const },
   itemExpanded: {
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   itemRationale: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.textMuted,
     lineHeight: 18,
@@ -428,23 +428,23 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
   },
   lockedText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.amber,
     flex: 1,
     lineHeight: 17,
   },
   deprioNote: { flexDirection: "row", alignItems: "center", gap: 6 },
-  deprioText: { fontFamily: "sans-serif", fontSize: 12, color: COLORS.textMuted },
+  deprioText: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted },
   deprioSection: { marginTop: SPACING.xl, gap: SPACING.sm },
   deprioSectionTitle: {
-    fontFamily: "serif",
+    fontFamily: FONTS.heading,
     fontSize: 16,
     color: COLORS.textMuted,
     marginBottom: SPACING.sm,
   },
   footerText: {
-    fontFamily: "sans-serif",
+    fontFamily: FONTS.body,
     fontSize: 11,
     color: COLORS.textLight,
     textAlign: "center",
