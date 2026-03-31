@@ -67,6 +67,7 @@ export const profiles = pgTable(
     subscriptionStatus: text("subscription_status").default("free"), // free | plus | canceled
     lmnStatus: text("lmn_status").notNull().default("none"), // none | requested | received
     referralCode: text("referral_code"),               // unique shareable code, e.g. "HPF-ABCD1234"
+    referralCount: integer("referral_count").notNull().default(0), // number of successful referrals made
     phone: text("phone"),                               // for SMS notifications
     communicationPrefs: jsonb("communication_prefs")
       .$type<{ email: boolean; sms: boolean }>()

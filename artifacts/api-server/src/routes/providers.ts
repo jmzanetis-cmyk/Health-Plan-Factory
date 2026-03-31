@@ -354,11 +354,11 @@ router.get("/admin/providers/:id", async (req, res) => {
 
 /**
  * POST /api/providers/unlock
- * Applies a member credit to "unlock" (record intent to contact) a provider.
- * If the member has unused referral credits, uses one ($2) and returns used_credit: true.
- * Otherwise returns used_credit: false and the price to charge at checkout.
+ * Applies a member credit to unlock a provider listing.
+ * Price is determined server-side by looking up the provider's primary modality category.
+ * Credit application is atomic (transaction + conditional WHERE used=false update).
  *
- * Body: { providerId: string, modalityCategory?: string }
+ * Body: { providerId: string }
  */
 router.post("/providers/unlock", async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -366,10 +366,7 @@ router.post("/providers/unlock", async (req, res) => {
     return;
   }
   const profileId = req.user!.id;
-  const { providerId, modalityCategory } = req.body as {
-    providerId?: string;
-    modalityCategory?: string;
-  };
+  const { providerId } = req.body as { providerId?: string };
 
   if (!providerId) {
     res.status(400).json({ error: "providerId is required" });
@@ -377,37 +374,57 @@ router.post("/providers/unlock", async (req, res) => {
   }
 
   try {
-    // Determine price tier ($1 telehealth, $3 medical, $2 default)
-    const priceCents = modalityCategory === "telehealth" ? 100
-      : modalityCategory === "medical" ? 300
-      : 200;
+    // --- Server-side price determination ---
+    // Look up the provider's primary modality category from the DB
+    const [providerModality] = await db
+      .select({ category: modalitiesTable.category })
+      .from(providerModalities)
+      .innerJoin(modalitiesTable, eq(providerModalities.modalityId, modalitiesTable.id))
+      .where(eq(providerModalities.providerId, providerId))
+      .limit(1);
 
-    // Check for unused credits
-    const credits = await db
-      .select()
-      .from(memberCredits)
-      .where(and(eq(memberCredits.profileId, profileId), eq(memberCredits.used, false)))
-      .orderBy(memberCredits.createdAt);
+    const category = providerModality?.category ?? "wellness";
+    const priceCents = category === "telehealth" ? 100
+      : category === "medical" ? 300
+      : 200; // wellness / fitness / default
 
-    if (credits.length > 0) {
-      // Apply the first unused credit
+    // --- Atomic credit redemption ---
+    // Use a transaction: select the first unused credit, then conditionally mark it used.
+    // The conditional WHERE (used = false) prevents double-spend under concurrent requests.
+    const result = await db.transaction(async (tx) => {
+      const credits = await tx
+        .select()
+        .from(memberCredits)
+        .where(and(eq(memberCredits.profileId, profileId), eq(memberCredits.used, false)))
+        .orderBy(memberCredits.createdAt)
+        .limit(1);
+
+      if (credits.length === 0) return null;
+
       const credit = credits[0];
-      await db
+      const [updated] = await tx
         .update(memberCredits)
         .set({ used: true, usedAt: new Date() })
-        .where(eq(memberCredits.id, credit.id));
+        .where(and(eq(memberCredits.id, credit.id), eq(memberCredits.used, false)))
+        .returning();
 
+      return updated ?? null; // null if credit was already used by a concurrent request
+    });
+
+    if (result) {
+      // Credit successfully applied
       res.json({
         used_credit: true,
-        credit_applied_cents: credit.amountCents,
-        amount_charged_cents: Math.max(0, priceCents - credit.amountCents),
-        amount_charged_formatted: `$${(Math.max(0, priceCents - credit.amountCents) / 100).toFixed(2)}`,
+        credit_applied_cents: result.amountCents,
+        amount_charged_cents: Math.max(0, priceCents - result.amountCents),
+        amount_charged_formatted: `$${(Math.max(0, priceCents - result.amountCents) / 100).toFixed(2)}`,
         providerId,
-        message: `1 referral credit applied — $${(credit.amountCents / 100).toFixed(2)} discount`,
+        message: `1 referral credit applied — $${(result.amountCents / 100).toFixed(2)} discount`,
       });
+      return;
     }
 
-    // No credits — return checkout required info
+    // No credits available
     res.json({
       used_credit: false,
       credit_applied_cents: 0,

@@ -26,6 +26,14 @@ import {
 
 const OIDC_COOKIE_TTL = 10 * 60 * 1000;
 
+/** Generate a unique referral code at signup (no 0/O/I/1 to avoid confusion) */
+function makeReferralCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "HPF-";
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 const router: IRouter = Router();
 
 function getOrigin(req: Request): string {
@@ -91,6 +99,7 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
       displayName,
       avatarUrl: profileImageUrl,
       role: "member",
+      referralCode: makeReferralCode(), // assigned at creation; guaranteed for every new member
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -101,6 +110,7 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
         displayName: displayName ?? undefined,
         avatarUrl: profileImageUrl ?? undefined,
         updatedAt: new Date(),
+        // referralCode intentionally excluded — preserve existing code on re-login
       },
     })
     .returning();

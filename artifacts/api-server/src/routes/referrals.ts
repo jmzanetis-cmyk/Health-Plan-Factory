@@ -14,7 +14,7 @@ import {
   plans,
   memberIntakes,
 } from "@workspace/db";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { sendEmail, sendNotification } from "../lib/comms";
@@ -195,18 +195,25 @@ router.post("/referrals/register", async (req: Request, res: Response) => {
       return;
     }
 
-    // Create the pending referral
-    const [referral] = await db
-      .insert(referrals)
-      .values({
-        id: randomUUID(),
-        referrerId: referrer.id,
-        referredMemberId: profileId,
-        code: referralCode.trim().toUpperCase(),
-        status: "pending",
-        createdAt: new Date(),
-      })
-      .returning();
+    // Create the pending referral and increment referrer's referralCount atomically
+    const [referral] = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(referrals)
+        .values({
+          id: randomUUID(),
+          referrerId: referrer.id,
+          referredMemberId: profileId,
+          code: referralCode.trim().toUpperCase(),
+          status: "pending",
+          createdAt: new Date(),
+        })
+        .returning();
+      await tx
+        .update(profiles)
+        .set({ referralCount: sql`referral_count + 1`, updatedAt: new Date() })
+        .where(eq(profiles.id, referrer.id));
+      return [created];
+    });
 
     // Return referrer's first name for the welcome banner
     const referrerFirstName = referrer.displayName?.split(" ")[0] ?? null;
