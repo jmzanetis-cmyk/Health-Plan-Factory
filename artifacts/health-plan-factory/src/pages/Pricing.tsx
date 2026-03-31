@@ -11,7 +11,7 @@ const TIERS = [
     price: "Free",
     per: "forever",
     desc: "Build your plan, browse providers, and see what's possible.",
-    features: ["Full AI plan generation", "Modality library access", "Provider browse (blurred)", "Up to 2 free unlocks"],
+    features: ["Full AI plan generation", "Modality library access", "Provider browse (blurred)", "1 free unlock included"],
     cta: "Get started free",
     ctaHref: "/sign-up",
     featured: false,
@@ -20,7 +20,7 @@ const TIERS = [
   {
     tier: "Plus",
     price: "$9.99",
-    per: "per month or $89.99/year",
+    per: "per month · $79.99/year (2 months free)",
     desc: "The full factory experience — unlimited reveals, coaching, and tracking.",
     features: [
       "Everything in Explorer",
@@ -41,7 +41,7 @@ const TIERS = [
     price: "Free",
     per: "to list",
     desc: "Get discovered by members whose plans match your specialty.",
-    features: ["Listing in provider directory", "Lead alerts for your modalities", "Booking calendar integration", "Founding: 0% commission for 90 days"],
+    features: ["Listing in provider directory", "Lead alerts for your modalities", "Booking calendar integration", "0% commission for first 90 days · 2% after"],
     cta: "Apply as a provider",
     ctaHref: "/provider/signup",
     featured: false,
@@ -249,9 +249,9 @@ export default function Pricing() {
             <h3 className="font-semibold mb-2 text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>À la carte provider unlocks</h3>
             <div className="flex justify-center gap-8 flex-wrap">
               {[
-                { label: "Wellness provider", price: "$2.00" },
-                { label: "Physician / DPC", price: "$3.00" },
-                { label: "App-based program", price: "$1.00" },
+                { label: "Wellness provider", price: "$5.00" },
+                { label: "Physician / DPC", price: "$8.00" },
+                { label: "App-based program", price: "$3.00" },
               ].map((item) => (
                 <div key={item.label} className="text-center">
                   <div className="text-xl font-semibold mb-1" style={{ fontFamily: "var(--app-font-mono)", color: "var(--navy)" }}>{item.price}</div>

@@ -37,7 +37,7 @@ const FAQS = [
   },
   {
     q: "How much does it cost to get started?",
-    a: "Building your initial plan is completely free. You pay small unlock fees ($1–$3) only when you want to view a specific provider's contact information. A Plus membership ($9.99/month) unlocks unlimited reveals, journaling, routine building, and the AI accountability coach.",
+    a: "Building your initial plan is completely free. You pay unlock fees ($3–$8) only when you want to view a specific provider's contact information. A Plus membership ($9.99/month) unlocks unlimited reveals, journaling, routine building, and the AI accountability coach.",
   },
   {
     q: "Can I use my HSA or FSA?",
@@ -813,7 +813,7 @@ export default function Landing() {
           </div>
 
           <p className="text-center text-xs mt-6" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-            Provider unlocks: $2 wellness · $3 physician · $1 app-based · Plus members pay $0 per reveal
+            Provider unlocks: $5 wellness · $8 physician · $3 app-based · Plus members pay $0 per reveal
           </p>
         </div>
       </section>

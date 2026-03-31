@@ -429,9 +429,9 @@ router.post("/providers/unlock", async (req, res) => {
 
     const category = providerModality?.category ?? "wellness";
     const providerName = providerModality?.name ?? "Provider";
-    const priceCents = category === "telehealth" ? 100
-      : category === "medical" ? 300
-      : 200;
+    const priceCents = category === "telehealth" ? 300   // $3.00 — app-based/telehealth
+      : category === "medical" ? 800                    // $8.00 — physician / DPC
+      : 500;                                            // $5.00 — wellness / fitness / default
 
     // --- Phase A: try to cover the full price with a referral credit ---
     const creditResult = await db.transaction(async (tx) => {
