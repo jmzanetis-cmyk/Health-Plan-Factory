@@ -10,273 +10,274 @@ CREATE TYPE "public"."plan_status" AS ENUM('generated', 'saved', 'active');--> s
 CREATE TYPE "public"."provider_status" AS ENUM('pending', 'approved', 'rejected');--> statement-breakpoint
 CREATE TYPE "public"."referral_status" AS ENUM('pending', 'rewarded');--> statement-breakpoint
 CREATE TABLE "admin_settings" (
-	"key" text PRIMARY KEY NOT NULL,
-	"value" jsonb,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+        "key" text PRIMARY KEY NOT NULL,
+        "value" jsonb,
+        "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "employer_members" (
-	"id" text PRIMARY KEY NOT NULL,
-	"employer_id" text NOT NULL,
-	"profile_id" text NOT NULL,
-	"monthly_budget" integer NOT NULL,
-	"spent_this_month" integer DEFAULT 0 NOT NULL,
-	"budget_month" text,
-	"linked_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "employer_id" text NOT NULL,
+        "profile_id" text NOT NULL,
+        "monthly_budget" integer NOT NULL,
+        "spent_this_month" integer DEFAULT 0 NOT NULL,
+        "budget_month" text,
+        "linked_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "employer_modality_rules" (
-	"id" text PRIMARY KEY NOT NULL,
-	"employer_id" text NOT NULL,
-	"modality_id" text NOT NULL,
-	"covered" boolean DEFAULT true NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "employer_id" text NOT NULL,
+        "modality_id" text NOT NULL,
+        "covered" boolean DEFAULT true NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "employers" (
-	"id" text PRIMARY KEY NOT NULL,
-	"company_name" text NOT NULL,
-	"admin_contact_name" text NOT NULL,
-	"admin_contact_email" text NOT NULL,
-	"billing_contact_email" text,
-	"admin_profile_id" text,
-	"number_of_employees" integer NOT NULL,
-	"stipend_per_employee" integer NOT NULL,
-	"platform_fee_percent" integer DEFAULT 8 NOT NULL,
-	"invite_code" text NOT NULL,
-	"stripe_customer_id" text,
-	"stripe_subscription_id" text,
-	"status" text DEFAULT 'active' NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "company_name" text NOT NULL,
+        "admin_contact_name" text NOT NULL,
+        "admin_contact_email" text NOT NULL,
+        "billing_contact_email" text,
+        "admin_profile_id" text,
+        "number_of_employees" integer NOT NULL,
+        "stipend_per_employee" integer NOT NULL,
+        "platform_fee_percent" integer DEFAULT 8 NOT NULL,
+        "invite_code" text NOT NULL,
+        "stripe_customer_id" text,
+        "stripe_subscription_id" text,
+        "status" text DEFAULT 'active' NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "favorites" (
-	"profile_id" text NOT NULL,
-	"provider_id" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+        "profile_id" text NOT NULL,
+        "provider_id" text NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "insights_cache" (
-	"id" text PRIMARY KEY NOT NULL,
-	"profile_id" text NOT NULL,
-	"insights" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"attention_items" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"wellness_score" integer,
-	"journal_count" integer DEFAULT 0 NOT NULL,
-	"session_count" integer DEFAULT 0 NOT NULL,
-	"refreshed_at" timestamp DEFAULT now() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "profile_id" text NOT NULL,
+        "insights" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "attention_items" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "wellness_score" integer,
+        "journal_count" integer DEFAULT 0 NOT NULL,
+        "session_count" integer DEFAULT 0 NOT NULL,
+        "refreshed_at" timestamp DEFAULT now() NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "lmn_requests" (
-	"id" text PRIMARY KEY NOT NULL,
-	"profile_id" text NOT NULL,
-	"plan_id" text,
-	"status" text DEFAULT 'draft' NOT NULL,
-	"draft_message" text NOT NULL,
-	"eligible_modalities" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"estimated_annual_savings" integer,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "profile_id" text NOT NULL,
+        "plan_id" text,
+        "status" text DEFAULT 'draft' NOT NULL,
+        "draft_message" text NOT NULL,
+        "eligible_modalities" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "estimated_annual_savings" integer,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "magic_links" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"profile_id" text NOT NULL,
-	"action" "magic_link_action" NOT NULL,
-	"payload" jsonb,
-	"expires_at" timestamp NOT NULL,
-	"used_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "profile_id" text NOT NULL,
+        "action" "magic_link_action" NOT NULL,
+        "payload" jsonb,
+        "expires_at" timestamp NOT NULL,
+        "used_at" timestamp,
+        "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "member_credits" (
-	"id" text PRIMARY KEY NOT NULL,
-	"profile_id" text NOT NULL,
-	"source" "credit_source" NOT NULL,
-	"amount_cents" integer DEFAULT 200 NOT NULL,
-	"used" boolean DEFAULT false NOT NULL,
-	"referral_id" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"used_at" timestamp
+        "id" text PRIMARY KEY NOT NULL,
+        "profile_id" text NOT NULL,
+        "source" "credit_source" NOT NULL,
+        "amount_cents" integer DEFAULT 200 NOT NULL,
+        "used" boolean DEFAULT false NOT NULL,
+        "referral_id" text,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "used_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "member_intakes" (
-	"id" text PRIMARY KEY NOT NULL,
-	"profile_id" text,
-	"budget" integer NOT NULL,
-	"goals" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"conditions" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"preferences" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"exclusions" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"zip_code" text,
-	"radius" integer DEFAULT 25 NOT NULL,
-	"telehealth" boolean DEFAULT false NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "profile_id" text,
+        "budget" integer NOT NULL,
+        "goals" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "conditions" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "preferences" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "exclusions" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "zip_code" text,
+        "radius" integer DEFAULT 25 NOT NULL,
+        "telehealth" boolean DEFAULT false NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "modalities" (
-	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"emoji" text DEFAULT '✨' NOT NULL,
-	"category" "modality_category" NOT NULL,
-	"evidence_level" "evidence_level" NOT NULL,
-	"cost_low" integer NOT NULL,
-	"cost_high" integer NOT NULL,
-	"typical_frequency" text NOT NULL,
-	"hsa_eligible" boolean DEFAULT false NOT NULL,
-	"lmn_eligible" boolean DEFAULT false NOT NULL,
-	"description" text NOT NULL,
-	"goals" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"conditions" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"preference_match" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"exclusion_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"is_active" boolean DEFAULT true NOT NULL,
-	"evidence_summary" text,
-	"meta_description" text,
-	"related_modalities" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "name" text NOT NULL,
+        "emoji" text DEFAULT '✨' NOT NULL,
+        "category" "modality_category" NOT NULL,
+        "evidence_level" "evidence_level" NOT NULL,
+        "cost_low" integer NOT NULL,
+        "cost_high" integer NOT NULL,
+        "typical_frequency" text NOT NULL,
+        "hsa_eligible" boolean DEFAULT false NOT NULL,
+        "lmn_eligible" boolean DEFAULT false NOT NULL,
+        "description" text NOT NULL,
+        "goals" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "conditions" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "preference_match" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "exclusion_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "is_active" boolean DEFAULT true NOT NULL,
+        "evidence_summary" text,
+        "meta_description" text,
+        "related_modalities" jsonb DEFAULT '[]'::jsonb NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "notification_log" (
-	"id" text PRIMARY KEY NOT NULL,
-	"profile_id" text NOT NULL,
-	"channel" "notification_channel" NOT NULL,
-	"type" "notification_type" NOT NULL,
-	"status" "notification_status" DEFAULT 'queued' NOT NULL,
-	"scheduled_for" timestamp,
-	"sent_at" timestamp,
-	"metadata" jsonb,
-	"created_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "profile_id" text NOT NULL,
+        "channel" "notification_channel" NOT NULL,
+        "type" "notification_type" NOT NULL,
+        "status" "notification_status" DEFAULT 'queued' NOT NULL,
+        "scheduled_for" timestamp,
+        "sent_at" timestamp,
+        "metadata" jsonb,
+        "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "plan_items" (
-	"id" text PRIMARY KEY NOT NULL,
-	"plan_id" text NOT NULL,
-	"modality_id" text NOT NULL,
-	"score" integer NOT NULL,
-	"frequency" text NOT NULL,
-	"estimated_monthly_cost" integer NOT NULL,
-	"rationale" text NOT NULL,
-	"is_deprioritized" boolean DEFAULT false NOT NULL,
-	"sort_order" integer DEFAULT 0 NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "plan_id" text NOT NULL,
+        "modality_id" text NOT NULL,
+        "score" integer NOT NULL,
+        "frequency" text NOT NULL,
+        "estimated_monthly_cost" integer NOT NULL,
+        "rationale" text NOT NULL,
+        "is_deprioritized" boolean DEFAULT false NOT NULL,
+        "sort_order" integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "plan_progress_logs" (
-	"id" text PRIMARY KEY NOT NULL,
-	"profile_id" text NOT NULL,
-	"plan_id" text,
-	"modality_id" text,
-	"note" text,
-	"rating" integer,
-	"mood" integer,
-	"pain" integer,
-	"energy" integer,
-	"session_date" timestamp,
-	"session_cost_cents" integer,
-	"employer_covered_cents" integer,
-	"out_of_pocket_cents" integer,
-	"created_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "profile_id" text NOT NULL,
+        "plan_id" text,
+        "modality_id" text,
+        "note" text,
+        "rating" integer,
+        "mood" integer,
+        "pain" integer,
+        "energy" integer,
+        "session_date" timestamp,
+        "session_cost_cents" integer,
+        "employer_covered_cents" integer,
+        "out_of_pocket_cents" integer,
+        "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "plans" (
-	"id" text PRIMARY KEY NOT NULL,
-	"profile_id" text,
-	"intake_id" text,
-	"status" "plan_status" DEFAULT 'generated' NOT NULL,
-	"total_monthly_cost" integer NOT NULL,
-	"budget_utilization" integer NOT NULL,
-	"budget" integer NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "profile_id" text,
+        "intake_id" text,
+        "status" "plan_status" DEFAULT 'generated' NOT NULL,
+        "total_monthly_cost" integer NOT NULL,
+        "budget_utilization" integer NOT NULL,
+        "budget" integer NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "profiles" (
-	"id" text PRIMARY KEY NOT NULL,
-	"email" text NOT NULL,
-	"display_name" text,
-	"avatar_url" text,
-	"role" "member_role" DEFAULT 'member' NOT NULL,
-	"stripe_customer_id" text,
-	"subscription_status" text DEFAULT 'free',
-	"lmn_status" text DEFAULT 'none' NOT NULL,
-	"referral_code" text,
-	"phone" text,
-	"communication_prefs" jsonb DEFAULT '{"email":true,"sms":false}'::jsonb,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "email" text NOT NULL,
+        "display_name" text,
+        "avatar_url" text,
+        "role" "member_role" DEFAULT 'member' NOT NULL,
+        "stripe_customer_id" text,
+        "subscription_status" text DEFAULT 'free',
+        "lmn_status" text DEFAULT 'none' NOT NULL,
+        "referral_code" text,
+        "referral_count" integer DEFAULT 0 NOT NULL,
+        "phone" text,
+        "communication_prefs" jsonb DEFAULT '{"email":true,"sms":false}'::jsonb,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "provider_credentials" (
-	"id" text PRIMARY KEY NOT NULL,
-	"provider_id" text NOT NULL,
-	"credential_name" text NOT NULL,
-	"issuing_body" text,
-	"license_number" text,
-	"expires_at" timestamp,
-	"verified_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "provider_id" text NOT NULL,
+        "credential_name" text NOT NULL,
+        "issuing_body" text,
+        "license_number" text,
+        "expires_at" timestamp,
+        "verified_at" timestamp,
+        "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "provider_modalities" (
-	"provider_id" text NOT NULL,
-	"modality_id" text NOT NULL,
-	"is_primary" boolean DEFAULT false NOT NULL,
-	"cost_min" integer,
-	"cost_max" integer
+        "provider_id" text NOT NULL,
+        "modality_id" text NOT NULL,
+        "is_primary" boolean DEFAULT false NOT NULL,
+        "cost_min" integer,
+        "cost_max" integer
 );
 --> statement-breakpoint
 CREATE TABLE "providers" (
-	"id" text PRIMARY KEY NOT NULL,
-	"profile_id" text,
-	"name" text NOT NULL,
-	"bio" text,
-	"city" text,
-	"state" text,
-	"zip_code" text,
-	"lat" numeric(9, 6),
-	"lng" numeric(9, 6),
-	"phone" text,
-	"website" text,
-	"avatar_url" text,
-	"status" "provider_status" DEFAULT 'pending' NOT NULL,
-	"verification_status" text DEFAULT 'draft' NOT NULL,
-	"accepts_insurance" boolean DEFAULT false NOT NULL,
-	"offers_telehealth" boolean DEFAULT false NOT NULL,
-	"offers_in_person" boolean DEFAULT true NOT NULL,
-	"service_radius_miles" integer,
-	"cost_per_session" integer,
-	"rejection_reason" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+        "id" text PRIMARY KEY NOT NULL,
+        "profile_id" text,
+        "name" text NOT NULL,
+        "bio" text,
+        "city" text,
+        "state" text,
+        "zip_code" text,
+        "lat" numeric(9, 6),
+        "lng" numeric(9, 6),
+        "phone" text,
+        "website" text,
+        "avatar_url" text,
+        "status" "provider_status" DEFAULT 'pending' NOT NULL,
+        "verification_status" text DEFAULT 'draft' NOT NULL,
+        "accepts_insurance" boolean DEFAULT false NOT NULL,
+        "offers_telehealth" boolean DEFAULT false NOT NULL,
+        "offers_in_person" boolean DEFAULT true NOT NULL,
+        "service_radius_miles" integer,
+        "cost_per_session" integer,
+        "rejection_reason" text,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "referrals" (
-	"id" text PRIMARY KEY NOT NULL,
-	"referrer_id" text NOT NULL,
-	"referred_member_id" text,
-	"code" text NOT NULL,
-	"status" "referral_status" DEFAULT 'pending' NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"rewarded_at" timestamp
+        "id" text PRIMARY KEY NOT NULL,
+        "referrer_id" text NOT NULL,
+        "referred_member_id" text,
+        "code" text NOT NULL,
+        "status" "referral_status" DEFAULT 'pending' NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "rewarded_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
-	"sid" varchar PRIMARY KEY NOT NULL,
-	"sess" jsonb NOT NULL,
-	"expire" timestamp NOT NULL
+        "sid" varchar PRIMARY KEY NOT NULL,
+        "sess" jsonb NOT NULL,
+        "expire" timestamp NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"email" varchar,
-	"first_name" varchar,
-	"last_name" varchar,
-	"profile_image_url" varchar,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "email" varchar,
+        "first_name" varchar,
+        "last_name" varchar,
+        "profile_image_url" varchar,
+        "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+        "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+        CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 ALTER TABLE "employer_members" ADD CONSTRAINT "employer_members_employer_id_employers_id_fk" FOREIGN KEY ("employer_id") REFERENCES "public"."employers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

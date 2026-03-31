@@ -7,8 +7,9 @@ import {
   ExchangeMobileAuthorizationCodeResponse,
   LogoutMobileSessionResponse,
 } from "@workspace/api-zod";
-import { db, profiles, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, profiles, usersTable, referrals } from "@workspace/db";
+import { eq, sql as drizzleSql } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { sendNotification } from "../lib/comms";
 import { welcomeEmail } from "../emails/welcome";
 import {
@@ -32,6 +33,50 @@ function makeReferralCode(): string {
   let code = "HPF-";
   for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
+}
+
+/**
+ * Server-side referral registration — called at auth callback completion.
+ * Reads the hpf_ref cookie set during /api/login, creates a pending referral
+ * row, and increments the referrer's referralCount atomically.
+ * Fire-and-forget; errors are swallowed so they don't interrupt login.
+ */
+async function processReferralCookie(profileId: string, refCode: string | undefined): Promise<void> {
+  if (!refCode) return;
+  const code = refCode.trim().toUpperCase();
+  try {
+    // Prevent self-referral
+    const [self] = await db.select({ referralCode: profiles.referralCode })
+      .from(profiles).where(eq(profiles.id, profileId)).limit(1);
+    if (self?.referralCode === code) return;
+
+    // Look up the referrer
+    const [referrer] = await db.select({ id: profiles.id })
+      .from(profiles).where(eq(profiles.referralCode, code)).limit(1);
+    if (!referrer) return;
+
+    // Skip if already referred
+    const [existing] = await db.select({ id: referrals.id })
+      .from(referrals).where(eq(referrals.referredMemberId, profileId)).limit(1);
+    if (existing) return;
+
+    // Atomically insert referral + increment referralCount
+    await db.transaction(async (tx) => {
+      await tx.insert(referrals).values({
+        id: randomUUID(),
+        referrerId: referrer.id,
+        referredMemberId: profileId,
+        code,
+        status: "pending",
+        createdAt: new Date(),
+      });
+      await tx.update(profiles)
+        .set({ referralCount: drizzleSql`referral_count + 1`, updatedAt: new Date() })
+        .where(eq(profiles.id, referrer.id));
+    });
+  } catch {
+    // Swallowed — referral registration must not block login
+  }
 }
 
 const router: IRouter = Router();
@@ -222,6 +267,12 @@ router.get("/login", async (req: Request, res: Response) => {
   setOidcCookie(res, "state", state);
   setOidcCookie(res, "return_to", returnTo);
 
+  // Persist referral code through the OIDC round-trip so we can register it server-side
+  const refCode = typeof req.query.ref === "string" ? req.query.ref.trim().toUpperCase() : undefined;
+  if (refCode && /^HPF-[A-Z0-9]{8}$/.test(refCode)) {
+    setOidcCookie(res, "hpf_ref", refCode);
+  }
+
   res.redirect(redirectTo.href);
 });
 
@@ -267,6 +318,10 @@ router.get("/callback", async (req: Request, res: Response) => {
     claims as unknown as Record<string, unknown>,
   );
 
+  // Server-side referral registration — fires at auth completion, not Dashboard load
+  const hpfRef = req.cookies?.hpf_ref as string | undefined;
+  void processReferralCookie(userInfo.id, hpfRef);
+
   const now = Math.floor(Date.now() / 1000);
   const sessionData: SessionData = {
     user: {
@@ -288,6 +343,7 @@ router.get("/callback", async (req: Request, res: Response) => {
   res.clearCookie("nonce", { path: "/" });
   res.clearCookie("state", { path: "/" });
   res.clearCookie("return_to", { path: "/" });
+  res.clearCookie("hpf_ref", { path: "/" });
 
   // Role-based post-login routing when no explicit returnTo was set
   let destination = returnTo;
