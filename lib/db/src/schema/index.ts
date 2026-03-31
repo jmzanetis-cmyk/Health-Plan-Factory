@@ -316,6 +316,9 @@ export const planProgressLogs = pgTable(
     pain: integer("pain"),     // 1–10 (higher = more pain)
     energy: integer("energy"), // 1–10
     sessionDate: timestamp("session_date"),
+    sessionCostCents: integer("session_cost_cents"),     // actual cost paid by member (cents)
+    employerCoveredCents: integer("employer_covered_cents"), // portion covered by employer stipend
+    outOfPocketCents: integer("out_of_pocket_cents"),    // overflow: member's personal expense
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [index("progress_logs_profile_idx").on(t.profileId)],

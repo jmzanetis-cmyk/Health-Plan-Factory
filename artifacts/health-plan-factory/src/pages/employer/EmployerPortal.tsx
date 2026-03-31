@@ -186,7 +186,38 @@ function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) 
 
 function SuccessPanel({ employer }: { employer: Employer }) {
   const navigate = useNavigate();
-  const monthlyTotal = 0;
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutDone, setCheckoutDone] = useState(false);
+
+  // Auto-initiate Stripe checkout as part of signup completion flow
+  useEffect(() => {
+    let cancelled = false;
+    setCheckoutLoading(true);
+    fetch(`${BASE}/api/employer/billing/create-checkout`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return;
+        setCheckoutLoading(false);
+        if (json.stripe_mode === "live" && json.url) {
+          window.location.href = json.url;
+        } else {
+          // Test / sandbox mode — no live redirect; show completion prompt
+          setCheckoutDone(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCheckoutLoading(false);
+          setCheckoutError("Could not initiate billing setup — you can complete it from the dashboard.");
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div style={{ textAlign: "center" }}>
@@ -214,6 +245,23 @@ function SuccessPanel({ employer }: { employer: Employer }) {
           Employees enter this at sign-up or in their profile settings
         </div>
       </div>
+
+      {/* Billing setup status — shown inline as part of signup completion */}
+      {checkoutLoading && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20, fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>
+          <Loader2 size={16} className="animate-spin" />
+          Setting up billing…
+        </div>
+      )}
+      {checkoutError && (
+        <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "#b8892a", marginBottom: 20 }}>{checkoutError}</p>
+      )}
+      {checkoutDone && (
+        <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, marginBottom: 20 }}>
+          Billing configured in test mode. You can update payment details from the dashboard.
+        </p>
+      )}
+
       <button
         onClick={() => navigate("/employer/dashboard")}
         style={{

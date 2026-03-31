@@ -18,6 +18,7 @@ const logSchema = z.object({
   energy: z.coerce.number().min(1).max(10).optional(),
   note: z.string().max(500).optional(),
   sessionDate: z.string().optional(),
+  sessionCostDollars: z.coerce.number().min(0).optional(), // entered in dollars; converted to cents on submit
 }).refine((d) => d.rating ?? d.mood ?? d.pain ?? d.energy, {
   message: "Log at least one metric",
   path: ["rating"],
@@ -72,6 +73,7 @@ export default function Progress() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [isEnrolledWithEmployer, setIsEnrolledWithEmployer] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<LogForm>({
     resolver: zodResolver(logSchema),
@@ -87,6 +89,11 @@ export default function Progress() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    // Check if member is enrolled with an employer — determines whether to show session cost field
+    fetch(`${BASE}/api/employer/enroll-status`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.enrolled) setIsEnrolledWithEmployer(true); })
+      .catch(() => {});
   }, [user]);
 
   const onSubmit = async (data: LogForm) => {
@@ -105,6 +112,10 @@ export default function Progress() {
           energy: data.energy ? Number(data.energy) : undefined,
           note: data.note || null,
           sessionDate: data.sessionDate || null,
+          // Convert dollars → cents for employer stipend deduction
+          sessionCostCents: data.sessionCostDollars && data.sessionCostDollars > 0
+            ? Math.round(data.sessionCostDollars * 100)
+            : undefined,
         }),
       });
       if (!res.ok) throw new Error("Failed to save log");
@@ -209,6 +220,28 @@ export default function Progress() {
                 style={inputStyle}
               />
             </div>
+
+            {/* Session cost field — only shown when the member is enrolled in an employer stipend */}
+            {isEnrolledWithEmployer && (
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  Session Cost (optional, $)
+                </label>
+                <p className="text-xs mb-2" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                  Enter what you paid for this session. Your employer stipend will be applied first; any remainder is your out-of-pocket expense.
+                </p>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  placeholder="e.g. 25.00"
+                  {...register("sessionCostDollars")}
+                  className="px-3 py-2 text-sm"
+                  style={{ ...inputStyle, width: 140 }}
+                />
+              </div>
+            )}
+
             <div className="flex gap-3 justify-end">
               <button
                 type="button"

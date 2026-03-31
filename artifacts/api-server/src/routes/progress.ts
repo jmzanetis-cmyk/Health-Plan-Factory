@@ -70,6 +70,8 @@ router.post("/progress", async (req, res) => {
 
     if (!canAccessProfile(req, res, body.data.profileId)) return;
 
+    const sessionCostCents = body.data.sessionCostCents ?? 0;
+
     const [created] = await db
       .insert(planProgressLogs)
       .values({
@@ -83,6 +85,8 @@ router.post("/progress", async (req, res) => {
         pain: body.data.pain ?? null,
         energy: body.data.energy ?? null,
         sessionDate: body.data.sessionDate ? new Date(body.data.sessionDate) : null,
+        sessionCostCents: sessionCostCents > 0 ? sessionCostCents : null,
+        // employer-covered and out-of-pocket portions resolved after deduction below
         createdAt: new Date(),
       })
       .returning();
@@ -90,10 +94,10 @@ router.post("/progress", async (req, res) => {
     // ── Employer stipend deduction ───────────────────────────────────────────
     // If the member is enrolled in an employer wellness stipend, deduct the
     // actual session cost (provided by the caller) from their monthly budget.
-    // Only deduct when the caller explicitly supplies sessionCostCents — this
-    // avoids misusing modality monthly-estimate columns (costLow/costHigh) as
-    // per-session pricing, which would produce incorrect utilization data.
-    const sessionCostCents = body.data.sessionCostCents ?? 0;
+    // Only when sessionCostCents is explicitly provided — avoids misusing
+    // modality monthly-estimate columns (costLow/costHigh) as per-session pricing.
+    // Employer-funded balance is consumed first; any overflow is persisted as
+    // outOfPocketCents on this progress log (member's personal expense).
     if (body.data.modalityId && sessionCostCents > 0) {
       try {
         const currentMonth = new Date().toISOString().slice(0, 7);
@@ -110,10 +114,13 @@ router.post("/progress", async (req, res) => {
           .where(eq(employerMembers.profileId, body.data.profileId))
           .limit(1);
 
+        let employerCovered = 0;
+        let outOfPocket = sessionCostCents;
+
         if (link) {
           // ── Check employer coverage rules for this modality ──────────────
           // If the employer has explicitly set covered=false for this modality,
-          // skip the deduction — the session cost is the member's own expense.
+          // skip the deduction — the session cost is entirely the member's own.
           const [rule] = await db
             .select({ covered: employerModalityRules.covered })
             .from(employerModalityRules)
@@ -132,20 +139,32 @@ router.post("/progress", async (req, res) => {
             const effectiveSpent =
               link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
             const remaining = Math.max(0, link.monthlyBudget - effectiveSpent);
-            const deduction = Math.min(sessionCostCents, remaining);
+            // Employer covers up to the remaining balance; overflow is personal
+            employerCovered = Math.min(sessionCostCents, remaining);
+            outOfPocket = sessionCostCents - employerCovered;
 
-            if (deduction > 0) {
+            if (employerCovered > 0) {
               await db
                 .update(employerMembers)
                 .set({
-                  spentThisMonth: effectiveSpent + deduction,
+                  spentThisMonth: effectiveSpent + employerCovered,
                   budgetMonth: currentMonth,
                 })
                 .where(eq(employerMembers.id, link.id));
             }
           }
-          // If !isCovered: modality explicitly excluded — no employer stipend deducted
+          // If !isCovered: entire session cost is out-of-pocket (already set above)
         }
+
+        // Persist the employer-covered / out-of-pocket split on the progress log
+        await db
+          .update(planProgressLogs)
+          .set({
+            employerCoveredCents: employerCovered,
+            outOfPocketCents: outOfPocket,
+          })
+          .where(eq(planProgressLogs.id, created.id));
+
       } catch (deductErr) {
         // Non-fatal — log but don't fail the progress log creation
         console.error("Employer stipend deduction error:", deductErr);
