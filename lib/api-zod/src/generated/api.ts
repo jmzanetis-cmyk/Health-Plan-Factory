@@ -74,7 +74,13 @@ export const RecordModalitySessionParams = zod.object({
 });
 
 export const RecordModalitySessionBody = zod.object({
-  profileId: zod.string().uuid(),
+  profileId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Optional. Admin callers may specify a target profileId; non-admin callers always use their own profile.",
+    ),
   sessionCostCents: zod
     .number()
     .min(1)

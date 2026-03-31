@@ -115,11 +115,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [profileId, sessionCostCents]
+              required: [sessionCostCents]
               properties:
                 profileId:
                   type: string
                   format: uuid
+                  description: Optional. Admin callers may specify a target profileId; non-admin callers always use their own profile.
                 sessionCostCents:
                   type: integer
                   minimum: 1

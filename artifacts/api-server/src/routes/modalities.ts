@@ -20,7 +20,7 @@ function requireAuth(req: Request, res: Response): boolean {
 }
 
 const RecordSessionBody = z.object({
-  profileId: z.string().uuid(),
+  profileId: z.string().uuid().optional(), // ignored for non-admin callers; admin may specify
   sessionCostCents: z.number().int().min(1),
   note: z.string().optional(),
   sessionDate: z.string().optional(),
@@ -84,9 +84,8 @@ router.post("/modalities", async (req, res) => {
 });
 
 // ── Record Modality Session (explicit spend trigger for employer stipend) ──────
-// This is the dedicated endpoint for recording a modality session alongside
-// an explicit session cost. Stipend deduction and progress log creation run in
-// a single transaction — so financial state is always consistent.
+// Dedicated endpoint for recording a modality session with employer deduction.
+// Progress log and balance update run in one transaction.
 router.post("/modalities/:id/sessions", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -97,7 +96,13 @@ router.post("/modalities/:id/sessions", async (req, res) => {
     }
 
     const modalityId = String(req.params.id);
-    const { profileId, sessionCostCents, note, sessionDate } = body.data;
+    const { sessionCostCents, note, sessionDate } = body.data;
+
+    // Derive profileId from the authenticated user for non-admin callers to
+    // prevent cross-user financial mutations (IDOR).
+    const profileId = req.user!.role === "admin"
+      ? (body.data.profileId ?? req.user!.id)
+      : req.user!.id;
     const currentMonth = new Date().toISOString().slice(0, 7);
 
     const [log] = await db.transaction(async (tx) => {

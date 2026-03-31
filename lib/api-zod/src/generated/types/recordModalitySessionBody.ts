@@ -7,7 +7,8 @@
  */
 
 export type RecordModalitySessionBody = {
-  profileId: string;
+  /** Optional. Admin callers may specify a target profileId; non-admin callers always use their own profile. */
+  profileId?: string;
   /**
    * Actual session cost in cents (must be > 0)
    * @minimum 1

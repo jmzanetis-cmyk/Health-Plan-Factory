@@ -8,11 +8,18 @@ const sage = "#3d6b52";
 
 interface EmployerBudget {
   enrolled: boolean;
-  companyName?: string;
-  monthlyBudget?: number;
-  spentThisMonth?: number;
-  remainingCents?: number;
-  budgetMonth?: string;
+  employer?: {
+    id: string;
+    companyName: string;
+    inviteCode: string;
+    status: string;
+  } | null;
+  member?: {
+    monthlyBudget: number;
+    spentThisMonth: number;
+    remainingCents: number;
+    budgetMonth: string;
+  } | null;
 }
 
 function fmt(cents: number) {
@@ -80,21 +87,21 @@ function EmployerStipendSection() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <Loader2 size={20} className="animate-spin" style={{ color: navy }} />
         </div>
-      ) : budget?.enrolled ? (
+      ) : budget?.enrolled && budget.employer && budget.member ? (
         <div>
           <div style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.2)", borderRadius: 10, padding: "16px 20px", marginBottom: 16 }}>
             <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: sage, marginBottom: 4 }}>
-              ✓ Enrolled — {budget.companyName}
+              ✓ Enrolled — {budget.employer.companyName}
             </div>
             <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>
-              {budget.budgetMonth} benefit period
+              {budget.member.budgetMonth} benefit period
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
             {[
-              { label: "Monthly Budget", value: fmt(budget.monthlyBudget!) },
-              { label: "Spent", value: fmt(budget.spentThisMonth!) },
-              { label: "Remaining", value: fmt(budget.remainingCents!) },
+              { label: "Monthly Budget", value: fmt(budget.member.monthlyBudget) },
+              { label: "Spent", value: fmt(budget.member.spentThisMonth) },
+              { label: "Remaining", value: fmt(budget.member.remainingCents) },
             ].map((s) => (
               <div key={s.label} style={{ background: "rgba(27,45,79,0.03)", borderRadius: 8, padding: "12px 16px" }}>
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>{s.label}</div>
