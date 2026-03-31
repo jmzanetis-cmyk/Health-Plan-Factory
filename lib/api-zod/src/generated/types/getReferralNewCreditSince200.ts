@@ -5,11 +5,14 @@
  * Health Plan Factory API
  * OpenAPI spec version: 0.1.0
  */
-import type { MemberCreditRow } from "./memberCreditRow";
 
 export type GetReferralNewCreditSince200 = {
-  hasNew: boolean;
-  newCredits: MemberCreditRow[];
-  /** Display name of the referrer if a new credit was rewarded */
-  referrerName?: string | null;
+  /** True if at least one new credit was issued since the timestamp */
+  hasNewCredit: boolean;
+  /** Total cents of new credits issued */
+  newCreditsCents: number;
+  /** Human-readable total, e.g. "$5.00" */
+  newCreditsFormatted: string;
+  /** Number of new credits issued */
+  count: number;
 };

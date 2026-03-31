@@ -1367,17 +1367,43 @@ paths:
               schema:
                 type: object
                 properties:
-                  hasNew:
+                  hasNewCredit:
                     type: boolean
-                  newCredits:
+                    description: True if at least one new credit was issued since the timestamp
+                  newCreditsCents:
+                    type: integer
+                    description: Total cents of new credits issued
+                  newCreditsFormatted:
+                    type: string
+                    description: Human-readable total, e.g. "$5.00"
+                  count:
+                    type: integer
+                    description: Number of new credits issued
+                required: [hasNewCredit, newCreditsCents, newCreditsFormatted, count]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /providers/unlocked:
+    get:
+      operationId: getProviderUnlocked
+      tags: [providers]
+      summary: Return the set of provider IDs this member has already unlocked
+      description: Used on page load to restore persisted unlock state across sessions.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of unlocked provider IDs for the authenticated member.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unlockedProviderIds:
                     type: array
                     items:
-                      $ref: '#/components/schemas/MemberCreditRow'
-                  referrerName:
-                    type: string
-                    nullable: true
-                    description: Display name of the referrer if a new credit was rewarded
-                required: [hasNew, newCredits]
+                      type: string
+                required: [unlockedProviderIds]
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -1385,7 +1411,13 @@ paths:
     post:
       operationId: postProviderUnlock
       tags: [providers]
-      summary: Apply a referral credit to unlock a provider listing
+      summary: Unlock a provider listing (credit or Stripe payment)
+      description: >
+        Two-phase unlock. Phase A — if a referral credit covers the full price,
+        it is applied atomically and the response includes `unlocked: true`.
+        Phase B — if payment is needed, a Stripe Checkout Session is created and
+        `checkout_url` is returned; the credit is NOT consumed until payment is
+        confirmed via the webhook or unlock-status endpoint.
       security:
         - cookieAuth: []
       requestBody:
@@ -1397,18 +1429,18 @@ paths:
               properties:
                 providerId:
                   type: string
-                modalityCategory:
-                  type: string
-                  enum: [telehealth, medical, wellness, fitness]
               required: [providerId]
       responses:
         '200':
-          description: Unlock result — whether a credit was applied and the net charge.
+          description: Unlock result.
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  unlocked:
+                    type: boolean
+                    description: True only when access is immediately granted (credit covered the full price or already unlocked)
                   used_credit:
                     type: boolean
                   credit_applied_cents:
@@ -1421,9 +1453,116 @@ paths:
                     type: string
                   message:
                     type: string
-                required: [used_credit, credit_applied_cents, amount_charged_cents, amount_charged_formatted, providerId, message]
+                  checkout_url:
+                    type: string
+                    nullable: true
+                    description: Stripe Checkout hosted-page URL; redirect the user here when present
+                  session_id:
+                    type: string
+                    nullable: true
+                    description: Stripe Checkout Session ID; pass to unlock-status after return
+                  already_unlocked:
+                    type: boolean
+                    nullable: true
+                required: [unlocked, used_credit, credit_applied_cents, amount_charged_cents, amount_charged_formatted, providerId, message]
         '400':
           description: Missing or invalid providerId.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          description: Payment required and Stripe is not configured.
+
+  /providers/unlock-status:
+    get:
+      operationId: getProviderUnlockStatus
+      tags: [providers]
+      summary: Confirm a Stripe Checkout payment and record the provider unlock
+      description: >
+        Called when the member returns from the Stripe Checkout hosted page.
+        Verifies the session, records the unlock, and idempotently marks the
+        credit as used.  Pass `session_id` (the `{CHECKOUT_SESSION_ID}` template
+        value from the success URL).
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unlock confirmation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unlocked:
+                    type: boolean
+                  providerId:
+                    type: string
+                    nullable: true
+                  credit_applied_cents:
+                    type: integer
+                  amount_charged_cents:
+                    type: integer
+                  payment_status:
+                    type: string
+                    nullable: true
+                    description: Stripe payment status when not yet paid
+                required: [unlocked]
+        '400':
+          description: Missing session_id.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Session does not belong to this member.
+        '503':
+          description: Stripe is not configured.
+
+  /subscriptions/checkout:
+    post:
+      operationId: postSubscriptionCheckout
+      tags: [subscriptions]
+      summary: Create a Stripe Checkout Session for a member Plus subscription
+      description: >
+        Applies any available referral credits as a discount before charging
+        Stripe. When Stripe is not configured, returns `stripe_required: true`
+        with the pricing breakdown but no checkout URL.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Stripe Checkout Session URL (or pricing info in demo mode).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkout_url:
+                    type: string
+                    nullable: true
+                    description: Stripe hosted checkout page URL; redirect the user here
+                  session_id:
+                    type: string
+                    nullable: true
+                  subscription_price_cents:
+                    type: integer
+                  credit_applied_cents:
+                    type: integer
+                  amount_charged_cents:
+                    type: integer
+                  amount_charged_formatted:
+                    type: string
+                  stripe_required:
+                    type: boolean
+                    nullable: true
+                    description: True when Stripe is not configured
+                  message:
+                    type: string
+                    nullable: true
+                required: [subscription_price_cents, credit_applied_cents, amount_charged_cents, amount_charged_formatted]
         '401':
           $ref: '#/components/responses/Unauthorized'
 

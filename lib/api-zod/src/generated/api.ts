@@ -1390,42 +1390,98 @@ export const GetReferralNewCreditSinceParams = zod.object({
 });
 
 export const GetReferralNewCreditSinceResponse = zod.object({
-  hasNew: zod.boolean(),
-  newCredits: zod.array(
-    zod.object({
-      id: zod.string(),
-      profileId: zod.string(),
-      source: zod.enum(["referral", "promo"]),
-      amountCents: zod.number(),
-      used: zod.boolean(),
-      referralId: zod.string().nullish(),
-      createdAt: zod.coerce.date(),
-      usedAt: zod.coerce.date().nullish(),
-    }),
-  ),
-  referrerName: zod
+  hasNewCredit: zod
+    .boolean()
+    .describe("True if at least one new credit was issued since the timestamp"),
+  newCreditsCents: zod.number().describe("Total cents of new credits issued"),
+  newCreditsFormatted: zod
     .string()
-    .nullish()
-    .describe("Display name of the referrer if a new credit was rewarded"),
+    .describe('Human-readable total, e.g. \"$5.00\"'),
+  count: zod.number().describe("Number of new credits issued"),
 });
 
 /**
- * @summary Apply a referral credit to unlock a provider listing
+ * Used on page load to restore persisted unlock state across sessions.
+ * @summary Return the set of provider IDs this member has already unlocked
+ */
+export const GetProviderUnlockedResponse = zod.object({
+  unlockedProviderIds: zod.array(zod.string()),
+});
+
+/**
+ * Two-phase unlock. Phase A — if a referral credit covers the full price, it is applied atomically and the response includes `unlocked: true`. Phase B — if payment is needed, a Stripe Checkout Session is created and `checkout_url` is returned; the credit is NOT consumed until payment is confirmed via the webhook or unlock-status endpoint.
+
+ * @summary Unlock a provider listing (credit or Stripe payment)
  */
 export const PostProviderUnlockBody = zod.object({
   providerId: zod.string(),
-  modalityCategory: zod
-    .enum(["telehealth", "medical", "wellness", "fitness"])
-    .optional(),
 });
 
 export const PostProviderUnlockResponse = zod.object({
+  unlocked: zod
+    .boolean()
+    .describe(
+      "True only when access is immediately granted (credit covered the full price or already unlocked)",
+    ),
   used_credit: zod.boolean(),
   credit_applied_cents: zod.number(),
   amount_charged_cents: zod.number(),
   amount_charged_formatted: zod.string(),
   providerId: zod.string(),
   message: zod.string(),
+  checkout_url: zod
+    .string()
+    .nullish()
+    .describe(
+      "Stripe Checkout hosted-page URL; redirect the user here when present",
+    ),
+  session_id: zod
+    .string()
+    .nullish()
+    .describe("Stripe Checkout Session ID; pass to unlock-status after return"),
+  already_unlocked: zod.boolean().nullish(),
+});
+
+/**
+ * Called when the member returns from the Stripe Checkout hosted page. Verifies the session, records the unlock, and idempotently marks the credit as used.  Pass `session_id` (the `{CHECKOUT_SESSION_ID}` template value from the success URL).
+
+ * @summary Confirm a Stripe Checkout payment and record the provider unlock
+ */
+export const GetProviderUnlockStatusQueryParams = zod.object({
+  session_id: zod.coerce.string(),
+});
+
+export const GetProviderUnlockStatusResponse = zod.object({
+  unlocked: zod.boolean(),
+  providerId: zod.string().nullish(),
+  credit_applied_cents: zod.number().optional(),
+  amount_charged_cents: zod.number().optional(),
+  payment_status: zod
+    .string()
+    .nullish()
+    .describe("Stripe payment status when not yet paid"),
+});
+
+/**
+ * Applies any available referral credits as a discount before charging Stripe. When Stripe is not configured, returns `stripe_required: true` with the pricing breakdown but no checkout URL.
+
+ * @summary Create a Stripe Checkout Session for a member Plus subscription
+ */
+export const PostSubscriptionCheckoutResponse = zod.object({
+  checkout_url: zod
+    .string()
+    .nullish()
+    .describe("Stripe hosted checkout page URL; redirect the user here"),
+  session_id: zod.string().nullish(),
+  subscription_price_cents: zod.number(),
+  credit_applied_cents: zod.number(),
+  amount_charged_cents: zod.number(),
+  amount_charged_formatted: zod.string(),
+  stripe_required: zod
+    .boolean()
+    .nullish()
+    .describe("True when Stripe is not configured"),
+  message: zod.string().nullish(),
 });
 
 /**

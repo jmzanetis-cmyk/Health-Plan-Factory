@@ -6,6 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type PostProviderUnlockBody = {
-  providerId: string;
+export type GetProviderUnlocked200 = {
+  unlockedProviderIds: string[];
 };

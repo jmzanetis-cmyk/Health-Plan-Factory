@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
+import { randomUUID } from "node:crypto";
+import Stripe from "stripe";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits } from "@workspace/db";
+import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   ListProvidersQueryParams,
@@ -9,6 +11,12 @@ import {
   GetAdminProviderParams,
   GetAdminProviderResponse,
 } from "@workspace/api-zod";
+
+// ── Stripe (lazy — only active when STRIPE_SECRET_KEY is set) ─────────────────
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+const stripe: Stripe | null = stripeKey
+  ? new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" })
+  : null;
 
 const router: IRouter = Router();
 
@@ -353,10 +361,36 @@ router.get("/admin/providers/:id", async (req, res) => {
 });
 
 /**
+ * GET /api/providers/unlocked
+ * Returns the set of provider IDs this member has already unlocked.
+ * Used on page load to restore persisted unlock state.
+ */
+router.get("/providers/unlocked", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  try {
+    const rows = await db
+      .select({ providerId: providerUnlocks.providerId })
+      .from(providerUnlocks)
+      .where(eq(providerUnlocks.memberId, req.user!.id));
+    res.json({ unlockedProviderIds: rows.map((r) => r.providerId) });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
  * POST /api/providers/unlock
- * Applies a member credit to unlock a provider listing.
- * Price is determined server-side by looking up the provider's primary modality category.
- * Credit application is atomic (transaction + conditional WHERE used=false update).
+ * Two-phase unlock:
+ *   Phase A (full credit): credit covers the full price → apply credit atomically +
+ *     record unlock in provider_unlocks → respond { unlocked: true }.
+ *   Phase B (payment needed): credit is partial or absent → create Stripe Checkout
+ *     Session (if Stripe is configured) for the net amount → respond
+ *     { unlocked: false, checkout_url }.  Credit is NOT consumed until payment
+ *     is confirmed via the webhook or the unlock-status endpoint.
  *
  * Body: { providerId: string }
  */
@@ -374,64 +408,372 @@ router.post("/providers/unlock", async (req, res) => {
   }
 
   try {
+    // Already unlocked? Return immediately without consuming another credit.
+    const [existing] = await db
+      .select({ id: providerUnlocks.id })
+      .from(providerUnlocks)
+      .where(and(eq(providerUnlocks.memberId, profileId), eq(providerUnlocks.providerId, providerId)));
+    if (existing) {
+      res.json({ unlocked: true, already_unlocked: true, used_credit: false, credit_applied_cents: 0, amount_charged_cents: 0 });
+      return;
+    }
+
     // --- Server-side price determination ---
-    // Look up the provider's primary modality category from the DB
     const [providerModality] = await db
-      .select({ category: modalitiesTable.category })
+      .select({ category: modalitiesTable.category, name: providers.name })
       .from(providerModalities)
       .innerJoin(modalitiesTable, eq(providerModalities.modalityId, modalitiesTable.id))
+      .innerJoin(providers, eq(providerModalities.providerId, providers.id))
       .where(eq(providerModalities.providerId, providerId))
       .limit(1);
 
     const category = providerModality?.category ?? "wellness";
+    const providerName = providerModality?.name ?? "Provider";
     const priceCents = category === "telehealth" ? 100
       : category === "medical" ? 300
-      : 200; // wellness / fitness / default
+      : 200;
 
-    // --- Atomic credit redemption ---
-    // Use a transaction: select the first unused credit, then conditionally mark it used.
-    // The conditional WHERE (used = false) prevents double-spend under concurrent requests.
-    const result = await db.transaction(async (tx) => {
-      const credits = await tx
+    // --- Phase A: try to cover the full price with a referral credit ---
+    const creditResult = await db.transaction(async (tx) => {
+      const [credit] = await tx
         .select()
         .from(memberCredits)
         .where(and(eq(memberCredits.profileId, profileId), eq(memberCredits.used, false)))
         .orderBy(memberCredits.createdAt)
         .limit(1);
 
-      if (credits.length === 0) return null;
+      if (!credit) return null;
 
-      const credit = credits[0];
-      const [updated] = await tx
+      // Only fully-covering credits unlock immediately — partial credit still
+      // requires Stripe to collect the remainder.
+      if (credit.amountCents < priceCents) return { credit, netCents: priceCents - credit.amountCents };
+
+      // Credit covers the full price — consume it and record the unlock atomically.
+      const [consumed] = await tx
         .update(memberCredits)
         .set({ used: true, usedAt: new Date() })
         .where(and(eq(memberCredits.id, credit.id), eq(memberCredits.used, false)))
         .returning();
 
-      return updated ?? null; // null if credit was already used by a concurrent request
+      if (!consumed) return null; // lost race — no credit applied
+
+      await tx.insert(providerUnlocks).values({
+        id: randomUUID(),
+        memberId: profileId,
+        providerId,
+        creditId: consumed.id,
+        amountCharged: 0,
+      }).onConflictDoNothing();
+
+      return { credit: consumed, netCents: 0 };
     });
 
-    if (result) {
-      // Credit successfully applied
+    // Credit fully covered the price → unlock immediately
+    if (creditResult && creditResult.netCents === 0) {
       res.json({
+        unlocked: true,
         used_credit: true,
-        credit_applied_cents: result.amountCents,
-        amount_charged_cents: Math.max(0, priceCents - result.amountCents),
-        amount_charged_formatted: `$${(Math.max(0, priceCents - result.amountCents) / 100).toFixed(2)}`,
+        credit_applied_cents: creditResult.credit.amountCents,
+        amount_charged_cents: 0,
+        amount_charged_formatted: "$0.00",
         providerId,
-        message: `1 referral credit applied — $${(result.amountCents / 100).toFixed(2)} discount`,
+        message: `Referral credit applied — unlock is free!`,
       });
       return;
     }
 
-    // No credits available
+    // --- Phase B: payment required for the net amount ---
+    const creditAppliedCents = creditResult?.credit.amountCents ?? 0;
+    const netCents = creditResult?.netCents ?? priceCents;
+
+    if (!stripe) {
+      // Stripe not configured — inform client; do NOT grant access.
+      res.status(402).json({
+        unlocked: false,
+        stripe_required: true,
+        credit_applied_cents: creditAppliedCents,
+        amount_charged_cents: netCents,
+        amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
+        providerId,
+        message: "Payment required. Configure STRIPE_SECRET_KEY to enable provider unlocks.",
+      });
+      return;
+    }
+
+    // Build redirect origin from the request host
+    const origin = `${req.protocol}://${req.get("host")}`;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: netCents,
+            product_data: { name: `Provider Unlock — ${providerName}` },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        type: "provider_unlock",
+        provider_id: providerId,
+        member_id: profileId,
+        credit_id: creditResult?.credit.id ?? "",
+        credit_applied_cents: String(creditAppliedCents),
+      },
+      success_url: `${origin}/providers?unlock_session={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/providers`,
+    });
+
     res.json({
+      unlocked: false,
+      checkout_url: session.url,
+      session_id: session.id,
       used_credit: false,
-      credit_applied_cents: 0,
-      amount_charged_cents: priceCents,
-      amount_charged_formatted: `$${(priceCents / 100).toFixed(2)}`,
+      credit_applied_cents: creditAppliedCents,
+      amount_charged_cents: netCents,
+      amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
       providerId,
-      message: "No credits available — payment required at checkout",
+      message: "Complete payment to unlock provider contact details.",
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * GET /api/providers/unlock-status
+ * Called when the member returns from the Stripe Checkout hosted page.
+ * Verifies the Stripe session, records the unlock, and (idempotently) marks
+ * the credit as used.  Returns { unlocked: boolean }.
+ *
+ * Query: ?session_id=cs_xxx
+ */
+router.get("/providers/unlock-status", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const profileId = req.user!.id;
+  const sessionId = typeof req.query.session_id === "string" ? req.query.session_id : null;
+
+  if (!sessionId) {
+    res.status(400).json({ error: "session_id query param is required" });
+    return;
+  }
+  if (!stripe) {
+    res.status(503).json({ error: "Stripe is not configured" });
+    return;
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== "paid") {
+      res.json({ unlocked: false, payment_status: session.payment_status });
+      return;
+    }
+
+    const { provider_id, credit_id, credit_applied_cents } = session.metadata ?? {};
+
+    if (!provider_id || session.metadata?.member_id !== profileId) {
+      res.status(403).json({ error: "Session does not belong to this member" });
+      return;
+    }
+
+    // Idempotently record the unlock
+    await db.insert(providerUnlocks).values({
+      id: randomUUID(),
+      memberId: profileId,
+      providerId: provider_id,
+      creditId: credit_id || null,
+      stripeSessionId: sessionId,
+      amountCharged: session.amount_total ?? 0,
+    }).onConflictDoNothing();
+
+    // Idempotently mark the credit as used (if one was reserved)
+    if (credit_id) {
+      await db
+        .update(memberCredits)
+        .set({ used: true, usedAt: new Date() })
+        .where(and(eq(memberCredits.id, credit_id), eq(memberCredits.used, false)));
+    }
+
+    res.json({
+      unlocked: true,
+      providerId: provider_id,
+      credit_applied_cents: Number(credit_applied_cents ?? 0),
+      amount_charged_cents: session.amount_total ?? 0,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /api/providers/stripe-webhook
+ * Stripe webhook for provider unlock checkout.session.completed events.
+ * Register this URL in your Stripe dashboard with event: checkout.session.completed
+ * and set STRIPE_WEBHOOK_SECRET.
+ */
+router.post(
+  "/providers/stripe-webhook",
+  async (req, res) => {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!stripe || !webhookSecret) {
+      res.json({ received: true, note: "Stripe not configured — webhook ignored" });
+      return;
+    }
+
+    const sig = req.headers["stripe-signature"] as string | undefined;
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body as Buffer, sig ?? "", webhookSecret);
+    } catch (err) {
+      res.status(400).json({ error: "Webhook signature verification failed" });
+      return;
+    }
+
+    try {
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.metadata?.type !== "provider_unlock") {
+          res.json({ received: true });
+          return;
+        }
+        if (session.payment_status !== "paid") {
+          res.json({ received: true });
+          return;
+        }
+
+        const { provider_id, member_id, credit_id } = session.metadata;
+
+        if (provider_id && member_id) {
+          await db.insert(providerUnlocks).values({
+            id: randomUUID(),
+            memberId: member_id,
+            providerId: provider_id,
+            creditId: credit_id || null,
+            stripeSessionId: session.id,
+            amountCharged: session.amount_total ?? 0,
+          }).onConflictDoNothing();
+
+          if (credit_id) {
+            await db
+              .update(memberCredits)
+              .set({ used: true, usedAt: new Date() })
+              .where(and(eq(memberCredits.id, credit_id), eq(memberCredits.used, false)));
+          }
+        }
+      }
+      res.json({ received: true });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Webhook handler error";
+      console.error("[provider-webhook]", message);
+      res.status(500).json({ error: message });
+    }
+  }
+);
+
+/**
+ * POST /api/subscriptions/checkout
+ * Creates a Stripe Checkout Session for a member's Plus subscription.
+ * Applies any available referral credits as a discount before charging Stripe.
+ * Returns { checkout_url } when Stripe is configured, or
+ * { credit_applied_cents, amount_charged_cents, stripe_required: true } when not.
+ */
+router.post("/subscriptions/checkout", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const profileId = req.user!.id;
+
+  try {
+    const SUBSCRIPTION_PRICE_CENTS = 999; // $9.99/mo
+
+    // Check for available credits to discount the subscription
+    const [credit] = await db
+      .select()
+      .from(memberCredits)
+      .where(and(eq(memberCredits.profileId, profileId), eq(memberCredits.used, false)))
+      .orderBy(memberCredits.createdAt)
+      .limit(1);
+
+    const creditAppliedCents = credit ? Math.min(credit.amountCents, SUBSCRIPTION_PRICE_CENTS) : 0;
+    const netCents = Math.max(0, SUBSCRIPTION_PRICE_CENTS - creditAppliedCents);
+
+    if (!stripe) {
+      res.status(402).json({
+        stripe_required: true,
+        subscription_price_cents: SUBSCRIPTION_PRICE_CENTS,
+        credit_applied_cents: creditAppliedCents,
+        amount_charged_cents: netCents,
+        amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
+        message: "Configure STRIPE_SECRET_KEY to enable subscription checkout.",
+      });
+      return;
+    }
+
+    const origin = `${req.protocol}://${req.get("host")}`;
+
+    const discounts: Stripe.Checkout.SessionCreateParams["discounts"] = [];
+    if (creditAppliedCents > 0) {
+      // Create a one-time coupon for the credit amount
+      const coupon = await stripe.coupons.create({
+        amount_off: creditAppliedCents,
+        currency: "usd",
+        duration: "once",
+        name: "Referral Credit",
+      });
+      discounts.push({ coupon: coupon.id });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: SUBSCRIPTION_PRICE_CENTS,
+            recurring: { interval: "month" },
+            product_data: { name: "Health Plan Factory Plus" },
+          },
+          quantity: 1,
+        },
+      ],
+      discounts,
+      metadata: {
+        type: "member_subscription",
+        member_id: profileId,
+        credit_id: credit?.id ?? "",
+        credit_applied_cents: String(creditAppliedCents),
+      },
+      success_url: `${origin}/dashboard?subscription=success`,
+      cancel_url: `${origin}/dashboard`,
+    });
+
+    // Mark the credit as reserved (used=true) pre-emptively — if checkout is
+    // abandoned we accept the loss to avoid double-spend on retry.
+    if (credit && creditAppliedCents > 0) {
+      await db
+        .update(memberCredits)
+        .set({ used: true, usedAt: new Date() })
+        .where(and(eq(memberCredits.id, credit.id), eq(memberCredits.used, false)));
+    }
+
+    res.json({
+      checkout_url: session.url,
+      session_id: session.id,
+      credit_applied_cents: creditAppliedCents,
+      amount_charged_cents: netCents,
+      amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
+      subscription_price_cents: SUBSCRIPTION_PRICE_CENTS,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";

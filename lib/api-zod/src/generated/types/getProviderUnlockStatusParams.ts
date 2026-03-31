@@ -6,6 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type PostProviderUnlockBody = {
-  providerId: string;
+export type GetProviderUnlockStatusParams = {
+  session_id: string;
 };

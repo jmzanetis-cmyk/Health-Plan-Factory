@@ -963,34 +963,64 @@ export type PostReferralTrack200 = {
 };
 
 export type GetReferralNewCreditSince200 = {
-  hasNew: boolean;
-  newCredits: MemberCreditRow[];
-  /** Display name of the referrer if a new credit was rewarded */
-  referrerName?: string | null;
+  /** True if at least one new credit was issued since the timestamp */
+  hasNewCredit: boolean;
+  /** Total cents of new credits issued */
+  newCreditsCents: number;
+  /** Human-readable total, e.g. "$5.00" */
+  newCreditsFormatted: string;
+  /** Number of new credits issued */
+  count: number;
 };
 
-export type PostProviderUnlockBodyModalityCategory =
-  (typeof PostProviderUnlockBodyModalityCategory)[keyof typeof PostProviderUnlockBodyModalityCategory];
-
-export const PostProviderUnlockBodyModalityCategory = {
-  telehealth: "telehealth",
-  medical: "medical",
-  wellness: "wellness",
-  fitness: "fitness",
-} as const;
+export type GetProviderUnlocked200 = {
+  unlockedProviderIds: string[];
+};
 
 export type PostProviderUnlockBody = {
   providerId: string;
-  modalityCategory?: PostProviderUnlockBodyModalityCategory;
 };
 
 export type PostProviderUnlock200 = {
+  /** True only when access is immediately granted (credit covered the full price or already unlocked) */
+  unlocked: boolean;
   used_credit: boolean;
   credit_applied_cents: number;
   amount_charged_cents: number;
   amount_charged_formatted: string;
   providerId: string;
   message: string;
+  /** Stripe Checkout hosted-page URL; redirect the user here when present */
+  checkout_url?: string | null;
+  /** Stripe Checkout Session ID; pass to unlock-status after return */
+  session_id?: string | null;
+  already_unlocked?: boolean | null;
+};
+
+export type GetProviderUnlockStatusParams = {
+  session_id: string;
+};
+
+export type GetProviderUnlockStatus200 = {
+  unlocked: boolean;
+  providerId?: string | null;
+  credit_applied_cents?: number;
+  amount_charged_cents?: number;
+  /** Stripe payment status when not yet paid */
+  payment_status?: string | null;
+};
+
+export type PostSubscriptionCheckout200 = {
+  /** Stripe hosted checkout page URL; redirect the user here */
+  checkout_url?: string | null;
+  session_id?: string | null;
+  subscription_price_cents: number;
+  credit_applied_cents: number;
+  amount_charged_cents: number;
+  amount_charged_formatted: string;
+  /** True when Stripe is not configured */
+  stripe_required?: boolean | null;
+  message?: string | null;
 };
 
 export type GetAdminReferralStats200 = {

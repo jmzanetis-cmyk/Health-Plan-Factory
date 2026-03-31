@@ -6,11 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface UnlockResult {
   providerId: string;
+  unlocked: boolean;
   used_credit: boolean;
   credit_applied_cents: number;
   amount_charged_cents: number;
   amount_charged_formatted: string;
   message: string;
+  checkout_url?: string;
+  stripe_required?: boolean;
 }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -104,8 +107,33 @@ export default function Providers() {
           if (typeof data?.unusedCreditsCents === "number") setUserCreditsCents(data.unusedCreditsCents);
         })
         .catch(() => {});
+
+      // Restore persisted unlocks from the server (survives page refresh)
+      fetch(`${BASE}/api/providers/unlocked`, { credentials: "include" })
+        .then((r) => r.json())
+        .then((data: { unlockedProviderIds: string[] }) => {
+          if (Array.isArray(data?.unlockedProviderIds)) {
+            setUnlockedIds(new Set(data.unlockedProviderIds));
+          }
+        })
+        .catch(() => {});
     }
   }, [user]);
+
+  // Handle return from Stripe Checkout — confirm payment and record unlock
+  useEffect(() => {
+    const sessionId = searchParams.get("unlock_session");
+    if (!sessionId || !user) return;
+    fetch(`${BASE}/api/providers/unlock-status?session_id=${encodeURIComponent(sessionId)}`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: { unlocked: boolean; providerId?: string; credit_applied_cents?: number; amount_charged_cents?: number }) => {
+        if (data.unlocked && data.providerId) {
+          setUnlockedIds((prev) => new Set([...prev, data.providerId!]));
+          toast({ title: "Provider unlocked!", description: "Payment confirmed. You can now view full contact details." });
+        }
+      })
+      .catch(() => {});
+  }, [searchParams, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleUnlock = async (providerId: string) => {
     if (!user) {
@@ -121,15 +149,35 @@ export default function Providers() {
         body: JSON.stringify({ providerId }),
       });
       const data: UnlockResult = await res.json();
+
+      // Phase B: Stripe payment required — redirect to hosted checkout page
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      }
+
+      // Stripe not yet configured (demo / staging environment)
+      if (data.stripe_required) {
+        toast({
+          title: "Payment required",
+          description: `This unlock costs ${data.amount_charged_formatted}. Stripe is not yet configured in this environment.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (!res.ok) {
         toast({ title: "Unlock failed", description: (data as { error?: string }).error ?? "Something went wrong.", variant: "destructive" });
         return;
       }
-      setUnlockedIds((prev) => new Set([...prev, providerId]));
-      setUnlockModal(data);
-      // Update local credits balance
-      if (data.used_credit) {
-        setUserCreditsCents((prev) => Math.max(0, prev - data.credit_applied_cents));
+
+      // Phase A: unlock granted immediately (credit covered the full price)
+      if (data.unlocked) {
+        setUnlockedIds((prev) => new Set([...prev, providerId]));
+        setUnlockModal(data);
+        if (data.used_credit) {
+          setUserCreditsCents((prev) => Math.max(0, prev - data.credit_applied_cents));
+        }
       }
     } catch {
       toast({ title: "Unlock failed", description: "Network error. Please try again.", variant: "destructive" });

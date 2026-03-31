@@ -7,10 +7,17 @@
  */
 
 export type PostProviderUnlock200 = {
+  /** True only when access is immediately granted (credit covered the full price or already unlocked) */
+  unlocked: boolean;
   used_credit: boolean;
   credit_applied_cents: number;
   amount_charged_cents: number;
   amount_charged_formatted: string;
   providerId: string;
   message: string;
+  /** Stripe Checkout hosted-page URL; redirect the user here when present */
+  checkout_url?: string | null;
+  /** Stripe Checkout Session ID; pass to unlock-status after return */
+  session_id?: string | null;
+  already_unlocked?: boolean | null;
 };

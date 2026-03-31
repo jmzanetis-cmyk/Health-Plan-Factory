@@ -47,6 +47,9 @@ import type {
   GeneratePlanBody,
   GetAdminReferralStats200,
   GetEmployerDashboard200,
+  GetProviderUnlockStatus200,
+  GetProviderUnlockStatusParams,
+  GetProviderUnlocked200,
   GetReferralNewCreditSince200,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
@@ -73,6 +76,7 @@ import type {
   PostProviderUnlockBody,
   PostReferralRegister200,
   PostReferralTrack200,
+  PostSubscriptionCheckout200,
   ProgressLogRecord,
   ProviderRecord,
   RecordModalitySession201,
@@ -5017,7 +5021,85 @@ export function useGetReferralNewCreditSince<
 }
 
 /**
- * @summary Apply a referral credit to unlock a provider listing
+ * Used on page load to restore persisted unlock state across sessions.
+ * @summary Return the set of provider IDs this member has already unlocked
+ */
+export const getGetProviderUnlockedUrl = () => {
+  return `/api/providers/unlocked`;
+};
+
+export const getProviderUnlocked = async (
+  options?: RequestInit,
+): Promise<GetProviderUnlocked200> => {
+  return customFetch<GetProviderUnlocked200>(getGetProviderUnlockedUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProviderUnlockedQueryKey = () => {
+  return [`/api/providers/unlocked`] as const;
+};
+
+export const getGetProviderUnlockedQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProviderUnlocked>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getProviderUnlocked>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetProviderUnlockedQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProviderUnlocked>>
+  > = ({ signal }) => getProviderUnlocked({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProviderUnlocked>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProviderUnlockedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProviderUnlocked>>
+>;
+export type GetProviderUnlockedQueryError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Return the set of provider IDs this member has already unlocked
+ */
+
+export function useGetProviderUnlocked<
+  TData = Awaited<ReturnType<typeof getProviderUnlocked>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getProviderUnlocked>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProviderUnlockedQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Two-phase unlock. Phase A — if a referral credit covers the full price, it is applied atomically and the response includes `unlocked: true`. Phase B — if payment is needed, a Stripe Checkout Session is created and `checkout_url` is returned; the credit is NOT consumed until payment is confirmed via the webhook or unlock-status endpoint.
+
+ * @summary Unlock a provider listing (credit or Stripe payment)
  */
 export const getPostProviderUnlockUrl = () => {
   return `/api/providers/unlock`;
@@ -5081,7 +5163,7 @@ export type PostProviderUnlockMutationError =
   ErrorType<void | UnauthorizedResponse>;
 
 /**
- * @summary Apply a referral credit to unlock a provider listing
+ * @summary Unlock a provider listing (credit or Stripe payment)
  */
 export const usePostProviderUnlock = <
   TError = ErrorType<void | UnauthorizedResponse>,
@@ -5101,6 +5183,199 @@ export const usePostProviderUnlock = <
   TContext
 > => {
   return useMutation(getPostProviderUnlockMutationOptions(options));
+};
+
+/**
+ * Called when the member returns from the Stripe Checkout hosted page. Verifies the session, records the unlock, and idempotently marks the credit as used.  Pass `session_id` (the `{CHECKOUT_SESSION_ID}` template value from the success URL).
+
+ * @summary Confirm a Stripe Checkout payment and record the provider unlock
+ */
+export const getGetProviderUnlockStatusUrl = (
+  params: GetProviderUnlockStatusParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/providers/unlock-status?${stringifiedParams}`
+    : `/api/providers/unlock-status`;
+};
+
+export const getProviderUnlockStatus = async (
+  params: GetProviderUnlockStatusParams,
+  options?: RequestInit,
+): Promise<GetProviderUnlockStatus200> => {
+  return customFetch<GetProviderUnlockStatus200>(
+    getGetProviderUnlockStatusUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetProviderUnlockStatusQueryKey = (
+  params?: GetProviderUnlockStatusParams,
+) => {
+  return [`/api/providers/unlock-status`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetProviderUnlockStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProviderUnlockStatus>>,
+  TError = ErrorType<void | UnauthorizedResponse>,
+>(
+  params: GetProviderUnlockStatusParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProviderUnlockStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProviderUnlockStatusQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProviderUnlockStatus>>
+  > = ({ signal }) =>
+    getProviderUnlockStatus(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProviderUnlockStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProviderUnlockStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProviderUnlockStatus>>
+>;
+export type GetProviderUnlockStatusQueryError =
+  ErrorType<void | UnauthorizedResponse>;
+
+/**
+ * @summary Confirm a Stripe Checkout payment and record the provider unlock
+ */
+
+export function useGetProviderUnlockStatus<
+  TData = Awaited<ReturnType<typeof getProviderUnlockStatus>>,
+  TError = ErrorType<void | UnauthorizedResponse>,
+>(
+  params: GetProviderUnlockStatusParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProviderUnlockStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProviderUnlockStatusQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Applies any available referral credits as a discount before charging Stripe. When Stripe is not configured, returns `stripe_required: true` with the pricing breakdown but no checkout URL.
+
+ * @summary Create a Stripe Checkout Session for a member Plus subscription
+ */
+export const getPostSubscriptionCheckoutUrl = () => {
+  return `/api/subscriptions/checkout`;
+};
+
+export const postSubscriptionCheckout = async (
+  options?: RequestInit,
+): Promise<PostSubscriptionCheckout200> => {
+  return customFetch<PostSubscriptionCheckout200>(
+    getPostSubscriptionCheckoutUrl(),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getPostSubscriptionCheckoutMutationOptions = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postSubscriptionCheckout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postSubscriptionCheckout>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["postSubscriptionCheckout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postSubscriptionCheckout>>,
+    void
+  > = () => {
+    return postSubscriptionCheckout(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostSubscriptionCheckoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postSubscriptionCheckout>>
+>;
+
+export type PostSubscriptionCheckoutMutationError =
+  ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Create a Stripe Checkout Session for a member Plus subscription
+ */
+export const usePostSubscriptionCheckout = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postSubscriptionCheckout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof postSubscriptionCheckout>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPostSubscriptionCheckoutMutationOptions(options));
 };
 
 /**

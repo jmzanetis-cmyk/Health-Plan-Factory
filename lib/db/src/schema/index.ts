@@ -695,3 +695,32 @@ export const insertMemberCreditSchema = createInsertSchema(memberCredits).omit({
 });
 export type InsertMemberCredit = InferInsertModel<typeof memberCredits>;
 export type MemberCredit = InferSelectModel<typeof memberCredits>;
+
+// ── provider_unlocks ──────────────────────────────────────────────────────────
+// Persistent record of which providers a member has unlocked (paid to view).
+// Populated immediately for full-credit unlocks, or after Stripe confirms payment.
+
+export const providerUnlocks = pgTable(
+  "provider_unlocks",
+  {
+    id: text("id").primaryKey(),
+    memberId: text("member_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    providerId: text("provider_id").notNull(),
+    creditId: text("credit_id").references(() => memberCredits.id, { onDelete: "set null" }),
+    stripeSessionId: text("stripe_session_id"),
+    amountCharged: integer("amount_charged").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("provider_unlocks_member_idx").on(t.memberId),
+    uniqueIndex("provider_unlocks_member_provider_unique_idx").on(t.memberId, t.providerId),
+  ],
+);
+
+export const insertProviderUnlockSchema = createInsertSchema(providerUnlocks).omit({
+  createdAt: true,
+});
+export type InsertProviderUnlock = InferInsertModel<typeof providerUnlocks>;
+export type ProviderUnlock = InferSelectModel<typeof providerUnlocks>;
