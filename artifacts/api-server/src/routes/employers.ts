@@ -253,6 +253,11 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req, res) => {
       monthlySpend.push({ month: m, totalCents: spent });
     }
 
+    // K-anonymity floor: suppress utilization/wellness aggregates for small cohorts
+    // to prevent de-anonymization of individual member health data.
+    const K_ANON_MIN = 5;
+    const cohortTooSmall = totalEnrolled < K_ANON_MIN;
+
     res.json({
       employer: {
         id: employer.id,
@@ -265,16 +270,17 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req, res) => {
       stats: {
         totalEnrolled,
         totalBudgetCents,
-        totalSpentCents,
-        utilizationPct,
-        avgWellnessScore,
+        totalSpentCents: cohortTooSmall ? null : totalSpentCents,
+        utilizationPct: cohortTooSmall ? null : utilizationPct,
+        avgWellnessScore: cohortTooSmall ? null : avgWellnessScore,
         monthlyInvoiceCents:
           employer.stipendPerEmployee *
           totalEnrolled *
           (1 + employer.platformFeePercent / 100),
+        privacySuppressed: cohortTooSmall,
       },
-      topModalities,
-      monthlySpend,
+      topModalities: cohortTooSmall ? [] : topModalities,
+      monthlySpend: cohortTooSmall ? [] : monthlySpend,
     });
   } catch (err) {
     console.error("Dashboard error:", err);
@@ -345,15 +351,23 @@ router.get("/employer/members", requireEmployerAuth, async (req, res) => {
       .slice(-6)
       .map(([month, count]) => ({ month, count }));
 
+    // K-anonymity floor: suppress spend/utilization data below threshold
+    const COHORT_K_MIN = 5;
+    const cohortTooSmall = totalEnrolled < COHORT_K_MIN;
+
     res.json({
       contractedHeadcount: employer.numberOfEmployees,
       totalEnrolled,
-      utilizationRate: totalEnrolled > 0 && totalBudget > 0
-        ? Math.round((totalSpent / totalBudget) * 100)
-        : 0,
-      averageMonthlyBudgetCents: totalEnrolled > 0 ? Math.round(totalBudget / totalEnrolled) : 0,
-      averageMonthlySpentCents: totalEnrolled > 0 ? Math.round(totalSpent / totalEnrolled) : 0,
-      utilizationBuckets: buckets.map(({ label, count, min, max: _max }) => ({
+      privacySuppressed: cohortTooSmall,
+      utilizationRate: cohortTooSmall ? null
+        : totalEnrolled > 0 && totalBudget > 0
+          ? Math.round((totalSpent / totalBudget) * 100)
+          : 0,
+      averageMonthlyBudgetCents: cohortTooSmall ? null
+        : totalEnrolled > 0 ? Math.round(totalBudget / totalEnrolled) : 0,
+      averageMonthlySpentCents: cohortTooSmall ? null
+        : totalEnrolled > 0 ? Math.round(totalSpent / totalEnrolled) : 0,
+      utilizationBuckets: cohortTooSmall ? [] : buckets.map(({ label, count, min, max: _max }) => ({
         label,
         count,
         pct: totalEnrolled > 0 ? Math.round((count / totalEnrolled) * 100) : 0,

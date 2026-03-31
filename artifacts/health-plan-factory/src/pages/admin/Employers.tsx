@@ -41,13 +41,23 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+interface EmployerFormData {
+  companyName: string;
+  adminContactName: string;
+  adminContactEmail: string;
+  billingContactEmail?: string;
+  numberOfEmployees: number;
+  stipendPerEmployee: number;
+  status?: string;
+}
+
 function EmployerForm({
   initial,
   onSave,
   onCancel,
 }: {
   initial?: Partial<Employer>;
-  onSave: (data: any) => Promise<void>;
+  onSave: (data: EmployerFormData) => Promise<void>;
   onCancel: () => void;
 }) {
   const [form, setForm] = useState({
@@ -78,8 +88,8 @@ function EmployerForm({
         stipendPerEmployee: Math.round(parseFloat(form.stipendPerEmployee) * 100),
         status: form.status,
       });
-    } catch (err: any) {
-      setError(err.message ?? "Failed to save");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setLoading(false);
     }
@@ -182,7 +192,7 @@ export default function AdminEmployers() {
 
   useEffect(() => { load(); }, []);
 
-  const createEmployer = async (data: any) => {
+  const createEmployer = async (data: EmployerFormData) => {
     const res = await fetch(`${BASE}/api/admin/employers`, {
       method: "POST",
       credentials: "include",
@@ -195,7 +205,7 @@ export default function AdminEmployers() {
     load();
   };
 
-  const updateEmployer = async (id: string, data: any) => {
+  const updateEmployer = async (id: string, data: EmployerFormData) => {
     const res = await fetch(`${BASE}/api/admin/employers/${id}`, {
       method: "PATCH",
       credentials: "include",

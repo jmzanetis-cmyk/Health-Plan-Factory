@@ -91,14 +91,9 @@ router.post("/progress", async (req, res) => {
       })
       .returning();
 
-    // ── Employer stipend deduction ───────────────────────────────────────────
-    // If the member is enrolled in an employer wellness stipend, deduct the
-    // actual session cost (provided by the caller) from their monthly budget.
-    // Only when sessionCostCents is explicitly provided — avoids misusing
-    // modality monthly-estimate columns (costLow/costHigh) as per-session pricing.
-    // Employer-funded balance is consumed first; any overflow is persisted as
-    // outOfPocketCents on this progress log (member's personal expense).
-    if (body.data.modalityId && sessionCostCents > 0) {
+    // Employer stipend deduction for covered modality sessions.
+    // Uses sessionCostCents when provided; falls back to monthlyBudget/4.
+    if (body.data.modalityId) {
       try {
         const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -139,9 +134,11 @@ router.post("/progress", async (req, res) => {
             const effectiveSpent =
               link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
             const remaining = Math.max(0, link.monthlyBudget - effectiveSpent);
-            // Employer covers up to the remaining balance; overflow is personal
-            employerCovered = Math.min(sessionCostCents, remaining);
-            outOfPocket = sessionCostCents - employerCovered;
+            const deductCents = sessionCostCents > 0
+              ? sessionCostCents
+              : Math.round(link.monthlyBudget / 4); // fallback: 4 sessions/month
+            employerCovered = Math.min(deductCents, remaining);
+            outOfPocket = deductCents - employerCovered;
 
             if (employerCovered > 0) {
               await db
