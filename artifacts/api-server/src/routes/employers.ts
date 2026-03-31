@@ -698,14 +698,20 @@ router.get("/employer/export-csv", requireEmployerAuth, async (req, res) => {
     }
     const total = rows.length;
 
-    const lines = [
-      "utilization_bracket,member_count,pct_of_enrolled,avg_budget_usd,avg_spent_usd",
-    ];
-    for (const b of buckets) {
-      const pctEnrolled = total > 0 ? ((b.count / total) * 100).toFixed(1) : "0.0";
-      const avgBudget = b.count > 0 ? (b.totalBudget / b.count / 100).toFixed(2) : "0.00";
-      const avgSpent = b.count > 0 ? (b.totalSpent / b.count / 100).toFixed(2) : "0.00";
-      lines.push(`"${b.label}",${b.count},${pctEnrolled}%,${avgBudget},${avgSpent}`);
+    // Apply same k-anonymity floor as dashboard/members endpoints
+    const K_ANON_MIN = 5;
+    const lines: string[] = [];
+    if (total < K_ANON_MIN) {
+      lines.push("privacy_notice");
+      lines.push('"Data suppressed: fewer than 5 employees enrolled. Metrics will appear once the cohort reaches the minimum privacy threshold."');
+    } else {
+      lines.push("utilization_bracket,member_count,pct_of_enrolled,avg_budget_usd,avg_spent_usd");
+      for (const b of buckets) {
+        const pctEnrolled = total > 0 ? ((b.count / total) * 100).toFixed(1) : "0.0";
+        const avgBudget = b.count > 0 ? (b.totalBudget / b.count / 100).toFixed(2) : "0.00";
+        const avgSpent = b.count > 0 ? (b.totalSpent / b.count / 100).toFixed(2) : "0.00";
+        lines.push(`"${b.label}",${b.count},${pctEnrolled}%,${avgBudget},${avgSpent}`);
+      }
     }
 
     const csv = lines.join("\n");

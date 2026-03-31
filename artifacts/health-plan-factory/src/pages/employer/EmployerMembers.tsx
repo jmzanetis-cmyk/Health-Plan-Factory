@@ -23,9 +23,10 @@ interface EnrollmentPoint {
 interface CohortStats {
   contractedHeadcount: number;
   totalEnrolled: number;
-  utilizationRate: number;
-  averageMonthlyBudgetCents: number;
-  averageMonthlySpentCents: number;
+  privacySuppressed?: boolean;
+  utilizationRate: number | null;
+  averageMonthlyBudgetCents: number | null;
+  averageMonthlySpentCents: number | null;
   utilizationBuckets: UtilizationBucket[];
   enrollmentTrend: EnrollmentPoint[];
 }
@@ -107,6 +108,13 @@ export default function EmployerMembers() {
           <div style={{ textAlign: "center", padding: 60, color: "#c42b2b", fontFamily: "var(--app-font-sans)" }}>{error}</div>
         ) : !stats ? null : (
           <>
+            {/* Privacy suppression notice */}
+            {stats.privacySuppressed && (
+              <div style={{ background: "rgba(184,137,42,0.08)", border: "1.5px solid rgba(184,137,42,0.3)", borderRadius: 10, padding: "12px 18px", marginBottom: 20, fontFamily: "var(--app-font-sans)", fontSize: 13, color: amber }}>
+                Utilization metrics are suppressed until at least 5 employees have enrolled (privacy protection).
+              </div>
+            )}
+
             {/* Summary KPIs */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
               {[
@@ -118,20 +126,20 @@ export default function EmployerMembers() {
                 },
                 {
                   label: "Avg Utilization",
-                  value: `${stats.utilizationRate}%`,
-                  sub: "of monthly stipend used",
+                  value: stats.utilizationRate != null ? `${stats.utilizationRate}%` : "—",
+                  sub: stats.privacySuppressed ? "Suppressed (<5 members)" : "of monthly stipend used",
                   icon: <TrendingUp size={16} />,
                 },
                 {
                   label: "Avg Monthly Budget",
-                  value: fmt(stats.averageMonthlyBudgetCents),
+                  value: stats.averageMonthlyBudgetCents != null ? fmt(stats.averageMonthlyBudgetCents) : "—",
                   sub: "per enrolled employee",
                   icon: <BarChart2 size={16} />,
                 },
                 {
                   label: "Avg Monthly Spend",
-                  value: fmt(stats.averageMonthlySpentCents),
-                  sub: "per enrolled employee",
+                  value: stats.averageMonthlySpentCents != null ? fmt(stats.averageMonthlySpentCents) : "—",
+                  sub: stats.privacySuppressed ? "Suppressed (<5 members)" : "per enrolled employee",
                   icon: <TrendingUp size={16} />,
                 },
               ].map((s) => (
