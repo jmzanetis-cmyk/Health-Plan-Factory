@@ -59,6 +59,7 @@ export * from "./planWithItems";
 export * from "./progressLogRecord";
 export * from "./providerRecord";
 export * from "./redeemCodeBody";
+export * from "./redeemEmployerInviteCode201";
 export * from "./removeFavoriteParams";
 export * from "./setModalityRulesBody";
 export * from "./setModalityRulesBodyRulesItem";

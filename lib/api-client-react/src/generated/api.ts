@@ -56,6 +56,7 @@ import type {
   ProgressLogRecord,
   ProviderRecord,
   RedeemCodeBody,
+  RedeemEmployerInviteCode201,
   RemoveFavoriteParams,
   SetModalityRulesBody,
   StripeWebhookBody,
@@ -2844,13 +2845,16 @@ export const getRedeemEmployerInviteCodeUrl = () => {
 export const redeemEmployerInviteCode = async (
   redeemCodeBody: RedeemCodeBody,
   options?: RequestInit,
-): Promise<void> => {
-  return customFetch<void>(getRedeemEmployerInviteCodeUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(redeemCodeBody),
-  });
+): Promise<RedeemEmployerInviteCode201> => {
+  return customFetch<RedeemEmployerInviteCode201>(
+    getRedeemEmployerInviteCodeUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(redeemCodeBody),
+    },
+  );
 };
 
 export const getRedeemEmployerInviteCodeMutationOptions = <

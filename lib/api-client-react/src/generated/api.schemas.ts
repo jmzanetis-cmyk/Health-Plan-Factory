@@ -572,6 +572,13 @@ export type HandleBrowserLoginCallbackParams = {
   state?: string;
 };
 
+export type RedeemEmployerInviteCode201 = {
+  success: boolean;
+  companyName: string;
+  /** Monthly stipend in cents */
+  monthlyBudget: number;
+};
+
 /**
  * Raw Stripe webhook event payload.
  */

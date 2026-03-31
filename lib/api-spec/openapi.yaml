@@ -731,8 +731,21 @@ paths:
             schema:
               $ref: '#/components/schemas/RedeemCodeBody'
       responses:
-        '200':
-          description: Enrolment successful.
+        '201':
+          description: Enrolment successful — member linked to employer stipend account.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, companyName, monthlyBudget]
+                properties:
+                  success:
+                    type: boolean
+                  companyName:
+                    type: string
+                  monthlyBudget:
+                    type: integer
+                    description: Monthly stipend in cents
         '404':
           description: Invalid or expired invite code.
         '409':
