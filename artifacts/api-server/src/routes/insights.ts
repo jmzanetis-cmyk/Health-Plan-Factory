@@ -105,58 +105,85 @@ function buildHeadline(
       : withAvg > withoutAvg
         ? "higher"
         : "lower";
-  return `On days with ${modalityName} sessions, your ${label} averaged ${round1(withAvg)} vs ${round1(withoutAvg)} on other days — ${improvement} by ${Math.abs(Math.round(((withAvg - withoutAvg) / (withoutAvg || 1)) * 100))}%.`;
+  return `On days after a ${modalityName} session, your ${label} averaged ${round1(withAvg)} vs ${round1(withoutAvg)} on other days — ${improvement} by ${Math.abs(Math.round(((withAvg - withoutAvg) / (withoutAvg || 1)) * 100))}%.`;
 }
 
+/**
+ * Build a 90-day sparkline for a given metric.
+ * Each point is a journal entry; hasSession indicates whether a session of
+ * the given modality occurred within the preceding 2 days.
+ */
 function buildSparkline(
-  logs: PlanProgressLog[],
+  journalEntries: PlanProgressLog[],
+  sessionRecords: PlanProgressLog[],
   metric: keyof Pick<PlanProgressLog, "pain" | "energy" | "mood" | "rating">,
   modalityId: string
 ): Array<{ date: string; value: number; hasSession: boolean }> {
-  const sorted = [...logs]
-    .filter((l) => l[metric] != null)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .slice(-30);
+  const ninetyDaysAgo = Date.now() - 90 * 24 * 3600 * 1000;
+  const TWO_DAYS_MS = 2 * 24 * 3600 * 1000;
 
-  return sorted.map((l) => ({
-    date: new Date(l.createdAt).toISOString().slice(0, 10),
-    value: l[metric] as number,
-    hasSession: l.modalityId === modalityId,
-  }));
+  // Index session records by modality for fast lookup
+  const sessionDates = sessionRecords
+    .filter((s) => s.modalityId === modalityId && s.sessionDate != null)
+    .map((s) => new Date(s.sessionDate!).getTime());
+
+  return journalEntries
+    .filter((j) => j[metric] != null && new Date(j.createdAt).getTime() > ninetyDaysAgo)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .map((j) => {
+      const jTime = new Date(j.createdAt).getTime();
+      const hasSession = sessionDates.some(
+        (sTime) => sTime <= jTime && sTime >= jTime - TWO_DAYS_MS
+      );
+      return {
+        date: new Date(j.createdAt).toISOString().slice(0, 10),
+        value: j[metric] as number,
+        hasSession,
+      };
+    });
 }
 
 function computeWellnessScore(
-  logs: PlanProgressLog[],
+  journalEntries: PlanProgressLog[],
+  sessionRecords: PlanProgressLog[],
   activePlanItems: PlanItem[]
 ): number {
-  if (logs.length === 0) return 0;
+  if (journalEntries.length === 0) return 0;
 
-  // Base score from average journal rating (0–70 pts)
-  const ratingLogs = logs.filter((l) => l.rating != null).slice(0, 30);
+  // Base score from average journal rating (0–70 pts), last 30 entries
+  const ratingEntries = journalEntries
+    .filter((l) => l.rating != null)
+    .slice(0, 30);
   const avgRating =
-    ratingLogs.length > 0
-      ? ratingLogs.reduce((s, l) => s + (l.rating ?? 0), 0) / ratingLogs.length
+    ratingEntries.length > 0
+      ? ratingEntries.reduce((s, l) => s + (l.rating ?? 0), 0) / ratingEntries.length
       : 5;
   const baseScore = (avgRating / 10) * 70;
 
-  // Session completion rate (0–20 pts)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const recentSessions = new Set(
-    logs
-      .filter((l) => l.modalityId && new Date(l.createdAt) > thirtyDaysAgo)
-      .map((l) => l.modalityId)
+  // Session completion rate (0–20 pts): distinct modalities with a session in last 30 days
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 3600 * 1000;
+  const recentSessionModalities = new Set(
+    sessionRecords
+      .filter(
+        (s) =>
+          s.modalityId != null &&
+          s.sessionDate != null &&
+          new Date(s.sessionDate).getTime() > thirtyDaysAgo
+      )
+      .map((s) => s.modalityId as string)
   );
   const completionRate =
-    activePlanItems.length > 0 ? recentSessions.size / activePlanItems.length : 0;
+    activePlanItems.length > 0
+      ? recentSessionModalities.size / activePlanItems.length
+      : 0;
   const completionScore = Math.min(20, completionRate * 20);
 
-  // Journal trend (0–10 pts): recent 7 vs previous 7
-  const last7 = logs.slice(0, 7).filter((l) => l.rating != null);
-  const prev7 = logs.slice(7, 14).filter((l) => l.rating != null);
+  // Journal trend (0–10 pts): recent 7 vs previous 7 journal entries
+  const last7 = journalEntries.slice(0, 7).filter((l) => l.rating != null);
+  const prev7 = journalEntries.slice(7, 14).filter((l) => l.rating != null);
   const last7Avg = avg(last7.map((l) => l.rating as number));
   const prev7Avg = avg(prev7.map((l) => l.rating as number));
-  let trendScore = 5; // neutral
+  let trendScore = 5;
   if (last7Avg !== null && prev7Avg !== null) {
     if (last7Avg > prev7Avg + 0.5) trendScore = 10;
     else if (last7Avg < prev7Avg - 0.5) trendScore = 0;
@@ -166,12 +193,20 @@ function computeWellnessScore(
 }
 
 export async function computeAndCacheInsights(profileId: string): Promise<void> {
-  // Fetch all journal/session logs for the member (most recent first)
-  const logs = await db
+  // Fetch ALL planProgressLogs for this member, most recent first
+  const allLogs = await db
     .select()
     .from(planProgressLogs)
     .where(eq(planProgressLogs.profileId, profileId))
     .orderBy(desc(planProgressLogs.createdAt));
+
+  // Separate into journal entries (has at least one metric) and session records (has sessionDate + modalityId)
+  const journalEntries = allLogs.filter(
+    (l) => l.rating != null || l.mood != null || l.pain != null || l.energy != null
+  );
+  const sessionRecords = allLogs.filter(
+    (l) => l.sessionDate != null && l.modalityId != null
+  );
 
   // Fetch the latest active plan's items
   const latestPlan = await db
@@ -193,41 +228,82 @@ export async function computeAndCacheInsights(profileId: string): Promise<void> 
   const allModalities = await db.select().from(modalities);
   const modalityMap = new Map<string, Modality>(allModalities.map((m) => [m.id, m]));
 
-  const journalCount = logs.length;
-  const sessionCount = logs.filter((l) => l.modalityId != null).length;
+  const journalCount = journalEntries.length;
+  const sessionCount = sessionRecords.length;
 
-  const wellnessScore = computeWellnessScore(logs, activePlanItems);
+  const wellnessScore = computeWellnessScore(journalEntries, sessionRecords, activePlanItems);
 
   const insights: InsightCard[] = [];
   const attentionItems: AttentionItem[] = [];
 
-  // Only compute correlations if member has enough data
+  // Only compute correlations if member has enough journal data
   if (journalCount >= 14) {
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const recentLogs = logs.filter((l) => new Date(l.createdAt) > ninetyDaysAgo);
+    const ninetyDaysAgo = Date.now() - 90 * 24 * 3600 * 1000;
+    const TWO_DAYS_MS = 2 * 24 * 3600 * 1000;
+
+    // Restrict to last 90 days for correlations
+    const recentJournals = journalEntries.filter(
+      (j) => new Date(j.createdAt).getTime() > ninetyDaysAgo
+    );
+
+    const planModalityIds = activePlanItems.map((pi) => pi.modalityId);
+    const usedModalityIds = [
+      ...new Set(
+        sessionRecords
+          .filter((s) => new Date(s.sessionDate!).getTime() > ninetyDaysAgo)
+          .map((s) => s.modalityId as string)
+      ),
+    ];
+    const allModalityIds = [...new Set([...planModalityIds, ...usedModalityIds])];
 
     const metrics = ["pain", "energy", "mood", "rating"] as const;
-    const planModalityIds = activePlanItems.map((pi) => pi.modalityId);
-    // Also include modalities the member has actually used
-    const usedModalityIds = [...new Set(recentLogs.filter((l) => l.modalityId).map((l) => l.modalityId as string))];
-    const allModalityIds = [...new Set([...planModalityIds, ...usedModalityIds])];
 
     for (const modalityId of allModalityIds) {
       const mod = modalityMap.get(modalityId);
       if (!mod) continue;
 
-      const withSession = recentLogs.filter((l) => l.modalityId === modalityId);
-      const withoutSession = recentLogs.filter((l) => l.modalityId !== modalityId);
+      // Build per-journal-entry cohorts using 2-day lookback join
+      const modalitySessions = sessionRecords.filter(
+        (s) =>
+          s.modalityId === modalityId &&
+          s.sessionDate != null &&
+          new Date(s.sessionDate).getTime() > ninetyDaysAgo
+      );
 
-      if (withSession.length < 2) continue;
+      if (modalitySessions.length < 2) continue;
+
+      const sessionTimestamps = modalitySessions.map((s) =>
+        new Date(s.sessionDate!).getTime()
+      );
+
+      // For each journal entry, determine if a session occurred in the prior 2 days
+      const withSession: PlanProgressLog[] = [];
+      const withoutSession: PlanProgressLog[] = [];
+
+      for (const journal of recentJournals) {
+        const jTime = new Date(journal.createdAt).getTime();
+        const hadRecentSession = sessionTimestamps.some(
+          (sTime) => sTime <= jTime && sTime >= jTime - TWO_DAYS_MS
+        );
+        if (hadRecentSession) {
+          withSession.push(journal);
+        } else {
+          withoutSession.push(journal);
+        }
+      }
+
+      if (withSession.length < 2 || withoutSession.length < 2) continue;
 
       let bestInsight: InsightCard | null = null;
       let bestPctDiff = 0;
 
       for (const metric of metrics) {
-        const withVals = withSession.map((l) => l[metric]).filter((v): v is number => v != null);
-        const withoutVals = withoutSession.map((l) => l[metric]).filter((v): v is number => v != null);
+        const withVals = withSession
+          .map((l) => l[metric])
+          .filter((v): v is number => v != null);
+        const withoutVals = withoutSession
+          .map((l) => l[metric])
+          .filter((v): v is number => v != null);
 
         const withAvgVal = avg(withVals);
         const withoutAvgVal = avg(withoutVals);
@@ -254,8 +330,8 @@ export async function computeAndCacheInsights(profileId: string): Promise<void> 
             withSessionAvg: round1(withAvgVal),
             withoutSessionAvg: round1(withoutAvgVal),
             percentDiff: pctDiff,
-            sessionCount: withSession.length,
-            sparklineData: buildSparkline(recentLogs, metric, modalityId),
+            sessionCount: modalitySessions.length,
+            sparklineData: buildSparkline(recentJournals, sessionRecords, metric, modalityId),
             whyItMatters: getWhyItMatters(metric, modalityId),
           };
         }
@@ -270,25 +346,27 @@ export async function computeAndCacheInsights(profileId: string): Promise<void> 
 
   // "What might need attention" — plan items with 0 sessions in the last 30 days
   if (activePlanItems.length > 0) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 3600 * 1000;
 
     for (const item of activePlanItems) {
       const mod = modalityMap.get(item.modalityId);
       if (!mod) continue;
 
-      const recentSessions = logs.filter(
-        (l) =>
-          l.modalityId === item.modalityId &&
-          l.sessionDate != null &&
-          new Date(l.sessionDate) > thirtyDaysAgo
+      const recentSessions = sessionRecords.filter(
+        (s) =>
+          s.modalityId === item.modalityId &&
+          s.sessionDate != null &&
+          new Date(s.sessionDate).getTime() > thirtyDaysAgo
       );
 
       if (recentSessions.length === 0) {
-        // Find how many days since last session (if any)
-        const lastSession = logs.find((l) => l.modalityId === item.modalityId && l.sessionDate != null);
+        const lastSession = sessionRecords.find(
+          (s) => s.modalityId === item.modalityId && s.sessionDate != null
+        );
         const daysSince = lastSession?.sessionDate
-          ? Math.floor((Date.now() - new Date(lastSession.sessionDate).getTime()) / 86400000)
+          ? Math.floor(
+              (Date.now() - new Date(lastSession.sessionDate).getTime()) / 86400000
+            )
           : null;
 
         attentionItems.push({
@@ -363,7 +441,15 @@ router.get("/insights/mine", async (req: Request, res: Response) => {
         .from(insightsCache)
         .where(eq(insightsCache.profileId, profileId))
         .limit(1);
-      res.json(refreshed[0] ?? { insights: [], attentionItems: [], journalCount: 0, sessionCount: 0, wellnessScore: null });
+      res.json(
+        refreshed[0] ?? {
+          insights: [],
+          attentionItems: [],
+          journalCount: 0,
+          sessionCount: 0,
+          wellnessScore: null,
+        }
+      );
       return;
     }
 
@@ -386,7 +472,15 @@ router.post("/insights/refresh", async (req: Request, res: Response) => {
       .from(insightsCache)
       .where(eq(insightsCache.profileId, profileId))
       .limit(1);
-    res.json(refreshed[0] ?? { insights: [], attentionItems: [], journalCount: 0, sessionCount: 0, wellnessScore: null });
+    res.json(
+      refreshed[0] ?? {
+        insights: [],
+        attentionItems: [],
+        journalCount: 0,
+        sessionCount: 0,
+        wellnessScore: null,
+      }
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

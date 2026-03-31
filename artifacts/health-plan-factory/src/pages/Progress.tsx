@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { Loader2, Plus, CheckCircle, BadgeCheck, Sparkles, AlertTriangle, Printer, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { jsPDF } from "jspdf";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -71,6 +72,122 @@ interface InsightsData {
   journalCount: number;
   sessionCount: number;
   refreshedAt?: string;
+}
+
+function generateInsightsPdf(data: InsightsData, userName?: string): void {
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const navy = [27, 45, 79] as [number, number, number];
+  const amber = [184, 137, 42] as [number, number, number];
+  const gray = [100, 100, 100] as [number, number, number];
+  const lightGray = [230, 230, 230] as [number, number, number];
+  const pageW = doc.internal.pageSize.getWidth();
+  let y = 48;
+
+  const headerH = 72;
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, pageW, headerH, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text("HealthPlanFactory", 40, 32);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("Wellness Outcomes Report", 40, 48);
+  if (userName) doc.text(`Member: ${userName}`, 40, 62);
+  doc.setFontSize(9);
+  doc.text(
+    `Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}   |   ${data.journalCount} journal entries   |   ${data.sessionCount} sessions logged`,
+    40,
+    userName ? 76 : 62
+  );
+
+  y = headerH + 28;
+  if (data.wellnessScore != null) {
+    doc.setFillColor(245, 248, 252);
+    doc.roundedRect(40, y, pageW - 80, 36, 6, 6, "F");
+    doc.setTextColor(...navy);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Overall Wellness Score:", 52, y + 15);
+    doc.setTextColor(...amber);
+    doc.setFontSize(20);
+    doc.text(`${data.wellnessScore}/100`, 52, y + 32);
+    y += 52;
+  }
+
+  if (data.insights.length > 0) {
+    doc.setTextColor(...navy);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text("Modality–Outcome Correlations", 40, y);
+    doc.setDrawColor(...lightGray);
+    doc.setLineWidth(0.5);
+    doc.line(40, y + 4, pageW - 40, y + 4);
+    y += 20;
+
+    for (const ins of data.insights) {
+      if (y > 700) {
+        doc.addPage();
+        y = 40;
+      }
+      doc.setFillColor(248, 250, 253);
+      const cardH = 72;
+      doc.roundedRect(40, y, pageW - 80, cardH, 6, 6, "F");
+
+      doc.setTextColor(...navy);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(`${ins.emoji}  ${ins.modalityName}  —  +${ins.percentDiff}% improvement in ${ins.metric}`, 52, y + 16);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...gray);
+      const headlineLines = doc.splitTextToSize(ins.headline, pageW - 120);
+      doc.text(headlineLines, 52, y + 30);
+      doc.text(
+        `With sessions: ${ins.withSessionAvg}/10   |   Without sessions: ${ins.withoutSessionAvg}/10   |   ${ins.sessionCount} sessions logged`,
+        52,
+        y + 58
+      );
+      y += cardH + 10;
+    }
+  }
+
+  if (data.attentionItems.length > 0) {
+    if (y > 660) { doc.addPage(); y = 40; }
+    y += 8;
+    doc.setTextColor(...navy);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text("Modalities Recommended But Not Yet Started", 40, y);
+    doc.setDrawColor(...lightGray);
+    doc.line(40, y + 4, pageW - 40, y + 4);
+    y += 20;
+
+    for (const item of data.attentionItems) {
+      if (y > 700) { doc.addPage(); y = 40; }
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(...navy);
+      doc.text(`${item.emoji}  ${item.modalityName}`, 52, y);
+      doc.setTextColor(...gray);
+      doc.setFontSize(9);
+      const msgLines = doc.splitTextToSize(item.message, pageW - 100);
+      doc.text(msgLines, 52, y + 13);
+      y += 13 + msgLines.length * 12 + 6;
+    }
+  }
+
+  const disclaimerY = doc.internal.pageSize.getHeight() - 36;
+  doc.setTextColor(160, 160, 160);
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "italic");
+  const disclaimer =
+    "Disclaimer: HealthPlanFactory is a wellness optimization platform, not a licensed medical provider. The correlations presented are observational and based on self-reported data. They are not clinical diagnoses or medical recommendations. Please consult a licensed healthcare provider before making changes to your healthcare routine.";
+  const dLines = doc.splitTextToSize(disclaimer, pageW - 80);
+  doc.text(dLines, 40, disclaimerY);
+
+  doc.save("HealthPlanFactory_Wellness_Report.pdf");
 }
 
 function MetricInput({ label, name, register }: { label: string; name: keyof LogForm; register: ReturnType<typeof useForm<LogForm>>["register"] }) {
@@ -601,21 +718,21 @@ export default function Progress() {
         {/* ── Share with My Doctor ─────────────────────────────────────────── */}
         {insightsData && insightsData.insights.length > 0 && (
           <div>
-            <div className="no-print p-5 rounded-2xl flex items-center justify-between gap-4 flex-wrap" style={{ background: "rgba(27,45,79,0.04)", border: "1px solid rgba(27,45,79,0.08)" }}>
+            <div className="p-5 rounded-2xl flex items-center justify-between gap-4 flex-wrap" style={{ background: "rgba(27,45,79,0.04)", border: "1px solid rgba(27,45,79,0.08)" }}>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
                   Share your outcomes with your doctor
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                  Print a clinical summary of your wellness data and outcome correlations.
+                  Download a clinical PDF summary of your wellness data and outcome correlations.
                 </p>
               </div>
               <button
-                onClick={() => window.print()}
+                onClick={() => generateInsightsPdf(insightsData)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline"
                 style={{ background: "var(--navy)", color: "white", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
-                <Printer size={14} /> Print / Save PDF
+                <Printer size={14} /> Download PDF
               </button>
             </div>
 

@@ -79,6 +79,7 @@
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.0.2",
+    "jspdf": "^4.2.1",
     "react-helmet-async": "^3.0.0",
     "react-router-dom": "^7.13.2"
   }
