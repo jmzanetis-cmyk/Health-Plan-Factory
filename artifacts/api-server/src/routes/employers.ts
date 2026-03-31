@@ -250,7 +250,7 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req: any, res) => 
 router.get("/employer/members", requireEmployerAuth, async (req: any, res) => {
   try {
     const [employer] = await db
-      .select({ id: employers.id })
+      .select({ id: employers.id, numberOfEmployees: employers.numberOfEmployees })
       .from(employers)
       .where(eq(employers.adminProfileId, req.user!.id))
       .limit(1);
@@ -260,20 +260,65 @@ router.get("/employer/members", requireEmployerAuth, async (req: any, res) => {
       return;
     }
 
-    const members = await db
+    // Retrieve aggregate-only cohort statistics — no individual member rows exposed
+    const rows = await db
       .select({
-        id: employerMembers.id,
         monthlyBudget: employerMembers.monthlyBudget,
         spentThisMonth: employerMembers.spentThisMonth,
-        budgetMonth: employerMembers.budgetMonth,
         linkedAt: employerMembers.linkedAt,
       })
       .from(employerMembers)
       .where(eq(employerMembers.employerId, employer.id));
 
-    res.json(members);
+    const totalEnrolled = rows.length;
+    const totalBudget = rows.reduce((s, r) => s + (r.monthlyBudget ?? 0), 0);
+    const totalSpent = rows.reduce((s, r) => s + (r.spentThisMonth ?? 0), 0);
+
+    const buckets = [
+      { label: "0–25%", min: 0, max: 25, count: 0 },
+      { label: "25–50%", min: 25, max: 50, count: 0 },
+      { label: "50–75%", min: 50, max: 75, count: 0 },
+      { label: "75–100%", min: 75, max: 100, count: 0 },
+      { label: "100%+", min: 100, max: Infinity, count: 0 },
+    ];
+
+    for (const r of rows) {
+      const pct = r.monthlyBudget && r.monthlyBudget > 0
+        ? (r.spentThisMonth / r.monthlyBudget) * 100
+        : 0;
+      const bucket = buckets.find((b) => pct >= b.min && pct < b.max) ?? buckets[buckets.length - 1];
+      bucket.count++;
+    }
+
+    // Enrollment trend: count per calendar month (last 6 months)
+    const monthCounts: Record<string, number> = {};
+    for (const r of rows) {
+      const key = new Date(r.linkedAt).toISOString().slice(0, 7);
+      monthCounts[key] = (monthCounts[key] ?? 0) + 1;
+    }
+    const enrollmentTrend = Object.entries(monthCounts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([month, count]) => ({ month, count }));
+
+    res.json({
+      contractedHeadcount: employer.numberOfEmployees,
+      totalEnrolled,
+      utilizationRate: totalEnrolled > 0 && totalBudget > 0
+        ? Math.round((totalSpent / totalBudget) * 100)
+        : 0,
+      averageMonthlyBudgetCents: totalEnrolled > 0 ? Math.round(totalBudget / totalEnrolled) : 0,
+      averageMonthlySpentCents: totalEnrolled > 0 ? Math.round(totalSpent / totalEnrolled) : 0,
+      utilizationBuckets: buckets.map(({ label, count, min, max: _max }) => ({
+        label,
+        count,
+        pct: totalEnrolled > 0 ? Math.round((count / totalEnrolled) * 100) : 0,
+        barMin: min,
+      })),
+      enrollmentTrend,
+    });
   } catch {
-    res.status(500).json({ error: "Failed to fetch members" });
+    res.status(500).json({ error: "Failed to fetch member cohort data" });
   }
 });
 
@@ -469,27 +514,40 @@ router.get("/employer/export-csv", requireEmployerAuth, async (req: any, res) =>
       return;
     }
 
-    const members = await db
+    // Aggregate-only export — no individual member rows to protect member privacy
+    const rows = await db
       .select({
-        id: employerMembers.id,
         monthlyBudget: employerMembers.monthlyBudget,
         spentThisMonth: employerMembers.spentThisMonth,
-        budgetMonth: employerMembers.budgetMonth,
         linkedAt: employerMembers.linkedAt,
       })
       .from(employerMembers)
       .where(eq(employerMembers.employerId, employer.id));
 
-    const lines = [
-      "member_id,monthly_budget_usd,spent_this_month_usd,utilization_pct,budget_month,enrolled_date",
+    const buckets = [
+      { label: "0–25%", min: 0, max: 25, count: 0, totalBudget: 0, totalSpent: 0 },
+      { label: "25–50%", min: 25, max: 50, count: 0, totalBudget: 0, totalSpent: 0 },
+      { label: "50–75%", min: 50, max: 75, count: 0, totalBudget: 0, totalSpent: 0 },
+      { label: "75–100%", min: 75, max: 100, count: 0, totalBudget: 0, totalSpent: 0 },
+      { label: "100%+", min: 100, max: Infinity, count: 0, totalBudget: 0, totalSpent: 0 },
     ];
-    for (const m of members) {
-      const pct = m.monthlyBudget > 0
-        ? ((m.spentThisMonth / m.monthlyBudget) * 100).toFixed(1)
-        : "0.0";
-      lines.push(
-        `${m.id},${(m.monthlyBudget / 100).toFixed(2)},${(m.spentThisMonth / 100).toFixed(2)},${pct}%,${m.budgetMonth ?? ""},${m.linkedAt.toISOString().split("T")[0]}`
-      );
+    for (const r of rows) {
+      const pct = r.monthlyBudget && r.monthlyBudget > 0 ? (r.spentThisMonth / r.monthlyBudget) * 100 : 0;
+      const b = buckets.find((b) => pct >= b.min && pct < b.max) ?? buckets[buckets.length - 1];
+      b.count++;
+      b.totalBudget += r.monthlyBudget ?? 0;
+      b.totalSpent += r.spentThisMonth ?? 0;
+    }
+    const total = rows.length;
+
+    const lines = [
+      "utilization_bracket,member_count,pct_of_enrolled,avg_budget_usd,avg_spent_usd",
+    ];
+    for (const b of buckets) {
+      const pctEnrolled = total > 0 ? ((b.count / total) * 100).toFixed(1) : "0.0";
+      const avgBudget = b.count > 0 ? (b.totalBudget / b.count / 100).toFixed(2) : "0.00";
+      const avgSpent = b.count > 0 ? (b.totalSpent / b.count / 100).toFixed(2) : "0.00";
+      lines.push(`"${b.label}",${b.count},${pctEnrolled}%,${avgBudget},${avgSpent}`);
     }
 
     const csv = lines.join("\n");
@@ -664,15 +722,18 @@ router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req
       return;
     }
 
+    // Enrolled count is for utilization display only; billing uses contracted headcount
     const enrolledResult = await db
       .select({ count: count() })
       .from(employerMembers)
       .where(eq(employerMembers.employerId, employer.id));
     const enrolled = enrolledResult[0]?.count ?? 0;
 
+    // Invoice = contracted headcount × stipend + platform fee (matches spec requirement #4)
+    const headcount = employer.numberOfEmployees;
     const unitAmountCents = employer.stipendPerEmployee;
     const feeMultiplier = 1 + employer.platformFeePercent / 100;
-    const totalCents = Math.round(unitAmountCents * enrolled * feeMultiplier);
+    const totalCents = Math.round(unitAmountCents * headcount * feeMultiplier);
 
     if (!stripe) {
       // Demo mode — no Stripe key configured
@@ -681,11 +742,13 @@ router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req
         message: "Configure STRIPE_SECRET_KEY to enable live Stripe Checkout.",
         invoice_preview: {
           companyName: employer.companyName,
+          contractedHeadcount: headcount,
           enrolledMembers: enrolled,
-          stipendPerMember: fmt_cents(unitAmountCents),
+          stipendPerEmployee: fmt_cents(unitAmountCents),
           platformFee: `${employer.platformFeePercent}%`,
           totalMonthly: fmt_cents(totalCents),
           billingCycle: "monthly",
+          formula: `${headcount} employees × ${fmt_cents(unitAmountCents)} × ${feeMultiplier.toFixed(3)}`,
         },
       });
       return;
@@ -715,8 +778,8 @@ router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req
           price_data: {
             currency: "usd",
             product_data: {
-              name: `Health Plan Factory — Wellness Stipend (${enrolled} employees)`,
-              description: `$${(unitAmountCents / 100).toFixed(0)}/mo per employee + ${employer.platformFeePercent}% platform fee`,
+              name: `Health Plan Factory — Wellness Stipend (${headcount} contracted employees)`,
+              description: `$${(unitAmountCents / 100).toFixed(0)}/mo × ${headcount} employees + ${employer.platformFeePercent}% platform fee`,
             },
             unit_amount: totalCents,
             recurring: { interval: "month" },

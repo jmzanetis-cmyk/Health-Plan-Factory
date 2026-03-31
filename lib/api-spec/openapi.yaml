@@ -24,6 +24,10 @@ tags:
     description: Member progress logs
   - name: admin
     description: Admin operations
+  - name: employer
+    description: Employer wellness stipend account operations
+  - name: employer-admin
+    description: Admin management of employer accounts
   - name: Auth
     description: Browser and mobile authentication endpoints.
 
@@ -640,6 +644,264 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthLogoutSuccess'
 
+  # ─── Employer Stipend Endpoints ───────────────────────────────────────────
+
+  /employer/signup:
+    post:
+      tags: [employer]
+      operationId: createEmployer
+      summary: Register a new employer wellness stipend account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmployerBody'
+      responses:
+        '201':
+          description: Employer account created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employer'
+        '409':
+          description: Employer account already exists.
+
+  /employer/me:
+    get:
+      tags: [employer]
+      operationId: getEmployerAccount
+      summary: Get the authenticated employer's account details
+      responses:
+        '200':
+          description: Employer account data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerAccount'
+        '404':
+          description: No employer account found.
+    patch:
+      tags: [employer]
+      operationId: updateEmployerAccount
+      summary: Update employer account settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmployerBody'
+      responses:
+        '200':
+          description: Updated employer account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employer'
+        '404':
+          description: No employer account found.
+
+  /employer/members:
+    get:
+      tags: [employer]
+      operationId: getEmployerMemberCohort
+      summary: Get aggregate-only cohort utilization statistics for enrolled employees
+      description: >
+        Returns anonymized aggregate statistics only — no individual member rows
+        or identifiers are exposed to the employer.
+      responses:
+        '200':
+          description: Cohort statistics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerCohortStats'
+        '404':
+          description: No employer account found.
+
+  /employer/redeem-code:
+    post:
+      tags: [employer]
+      operationId: redeemEmployerInviteCode
+      summary: Enroll the authenticated member into an employer wellness programme
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedeemCodeBody'
+      responses:
+        '200':
+          description: Enrolment successful.
+        '404':
+          description: Invalid or expired invite code.
+        '409':
+          description: Member already enrolled with this or another employer.
+
+  /employer/enroll-status:
+    get:
+      tags: [employer]
+      operationId: getEmployerEnrollStatus
+      summary: Check whether the current member is enrolled with an employer
+      responses:
+        '200':
+          description: Enrolment status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollStatusResponse'
+
+  /employer/modality-rules:
+    get:
+      tags: [employer]
+      operationId: listEmployerModalityRules
+      summary: List modality coverage rules for the employer's programme
+      responses:
+        '200':
+          description: List of modality coverage rules.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModalityRule'
+        '404':
+          description: No employer account found.
+    post:
+      tags: [employer]
+      operationId: upsertEmployerModalityRule
+      summary: Create or update a modality coverage rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertModalityRuleBody'
+      responses:
+        '200':
+          description: Rule saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModalityRule'
+        '404':
+          description: No employer account found.
+
+  /employer/export-csv:
+    get:
+      tags: [employer]
+      operationId: exportEmployerCsv
+      summary: Download aggregate utilization summary as CSV
+      description: >
+        Returns an aggregate cohort CSV (utilization brackets × member counts).
+        No individual rows or identifiers are included.
+      responses:
+        '200':
+          description: CSV file attachment.
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /employer/billing/create-checkout:
+    post:
+      tags: [employer]
+      operationId: createEmployerBillingCheckout
+      summary: Create a Stripe Checkout session for employer monthly billing
+      description: >
+        Billing is calculated on contracted headcount (numberOfEmployees × stipendPerEmployee × fee multiplier).
+        Returns a demo invoice preview when STRIPE_SECRET_KEY is not configured.
+      responses:
+        '200':
+          description: Checkout session URL or demo invoice preview.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingCheckoutResponse'
+        '404':
+          description: No employer account found.
+
+  /employer/billing/webhook:
+    post:
+      tags: [employer]
+      operationId: stripeWebhook
+      summary: Stripe webhook receiver for subscription lifecycle events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Raw Stripe webhook event payload.
+      responses:
+        '200':
+          description: Webhook processed.
+        '400':
+          description: Invalid webhook signature.
+
+  # ─── Admin Employer Management Endpoints ──────────────────────────────────
+
+  /admin/employers:
+    get:
+      tags: [employer-admin]
+      operationId: adminListEmployers
+      summary: List all employer accounts (admin only)
+      responses:
+        '200':
+          description: List of employers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminEmployer'
+
+  /admin/employers/{id}:
+    get:
+      tags: [employer-admin]
+      operationId: adminGetEmployer
+      summary: Get a specific employer account (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Employer details with members count.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminEmployerDetail'
+        '404':
+          description: Employer not found.
+    patch:
+      tags: [employer-admin]
+      operationId: adminUpdateEmployer
+      summary: Update an employer account (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUpdateEmployerBody'
+      responses:
+        '200':
+          description: Updated employer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employer'
+        '404':
+          description: Employer not found.
+
 components:
   schemas:
     HealthStatus:
@@ -1232,7 +1494,7 @@ components:
           nullable: true
         role:
           type: string
-          enum: [member, provider, admin]
+          enum: [member, provider, admin, employer]
           nullable: true
 
     AuthUserEnvelope:
