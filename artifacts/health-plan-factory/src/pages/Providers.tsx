@@ -150,23 +150,7 @@ export default function Providers() {
       });
       const data: UnlockResult = await res.json();
 
-      // Phase B: Stripe payment required — redirect to hosted checkout page
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-        return;
-      }
-
-      // Stripe not yet configured (demo / staging environment)
-      if (data.stripe_required) {
-        toast({
-          title: "Payment required",
-          description: `This unlock costs ${data.amount_charged_formatted}. Stripe is not yet configured in this environment.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!res.ok) {
+      if (!res.ok && !data.checkout_url && !data.stripe_required) {
         toast({ title: "Unlock failed", description: (data as { error?: string }).error ?? "Something went wrong.", variant: "destructive" });
         return;
       }
@@ -178,7 +162,13 @@ export default function Providers() {
         if (data.used_credit) {
           setUserCreditsCents((prev) => Math.max(0, prev - data.credit_applied_cents));
         }
+        return;
       }
+
+      // Phase B or Stripe-not-configured: show checkout modal with credit
+      // breakdown BEFORE redirecting/confirming — so the user sees the discount
+      // applied to the price before leaving the page.
+      setUnlockModal(data);
     } catch {
       toast({ title: "Unlock failed", description: "Network error. Please try again.", variant: "destructive" });
     } finally {
@@ -270,13 +260,15 @@ export default function Providers() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2 mb-4">
-              <CheckCircle2 size={20} style={{ color: "var(--sage)" }} />
+              {unlockModal.unlocked
+                ? <CheckCircle2 size={20} style={{ color: "var(--sage)" }} />
+                : <Unlock size={20} style={{ color: "var(--hpf-amber)" }} />}
               <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--navy)", margin: 0 }}>
-                Provider Unlocked
+                {unlockModal.unlocked ? "Provider Unlocked" : "Complete Payment to Unlock"}
               </h3>
             </div>
 
-            {/* Checkout breakdown */}
+            {/* Price breakdown — shown for both immediate unlock and Stripe redirect cases */}
             <div style={{ background: "rgba(27,45,79,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(27,45,79,0.08)" }}>
               <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
                 <span style={{ color: "var(--text-secondary)" }}>Unlock fee</span>
@@ -284,7 +276,7 @@ export default function Providers() {
                   ${((unlockModal.amount_charged_cents + unlockModal.credit_applied_cents) / 100).toFixed(2)}
                 </span>
               </div>
-              {unlockModal.used_credit && (
+              {unlockModal.credit_applied_cents > 0 && (
                 <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
                   <span style={{ color: "var(--hpf-amber)", fontWeight: 600 }}>🎁 Referral credit applied</span>
                   <span style={{ color: "var(--hpf-amber)", fontWeight: 700 }}>
@@ -293,7 +285,9 @@ export default function Providers() {
                 </div>
               )}
               <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(27,45,79,0.08)", fontFamily: "var(--app-font-sans)" }}>
-                <span style={{ color: "var(--navy)", fontWeight: 700 }}>Total charged</span>
+                <span style={{ color: "var(--navy)", fontWeight: 700 }}>
+                  {unlockModal.unlocked ? "Total charged" : "Due now"}
+                </span>
                 <span style={{ color: unlockModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--navy)", fontWeight: 700 }}>
                   {unlockModal.amount_charged_cents === 0 ? "Free" : unlockModal.amount_charged_formatted}
                 </span>
@@ -301,17 +295,40 @@ export default function Providers() {
             </div>
 
             <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
-              {unlockModal.amount_charged_cents > 0
-                ? "You can now view this provider's full contact details. Payment will be processed at booking."
-                : "Your referral credit covered this unlock. You can now view full contact details."}
+              {unlockModal.unlocked
+                ? "Your referral credit covered this unlock. You can now view full contact details."
+                : unlockModal.stripe_required
+                  ? "Stripe is not yet configured in this environment. Set STRIPE_SECRET_KEY to enable live payments."
+                  : "Your referral credit discount is applied. Complete payment via Stripe to reveal full contact details."}
             </p>
 
-            <button
-              onClick={() => setUnlockModal(null)}
-              style={{ width: "100%", padding: "0.75rem", borderRadius: 10, background: "var(--navy)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
-            >
-              View Provider
-            </button>
+            {unlockModal.unlocked ? (
+              <button
+                onClick={() => setUnlockModal(null)}
+                style={{ width: "100%", padding: "0.75rem", borderRadius: 10, background: "var(--navy)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                View Provider
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setUnlockModal(null)}
+                  style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--navy)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(27,45,79,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (unlockModal.checkout_url) window.location.href = unlockModal.checkout_url;
+                    else setUnlockModal(null);
+                  }}
+                  disabled={!!unlockModal.stripe_required}
+                  style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: unlockModal.stripe_required ? "rgba(27,45,79,0.1)" : "var(--hpf-amber)", color: unlockModal.stripe_required ? "var(--text-muted)" : "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: unlockModal.stripe_required ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+                >
+                  {unlockModal.stripe_required ? "Not yet available" : "Proceed to payment →"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
