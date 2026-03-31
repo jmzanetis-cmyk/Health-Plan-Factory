@@ -59,6 +59,21 @@ export default function Dashboard() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Auto-redeem employer invite code stored during signup
+  useEffect(() => {
+    if (!user) return;
+    const code = sessionStorage.getItem("hpf_employer_code");
+    if (!code) return;
+    sessionStorage.removeItem("hpf_employer_code");
+
+    fetch(`${BASE}/api/employer/redeem-code`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    }).catch(() => {});
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     const uid = user.id;

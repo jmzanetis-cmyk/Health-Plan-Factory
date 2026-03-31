@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "@workspace/db";
-import { planProgressLogs } from "@workspace/db";
-import { and, eq, desc } from "drizzle-orm";
+import { planProgressLogs, employerMembers, modalities } from "@workspace/db";
+import { and, eq, desc, sql } from "drizzle-orm";
 import {
   CreateProgressLogBody,
   ListProgressQueryParams,
@@ -86,6 +86,57 @@ router.post("/progress", async (req, res) => {
         createdAt: new Date(),
       })
       .returning();
+
+    // ── Employer stipend deduction ───────────────────────────────────────────
+    // If the member is enrolled in an employer wellness stipend, deduct the
+    // session cost (modality average cost) from their monthly employer budget.
+    // Employer-funded balance is consumed first; any overrun is the member's own.
+    if (body.data.modalityId) {
+      try {
+        const [mod] = await db
+          .select({ costLow: modalities.costLow, costHigh: modalities.costHigh })
+          .from(modalities)
+          .where(eq(modalities.id, body.data.modalityId))
+          .limit(1);
+
+        if (mod) {
+          const sessionCostCents = Math.round(((mod.costLow + mod.costHigh) / 2) * 100);
+          const currentMonth = new Date().toISOString().slice(0, 7);
+
+          const [link] = await db
+            .select({
+              id: employerMembers.id,
+              monthlyBudget: employerMembers.monthlyBudget,
+              spentThisMonth: employerMembers.spentThisMonth,
+              budgetMonth: employerMembers.budgetMonth,
+            })
+            .from(employerMembers)
+            .where(eq(employerMembers.profileId, body.data.profileId))
+            .limit(1);
+
+          if (link) {
+            // Reset spent counter if it's a new budget month
+            const effectiveSpent =
+              link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
+            const remaining = Math.max(0, link.monthlyBudget - effectiveSpent);
+            const deduction = Math.min(sessionCostCents, remaining);
+
+            if (deduction > 0) {
+              await db
+                .update(employerMembers)
+                .set({
+                  spentThisMonth: effectiveSpent + deduction,
+                  budgetMonth: currentMonth,
+                })
+                .where(eq(employerMembers.id, link.id));
+            }
+          }
+        }
+      } catch (deductErr) {
+        // Non-fatal — log but don't fail the progress log creation
+        console.error("Employer stipend deduction error:", deductErr);
+      }
+    }
 
     res.status(201).json(ListProgressResponseItem.parse(created));
   } catch (err: unknown) {

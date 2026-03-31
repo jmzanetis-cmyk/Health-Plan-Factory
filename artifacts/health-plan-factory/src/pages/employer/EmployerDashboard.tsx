@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import {
-  Building2, Users, DollarSign, TrendingUp, Download, RefreshCw, Loader2, Copy, CheckCheck,
+  Building2, Users, DollarSign, TrendingUp, Download, RefreshCw, Loader2, Copy, CheckCheck, CreditCard, Shield,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -98,6 +98,8 @@ export default function EmployerDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingMsg, setBillingMsg] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -122,6 +124,31 @@ export default function EmployerDashboard() {
 
   const exportCsv = () => {
     window.open(`${BASE}/api/employer/export-csv`, "_blank");
+  };
+
+  const setupBilling = async () => {
+    setBillingLoading(true);
+    setBillingMsg(null);
+    try {
+      const res = await fetch(`${BASE}/api/employer/billing/create-checkout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = await res.json();
+      if (json.stripe_mode === "live" && json.url) {
+        window.location.href = json.url;
+      } else if (json.invoice_preview) {
+        const p = json.invoice_preview;
+        setBillingMsg(`Demo mode — invoice preview: ${p.enrolledMembers} employees × ${p.stipendPerMember} + ${p.platformFee} fee = ${p.totalMonthly}/mo. Set STRIPE_SECRET_KEY to go live.`);
+      } else {
+        setBillingMsg(json.error ?? "Unable to create billing session.");
+      }
+    } catch {
+      setBillingMsg("Network error. Please try again.");
+    } finally {
+      setBillingLoading(false);
+    }
   };
 
   if (loading) {
@@ -173,12 +200,20 @@ export default function EmployerDashboard() {
               Employer Wellness Dashboard
             </p>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button onClick={load} style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
               <RefreshCw size={14} /> Refresh
             </button>
-            <button onClick={exportCsv} style={{ background: navy, color: "white", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
+            <button onClick={exportCsv} style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
               <Download size={14} /> Export CSV
+            </button>
+            <button
+              onClick={setupBilling}
+              disabled={billingLoading}
+              style={{ background: amber, color: "white", border: "none", borderRadius: 8, padding: "8px 14px", cursor: billingLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, opacity: billingLoading ? 0.7 : 1 }}
+            >
+              {billingLoading ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+              Setup Billing
             </button>
           </div>
         </div>
@@ -207,6 +242,39 @@ export default function EmployerDashboard() {
             Share with employees to enroll them in the benefit
           </div>
         </div>
+
+        {/* Privacy assurance banner */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          background: "rgba(61,107,82,0.07)",
+          border: "1.5px solid rgba(61,107,82,0.18)",
+          borderRadius: 10,
+          padding: "10px 18px",
+          marginBottom: 16,
+        }}>
+          <Shield size={16} color={sage} style={{ flexShrink: 0 }} />
+          <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, fontWeight: 500 }}>
+            Aggregate data only — individual member health information is never shared.
+          </span>
+        </div>
+
+        {/* Billing message */}
+        {billingMsg && (
+          <div style={{
+            background: "rgba(184,137,42,0.08)",
+            border: "1.5px solid rgba(184,137,42,0.25)",
+            borderRadius: 10,
+            padding: "12px 18px",
+            marginBottom: 16,
+            fontFamily: "var(--app-font-sans)",
+            fontSize: 13,
+            color: "#7a5c1e",
+          }}>
+            {billingMsg}
+          </div>
+        )}
 
         <EmployerNav active="/employer/dashboard" />
 

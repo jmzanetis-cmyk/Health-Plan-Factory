@@ -17,10 +17,11 @@
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
-    "zod": "catalog:",
     "openid-client": "^6.8.2",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "stripe": "^21.0.1",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

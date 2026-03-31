@@ -10,6 +10,15 @@ import {
 import { eq, and, count, sql, desc, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { z } from "zod";
+import Stripe from "stripe";
+
+// ── Stripe client (initialised lazily — requires STRIPE_SECRET_KEY in prod) ──
+// Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET environment variables to
+// enable live Stripe Checkout sessions and webhook processing.
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+const stripe: Stripe | null = stripeKey
+  ? new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" })
+  : null;
 
 const router: IRouter = Router();
 
@@ -637,5 +646,178 @@ router.delete("/admin/employers/:id", requireAdminAuth, async (req: any, res) =>
     res.status(500).json({ error: "Failed to delete employer" });
   }
 });
+
+// ── Stripe Billing ─────────────────────────────────────────────────────────────
+// Production: set STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET env vars.
+// Demo mode: returns invoice summary with stripe_mode: "demo" when key is absent.
+
+router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req: any, res) => {
+  try {
+    const [employer] = await db
+      .select()
+      .from(employers)
+      .where(eq(employers.adminProfileId, req.user!.id))
+      .limit(1);
+
+    if (!employer) {
+      res.status(404).json({ error: "No employer account found" });
+      return;
+    }
+
+    const enrolledResult = await db
+      .select({ count: count() })
+      .from(employerMembers)
+      .where(eq(employerMembers.employerId, employer.id));
+    const enrolled = enrolledResult[0]?.count ?? 0;
+
+    const unitAmountCents = employer.stipendPerEmployee;
+    const feeMultiplier = 1 + employer.platformFeePercent / 100;
+    const totalCents = Math.round(unitAmountCents * enrolled * feeMultiplier);
+
+    if (!stripe) {
+      // Demo mode — no Stripe key configured
+      res.json({
+        stripe_mode: "demo",
+        message: "Configure STRIPE_SECRET_KEY to enable live Stripe Checkout.",
+        invoice_preview: {
+          companyName: employer.companyName,
+          enrolledMembers: enrolled,
+          stipendPerMember: fmt_cents(unitAmountCents),
+          platformFee: `${employer.platformFeePercent}%`,
+          totalMonthly: fmt_cents(totalCents),
+          billingCycle: "monthly",
+        },
+      });
+      return;
+    }
+
+    // Ensure Stripe customer exists
+    let customerId = employer.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        name: employer.companyName,
+        email: employer.adminContactEmail,
+        metadata: { employerId: employer.id },
+      });
+      customerId = customer.id;
+      await db
+        .update(employers)
+        .set({ stripeCustomerId: customerId, updatedAt: new Date() })
+        .where(eq(employers.id, employer.id));
+    }
+
+    const appDomain = process.env.APP_DOMAIN ?? "http://localhost:8080";
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: "subscription",
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `Health Plan Factory — Wellness Stipend (${enrolled} employees)`,
+              description: `$${(unitAmountCents / 100).toFixed(0)}/mo per employee + ${employer.platformFeePercent}% platform fee`,
+            },
+            unit_amount: totalCents,
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${appDomain}/employer/dashboard?billing=success`,
+      cancel_url: `${appDomain}/employer/dashboard?billing=canceled`,
+      metadata: { employerId: employer.id },
+    });
+
+    res.json({ stripe_mode: "live", url: session.url });
+  } catch (err) {
+    console.error("Stripe checkout error:", err);
+    res.status(500).json({ error: "Failed to create billing session" });
+  }
+});
+
+// ── Stripe Webhook ─────────────────────────────────────────────────────────────
+// Mount this route BEFORE the express.json() middleware so Stripe can verify the raw body.
+// Register webhook at: https://dashboard.stripe.com/webhooks
+// Events to subscribe: invoice.payment_succeeded, invoice.payment_failed, customer.subscription.deleted
+
+router.post(
+  "/employer/billing/webhook",
+  // Stripe requires the raw body for signature verification
+  (req: any, res, next) => {
+    // If body is already a Buffer (raw body middleware configured), use it
+    // Otherwise fall through — signature verification will fail gracefully
+    next();
+  },
+  async (req: any, res) => {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!stripe || !webhookSecret) {
+      res.json({ received: true, note: "Stripe not configured — webhook ignored" });
+      return;
+    }
+
+    let event: Stripe.Event;
+    try {
+      const sig = req.headers["stripe-signature"] as string;
+      const rawBody = req.rawBody ?? req.body;
+      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    } catch (err) {
+      console.error("Stripe webhook signature verification failed:", err);
+      res.status(400).json({ error: "Webhook signature invalid" });
+      return;
+    }
+
+    try {
+      switch (event.type) {
+        case "invoice.payment_succeeded": {
+          // Use `any` cast — the subscription field path varies across Stripe API versions
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const invoice = event.data.object as any;
+          const subId: string | null =
+            typeof invoice.subscription === "string"
+              ? invoice.subscription
+              : invoice.parent?.subscription_details?.subscription ?? null;
+          if (subId && typeof invoice.customer === "string") {
+            await db
+              .update(employers)
+              .set({ status: "active", stripeSubscriptionId: subId, updatedAt: new Date() })
+              .where(eq(employers.stripeCustomerId, invoice.customer));
+          }
+          break;
+        }
+        case "invoice.payment_failed": {
+          const invoice = event.data.object as Stripe.Invoice;
+          if (typeof invoice.customer === "string") {
+            console.warn("Invoice payment failed for Stripe customer:", invoice.customer);
+            // Optionally set status to pending — business decision
+          }
+          break;
+        }
+        case "customer.subscription.deleted": {
+          const sub = event.data.object as Stripe.Subscription;
+          if (typeof sub.customer === "string") {
+            await db
+              .update(employers)
+              .set({ status: "canceled", updatedAt: new Date() })
+              .where(eq(employers.stripeCustomerId, sub.customer));
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      res.json({ received: true });
+    } catch (err) {
+      console.error("Stripe webhook handler error:", err);
+      res.status(500).json({ error: "Webhook processing failed" });
+    }
+  }
+);
+
+// Helper: format cents as dollar string (server-side only)
+function fmt_cents(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
 
 export default router;

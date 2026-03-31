@@ -21,6 +21,7 @@ export default function SignUp() {
   const { login, isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<Role>("member");
+  const [employerCode, setEmployerCode] = useState("");
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -35,6 +36,10 @@ export default function SignUp() {
     if (selectedRole === "provider") {
       login("/provider/signup");
     } else {
+      // Persist invite code so it can be redeemed after OAuth completes
+      if (employerCode.trim()) {
+        sessionStorage.setItem("hpf_employer_code", employerCode.trim().toUpperCase());
+      }
       login("/onboarding");
     }
   };
@@ -111,6 +116,47 @@ export default function SignUp() {
               ))}
             </div>
           </div>
+
+          {/* Employer invite code — member sign-up only */}
+          {selectedRole === "member" && (
+            <div className="mb-5">
+              <label
+                htmlFor="employerCode"
+                className="block text-xs font-semibold mb-1.5"
+                style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+              >
+                Employer invite code <span className="font-normal" style={{ color: "var(--text-muted)" }}>(optional)</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="employerCode"
+                  type="text"
+                  value={employerCode}
+                  onChange={(e) => setEmployerCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. ACME-4B2Z"
+                  maxLength={20}
+                  spellCheck={false}
+                  autoComplete="off"
+                  className="w-full px-4 py-2.5 rounded-lg text-sm tracking-widest"
+                  style={{
+                    border: "1.5px solid rgba(27,45,79,0.15)",
+                    fontFamily: "var(--app-font-sans)",
+                    color: "var(--navy)",
+                    outline: "none",
+                    background: employerCode ? "rgba(184,137,42,0.04)" : "white",
+                  }}
+                />
+                {employerCode && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "var(--hpf-amber)" }}>
+                    <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                Your employer covers wellness sessions up to your monthly stipend limit.
+              </p>
+            </div>
+          )}
 
           <button
             onClick={handleContinue}
