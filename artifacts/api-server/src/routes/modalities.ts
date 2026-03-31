@@ -230,7 +230,8 @@ router.post("/modalities/:id/sessions", async (req, res) => {
           const eligible = items.filter((i) => i.lmnEligible);
           eligibleNames = eligible.map((i) => i.name);
           eligibleIds = eligible.map((i) => i.modalityId);
-          estimatedAnnualSavings = eligible.reduce((s, i) => s + (i.estimatedMonthlyCost ?? 0) * 12, 0);
+          // Convert dollars → cents (× 100) to match /lmn/status and /lmn/request conventions
+          estimatedAnnualSavings = eligible.reduce((s, i) => s + (i.estimatedMonthlyCost ?? 0) * 12 * 100, 0);
         }
 
         const memberName = profile?.displayName ?? "Your patient";
@@ -263,6 +264,12 @@ ${memberName}`;
           estimatedAnnualSavings: estimatedAnnualSavings > 0 ? estimatedAnnualSavings : null,
           updatedAt: new Date(),
         });
+
+        // Advance lmnStatus from "none" → "requested" so the HsaUnlock flow routes correctly
+        await db
+          .update(profiles)
+          .set({ lmnStatus: "requested", updatedAt: new Date() })
+          .where(and(eq(profiles.id, profileId), eq(profiles.lmnStatus, "none")));
       } catch {
         // Silent — LMN auto-draft is supplementary; do not surface errors to the session log caller
       }

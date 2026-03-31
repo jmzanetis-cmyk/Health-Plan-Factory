@@ -63,14 +63,14 @@ router.get("/lmn/status", async (req, res) => {
           modalityId: i.modalityId,
           name: i.name,
           emoji: i.emoji,
-          estimatedMonthlyCost: i.estimatedMonthlyCost ?? 0,
+          // Convert dollars → cents so UI can safely divide by 100
+          estimatedMonthlyCost: (i.estimatedMonthlyCost ?? 0) * 100,
         }));
 
-      // Estimated annual savings: eligible item costs × 12 (if reimbursed via HSA)
-      estimatedAnnualSavings = eligibleItems.reduce(
-        (sum, i) => sum + i.estimatedMonthlyCost * 12,
-        0,
-      );
+      // Estimated annual savings in cents: eligible item costs × 12 months × 100 (dollars→cents)
+      estimatedAnnualSavings = items
+        .filter((i) => i.lmnEligible)
+        .reduce((sum, i) => sum + (i.estimatedMonthlyCost ?? 0) * 12 * 100, 0);
     }
 
     // Get latest LMN request if exists
@@ -135,7 +135,8 @@ router.post("/lmn/request", async (req, res) => {
       const eligible = items.filter((i) => i.lmnEligible);
       eligibleNames = eligible.map((i) => i.name);
       eligibleIds = eligible.map((i) => i.modalityId);
-      estimatedAnnualSavings = eligible.reduce((sum, i) => sum + (i.estimatedMonthlyCost ?? 0) * 12, 0);
+      // Convert dollars → cents (× 100) so stored value is consistent with /lmn/status
+      estimatedAnnualSavings = eligible.reduce((sum, i) => sum + (i.estimatedMonthlyCost ?? 0) * 12 * 100, 0);
     }
 
     const memberName = profile?.displayName ?? "Your patient";
