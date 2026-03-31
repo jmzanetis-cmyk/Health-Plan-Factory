@@ -1539,3 +1539,279 @@ components:
       properties:
         success:
           type: boolean
+
+    # ─── Employer Schemas ─────────────────────────────────────────────────────
+
+    CreateEmployerBody:
+      type: object
+      required: [companyName, numberOfEmployees, stipendPerEmployee]
+      properties:
+        companyName:
+          type: string
+          minLength: 1
+        numberOfEmployees:
+          type: integer
+          minimum: 1
+        stipendPerEmployee:
+          type: integer
+          description: Monthly stipend per employee in cents
+          minimum: 0
+        platformFeePercent:
+          type: number
+          description: Platform fee percentage (default 8)
+        coveredModalities:
+          type: array
+          items:
+            type: string
+          description: List of modality IDs covered by this employer
+
+    UpdateEmployerBody:
+      type: object
+      properties:
+        companyName:
+          type: string
+          minLength: 1
+        numberOfEmployees:
+          type: integer
+          minimum: 1
+        stipendPerEmployee:
+          type: integer
+          minimum: 0
+        platformFeePercent:
+          type: number
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+
+    Employer:
+      type: object
+      required: [id, companyName, status, inviteCode]
+      properties:
+        id:
+          type: string
+        companyName:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        inviteCode:
+          type: string
+        numberOfEmployees:
+          type: integer
+        stipendPerEmployee:
+          type: integer
+          description: Monthly stipend per employee in cents
+        platformFeePercent:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+
+    EmployerAccount:
+      allOf:
+        - $ref: '#/components/schemas/Employer'
+        - type: object
+          properties:
+            enrolledCount:
+              type: integer
+            totalAllocatedCents:
+              type: integer
+            totalSpentCents:
+              type: integer
+            stripeCustomerId:
+              type: string
+              nullable: true
+            stripeSubscriptionId:
+              type: string
+              nullable: true
+
+    EmployerCohortStats:
+      type: object
+      required: [contractedHeadcount, totalEnrolled, utilizationRate, utilizationBuckets, enrollmentTrend]
+      description: >
+        Aggregate-only cohort statistics. No individual member identifiers or
+        personal data are included.
+      properties:
+        contractedHeadcount:
+          type: integer
+          description: Contracted total employee headcount
+        totalEnrolled:
+          type: integer
+          description: Number of employees who have redeemed an invite code
+        utilizationRate:
+          type: integer
+          description: Cohort-wide average utilization percentage
+        averageMonthlyBudgetCents:
+          type: integer
+        averageMonthlySpentCents:
+          type: integer
+        utilizationBuckets:
+          type: array
+          items:
+            type: object
+            required: [label, count, pct, barMin]
+            properties:
+              label:
+                type: string
+                example: "25–50%"
+              count:
+                type: integer
+              pct:
+                type: integer
+                description: Percentage of enrolled cohort in this bucket
+              barMin:
+                type: integer
+        enrollmentTrend:
+          type: array
+          items:
+            type: object
+            required: [month, count]
+            properties:
+              month:
+                type: string
+                description: "YYYY-MM"
+              count:
+                type: integer
+
+    RedeemCodeBody:
+      type: object
+      required: [inviteCode]
+      properties:
+        inviteCode:
+          type: string
+          minLength: 1
+
+    EnrollStatusResponse:
+      type: object
+      required: [enrolled]
+      properties:
+        enrolled:
+          type: boolean
+        employer:
+          $ref: '#/components/schemas/Employer'
+          nullable: true
+        member:
+          type: object
+          nullable: true
+          properties:
+            monthlyBudget:
+              type: integer
+            spentThisMonth:
+              type: integer
+            budgetMonth:
+              type: string
+              nullable: true
+
+    ModalityRule:
+      type: object
+      required: [id, employerId, modalityId, covered]
+      properties:
+        id:
+          type: string
+        employerId:
+          type: string
+        modalityId:
+          type: string
+        covered:
+          type: boolean
+        maxMonthlyAllocationCents:
+          type: integer
+          nullable: true
+
+    UpsertModalityRuleBody:
+      type: object
+      required: [modalityId, covered]
+      properties:
+        modalityId:
+          type: string
+        covered:
+          type: boolean
+        maxMonthlyAllocationCents:
+          type: integer
+          nullable: true
+
+    BillingCheckoutResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Stripe Checkout session URL (live mode only)
+        stripe_mode:
+          type: string
+          enum: [live, demo]
+        message:
+          type: string
+        invoice_preview:
+          type: object
+          description: Demo mode invoice preview (no Stripe key configured)
+          properties:
+            companyName:
+              type: string
+            contractedHeadcount:
+              type: integer
+            enrolledMembers:
+              type: integer
+            stipendPerEmployee:
+              type: string
+            platformFee:
+              type: string
+            totalMonthly:
+              type: string
+            billingCycle:
+              type: string
+            formula:
+              type: string
+
+    AdminEmployer:
+      type: object
+      required: [id, companyName, status, inviteCode, numberOfEmployees]
+      properties:
+        id:
+          type: string
+        companyName:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        inviteCode:
+          type: string
+        numberOfEmployees:
+          type: integer
+        stipendPerEmployee:
+          type: integer
+        platformFeePercent:
+          type: number
+        enrolledCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminEmployerDetail:
+      allOf:
+        - $ref: '#/components/schemas/AdminEmployer'
+        - type: object
+          properties:
+            stripeCustomerId:
+              type: string
+              nullable: true
+            stripeSubscriptionId:
+              type: string
+              nullable: true
+            adminProfileId:
+              type: string
+
+    AdminUpdateEmployerBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        numberOfEmployees:
+          type: integer
+          minimum: 1
+        stipendPerEmployee:
+          type: integer
+          minimum: 0
+        platformFeePercent:
+          type: number

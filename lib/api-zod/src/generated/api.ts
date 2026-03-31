@@ -275,9 +275,6 @@ export const ListProgressResponseItem = zod.object({
   modalityId: zod.string().nullish(),
   note: zod.string().nullish(),
   rating: zod.number().nullish(),
-  mood: zod.number().nullish(),
-  pain: zod.number().nullish(),
-  energy: zod.number().nullish(),
   sessionDate: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
@@ -292,9 +289,6 @@ export const CreateProgressLogBody = zod.object({
   modalityId: zod.string().optional(),
   note: zod.string().optional(),
   rating: zod.number().optional(),
-  mood: zod.number().optional(),
-  pain: zod.number().optional(),
-  energy: zod.number().optional(),
   sessionDate: zod.coerce.date().optional(),
 });
 
@@ -307,7 +301,6 @@ export const GetAdminStatsResponse = zod.object({
   totalPlans: zod.number(),
   pendingProviders: zod.number(),
   recentSignups: zod.number(),
-  activeModalities: zod.number().optional(),
 });
 
 /**
@@ -508,4 +501,305 @@ export const ExchangeMobileAuthorizationCodeResponse = zod.object({
  */
 export const LogoutMobileSessionResponse = zod.object({
   success: zod.boolean(),
+});
+
+/**
+ * @summary Register a new employer wellness stipend account
+ */
+
+export const createEmployerBodyStipendPerEmployeeMin = 0;
+
+export const CreateEmployerBody = zod.object({
+  companyName: zod.string().min(1),
+  numberOfEmployees: zod.number().min(1),
+  stipendPerEmployee: zod
+    .number()
+    .min(createEmployerBodyStipendPerEmployeeMin)
+    .describe("Monthly stipend per employee in cents"),
+  platformFeePercent: zod
+    .number()
+    .optional()
+    .describe("Platform fee percentage (default 8)"),
+  coveredModalities: zod
+    .array(zod.string())
+    .optional()
+    .describe("List of modality IDs covered by this employer"),
+});
+
+/**
+ * @summary Get the authenticated employer's account details
+ */
+export const GetEmployerAccountResponse = zod
+  .object({
+    id: zod.string(),
+    companyName: zod.string(),
+    status: zod.enum(["active", "inactive", "suspended"]),
+    inviteCode: zod.string(),
+    numberOfEmployees: zod.number().optional(),
+    stipendPerEmployee: zod
+      .number()
+      .optional()
+      .describe("Monthly stipend per employee in cents"),
+    platformFeePercent: zod.number().optional(),
+    createdAt: zod.coerce.date().optional(),
+  })
+  .and(
+    zod.object({
+      enrolledCount: zod.number().optional(),
+      totalAllocatedCents: zod.number().optional(),
+      totalSpentCents: zod.number().optional(),
+      stripeCustomerId: zod.string().nullish(),
+      stripeSubscriptionId: zod.string().nullish(),
+    }),
+  );
+
+/**
+ * @summary Update employer account settings
+ */
+
+export const updateEmployerAccountBodyStipendPerEmployeeMin = 0;
+
+export const UpdateEmployerAccountBody = zod.object({
+  companyName: zod.string().min(1).optional(),
+  numberOfEmployees: zod.number().min(1).optional(),
+  stipendPerEmployee: zod
+    .number()
+    .min(updateEmployerAccountBodyStipendPerEmployeeMin)
+    .optional(),
+  platformFeePercent: zod.number().optional(),
+  status: zod.enum(["active", "inactive", "suspended"]).optional(),
+});
+
+export const UpdateEmployerAccountResponse = zod.object({
+  id: zod.string(),
+  companyName: zod.string(),
+  status: zod.enum(["active", "inactive", "suspended"]),
+  inviteCode: zod.string(),
+  numberOfEmployees: zod.number().optional(),
+  stipendPerEmployee: zod
+    .number()
+    .optional()
+    .describe("Monthly stipend per employee in cents"),
+  platformFeePercent: zod.number().optional(),
+  createdAt: zod.coerce.date().optional(),
+});
+
+/**
+ * Returns anonymized aggregate statistics only — no individual member rows or identifiers are exposed to the employer.
+
+ * @summary Get aggregate-only cohort utilization statistics for enrolled employees
+ */
+export const GetEmployerMemberCohortResponse = zod
+  .object({
+    contractedHeadcount: zod
+      .number()
+      .describe("Contracted total employee headcount"),
+    totalEnrolled: zod
+      .number()
+      .describe("Number of employees who have redeemed an invite code"),
+    utilizationRate: zod
+      .number()
+      .describe("Cohort-wide average utilization percentage"),
+    averageMonthlyBudgetCents: zod.number().optional(),
+    averageMonthlySpentCents: zod.number().optional(),
+    utilizationBuckets: zod.array(
+      zod.object({
+        label: zod.string(),
+        count: zod.number(),
+        pct: zod
+          .number()
+          .describe("Percentage of enrolled cohort in this bucket"),
+        barMin: zod.number(),
+      }),
+    ),
+    enrollmentTrend: zod.array(
+      zod.object({
+        month: zod.string().describe("YYYY-MM"),
+        count: zod.number(),
+      }),
+    ),
+  })
+  .describe(
+    "Aggregate-only cohort statistics. No individual member identifiers or personal data are included.\n",
+  );
+
+/**
+ * @summary Enroll the authenticated member into an employer wellness programme
+ */
+
+export const RedeemEmployerInviteCodeBody = zod.object({
+  inviteCode: zod.string().min(1),
+});
+
+/**
+ * @summary Check whether the current member is enrolled with an employer
+ */
+export const GetEmployerEnrollStatusResponse = zod.object({
+  enrolled: zod.boolean(),
+  employer: zod
+    .object({
+      id: zod.string(),
+      companyName: zod.string(),
+      status: zod.enum(["active", "inactive", "suspended"]),
+      inviteCode: zod.string(),
+      numberOfEmployees: zod.number().optional(),
+      stipendPerEmployee: zod
+        .number()
+        .optional()
+        .describe("Monthly stipend per employee in cents"),
+      platformFeePercent: zod.number().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .nullish(),
+  member: zod
+    .object({
+      monthlyBudget: zod.number().optional(),
+      spentThisMonth: zod.number().optional(),
+      budgetMonth: zod.string().nullish(),
+    })
+    .nullish(),
+});
+
+/**
+ * @summary List modality coverage rules for the employer's programme
+ */
+export const ListEmployerModalityRulesResponseItem = zod.object({
+  id: zod.string(),
+  employerId: zod.string(),
+  modalityId: zod.string(),
+  covered: zod.boolean(),
+  maxMonthlyAllocationCents: zod.number().nullish(),
+});
+export const ListEmployerModalityRulesResponse = zod.array(
+  ListEmployerModalityRulesResponseItem,
+);
+
+/**
+ * @summary Create or update a modality coverage rule
+ */
+export const UpsertEmployerModalityRuleBody = zod.object({
+  modalityId: zod.string(),
+  covered: zod.boolean(),
+  maxMonthlyAllocationCents: zod.number().nullish(),
+});
+
+export const UpsertEmployerModalityRuleResponse = zod.object({
+  id: zod.string(),
+  employerId: zod.string(),
+  modalityId: zod.string(),
+  covered: zod.boolean(),
+  maxMonthlyAllocationCents: zod.number().nullish(),
+});
+
+/**
+ * Billing is calculated on contracted headcount (numberOfEmployees × stipendPerEmployee × fee multiplier). Returns a demo invoice preview when STRIPE_SECRET_KEY is not configured.
+
+ * @summary Create a Stripe Checkout session for employer monthly billing
+ */
+export const CreateEmployerBillingCheckoutResponse = zod.object({
+  url: zod
+    .string()
+    .optional()
+    .describe("Stripe Checkout session URL (live mode only)"),
+  stripe_mode: zod.enum(["live", "demo"]).optional(),
+  message: zod.string().optional(),
+  invoice_preview: zod
+    .object({
+      companyName: zod.string().optional(),
+      contractedHeadcount: zod.number().optional(),
+      enrolledMembers: zod.number().optional(),
+      stipendPerEmployee: zod.string().optional(),
+      platformFee: zod.string().optional(),
+      totalMonthly: zod.string().optional(),
+      billingCycle: zod.string().optional(),
+      formula: zod.string().optional(),
+    })
+    .optional()
+    .describe("Demo mode invoice preview (no Stripe key configured)"),
+});
+
+/**
+ * @summary Stripe webhook receiver for subscription lifecycle events
+ */
+export const StripeWebhookBody = zod
+  .object({})
+  .passthrough()
+  .describe("Raw Stripe webhook event payload.");
+
+/**
+ * @summary List all employer accounts (admin only)
+ */
+export const AdminListEmployersResponseItem = zod.object({
+  id: zod.string(),
+  companyName: zod.string(),
+  status: zod.enum(["active", "inactive", "suspended"]),
+  inviteCode: zod.string(),
+  numberOfEmployees: zod.number(),
+  stipendPerEmployee: zod.number().optional(),
+  platformFeePercent: zod.number().optional(),
+  enrolledCount: zod.number().optional(),
+  createdAt: zod.coerce.date().optional(),
+});
+export const AdminListEmployersResponse = zod.array(
+  AdminListEmployersResponseItem,
+);
+
+/**
+ * @summary Get a specific employer account (admin only)
+ */
+export const AdminGetEmployerParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AdminGetEmployerResponse = zod
+  .object({
+    id: zod.string(),
+    companyName: zod.string(),
+    status: zod.enum(["active", "inactive", "suspended"]),
+    inviteCode: zod.string(),
+    numberOfEmployees: zod.number(),
+    stipendPerEmployee: zod.number().optional(),
+    platformFeePercent: zod.number().optional(),
+    enrolledCount: zod.number().optional(),
+    createdAt: zod.coerce.date().optional(),
+  })
+  .and(
+    zod.object({
+      stripeCustomerId: zod.string().nullish(),
+      stripeSubscriptionId: zod.string().nullish(),
+      adminProfileId: zod.string().optional(),
+    }),
+  );
+
+/**
+ * @summary Update an employer account (admin only)
+ */
+export const AdminUpdateEmployerParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const adminUpdateEmployerBodyStipendPerEmployeeMin = 0;
+
+export const AdminUpdateEmployerBody = zod.object({
+  status: zod.enum(["active", "inactive", "suspended"]).optional(),
+  numberOfEmployees: zod.number().min(1).optional(),
+  stipendPerEmployee: zod
+    .number()
+    .min(adminUpdateEmployerBodyStipendPerEmployeeMin)
+    .optional(),
+  platformFeePercent: zod.number().optional(),
+});
+
+export const AdminUpdateEmployerResponse = zod.object({
+  id: zod.string(),
+  companyName: zod.string(),
+  status: zod.enum(["active", "inactive", "suspended"]),
+  inviteCode: zod.string(),
+  numberOfEmployees: zod.number().optional(),
+  stipendPerEmployee: zod
+    .number()
+    .optional()
+    .describe("Monthly stipend per employee in cents"),
+  platformFeePercent: zod.number().optional(),
+  createdAt: zod.coerce.date().optional(),
 });

@@ -18,15 +18,24 @@ import type {
 
 import type {
   AddFavoriteBody,
+  AdminEmployer,
+  AdminEmployerDetail,
   AdminSettingRecord,
   AdminStats,
+  AdminUpdateEmployerBody,
   AuthLogoutSuccess,
   AuthUserEnvelope,
   BeginBrowserLoginParams,
+  BillingCheckoutResponse,
+  CreateEmployerBody,
   CreateIntakeBody,
   CreateModalityBody,
   CreateProgressLogBody,
   CreateProviderBody,
+  Employer,
+  EmployerAccount,
+  EmployerCohortStats,
+  EnrollStatusResponse,
   ErrorResponse,
   FavoriteRecord,
   GeneratePlanBody,
@@ -41,15 +50,20 @@ import type {
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
   ModalityRecord,
+  ModalityRule,
   PlanRecord,
   PlanWithItems,
   ProgressLogRecord,
   ProviderRecord,
+  RedeemCodeBody,
   RemoveFavoriteParams,
+  StripeWebhookBody,
+  UpdateEmployerBody,
   UpdateModalityBody,
   UpdatePlanBody,
   UpdateProviderStatusBody,
   UpsertAdminSettingBody,
+  UpsertModalityRuleBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2493,4 +2507,1152 @@ export const useLogoutMobileSession = <
   TContext
 > => {
   return useMutation(getLogoutMobileSessionMutationOptions(options));
+};
+
+/**
+ * @summary Register a new employer wellness stipend account
+ */
+export const getCreateEmployerUrl = () => {
+  return `/api/employer/signup`;
+};
+
+export const createEmployer = async (
+  createEmployerBody: CreateEmployerBody,
+  options?: RequestInit,
+): Promise<Employer> => {
+  return customFetch<Employer>(getCreateEmployerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createEmployerBody),
+  });
+};
+
+export const getCreateEmployerMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEmployer>>,
+    TError,
+    { data: BodyType<CreateEmployerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createEmployer>>,
+  TError,
+  { data: BodyType<CreateEmployerBody> },
+  TContext
+> => {
+  const mutationKey = ["createEmployer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createEmployer>>,
+    { data: BodyType<CreateEmployerBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createEmployer(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateEmployerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createEmployer>>
+>;
+export type CreateEmployerMutationBody = BodyType<CreateEmployerBody>;
+export type CreateEmployerMutationError = ErrorType<void>;
+
+/**
+ * @summary Register a new employer wellness stipend account
+ */
+export const useCreateEmployer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEmployer>>,
+    TError,
+    { data: BodyType<CreateEmployerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createEmployer>>,
+  TError,
+  { data: BodyType<CreateEmployerBody> },
+  TContext
+> => {
+  return useMutation(getCreateEmployerMutationOptions(options));
+};
+
+/**
+ * @summary Get the authenticated employer's account details
+ */
+export const getGetEmployerAccountUrl = () => {
+  return `/api/employer/me`;
+};
+
+export const getEmployerAccount = async (
+  options?: RequestInit,
+): Promise<EmployerAccount> => {
+  return customFetch<EmployerAccount>(getGetEmployerAccountUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEmployerAccountQueryKey = () => {
+  return [`/api/employer/me`] as const;
+};
+
+export const getGetEmployerAccountQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEmployerAccount>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerAccount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetEmployerAccountQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEmployerAccount>>
+  > = ({ signal }) => getEmployerAccount({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerAccount>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEmployerAccountQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEmployerAccount>>
+>;
+export type GetEmployerAccountQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the authenticated employer's account details
+ */
+
+export function useGetEmployerAccount<
+  TData = Awaited<ReturnType<typeof getEmployerAccount>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerAccount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEmployerAccountQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update employer account settings
+ */
+export const getUpdateEmployerAccountUrl = () => {
+  return `/api/employer/me`;
+};
+
+export const updateEmployerAccount = async (
+  updateEmployerBody: UpdateEmployerBody,
+  options?: RequestInit,
+): Promise<Employer> => {
+  return customFetch<Employer>(getUpdateEmployerAccountUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateEmployerBody),
+  });
+};
+
+export const getUpdateEmployerAccountMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEmployerAccount>>,
+    TError,
+    { data: BodyType<UpdateEmployerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateEmployerAccount>>,
+  TError,
+  { data: BodyType<UpdateEmployerBody> },
+  TContext
+> => {
+  const mutationKey = ["updateEmployerAccount"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateEmployerAccount>>,
+    { data: BodyType<UpdateEmployerBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateEmployerAccount(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateEmployerAccountMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateEmployerAccount>>
+>;
+export type UpdateEmployerAccountMutationBody = BodyType<UpdateEmployerBody>;
+export type UpdateEmployerAccountMutationError = ErrorType<void>;
+
+/**
+ * @summary Update employer account settings
+ */
+export const useUpdateEmployerAccount = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEmployerAccount>>,
+    TError,
+    { data: BodyType<UpdateEmployerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateEmployerAccount>>,
+  TError,
+  { data: BodyType<UpdateEmployerBody> },
+  TContext
+> => {
+  return useMutation(getUpdateEmployerAccountMutationOptions(options));
+};
+
+/**
+ * Returns anonymized aggregate statistics only — no individual member rows or identifiers are exposed to the employer.
+
+ * @summary Get aggregate-only cohort utilization statistics for enrolled employees
+ */
+export const getGetEmployerMemberCohortUrl = () => {
+  return `/api/employer/members`;
+};
+
+export const getEmployerMemberCohort = async (
+  options?: RequestInit,
+): Promise<EmployerCohortStats> => {
+  return customFetch<EmployerCohortStats>(getGetEmployerMemberCohortUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEmployerMemberCohortQueryKey = () => {
+  return [`/api/employer/members`] as const;
+};
+
+export const getGetEmployerMemberCohortQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEmployerMemberCohort>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerMemberCohort>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetEmployerMemberCohortQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEmployerMemberCohort>>
+  > = ({ signal }) => getEmployerMemberCohort({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerMemberCohort>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEmployerMemberCohortQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEmployerMemberCohort>>
+>;
+export type GetEmployerMemberCohortQueryError = ErrorType<void>;
+
+/**
+ * @summary Get aggregate-only cohort utilization statistics for enrolled employees
+ */
+
+export function useGetEmployerMemberCohort<
+  TData = Awaited<ReturnType<typeof getEmployerMemberCohort>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerMemberCohort>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEmployerMemberCohortQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Enroll the authenticated member into an employer wellness programme
+ */
+export const getRedeemEmployerInviteCodeUrl = () => {
+  return `/api/employer/redeem-code`;
+};
+
+export const redeemEmployerInviteCode = async (
+  redeemCodeBody: RedeemCodeBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getRedeemEmployerInviteCodeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(redeemCodeBody),
+  });
+};
+
+export const getRedeemEmployerInviteCodeMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof redeemEmployerInviteCode>>,
+    TError,
+    { data: BodyType<RedeemCodeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof redeemEmployerInviteCode>>,
+  TError,
+  { data: BodyType<RedeemCodeBody> },
+  TContext
+> => {
+  const mutationKey = ["redeemEmployerInviteCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof redeemEmployerInviteCode>>,
+    { data: BodyType<RedeemCodeBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return redeemEmployerInviteCode(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RedeemEmployerInviteCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof redeemEmployerInviteCode>>
+>;
+export type RedeemEmployerInviteCodeMutationBody = BodyType<RedeemCodeBody>;
+export type RedeemEmployerInviteCodeMutationError = ErrorType<void>;
+
+/**
+ * @summary Enroll the authenticated member into an employer wellness programme
+ */
+export const useRedeemEmployerInviteCode = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof redeemEmployerInviteCode>>,
+    TError,
+    { data: BodyType<RedeemCodeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof redeemEmployerInviteCode>>,
+  TError,
+  { data: BodyType<RedeemCodeBody> },
+  TContext
+> => {
+  return useMutation(getRedeemEmployerInviteCodeMutationOptions(options));
+};
+
+/**
+ * @summary Check whether the current member is enrolled with an employer
+ */
+export const getGetEmployerEnrollStatusUrl = () => {
+  return `/api/employer/enroll-status`;
+};
+
+export const getEmployerEnrollStatus = async (
+  options?: RequestInit,
+): Promise<EnrollStatusResponse> => {
+  return customFetch<EnrollStatusResponse>(getGetEmployerEnrollStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEmployerEnrollStatusQueryKey = () => {
+  return [`/api/employer/enroll-status`] as const;
+};
+
+export const getGetEmployerEnrollStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEmployerEnrollStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerEnrollStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetEmployerEnrollStatusQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEmployerEnrollStatus>>
+  > = ({ signal }) => getEmployerEnrollStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerEnrollStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEmployerEnrollStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEmployerEnrollStatus>>
+>;
+export type GetEmployerEnrollStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Check whether the current member is enrolled with an employer
+ */
+
+export function useGetEmployerEnrollStatus<
+  TData = Awaited<ReturnType<typeof getEmployerEnrollStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerEnrollStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEmployerEnrollStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List modality coverage rules for the employer's programme
+ */
+export const getListEmployerModalityRulesUrl = () => {
+  return `/api/employer/modality-rules`;
+};
+
+export const listEmployerModalityRules = async (
+  options?: RequestInit,
+): Promise<ModalityRule[]> => {
+  return customFetch<ModalityRule[]>(getListEmployerModalityRulesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEmployerModalityRulesQueryKey = () => {
+  return [`/api/employer/modality-rules`] as const;
+};
+
+export const getListEmployerModalityRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEmployerModalityRules>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listEmployerModalityRules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListEmployerModalityRulesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listEmployerModalityRules>>
+  > = ({ signal }) => listEmployerModalityRules({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEmployerModalityRules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEmployerModalityRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEmployerModalityRules>>
+>;
+export type ListEmployerModalityRulesQueryError = ErrorType<void>;
+
+/**
+ * @summary List modality coverage rules for the employer's programme
+ */
+
+export function useListEmployerModalityRules<
+  TData = Awaited<ReturnType<typeof listEmployerModalityRules>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listEmployerModalityRules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEmployerModalityRulesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update a modality coverage rule
+ */
+export const getUpsertEmployerModalityRuleUrl = () => {
+  return `/api/employer/modality-rules`;
+};
+
+export const upsertEmployerModalityRule = async (
+  upsertModalityRuleBody: UpsertModalityRuleBody,
+  options?: RequestInit,
+): Promise<ModalityRule> => {
+  return customFetch<ModalityRule>(getUpsertEmployerModalityRuleUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(upsertModalityRuleBody),
+  });
+};
+
+export const getUpsertEmployerModalityRuleMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+    TError,
+    { data: BodyType<UpsertModalityRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+  TError,
+  { data: BodyType<UpsertModalityRuleBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertEmployerModalityRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+    { data: BodyType<UpsertModalityRuleBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return upsertEmployerModalityRule(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertEmployerModalityRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertEmployerModalityRule>>
+>;
+export type UpsertEmployerModalityRuleMutationBody =
+  BodyType<UpsertModalityRuleBody>;
+export type UpsertEmployerModalityRuleMutationError = ErrorType<void>;
+
+/**
+ * @summary Create or update a modality coverage rule
+ */
+export const useUpsertEmployerModalityRule = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+    TError,
+    { data: BodyType<UpsertModalityRuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+  TError,
+  { data: BodyType<UpsertModalityRuleBody> },
+  TContext
+> => {
+  return useMutation(getUpsertEmployerModalityRuleMutationOptions(options));
+};
+
+/**
+ * Returns an aggregate cohort CSV (utilization brackets × member counts). No individual rows or identifiers are included.
+
+ * @summary Download aggregate utilization summary as CSV
+ */
+export const getExportEmployerCsvUrl = () => {
+  return `/api/employer/export-csv`;
+};
+
+export const exportEmployerCsv = async (
+  options?: RequestInit,
+): Promise<string> => {
+  return customFetch<string>(getExportEmployerCsvUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportEmployerCsvQueryKey = () => {
+  return [`/api/employer/export-csv`] as const;
+};
+
+export const getExportEmployerCsvQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportEmployerCsv>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportEmployerCsv>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportEmployerCsvQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportEmployerCsv>>
+  > = ({ signal }) => exportEmployerCsv({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportEmployerCsv>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportEmployerCsvQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportEmployerCsv>>
+>;
+export type ExportEmployerCsvQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Download aggregate utilization summary as CSV
+ */
+
+export function useExportEmployerCsv<
+  TData = Awaited<ReturnType<typeof exportEmployerCsv>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportEmployerCsv>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportEmployerCsvQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Billing is calculated on contracted headcount (numberOfEmployees × stipendPerEmployee × fee multiplier). Returns a demo invoice preview when STRIPE_SECRET_KEY is not configured.
+
+ * @summary Create a Stripe Checkout session for employer monthly billing
+ */
+export const getCreateEmployerBillingCheckoutUrl = () => {
+  return `/api/employer/billing/create-checkout`;
+};
+
+export const createEmployerBillingCheckout = async (
+  options?: RequestInit,
+): Promise<BillingCheckoutResponse> => {
+  return customFetch<BillingCheckoutResponse>(
+    getCreateEmployerBillingCheckoutUrl(),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getCreateEmployerBillingCheckoutMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEmployerBillingCheckout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createEmployerBillingCheckout>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["createEmployerBillingCheckout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createEmployerBillingCheckout>>,
+    void
+  > = () => {
+    return createEmployerBillingCheckout(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateEmployerBillingCheckoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createEmployerBillingCheckout>>
+>;
+
+export type CreateEmployerBillingCheckoutMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a Stripe Checkout session for employer monthly billing
+ */
+export const useCreateEmployerBillingCheckout = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createEmployerBillingCheckout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createEmployerBillingCheckout>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCreateEmployerBillingCheckoutMutationOptions(options));
+};
+
+/**
+ * @summary Stripe webhook receiver for subscription lifecycle events
+ */
+export const getStripeWebhookUrl = () => {
+  return `/api/employer/billing/webhook`;
+};
+
+export const stripeWebhook = async (
+  stripeWebhookBody: StripeWebhookBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getStripeWebhookUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(stripeWebhookBody),
+  });
+};
+
+export const getStripeWebhookMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof stripeWebhook>>,
+    TError,
+    { data: BodyType<StripeWebhookBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof stripeWebhook>>,
+  TError,
+  { data: BodyType<StripeWebhookBody> },
+  TContext
+> => {
+  const mutationKey = ["stripeWebhook"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof stripeWebhook>>,
+    { data: BodyType<StripeWebhookBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return stripeWebhook(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StripeWebhookMutationResult = NonNullable<
+  Awaited<ReturnType<typeof stripeWebhook>>
+>;
+export type StripeWebhookMutationBody = BodyType<StripeWebhookBody>;
+export type StripeWebhookMutationError = ErrorType<void>;
+
+/**
+ * @summary Stripe webhook receiver for subscription lifecycle events
+ */
+export const useStripeWebhook = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof stripeWebhook>>,
+    TError,
+    { data: BodyType<StripeWebhookBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof stripeWebhook>>,
+  TError,
+  { data: BodyType<StripeWebhookBody> },
+  TContext
+> => {
+  return useMutation(getStripeWebhookMutationOptions(options));
+};
+
+/**
+ * @summary List all employer accounts (admin only)
+ */
+export const getAdminListEmployersUrl = () => {
+  return `/api/admin/employers`;
+};
+
+export const adminListEmployers = async (
+  options?: RequestInit,
+): Promise<AdminEmployer[]> => {
+  return customFetch<AdminEmployer[]>(getAdminListEmployersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListEmployersQueryKey = () => {
+  return [`/api/admin/employers`] as const;
+};
+
+export const getAdminListEmployersQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListEmployers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListEmployers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListEmployersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListEmployers>>
+  > = ({ signal }) => adminListEmployers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListEmployers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListEmployersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListEmployers>>
+>;
+export type AdminListEmployersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all employer accounts (admin only)
+ */
+
+export function useAdminListEmployers<
+  TData = Awaited<ReturnType<typeof adminListEmployers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListEmployers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListEmployersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a specific employer account (admin only)
+ */
+export const getAdminGetEmployerUrl = (id: string) => {
+  return `/api/admin/employers/${id}`;
+};
+
+export const adminGetEmployer = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AdminEmployerDetail> => {
+  return customFetch<AdminEmployerDetail>(getAdminGetEmployerUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetEmployerQueryKey = (id: string) => {
+  return [`/api/admin/employers/${id}`] as const;
+};
+
+export const getAdminGetEmployerQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetEmployer>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetEmployer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetEmployerQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetEmployer>>
+  > = ({ signal }) => adminGetEmployer(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetEmployer>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetEmployerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetEmployer>>
+>;
+export type AdminGetEmployerQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a specific employer account (admin only)
+ */
+
+export function useAdminGetEmployer<
+  TData = Awaited<ReturnType<typeof adminGetEmployer>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetEmployer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetEmployerQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update an employer account (admin only)
+ */
+export const getAdminUpdateEmployerUrl = (id: string) => {
+  return `/api/admin/employers/${id}`;
+};
+
+export const adminUpdateEmployer = async (
+  id: string,
+  adminUpdateEmployerBody: AdminUpdateEmployerBody,
+  options?: RequestInit,
+): Promise<Employer> => {
+  return customFetch<Employer>(getAdminUpdateEmployerUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateEmployerBody),
+  });
+};
+
+export const getAdminUpdateEmployerMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateEmployer>>,
+    TError,
+    { id: string; data: BodyType<AdminUpdateEmployerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateEmployer>>,
+  TError,
+  { id: string; data: BodyType<AdminUpdateEmployerBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateEmployer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateEmployer>>,
+    { id: string; data: BodyType<AdminUpdateEmployerBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateEmployer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateEmployerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateEmployer>>
+>;
+export type AdminUpdateEmployerMutationBody = BodyType<AdminUpdateEmployerBody>;
+export type AdminUpdateEmployerMutationError = ErrorType<void>;
+
+/**
+ * @summary Update an employer account (admin only)
+ */
+export const useAdminUpdateEmployer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateEmployer>>,
+    TError,
+    { id: string; data: BodyType<AdminUpdateEmployerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateEmployer>>,
+  TError,
+  { id: string; data: BodyType<AdminUpdateEmployerBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateEmployerMutationOptions(options));
 };

@@ -238,6 +238,7 @@ export const AuthUserRole = {
   member: "member",
   provider: "provider",
   admin: "admin",
+  employer: "employer",
 } as const;
 
 export interface AuthUser {
@@ -272,6 +273,209 @@ export interface MobileTokenExchangeSuccess {
 
 export interface AuthLogoutSuccess {
   success: boolean;
+}
+
+export interface CreateEmployerBody {
+  /** @minLength 1 */
+  companyName: string;
+  /** @minimum 1 */
+  numberOfEmployees: number;
+  /**
+   * Monthly stipend per employee in cents
+   * @minimum 0
+   */
+  stipendPerEmployee: number;
+  /** Platform fee percentage (default 8) */
+  platformFeePercent?: number;
+  /** List of modality IDs covered by this employer */
+  coveredModalities?: string[];
+}
+
+export type UpdateEmployerBodyStatus =
+  (typeof UpdateEmployerBodyStatus)[keyof typeof UpdateEmployerBodyStatus];
+
+export const UpdateEmployerBodyStatus = {
+  active: "active",
+  inactive: "inactive",
+  suspended: "suspended",
+} as const;
+
+export interface UpdateEmployerBody {
+  /** @minLength 1 */
+  companyName?: string;
+  /** @minimum 1 */
+  numberOfEmployees?: number;
+  /** @minimum 0 */
+  stipendPerEmployee?: number;
+  platformFeePercent?: number;
+  status?: UpdateEmployerBodyStatus;
+}
+
+export type EmployerStatus =
+  (typeof EmployerStatus)[keyof typeof EmployerStatus];
+
+export const EmployerStatus = {
+  active: "active",
+  inactive: "inactive",
+  suspended: "suspended",
+} as const;
+
+export interface Employer {
+  id: string;
+  companyName: string;
+  status: EmployerStatus;
+  inviteCode: string;
+  numberOfEmployees?: number;
+  /** Monthly stipend per employee in cents */
+  stipendPerEmployee?: number;
+  platformFeePercent?: number;
+  createdAt?: string;
+}
+
+export type EmployerAccount = Employer & {
+  enrolledCount?: number;
+  totalAllocatedCents?: number;
+  totalSpentCents?: number;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+};
+
+export type EmployerCohortStatsUtilizationBucketsItem = {
+  label: string;
+  count: number;
+  /** Percentage of enrolled cohort in this bucket */
+  pct: number;
+  barMin: number;
+};
+
+export type EmployerCohortStatsEnrollmentTrendItem = {
+  /** YYYY-MM */
+  month: string;
+  count: number;
+};
+
+/**
+ * Aggregate-only cohort statistics. No individual member identifiers or personal data are included.
+
+ */
+export interface EmployerCohortStats {
+  /** Contracted total employee headcount */
+  contractedHeadcount: number;
+  /** Number of employees who have redeemed an invite code */
+  totalEnrolled: number;
+  /** Cohort-wide average utilization percentage */
+  utilizationRate: number;
+  averageMonthlyBudgetCents?: number;
+  averageMonthlySpentCents?: number;
+  utilizationBuckets: EmployerCohortStatsUtilizationBucketsItem[];
+  enrollmentTrend: EmployerCohortStatsEnrollmentTrendItem[];
+}
+
+export interface RedeemCodeBody {
+  /** @minLength 1 */
+  inviteCode: string;
+}
+
+export type EnrollStatusResponseMember = {
+  monthlyBudget?: number;
+  spentThisMonth?: number;
+  budgetMonth?: string | null;
+} | null;
+
+export interface EnrollStatusResponse {
+  enrolled: boolean;
+  employer?: Employer | null;
+  member?: EnrollStatusResponseMember;
+}
+
+export interface ModalityRule {
+  id: string;
+  employerId: string;
+  modalityId: string;
+  covered: boolean;
+  maxMonthlyAllocationCents?: number | null;
+}
+
+export interface UpsertModalityRuleBody {
+  modalityId: string;
+  covered: boolean;
+  maxMonthlyAllocationCents?: number | null;
+}
+
+export type BillingCheckoutResponseStripeMode =
+  (typeof BillingCheckoutResponseStripeMode)[keyof typeof BillingCheckoutResponseStripeMode];
+
+export const BillingCheckoutResponseStripeMode = {
+  live: "live",
+  demo: "demo",
+} as const;
+
+/**
+ * Demo mode invoice preview (no Stripe key configured)
+ */
+export type BillingCheckoutResponseInvoicePreview = {
+  companyName?: string;
+  contractedHeadcount?: number;
+  enrolledMembers?: number;
+  stipendPerEmployee?: string;
+  platformFee?: string;
+  totalMonthly?: string;
+  billingCycle?: string;
+  formula?: string;
+};
+
+export interface BillingCheckoutResponse {
+  /** Stripe Checkout session URL (live mode only) */
+  url?: string;
+  stripe_mode?: BillingCheckoutResponseStripeMode;
+  message?: string;
+  /** Demo mode invoice preview (no Stripe key configured) */
+  invoice_preview?: BillingCheckoutResponseInvoicePreview;
+}
+
+export type AdminEmployerStatus =
+  (typeof AdminEmployerStatus)[keyof typeof AdminEmployerStatus];
+
+export const AdminEmployerStatus = {
+  active: "active",
+  inactive: "inactive",
+  suspended: "suspended",
+} as const;
+
+export interface AdminEmployer {
+  id: string;
+  companyName: string;
+  status: AdminEmployerStatus;
+  inviteCode: string;
+  numberOfEmployees: number;
+  stipendPerEmployee?: number;
+  platformFeePercent?: number;
+  enrolledCount?: number;
+  createdAt?: string;
+}
+
+export type AdminEmployerDetail = AdminEmployer & {
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  adminProfileId?: string;
+};
+
+export type AdminUpdateEmployerBodyStatus =
+  (typeof AdminUpdateEmployerBodyStatus)[keyof typeof AdminUpdateEmployerBodyStatus];
+
+export const AdminUpdateEmployerBodyStatus = {
+  active: "active",
+  inactive: "inactive",
+  suspended: "suspended",
+} as const;
+
+export interface AdminUpdateEmployerBody {
+  status?: AdminUpdateEmployerBodyStatus;
+  /** @minimum 1 */
+  numberOfEmployees?: number;
+  /** @minimum 0 */
+  stipendPerEmployee?: number;
+  platformFeePercent?: number;
 }
 
 export type ListModalitiesParams = {
@@ -317,3 +521,8 @@ export type HandleBrowserLoginCallbackParams = {
   code?: string;
   state?: string;
 };
+
+/**
+ * Raw Stripe webhook event payload.
+ */
+export type StripeWebhookBody = { [key: string]: unknown };
