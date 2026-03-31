@@ -57,13 +57,13 @@ import type {
   ProviderRecord,
   RedeemCodeBody,
   RemoveFavoriteParams,
+  SetModalityRulesBody,
   StripeWebhookBody,
   UpdateEmployerBody,
   UpdateModalityBody,
   UpdatePlanBody,
   UpdateProviderStatusBody,
   UpsertAdminSettingBody,
-  UpsertModalityRuleBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -3073,42 +3073,42 @@ export function useListEmployerModalityRules<
 }
 
 /**
- * @summary Create or update a modality coverage rule
+ * @summary Bulk set modality coverage rules for the employer's programme
  */
-export const getUpsertEmployerModalityRuleUrl = () => {
+export const getSetEmployerModalityRulesUrl = () => {
   return `/api/employer/modality-rules`;
 };
 
-export const upsertEmployerModalityRule = async (
-  upsertModalityRuleBody: UpsertModalityRuleBody,
+export const setEmployerModalityRules = async (
+  setModalityRulesBody: SetModalityRulesBody,
   options?: RequestInit,
-): Promise<ModalityRule> => {
-  return customFetch<ModalityRule>(getUpsertEmployerModalityRuleUrl(), {
+): Promise<ModalityRule[]> => {
+  return customFetch<ModalityRule[]>(getSetEmployerModalityRulesUrl(), {
     ...options,
-    method: "POST",
+    method: "PUT",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(upsertModalityRuleBody),
+    body: JSON.stringify(setModalityRulesBody),
   });
 };
 
-export const getUpsertEmployerModalityRuleMutationOptions = <
+export const getSetEmployerModalityRulesMutationOptions = <
   TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+    Awaited<ReturnType<typeof setEmployerModalityRules>>,
     TError,
-    { data: BodyType<UpsertModalityRuleBody> },
+    { data: BodyType<SetModalityRulesBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+  Awaited<ReturnType<typeof setEmployerModalityRules>>,
   TError,
-  { data: BodyType<UpsertModalityRuleBody> },
+  { data: BodyType<SetModalityRulesBody> },
   TContext
 > => {
-  const mutationKey = ["upsertEmployerModalityRule"];
+  const mutationKey = ["setEmployerModalityRules"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -3118,45 +3118,45 @@ export const getUpsertEmployerModalityRuleMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
-    { data: BodyType<UpsertModalityRuleBody> }
+    Awaited<ReturnType<typeof setEmployerModalityRules>>,
+    { data: BodyType<SetModalityRulesBody> }
   > = (props) => {
     const { data } = props ?? {};
 
-    return upsertEmployerModalityRule(data, requestOptions);
+    return setEmployerModalityRules(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type UpsertEmployerModalityRuleMutationResult = NonNullable<
-  Awaited<ReturnType<typeof upsertEmployerModalityRule>>
+export type SetEmployerModalityRulesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setEmployerModalityRules>>
 >;
-export type UpsertEmployerModalityRuleMutationBody =
-  BodyType<UpsertModalityRuleBody>;
-export type UpsertEmployerModalityRuleMutationError = ErrorType<void>;
+export type SetEmployerModalityRulesMutationBody =
+  BodyType<SetModalityRulesBody>;
+export type SetEmployerModalityRulesMutationError = ErrorType<void>;
 
 /**
- * @summary Create or update a modality coverage rule
+ * @summary Bulk set modality coverage rules for the employer's programme
  */
-export const useUpsertEmployerModalityRule = <
+export const useSetEmployerModalityRules = <
   TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+    Awaited<ReturnType<typeof setEmployerModalityRules>>,
     TError,
-    { data: BodyType<UpsertModalityRuleBody> },
+    { data: BodyType<SetModalityRulesBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof upsertEmployerModalityRule>>,
+  Awaited<ReturnType<typeof setEmployerModalityRules>>,
   TError,
-  { data: BodyType<UpsertModalityRuleBody> },
+  { data: BodyType<SetModalityRulesBody> },
   TContext
 > => {
-  return useMutation(getUpsertEmployerModalityRuleMutationOptions(options));
+  return useMutation(getSetEmployerModalityRulesMutationOptions(options));
 };
 
 /**

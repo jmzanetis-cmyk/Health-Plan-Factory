@@ -295,9 +295,9 @@ export type UpdateEmployerBodyStatus =
   (typeof UpdateEmployerBodyStatus)[keyof typeof UpdateEmployerBodyStatus];
 
 export const UpdateEmployerBodyStatus = {
+  pending: "pending",
   active: "active",
-  inactive: "inactive",
-  suspended: "suspended",
+  canceled: "canceled",
 } as const;
 
 export interface UpdateEmployerBody {
@@ -315,9 +315,9 @@ export type EmployerStatus =
   (typeof EmployerStatus)[keyof typeof EmployerStatus];
 
 export const EmployerStatus = {
+  pending: "pending",
   active: "active",
-  inactive: "inactive",
-  suspended: "suspended",
+  canceled: "canceled",
 } as const;
 
 export interface Employer {
@@ -396,10 +396,13 @@ export interface ModalityRule {
   maxMonthlyAllocationCents?: number | null;
 }
 
-export interface UpsertModalityRuleBody {
+export type SetModalityRulesBodyRulesItem = {
   modalityId: string;
   covered: boolean;
-  maxMonthlyAllocationCents?: number | null;
+};
+
+export interface SetModalityRulesBody {
+  rules: SetModalityRulesBodyRulesItem[];
 }
 
 export type BillingCheckoutResponseStripeMode =
@@ -437,9 +440,9 @@ export type AdminEmployerStatus =
   (typeof AdminEmployerStatus)[keyof typeof AdminEmployerStatus];
 
 export const AdminEmployerStatus = {
+  pending: "pending",
   active: "active",
-  inactive: "inactive",
-  suspended: "suspended",
+  canceled: "canceled",
 } as const;
 
 export interface AdminEmployer {
@@ -464,9 +467,9 @@ export type AdminUpdateEmployerBodyStatus =
   (typeof AdminUpdateEmployerBodyStatus)[keyof typeof AdminUpdateEmployerBodyStatus];
 
 export const AdminUpdateEmployerBodyStatus = {
+  pending: "pending",
   active: "active",
-  inactive: "inactive",
-  suspended: "suspended",
+  canceled: "canceled",
 } as const;
 
 export interface AdminUpdateEmployerBody {

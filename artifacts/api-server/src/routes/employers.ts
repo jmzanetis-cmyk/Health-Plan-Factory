@@ -144,6 +144,39 @@ router.get("/employer/me", requireEmployerAuth, async (req: any, res) => {
   }
 });
 
+const PatchEmployerMeBody = z.object({
+  companyName: z.string().min(1).optional(),
+  numberOfEmployees: z.number().int().min(1).optional(),
+  stipendPerEmployee: z.number().int().min(0).optional(),
+});
+
+router.patch("/employer/me", requireEmployerAuth, async (req: any, res) => {
+  const parsed = PatchEmployerMeBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
+    return;
+  }
+  try {
+    const [existing] = await db
+      .select({ id: employers.id })
+      .from(employers)
+      .where(eq(employers.adminProfileId, req.user!.id))
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "No employer account found" });
+      return;
+    }
+    const [updated] = await db
+      .update(employers)
+      .set({ ...parsed.data, updatedAt: new Date() })
+      .where(eq(employers.id, existing.id))
+      .returning();
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Failed to update employer" });
+  }
+});
+
 // ── Employer Dashboard Stats ───────────────────────────────────────────────────
 
 router.get("/employer/dashboard", requireEmployerAuth, async (req: any, res) => {
@@ -418,6 +451,38 @@ router.get("/employer/my-budget", requireEmployerAuth, async (req: any, res) => 
     });
   } catch {
     res.status(500).json({ error: "Failed to fetch budget" });
+  }
+});
+
+// ── Employer Enroll Status (alias for my-budget, spec-required name) ─────────
+
+router.get("/employer/enroll-status", requireEmployerAuth, async (req: any, res) => {
+  try {
+    const [link] = await db
+      .select({
+        monthlyBudget: employerMembers.monthlyBudget,
+        spentThisMonth: employerMembers.spentThisMonth,
+        budgetMonth: employerMembers.budgetMonth,
+        companyName: employers.companyName,
+        inviteCode: employers.inviteCode,
+      })
+      .from(employerMembers)
+      .innerJoin(employers, eq(employerMembers.employerId, employers.id))
+      .where(eq(employerMembers.profileId, req.user!.id))
+      .limit(1);
+
+    if (!link) {
+      res.json({ enrolled: false });
+      return;
+    }
+
+    res.json({
+      enrolled: true,
+      ...link,
+      remainingCents: link.monthlyBudget - link.spentThisMonth,
+    });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch enrol status" });
   }
 });
 

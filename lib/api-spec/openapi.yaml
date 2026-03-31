@@ -767,23 +767,25 @@ paths:
                   $ref: '#/components/schemas/ModalityRule'
         '404':
           description: No employer account found.
-    post:
+    put:
       tags: [employer]
-      operationId: upsertEmployerModalityRule
-      summary: Create or update a modality coverage rule
+      operationId: setEmployerModalityRules
+      summary: Bulk set modality coverage rules for the employer's programme
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpsertModalityRuleBody'
+              $ref: '#/components/schemas/SetModalityRulesBody'
       responses:
         '200':
-          description: Rule saved.
+          description: All rules saved; returns full updated rule list.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ModalityRule'
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModalityRule'
         '404':
           description: No employer account found.
 
@@ -1581,7 +1583,7 @@ components:
           type: number
         status:
           type: string
-          enum: [active, inactive, suspended]
+          enum: [pending, active, canceled]
 
     Employer:
       type: object
@@ -1593,7 +1595,7 @@ components:
           type: string
         status:
           type: string
-          enum: [active, inactive, suspended]
+          enum: [pending, active, canceled]
         inviteCode:
           type: string
         numberOfEmployees:
@@ -1718,17 +1720,20 @@ components:
           type: integer
           nullable: true
 
-    UpsertModalityRuleBody:
+    SetModalityRulesBody:
       type: object
-      required: [modalityId, covered]
+      required: [rules]
       properties:
-        modalityId:
-          type: string
-        covered:
-          type: boolean
-        maxMonthlyAllocationCents:
-          type: integer
-          nullable: true
+        rules:
+          type: array
+          items:
+            type: object
+            required: [modalityId, covered]
+            properties:
+              modalityId:
+                type: string
+              covered:
+                type: boolean
 
     BillingCheckoutResponse:
       type: object
@@ -1772,7 +1777,7 @@ components:
           type: string
         status:
           type: string
-          enum: [active, inactive, suspended]
+          enum: [pending, active, canceled]
         inviteCode:
           type: string
         numberOfEmployees:
@@ -1806,7 +1811,7 @@ components:
       properties:
         status:
           type: string
-          enum: [active, inactive, suspended]
+          enum: [pending, active, canceled]
         numberOfEmployees:
           type: integer
           minimum: 1

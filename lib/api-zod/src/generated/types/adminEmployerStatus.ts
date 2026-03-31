@@ -10,7 +10,7 @@ export type AdminEmployerStatus =
   (typeof AdminEmployerStatus)[keyof typeof AdminEmployerStatus];
 
 export const AdminEmployerStatus = {
+  pending: "pending",
   active: "active",
-  inactive: "inactive",
-  suspended: "suspended",
+  canceled: "canceled",
 } as const;

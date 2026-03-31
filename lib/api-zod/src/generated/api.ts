@@ -533,7 +533,7 @@ export const GetEmployerAccountResponse = zod
   .object({
     id: zod.string(),
     companyName: zod.string(),
-    status: zod.enum(["active", "inactive", "suspended"]),
+    status: zod.enum(["pending", "active", "canceled"]),
     inviteCode: zod.string(),
     numberOfEmployees: zod.number().optional(),
     stipendPerEmployee: zod
@@ -567,13 +567,13 @@ export const UpdateEmployerAccountBody = zod.object({
     .min(updateEmployerAccountBodyStipendPerEmployeeMin)
     .optional(),
   platformFeePercent: zod.number().optional(),
-  status: zod.enum(["active", "inactive", "suspended"]).optional(),
+  status: zod.enum(["pending", "active", "canceled"]).optional(),
 });
 
 export const UpdateEmployerAccountResponse = zod.object({
   id: zod.string(),
   companyName: zod.string(),
-  status: zod.enum(["active", "inactive", "suspended"]),
+  status: zod.enum(["pending", "active", "canceled"]),
   inviteCode: zod.string(),
   numberOfEmployees: zod.number().optional(),
   stipendPerEmployee: zod
@@ -640,7 +640,7 @@ export const GetEmployerEnrollStatusResponse = zod.object({
     .object({
       id: zod.string(),
       companyName: zod.string(),
-      status: zod.enum(["active", "inactive", "suspended"]),
+      status: zod.enum(["pending", "active", "canceled"]),
       inviteCode: zod.string(),
       numberOfEmployees: zod.number().optional(),
       stipendPerEmployee: zod
@@ -675,21 +675,27 @@ export const ListEmployerModalityRulesResponse = zod.array(
 );
 
 /**
- * @summary Create or update a modality coverage rule
+ * @summary Bulk set modality coverage rules for the employer's programme
  */
-export const UpsertEmployerModalityRuleBody = zod.object({
-  modalityId: zod.string(),
-  covered: zod.boolean(),
-  maxMonthlyAllocationCents: zod.number().nullish(),
+export const SetEmployerModalityRulesBody = zod.object({
+  rules: zod.array(
+    zod.object({
+      modalityId: zod.string(),
+      covered: zod.boolean(),
+    }),
+  ),
 });
 
-export const UpsertEmployerModalityRuleResponse = zod.object({
+export const SetEmployerModalityRulesResponseItem = zod.object({
   id: zod.string(),
   employerId: zod.string(),
   modalityId: zod.string(),
   covered: zod.boolean(),
   maxMonthlyAllocationCents: zod.number().nullish(),
 });
+export const SetEmployerModalityRulesResponse = zod.array(
+  SetEmployerModalityRulesResponseItem,
+);
 
 /**
  * Billing is calculated on contracted headcount (numberOfEmployees × stipendPerEmployee × fee multiplier). Returns a demo invoice preview when STRIPE_SECRET_KEY is not configured.
@@ -732,7 +738,7 @@ export const StripeWebhookBody = zod
 export const AdminListEmployersResponseItem = zod.object({
   id: zod.string(),
   companyName: zod.string(),
-  status: zod.enum(["active", "inactive", "suspended"]),
+  status: zod.enum(["pending", "active", "canceled"]),
   inviteCode: zod.string(),
   numberOfEmployees: zod.number(),
   stipendPerEmployee: zod.number().optional(),
@@ -755,7 +761,7 @@ export const AdminGetEmployerResponse = zod
   .object({
     id: zod.string(),
     companyName: zod.string(),
-    status: zod.enum(["active", "inactive", "suspended"]),
+    status: zod.enum(["pending", "active", "canceled"]),
     inviteCode: zod.string(),
     numberOfEmployees: zod.number(),
     stipendPerEmployee: zod.number().optional(),
@@ -781,7 +787,7 @@ export const AdminUpdateEmployerParams = zod.object({
 export const adminUpdateEmployerBodyStipendPerEmployeeMin = 0;
 
 export const AdminUpdateEmployerBody = zod.object({
-  status: zod.enum(["active", "inactive", "suspended"]).optional(),
+  status: zod.enum(["pending", "active", "canceled"]).optional(),
   numberOfEmployees: zod.number().min(1).optional(),
   stipendPerEmployee: zod
     .number()
@@ -793,7 +799,7 @@ export const AdminUpdateEmployerBody = zod.object({
 export const AdminUpdateEmployerResponse = zod.object({
   id: zod.string(),
   companyName: zod.string(),
-  status: zod.enum(["active", "inactive", "suspended"]),
+  status: zod.enum(["pending", "active", "canceled"]),
   inviteCode: zod.string(),
   numberOfEmployees: zod.number().optional(),
   stipendPerEmployee: zod

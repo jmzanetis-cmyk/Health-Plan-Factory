@@ -6,8 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UpsertModalityRuleBody {
+export type SetModalityRulesBodyRulesItem = {
   modalityId: string;
   covered: boolean;
-  maxMonthlyAllocationCents?: number | null;
-}
+};
