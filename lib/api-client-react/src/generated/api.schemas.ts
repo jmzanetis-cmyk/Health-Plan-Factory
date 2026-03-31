@@ -376,15 +376,24 @@ export interface RedeemCodeBody {
   inviteCode: string;
 }
 
+export type EnrollStatusResponseEmployer = {
+  id?: string;
+  companyName?: string;
+  inviteCode?: string;
+  status?: string;
+} | null;
+
 export type EnrollStatusResponseMember = {
   monthlyBudget?: number;
+  /** Effective spend for current month (0 if prior-month data) */
   spentThisMonth?: number;
-  budgetMonth?: string | null;
+  budgetMonth?: string;
+  remainingCents?: number;
 } | null;
 
 export interface EnrollStatusResponse {
   enrolled: boolean;
-  employer?: Employer | null;
+  employer?: EnrollStatusResponseEmployer;
   member?: EnrollStatusResponseMember;
 }
 
@@ -457,11 +466,18 @@ export interface AdminEmployer {
   createdAt?: string;
 }
 
-export type AdminEmployerDetail = AdminEmployer & {
-  stripeCustomerId?: string | null;
-  stripeSubscriptionId?: string | null;
-  adminProfileId?: string;
-};
+export type AdminEmployerDetailMembersItem = { [key: string]: unknown };
+
+/**
+ * Admin-only view of an employer account including raw member and rule records. This shape is never exposed to employer users.
+
+ */
+export interface AdminEmployerDetail {
+  employer: AdminEmployer;
+  /** Raw employer_members rows (admin-only) */
+  members: AdminEmployerDetailMembersItem[];
+  rules: ModalityRule[];
+}
 
 export type AdminUpdateEmployerBodyStatus =
   (typeof AdminUpdateEmployerBodyStatus)[keyof typeof AdminUpdateEmployerBodyStatus];

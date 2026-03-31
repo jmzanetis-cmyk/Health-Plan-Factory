@@ -9,6 +9,7 @@
 export * from "./addFavoriteBody";
 export * from "./adminEmployer";
 export * from "./adminEmployerDetail";
+export * from "./adminEmployerDetailMembersItem";
 export * from "./adminEmployerStatus";
 export * from "./adminSettingRecord";
 export * from "./adminStats";
@@ -34,6 +35,7 @@ export * from "./employerCohortStatsEnrollmentTrendItem";
 export * from "./employerCohortStatsUtilizationBucketsItem";
 export * from "./employerStatus";
 export * from "./enrollStatusResponse";
+export * from "./enrollStatusResponseEmployer";
 export * from "./enrollStatusResponseMember";
 export * from "./errorResponse";
 export * from "./errorResponseDetails";

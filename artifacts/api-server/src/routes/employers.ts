@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { db } from "@workspace/db";
 import {
   employers,
@@ -31,7 +31,7 @@ function generateInviteCode(): string {
   return code;
 }
 
-function requireEmployerAuth(req: any, res: any, next: any) {
+function requireEmployerAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Authentication required" });
     return;
@@ -39,7 +39,7 @@ function requireEmployerAuth(req: any, res: any, next: any) {
   next();
 }
 
-function requireAdminAuth(req: any, res: any, next: any) {
+function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Authentication required" });
     return;
@@ -62,7 +62,7 @@ const CreateEmployerBody = z.object({
   stipendPerEmployee: z.number().int().min(1000), // cents, min $10
 });
 
-router.post("/employer/signup", requireEmployerAuth, async (req: any, res) => {
+router.post("/employer/signup", requireEmployerAuth, async (req, res) => {
   const parsed = CreateEmployerBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
@@ -127,7 +127,7 @@ router.post("/employer/signup", requireEmployerAuth, async (req: any, res) => {
 
 // ── Get Current Employer ───────────────────────────────────────────────────────
 
-router.get("/employer/me", requireEmployerAuth, async (req: any, res) => {
+router.get("/employer/me", requireEmployerAuth, async (req, res) => {
   try {
     const [employer] = await db
       .select()
@@ -150,7 +150,7 @@ const PatchEmployerMeBody = z.object({
   stipendPerEmployee: z.number().int().min(0).optional(),
 });
 
-router.patch("/employer/me", requireEmployerAuth, async (req: any, res) => {
+router.patch("/employer/me", requireEmployerAuth, async (req, res) => {
   const parsed = PatchEmployerMeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
@@ -179,7 +179,7 @@ router.patch("/employer/me", requireEmployerAuth, async (req: any, res) => {
 
 // ── Employer Dashboard Stats ───────────────────────────────────────────────────
 
-router.get("/employer/dashboard", requireEmployerAuth, async (req: any, res) => {
+router.get("/employer/dashboard", requireEmployerAuth, async (req, res) => {
   try {
     const [employer] = await db
       .select()
@@ -199,7 +199,12 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req: any, res) => 
 
     const totalEnrolled = members.length;
     const totalBudgetCents = totalEnrolled * employer.stipendPerEmployee;
-    const totalSpentCents = members.reduce((sum, m) => sum + m.spentThisMonth, 0);
+    // Apply effective-month reset at read time — avoids stale prior-month spend values
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const totalSpentCents = members.reduce(
+      (sum, m) => sum + (m.budgetMonth === currentMonth ? m.spentThisMonth : 0),
+      0
+    );
     const utilizationPct = totalBudgetCents > 0
       ? Math.round((totalSpentCents / totalBudgetCents) * 100)
       : 0;
@@ -237,7 +242,6 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req: any, res) => 
         .map(([modalityId, sessionCount]) => ({ modalityId, sessionCount }));
     }
 
-    const currentMonth = new Date().toISOString().slice(0, 7);
     const monthlySpend: Array<{ month: string; totalCents: number }> = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
@@ -280,7 +284,7 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req: any, res) => 
 
 // ── Employer Members List ──────────────────────────────────────────────────────
 
-router.get("/employer/members", requireEmployerAuth, async (req: any, res) => {
+router.get("/employer/members", requireEmployerAuth, async (req, res) => {
   try {
     const [employer] = await db
       .select({ id: employers.id, numberOfEmployees: employers.numberOfEmployees })
@@ -298,6 +302,7 @@ router.get("/employer/members", requireEmployerAuth, async (req: any, res) => {
       .select({
         monthlyBudget: employerMembers.monthlyBudget,
         spentThisMonth: employerMembers.spentThisMonth,
+        budgetMonth: employerMembers.budgetMonth,
         linkedAt: employerMembers.linkedAt,
       })
       .from(employerMembers)
@@ -305,7 +310,12 @@ router.get("/employer/members", requireEmployerAuth, async (req: any, res) => {
 
     const totalEnrolled = rows.length;
     const totalBudget = rows.reduce((s, r) => s + (r.monthlyBudget ?? 0), 0);
-    const totalSpent = rows.reduce((s, r) => s + (r.spentThisMonth ?? 0), 0);
+    // Apply effective-month reset at read time — avoids stale prior-month spend values
+    const cohortCurrentMonth = new Date().toISOString().slice(0, 7);
+    const totalSpent = rows.reduce(
+      (s, r) => s + (r.budgetMonth === cohortCurrentMonth ? (r.spentThisMonth ?? 0) : 0),
+      0
+    );
 
     const buckets = [
       { label: "0–25%", min: 0, max: 25, count: 0 },
@@ -316,8 +326,9 @@ router.get("/employer/members", requireEmployerAuth, async (req: any, res) => {
     ];
 
     for (const r of rows) {
+      const effectiveSpent = r.budgetMonth === cohortCurrentMonth ? r.spentThisMonth : 0;
       const pct = r.monthlyBudget && r.monthlyBudget > 0
-        ? (r.spentThisMonth / r.monthlyBudget) * 100
+        ? (effectiveSpent / r.monthlyBudget) * 100
         : 0;
       const bucket = buckets.find((b) => pct >= b.min && pct < b.max) ?? buckets[buckets.length - 1];
       bucket.count++;
@@ -359,7 +370,7 @@ router.get("/employer/members", requireEmployerAuth, async (req: any, res) => {
 
 const RedeemCodeBody = z.object({ inviteCode: z.string().min(1) });
 
-router.post("/employer/redeem-code", requireEmployerAuth, async (req: any, res) => {
+router.post("/employer/redeem-code", requireEmployerAuth, async (req, res) => {
   const parsed = RedeemCodeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request" });
@@ -424,7 +435,7 @@ router.post("/employer/redeem-code", requireEmployerAuth, async (req: any, res) 
 
 // ── Get Member's Employer Budget ───────────────────────────────────────────────
 
-router.get("/employer/my-budget", requireEmployerAuth, async (req: any, res) => {
+router.get("/employer/my-budget", requireEmployerAuth, async (req, res) => {
   try {
     const [link] = await db
       .select({
@@ -444,10 +455,18 @@ router.get("/employer/my-budget", requireEmployerAuth, async (req: any, res) => 
       return;
     }
 
+    // Apply effective-month reset at read time — avoids stale prior-month values
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const effectiveSpent = link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
+
     res.json({
       enrolled: true,
-      ...link,
-      remainingCents: link.monthlyBudget - link.spentThisMonth,
+      companyName: link.companyName,
+      inviteCode: link.inviteCode,
+      monthlyBudget: link.monthlyBudget,
+      spentThisMonth: effectiveSpent,
+      budgetMonth: currentMonth,
+      remainingCents: Math.max(0, link.monthlyBudget - effectiveSpent),
     });
   } catch {
     res.status(500).json({ error: "Failed to fetch budget" });
@@ -456,15 +475,17 @@ router.get("/employer/my-budget", requireEmployerAuth, async (req: any, res) => 
 
 // ── Employer Enroll Status (alias for my-budget, spec-required name) ─────────
 
-router.get("/employer/enroll-status", requireEmployerAuth, async (req: any, res) => {
+router.get("/employer/enroll-status", requireEmployerAuth, async (req, res) => {
   try {
     const [link] = await db
       .select({
         monthlyBudget: employerMembers.monthlyBudget,
         spentThisMonth: employerMembers.spentThisMonth,
         budgetMonth: employerMembers.budgetMonth,
+        employerId: employerMembers.employerId,
         companyName: employers.companyName,
         inviteCode: employers.inviteCode,
+        status: employers.status,
       })
       .from(employerMembers)
       .innerJoin(employers, eq(employerMembers.employerId, employers.id))
@@ -472,14 +493,29 @@ router.get("/employer/enroll-status", requireEmployerAuth, async (req: any, res)
       .limit(1);
 
     if (!link) {
-      res.json({ enrolled: false });
+      res.json({ enrolled: false, employer: null, member: null });
       return;
     }
 
+    // Apply effective-month reset at read time — avoids stale prior-month values
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const effectiveSpent = link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
+
+    // Return { enrolled, employer, member } as specified by EnrollStatusResponse schema
     res.json({
       enrolled: true,
-      ...link,
-      remainingCents: link.monthlyBudget - link.spentThisMonth,
+      employer: {
+        id: link.employerId,
+        companyName: link.companyName,
+        inviteCode: link.inviteCode,
+        status: link.status,
+      },
+      member: {
+        monthlyBudget: link.monthlyBudget,
+        spentThisMonth: effectiveSpent,
+        budgetMonth: currentMonth,
+        remainingCents: Math.max(0, link.monthlyBudget - effectiveSpent),
+      },
     });
   } catch {
     res.status(500).json({ error: "Failed to fetch enrol status" });
@@ -495,7 +531,7 @@ const SetModalityRulesBody = z.object({
   })),
 });
 
-router.put("/employer/modality-rules", requireEmployerAuth, async (req: any, res) => {
+router.put("/employer/modality-rules", requireEmployerAuth, async (req, res) => {
   const parsed = SetModalityRulesBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request" });
@@ -540,7 +576,7 @@ router.put("/employer/modality-rules", requireEmployerAuth, async (req: any, res
   }
 });
 
-router.get("/employer/modality-rules", requireEmployerAuth, async (req: any, res) => {
+router.get("/employer/modality-rules", requireEmployerAuth, async (req, res) => {
   try {
     const [employer] = await db
       .select({ id: employers.id })
@@ -566,7 +602,7 @@ router.get("/employer/modality-rules", requireEmployerAuth, async (req: any, res
 
 // ── CSV Export ─────────────────────────────────────────────────────────────────
 
-router.get("/employer/export-csv", requireEmployerAuth, async (req: any, res) => {
+router.get("/employer/export-csv", requireEmployerAuth, async (req, res) => {
   try {
     const [employer] = await db
       .select()
@@ -629,7 +665,7 @@ router.get("/employer/export-csv", requireEmployerAuth, async (req: any, res) =>
 
 // ── Admin Employer Management ──────────────────────────────────────────────────
 
-router.get("/admin/employers", requireAdminAuth, async (req: any, res) => {
+router.get("/admin/employers", requireAdminAuth, async (req, res) => {
   try {
     const all = await db
       .select()
@@ -652,12 +688,12 @@ router.get("/admin/employers", requireAdminAuth, async (req: any, res) => {
   }
 });
 
-router.get("/admin/employers/:id", requireAdminAuth, async (req: any, res) => {
+router.get("/admin/employers/:id", requireAdminAuth, async (req, res) => {
   try {
     const [employer] = await db
       .select()
       .from(employers)
-      .where(eq(employers.id, req.params.id))
+      .where(eq(employers.id, String(req.params.id)))
       .limit(1);
 
     if (!employer) {
@@ -691,7 +727,7 @@ const AdminCreateEmployerBody = z.object({
   status: z.enum(["pending", "active", "canceled"]).default("active"),
 });
 
-router.post("/admin/employers", requireAdminAuth, async (req: any, res) => {
+router.post("/admin/employers", requireAdminAuth, async (req, res) => {
   const parsed = AdminCreateEmployerBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
@@ -736,7 +772,7 @@ const AdminUpdateEmployerBody = z.object({
   status: z.enum(["pending", "active", "canceled"]).optional(),
 });
 
-router.patch("/admin/employers/:id", requireAdminAuth, async (req: any, res) => {
+router.patch("/admin/employers/:id", requireAdminAuth, async (req, res) => {
   const parsed = AdminUpdateEmployerBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request" });
@@ -747,7 +783,7 @@ router.patch("/admin/employers/:id", requireAdminAuth, async (req: any, res) => 
     const [updated] = await db
       .update(employers)
       .set({ ...parsed.data, updatedAt: new Date() })
-      .where(eq(employers.id, req.params.id))
+      .where(eq(employers.id, String(req.params.id)))
       .returning();
 
     if (!updated) {
@@ -761,9 +797,9 @@ router.patch("/admin/employers/:id", requireAdminAuth, async (req: any, res) => 
   }
 });
 
-router.delete("/admin/employers/:id", requireAdminAuth, async (req: any, res) => {
+router.delete("/admin/employers/:id", requireAdminAuth, async (req, res) => {
   try {
-    await db.delete(employers).where(eq(employers.id, req.params.id));
+    await db.delete(employers).where(eq(employers.id, String(req.params.id)));
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: "Failed to delete employer" });
@@ -774,7 +810,7 @@ router.delete("/admin/employers/:id", requireAdminAuth, async (req: any, res) =>
 // Production: set STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET env vars.
 // Demo mode: returns invoice summary with stripe_mode: "demo" when key is absent.
 
-router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req: any, res) => {
+router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req, res) => {
   try {
     const [employer] = await db
       .select()

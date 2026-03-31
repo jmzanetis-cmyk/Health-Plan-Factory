@@ -6,9 +6,16 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminEmployer } from "./adminEmployer";
+import type { AdminEmployerDetailMembersItem } from "./adminEmployerDetailMembersItem";
+import type { ModalityRule } from "./modalityRule";
 
-export type AdminEmployerDetail = AdminEmployer & {
-  stripeCustomerId?: string | null;
-  stripeSubscriptionId?: string | null;
-  adminProfileId?: string;
-};
+/**
+ * Admin-only view of an employer account including raw member and rule records. This shape is never exposed to employer users.
+
+ */
+export interface AdminEmployerDetail {
+  employer: AdminEmployer;
+  /** Raw employer_members rows (admin-only) */
+  members: AdminEmployerDetailMembersItem[];
+  rules: ModalityRule[];
+}

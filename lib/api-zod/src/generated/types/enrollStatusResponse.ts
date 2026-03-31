@@ -5,11 +5,11 @@
  * Health Plan Factory API
  * OpenAPI spec version: 0.1.0
  */
-import type { Employer } from "./employer";
+import type { EnrollStatusResponseEmployer } from "./enrollStatusResponseEmployer";
 import type { EnrollStatusResponseMember } from "./enrollStatusResponseMember";
 
 export interface EnrollStatusResponse {
   enrolled: boolean;
-  employer?: Employer | null;
+  employer?: EnrollStatusResponseEmployer;
   member?: EnrollStatusResponseMember;
 }

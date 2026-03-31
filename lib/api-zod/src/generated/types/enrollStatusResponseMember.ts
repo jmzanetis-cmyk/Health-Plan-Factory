@@ -8,6 +8,8 @@
 
 export type EnrollStatusResponseMember = {
   monthlyBudget?: number;
+  /** Effective spend for current month (0 if prior-month data) */
   spentThisMonth?: number;
-  budgetMonth?: string | null;
+  budgetMonth?: string;
+  remainingCents?: number;
 } | null;

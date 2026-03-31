@@ -638,24 +638,21 @@ export const GetEmployerEnrollStatusResponse = zod.object({
   enrolled: zod.boolean(),
   employer: zod
     .object({
-      id: zod.string(),
-      companyName: zod.string(),
-      status: zod.enum(["pending", "active", "canceled"]),
-      inviteCode: zod.string(),
-      numberOfEmployees: zod.number().optional(),
-      stipendPerEmployee: zod
-        .number()
-        .optional()
-        .describe("Monthly stipend per employee in cents"),
-      platformFeePercent: zod.number().optional(),
-      createdAt: zod.coerce.date().optional(),
+      id: zod.string().optional(),
+      companyName: zod.string().optional(),
+      inviteCode: zod.string().optional(),
+      status: zod.string().optional(),
     })
     .nullish(),
   member: zod
     .object({
       monthlyBudget: zod.number().optional(),
-      spentThisMonth: zod.number().optional(),
-      budgetMonth: zod.string().nullish(),
+      spentThisMonth: zod
+        .number()
+        .optional()
+        .describe("Effective spend for current month (0 if prior-month data)"),
+      budgetMonth: zod.string().optional(),
+      remainingCents: zod.number().optional(),
     })
     .nullish(),
 });
@@ -759,22 +756,32 @@ export const AdminGetEmployerParams = zod.object({
 
 export const AdminGetEmployerResponse = zod
   .object({
-    id: zod.string(),
-    companyName: zod.string(),
-    status: zod.enum(["pending", "active", "canceled"]),
-    inviteCode: zod.string(),
-    numberOfEmployees: zod.number(),
-    stipendPerEmployee: zod.number().optional(),
-    platformFeePercent: zod.number().optional(),
-    enrolledCount: zod.number().optional(),
-    createdAt: zod.coerce.date().optional(),
-  })
-  .and(
-    zod.object({
-      stripeCustomerId: zod.string().nullish(),
-      stripeSubscriptionId: zod.string().nullish(),
-      adminProfileId: zod.string().optional(),
+    employer: zod.object({
+      id: zod.string(),
+      companyName: zod.string(),
+      status: zod.enum(["pending", "active", "canceled"]),
+      inviteCode: zod.string(),
+      numberOfEmployees: zod.number(),
+      stipendPerEmployee: zod.number().optional(),
+      platformFeePercent: zod.number().optional(),
+      enrolledCount: zod.number().optional(),
+      createdAt: zod.coerce.date().optional(),
     }),
+    members: zod
+      .array(zod.object({}).passthrough())
+      .describe("Raw employer_members rows (admin-only)"),
+    rules: zod.array(
+      zod.object({
+        id: zod.string(),
+        employerId: zod.string(),
+        modalityId: zod.string(),
+        covered: zod.boolean(),
+        maxMonthlyAllocationCents: zod.number().nullish(),
+      }),
+    ),
+  })
+  .describe(
+    "Admin-only view of an employer account including raw member and rule records. This shape is never exposed to employer users.\n",
   );
 
 /**

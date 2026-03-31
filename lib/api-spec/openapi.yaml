@@ -1690,8 +1690,17 @@ components:
         enrolled:
           type: boolean
         employer:
-          $ref: '#/components/schemas/Employer'
+          type: object
           nullable: true
+          properties:
+            id:
+              type: string
+            companyName:
+              type: string
+            inviteCode:
+              type: string
+            status:
+              type: string
         member:
           type: object
           nullable: true
@@ -1700,9 +1709,11 @@ components:
               type: integer
             spentThisMonth:
               type: integer
+              description: Effective spend for current month (0 if prior-month data)
             budgetMonth:
               type: string
-              nullable: true
+            remainingCents:
+              type: integer
 
     ModalityRule:
       type: object
@@ -1793,18 +1804,23 @@ components:
           format: date-time
 
     AdminEmployerDetail:
-      allOf:
-        - $ref: '#/components/schemas/AdminEmployer'
-        - type: object
-          properties:
-            stripeCustomerId:
-              type: string
-              nullable: true
-            stripeSubscriptionId:
-              type: string
-              nullable: true
-            adminProfileId:
-              type: string
+      type: object
+      required: [employer, members, rules]
+      description: >
+        Admin-only view of an employer account including raw member and rule records.
+        This shape is never exposed to employer users.
+      properties:
+        employer:
+          $ref: '#/components/schemas/AdminEmployer'
+        members:
+          type: array
+          description: Raw employer_members rows (admin-only)
+          items:
+            type: object
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModalityRule'
 
     AdminUpdateEmployerBody:
       type: object
