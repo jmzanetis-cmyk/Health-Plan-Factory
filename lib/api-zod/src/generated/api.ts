@@ -65,6 +65,25 @@ export const CreateModalityBody = zod.object({
 });
 
 /**
+ * Dedicated spend-trigger endpoint for modality sessions. Employer stipend deduction and progress log creation run in a single transaction. employerCoveredCents reflects how much the employer covered (up to the member's remaining monthly balance); outOfPocketCents is the remainder.
+
+ * @summary Record a modality session with employer stipend deduction
+ */
+export const RecordModalitySessionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const RecordModalitySessionBody = zod.object({
+  profileId: zod.string().uuid(),
+  sessionCostCents: zod
+    .number()
+    .min(1)
+    .describe("Actual session cost in cents (must be > 0)"),
+  note: zod.string().optional(),
+  sessionDate: zod.coerce.date().optional(),
+});
+
+/**
  * @summary List member intakes (own or admin)
  */
 export const ListIntakesQueryParams = zod.object({

@@ -533,6 +533,26 @@ export type ListModalitiesParams = {
   isActive?: boolean;
 };
 
+export type RecordModalitySessionBody = {
+  profileId: string;
+  /**
+   * Actual session cost in cents (must be > 0)
+   * @minimum 1
+   */
+  sessionCostCents: number;
+  note?: string;
+  sessionDate?: string;
+};
+
+export type RecordModalitySession201 = {
+  id: string;
+  modalityId: string;
+  sessionCostCents: number;
+  employerCoveredCents?: number | null;
+  outOfPocketCents?: number | null;
+  createdAt?: string;
+};
+
 export type ListIntakesParams = {
   /**
    * Filter intakes by member profile ID

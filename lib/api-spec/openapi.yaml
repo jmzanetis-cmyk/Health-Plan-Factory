@@ -93,6 +93,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /modalities/{id}/sessions:
+    post:
+      operationId: recordModalitySession
+      tags: [modalities]
+      summary: Record a modality session with employer stipend deduction
+      description: >
+        Dedicated spend-trigger endpoint for modality sessions. Employer stipend
+        deduction and progress log creation run in a single transaction.
+        employerCoveredCents reflects how much the employer covered (up to the
+        member's remaining monthly balance); outOfPocketCents is the remainder.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profileId, sessionCostCents]
+              properties:
+                profileId:
+                  type: string
+                  format: uuid
+                sessionCostCents:
+                  type: integer
+                  minimum: 1
+                  description: Actual session cost in cents (must be > 0)
+                note:
+                  type: string
+                sessionDate:
+                  type: string
+                  format: date-time
+      responses:
+        "201":
+          description: Session recorded; stipend deduction applied if applicable.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, modalityId, sessionCostCents]
+                properties:
+                  id:
+                    type: string
+                  modalityId:
+                    type: string
+                  sessionCostCents:
+                    type: integer
+                  employerCoveredCents:
+                    type: integer
+                    nullable: true
+                  outOfPocketCents:
+                    type: integer
+                    nullable: true
+                  createdAt:
+                    type: string
+                    format: date-time
+        "400":
+          description: Validation error
+        "401":
+          description: Authentication required
+
   /intakes:
     get:
       operationId: listIntakes

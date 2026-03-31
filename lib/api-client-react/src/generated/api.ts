@@ -56,6 +56,8 @@ import type {
   PlanWithItems,
   ProgressLogRecord,
   ProviderRecord,
+  RecordModalitySession201,
+  RecordModalitySessionBody,
   RedeemCodeBody,
   RedeemEmployerInviteCode201,
   RemoveFavoriteParams,
@@ -331,6 +333,99 @@ export const useCreateModality = <
   TContext
 > => {
   return useMutation(getCreateModalityMutationOptions(options));
+};
+
+/**
+ * Dedicated spend-trigger endpoint for modality sessions. Employer stipend deduction and progress log creation run in a single transaction. employerCoveredCents reflects how much the employer covered (up to the member's remaining monthly balance); outOfPocketCents is the remainder.
+
+ * @summary Record a modality session with employer stipend deduction
+ */
+export const getRecordModalitySessionUrl = (id: string) => {
+  return `/api/modalities/${id}/sessions`;
+};
+
+export const recordModalitySession = async (
+  id: string,
+  recordModalitySessionBody: RecordModalitySessionBody,
+  options?: RequestInit,
+): Promise<RecordModalitySession201> => {
+  return customFetch<RecordModalitySession201>(
+    getRecordModalitySessionUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(recordModalitySessionBody),
+    },
+  );
+};
+
+export const getRecordModalitySessionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordModalitySession>>,
+    TError,
+    { id: string; data: BodyType<RecordModalitySessionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordModalitySession>>,
+  TError,
+  { id: string; data: BodyType<RecordModalitySessionBody> },
+  TContext
+> => {
+  const mutationKey = ["recordModalitySession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordModalitySession>>,
+    { id: string; data: BodyType<RecordModalitySessionBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return recordModalitySession(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordModalitySessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordModalitySession>>
+>;
+export type RecordModalitySessionMutationBody =
+  BodyType<RecordModalitySessionBody>;
+export type RecordModalitySessionMutationError = ErrorType<void>;
+
+/**
+ * @summary Record a modality session with employer stipend deduction
+ */
+export const useRecordModalitySession = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordModalitySession>>,
+    TError,
+    { id: string; data: BodyType<RecordModalitySessionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordModalitySession>>,
+  TError,
+  { id: string; data: BodyType<RecordModalitySessionBody> },
+  TContext
+> => {
+  return useMutation(getRecordModalitySessionMutationOptions(options));
 };
 
 /**

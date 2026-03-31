@@ -62,6 +62,8 @@ export * from "./planRecord";
 export * from "./planWithItems";
 export * from "./progressLogRecord";
 export * from "./providerRecord";
+export * from "./recordModalitySession201";
+export * from "./recordModalitySessionBody";
 export * from "./redeemCodeBody";
 export * from "./redeemEmployerInviteCode201";
 export * from "./removeFavoriteParams";
