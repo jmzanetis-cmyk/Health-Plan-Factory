@@ -1,10 +1,6 @@
 [build]
   command = "pnpm run build"
-  publish = "artifacts/health-plan-factory/dist/public"
-  functions = "netlify/functions"
-
-[build.environment]
-  NODE_VERSION = "20"
+  publish = "dist"
 
 [[redirects]]
   from = "/api/*"
@@ -15,7 +11,3 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["pg-native", "pino", "pino-pretty", "thread-stream"]
