@@ -31,9 +31,22 @@ function generateInviteCode(): string {
   return code;
 }
 
+function requireAnyAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  next();
+}
+
 function requireEmployerAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const role = req.user!.role;
+  if (role !== "employer" && role !== "admin") {
+    res.status(403).json({ error: "Employer account required" });
     return;
   }
   next();
@@ -76,7 +89,7 @@ const CreateEmployerBody = z.object({
   stipendPerEmployee: z.number().int().min(1000), // cents, min $10
 });
 
-router.post("/employer/signup", requireEmployerAuth, async (req, res) => {
+router.post("/employer/signup", requireAnyAuth, async (req, res) => {
   const parsed = CreateEmployerBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
@@ -673,10 +686,12 @@ router.get("/employer/export-csv", requireEmployerAuth, async (req, res) => {
     }
 
     // Aggregate-only export — no individual member rows to protect member privacy
+    const csvCurrentMonth = new Date().toISOString().slice(0, 7);
     const rows = await db
       .select({
         monthlyBudget: employerMembers.monthlyBudget,
         spentThisMonth: employerMembers.spentThisMonth,
+        budgetMonth: employerMembers.budgetMonth,
         linkedAt: employerMembers.linkedAt,
       })
       .from(employerMembers)
@@ -690,11 +705,13 @@ router.get("/employer/export-csv", requireEmployerAuth, async (req, res) => {
       { label: "100%+", min: 100, max: Infinity, count: 0, totalBudget: 0, totalSpent: 0 },
     ];
     for (const r of rows) {
-      const pct = r.monthlyBudget && r.monthlyBudget > 0 ? (r.spentThisMonth / r.monthlyBudget) * 100 : 0;
+      // Apply effective-month reset (same as dashboard/members) to avoid stale spend data
+      const effectiveSpent = r.budgetMonth === csvCurrentMonth ? r.spentThisMonth : 0;
+      const pct = r.monthlyBudget && r.monthlyBudget > 0 ? (effectiveSpent / r.monthlyBudget) * 100 : 0;
       const b = buckets.find((b) => pct >= b.min && pct < b.max) ?? buckets[buckets.length - 1];
       b.count++;
       b.totalBudget += r.monthlyBudget ?? 0;
-      b.totalSpent += r.spentThisMonth ?? 0;
+      b.totalSpent += effectiveSpent;
     }
     const total = rows.length;
 
