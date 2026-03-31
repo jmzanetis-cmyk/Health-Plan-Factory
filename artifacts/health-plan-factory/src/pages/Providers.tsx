@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -231,6 +232,35 @@ export default function Providers() {
           <p className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             {providers.length} provider{providers.length !== 1 ? "s" : ""} found
           </p>
+        )}
+
+        {/* DPC / physician LMN callout — shown when a medical-category modality is selected */}
+        {selectedModality && modalities.find((m) => m.id === selectedModality)?.category === "medical" && (
+          <div style={{
+            borderRadius: 12,
+            background: "rgba(184,137,42,0.06)",
+            border: "1.5px solid rgba(184,137,42,0.22)",
+            padding: "1rem 1.25rem",
+            display: "flex",
+            gap: "0.875rem",
+            alignItems: "flex-start",
+          }}>
+            <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>🩺</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 3 }}>
+                DPC physicians can write a Letter of Medical Necessity for your plan
+              </p>
+              <p style={{ fontSize: "0.73rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 8 }}>
+                Connect with a Direct Primary Care physician to get an LMN that covers HSA/FSA-reimbursable wellness services in your plan — potentially saving hundreds per year.
+              </p>
+              <Link
+                to="/hsa-unlock"
+                style={{ fontSize: "0.73rem", fontWeight: 600, color: "#b8892a", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
+              >
+                See how to unlock your HSA →
+              </Link>
+            </div>
+          </div>
         )}
 
         {/* Provider grid */}

@@ -327,6 +327,19 @@ export default function Progress() {
           )}
         </div>
 
+        {/* LMN on file banner — shown only when physician has confirmed LMN and member has eligible modalities */}
+        {lmnStatus === "received" && lmnEligibleIds.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "rgba(61,107,82,0.07)", border: "1px solid rgba(61,107,82,0.2)" }}>
+            <BadgeCheck size={18} style={{ color: "#3d6b52", flexShrink: 0 }} />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "#3d6b52", fontFamily: "var(--app-font-sans)" }}>LMN on file</p>
+              <p className="text-xs" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                Your Letter of Medical Necessity covers {lmnEligibleIds.length} modality{lmnEligibleIds.length !== 1 ? "ies" : ""} in your plan — sessions may be HSA/FSA reimbursable.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Recent logs */}
         <div className="p-6" style={cardStyle}>
           <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
@@ -352,17 +365,9 @@ export default function Progress() {
                 return (
                   <div key={l.id} className="flex items-start justify-between py-3 px-3 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.04)" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-mono)", margin: 0 }}>
-                          {metrics.join(" · ")}
-                        </p>
-                        {lmnStatus === "received" && lmnEligibleIds.length > 0 && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(61,107,82,0.1)", border: "1px solid rgba(61,107,82,0.22)", borderRadius: 20, padding: "2px 8px", fontFamily: "var(--app-font-sans)", fontSize: 10, fontWeight: 700, color: "#3d6b52", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
-                            <BadgeCheck size={10} color="#3d6b52" />
-                            LMN on file
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-mono)", margin: 0 }}>
+                        {metrics.join(" · ")}
+                      </p>
                       <p className="text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
                         {l.note ?? <em style={{ color: "var(--text-muted)" }}>No notes</em>}
                       </p>

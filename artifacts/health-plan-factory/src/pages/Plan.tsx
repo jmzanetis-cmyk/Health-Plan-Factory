@@ -184,6 +184,30 @@ function ModalityCard({ item, rank }: { item: PlanItem; rank: number }) {
             ))}
           </div>
 
+          {/* Physician / DPC LMN callout */}
+          {item.modality.category === "medical" && (
+            <div style={{
+              marginBottom: "1rem",
+              padding: "0.875rem",
+              borderRadius: 10,
+              background: "rgba(184,137,42,0.06)",
+              border: "1.5px solid rgba(184,137,42,0.2)",
+            }}>
+              <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 3 }}>
+                🩺 DPC physician can write an LMN for your plan
+              </p>
+              <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 6 }}>
+                A Direct Primary Care physician can issue a Letter of Medical Necessity covering HSA/FSA-reimbursable services in your plan — potentially saving hundreds per year.
+              </p>
+              <Link
+                to="/hsa-unlock"
+                style={{ fontSize: "0.72rem", fontWeight: 600, color: "#b8892a", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
+              >
+                Unlock your HSA →
+              </Link>
+            </div>
+          )}
+
           {/* Provider CTA — locked */}
           <div style={{
             padding: "1rem",
@@ -200,7 +224,7 @@ function ModalityCard({ item, rank }: { item: PlanItem; rank: number }) {
                 See vetted providers near you
               </p>
               <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                Unlock for $1–$3 · HSA-eligible providers flagged
+                Unlock for {item.modality.category === "medical" ? "$3" : item.modality.category === "telehealth" ? "$1" : "$2"} · HSA-eligible providers flagged
               </p>
             </div>
             <Link
@@ -510,19 +534,36 @@ export default function Plan() {
           alignItems: "flex-start",
         }}>
           <span style={{ fontSize: "1.4rem", flexShrink: 0 }}>💰</span>
-          <div>
+          <div style={{ flex: 1 }}>
             <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 4 }}>
               Items in your plan may qualify for HSA/FSA reimbursement with a physician's LMN
             </p>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 8 }}>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 10 }}>
               A Letter of Medical Necessity from a Direct Primary Care physician can unlock tax-free HSA/FSA reimbursement for massage, PT, yoga, acupuncture, and more — potentially saving hundreds per year.
             </p>
-            <Link
-              to="/lmn-guide"
-              style={{ fontSize: "0.75rem", fontWeight: 600, color: "#b8892a", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
-            >
-              Learn how LMNs work →
-            </Link>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+              <Link
+                to="/hsa-unlock"
+                style={{
+                  padding: "0.45rem 0.875rem",
+                  borderRadius: 8,
+                  background: "#b8892a",
+                  color: "white",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  fontFamily: "var(--app-font-sans)",
+                }}
+              >
+                Unlock my HSA →
+              </Link>
+              <Link
+                to="/lmn-guide"
+                style={{ fontSize: "0.72rem", fontWeight: 500, color: "#b8892a", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
+              >
+                How does it work?
+              </Link>
+            </div>
           </div>
         </div>
 

@@ -33,11 +33,11 @@ router.get("/lmn/status", async (req, res) => {
       .from(profiles)
       .where(eq(profiles.id, profileId));
 
-    // Get active plan's LMN-eligible items
+    // Get the member's most recent plan (regardless of status — plans default to "generated")
     const [activePlan] = await db
       .select({ id: plans.id })
       .from(plans)
-      .where(and(eq(plans.profileId, profileId), eq(plans.status, "active")))
+      .where(eq(plans.profileId, profileId))
       .orderBy(desc(plans.createdAt))
       .limit(1);
 
@@ -107,11 +107,11 @@ router.post("/lmn/request", async (req, res) => {
       .from(profiles)
       .where(eq(profiles.id, profileId));
 
-    // Get active plan
+    // Get most recent plan (regardless of status — plans default to "generated")
     const [activePlan] = await db
       .select({ id: plans.id })
       .from(plans)
-      .where(and(eq(plans.profileId, profileId), eq(plans.status, "active")))
+      .where(eq(plans.profileId, profileId))
       .orderBy(desc(plans.createdAt))
       .limit(1);
 
