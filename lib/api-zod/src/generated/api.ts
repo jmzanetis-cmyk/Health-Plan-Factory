@@ -1374,18 +1374,10 @@ export const PostReferralRegisterResponse = zod.object({
 });
 
 /**
- * @summary Explicitly track a referral event (e.g. first plan generated)
+ * @summary Trigger referral reward check for the authenticated member (e.g. after first plan is generated). Idempotent — safe to call multiple times.
  */
-export const PostReferralTrackBody = zod.object({
-  referralCode: zod.string().describe("The referral code to track against."),
-  event: zod
-    .string()
-    .optional()
-    .describe('The event type (e.g. \"plan_generated\").'),
-});
-
 export const PostReferralTrackResponse = zod.object({
-  ok: zod.boolean().optional(),
+  message: zod.string(),
 });
 
 /**

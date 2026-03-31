@@ -296,11 +296,24 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
   // If more than one plan exists (the plan being created is already in DB), skip
   if ((planCount ?? 0) > 1) return;
 
-  // Mark referral as rewarded
-  await db
+  // ── Single-winner guard: atomically transition pending → rewarded ──
+  // Only the first concurrent caller wins; subsequent calls get an empty array.
+  const [claimed] = await db
     .update(referrals)
     .set({ status: "rewarded", rewardedAt: new Date() })
-    .where(eq(referrals.id, pendingReferral.id));
+    .where(
+      and(
+        eq(referrals.id, pendingReferral.id),
+        eq(referrals.status, "pending"), // idempotency: only transition once
+      )
+    )
+    .returning({ id: referrals.id });
+
+  if (!claimed) {
+    // Another concurrent call already claimed this referral — no-op
+    console.info(`[referral] Skipping duplicate reward for referred member ${referredMemberId}`);
+    return;
+  }
 
   const now = new Date();
 

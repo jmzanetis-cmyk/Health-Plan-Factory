@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe } from "lucide-react";
+import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe, Unlock, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface UnlockResult {
+  providerId: string;
+  used_credit: boolean;
+  credit_applied_cents: number;
+  amount_charged_cents: number;
+  amount_charged_formatted: string;
+  message: string;
+}
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -59,6 +68,12 @@ export default function Providers() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
 
+  // Credit & unlock state
+  const [userCreditsCents, setUserCreditsCents] = useState(0);
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
+  const [unlockModal, setUnlockModal] = useState<UnlockResult | null>(null);
+
   // Filters — initialise selectedModality from ?modality= query param
   // (supports deep-link from /modalities/:slug evidence library pages)
   const [selectedModality, setSelectedModality] = useState(searchParams.get("modality") ?? "");
@@ -81,8 +96,47 @@ export default function Providers() {
         .then((data: Favorite[]) => {
           if (Array.isArray(data)) setFavorites(new Set(data.map((f) => f.providerId)));
         });
+
+      // Fetch credit balance to show credit badge and discount in checkout modal
+      fetch(`${BASE}/api/credits/mine`, { credentials: "include" })
+        .then((r) => r.json())
+        .then((data: { totalCents: number }) => {
+          if (typeof data?.totalCents === "number") setUserCreditsCents(data.totalCents);
+        })
+        .catch(() => {});
     }
   }, [user]);
+
+  const handleUnlock = async (providerId: string) => {
+    if (!user) {
+      toast({ title: "Sign in required", description: "Sign in to unlock provider details.", variant: "destructive" });
+      return;
+    }
+    setUnlockingId(providerId);
+    try {
+      const res = await fetch(`${BASE}/api/providers/unlock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ providerId }),
+      });
+      const data: UnlockResult = await res.json();
+      if (!res.ok) {
+        toast({ title: "Unlock failed", description: (data as { error?: string }).error ?? "Something went wrong.", variant: "destructive" });
+        return;
+      }
+      setUnlockedIds((prev) => new Set([...prev, providerId]));
+      setUnlockModal(data);
+      // Update local credits balance
+      if (data.used_credit) {
+        setUserCreditsCents((prev) => Math.max(0, prev - data.credit_applied_cents));
+      }
+    } catch {
+      toast({ title: "Unlock failed", description: "Network error. Please try again.", variant: "destructive" });
+    } finally {
+      setUnlockingId(null);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -152,6 +206,68 @@ export default function Providers() {
 
   return (
     <div className="min-h-screen px-4 md:px-10 py-10" style={{ background: "var(--warm-white)" }}>
+
+      {/* ── Unlock Checkout Modal ── */}
+      {unlockModal && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(27,45,79,0.55)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+          }}
+          onClick={() => setUnlockModal(null)}
+        >
+          <div
+            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(27,45,79,0.22)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle2 size={20} style={{ color: "var(--sage)" }} />
+              <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--navy)", margin: 0 }}>
+                Provider Unlocked
+              </h3>
+            </div>
+
+            {/* Checkout breakdown */}
+            <div style={{ background: "rgba(27,45,79,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(27,45,79,0.08)" }}>
+              <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Unlock fee</span>
+                <span style={{ color: "var(--navy)", fontWeight: 600 }}>
+                  ${((unlockModal.amount_charged_cents + unlockModal.credit_applied_cents) / 100).toFixed(2)}
+                </span>
+              </div>
+              {unlockModal.used_credit && (
+                <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
+                  <span style={{ color: "var(--hpf-amber)", fontWeight: 600 }}>🎁 Referral credit applied</span>
+                  <span style={{ color: "var(--hpf-amber)", fontWeight: 700 }}>
+                    −${(unlockModal.credit_applied_cents / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(27,45,79,0.08)", fontFamily: "var(--app-font-sans)" }}>
+                <span style={{ color: "var(--navy)", fontWeight: 700 }}>Total charged</span>
+                <span style={{ color: unlockModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--navy)", fontWeight: 700 }}>
+                  {unlockModal.amount_charged_cents === 0 ? "Free" : unlockModal.amount_charged_formatted}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
+              {unlockModal.amount_charged_cents > 0
+                ? "You can now view this provider's full contact details. Payment will be processed at booking."
+                : "Your referral credit covered this unlock. You can now view full contact details."}
+            </p>
+
+            <button
+              onClick={() => setUnlockModal(null)}
+              style={{ width: "100%", padding: "0.75rem", borderRadius: 10, background: "var(--navy)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+            >
+              View Provider
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -162,6 +278,11 @@ export default function Providers() {
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
               Browse verified wellness providers matched to your plan
             </p>
+            {user && userCreditsCents > 0 && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", marginTop: "0.5rem", background: "rgba(184,137,42,0.1)", border: "1px solid rgba(184,137,42,0.3)", borderRadius: 8, padding: "0.25rem 0.625rem", fontSize: "0.72rem", fontWeight: 600, color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                🎁 {(userCreditsCents / 100).toFixed(2)} referral credit available
+              </span>
+            )}
           </div>
           <button
             onClick={() => setShowFilters((v) => !v)}
@@ -367,37 +488,60 @@ export default function Providers() {
                     )}
                   </div>
 
-                  {/* Contact row */}
+                  {/* Contact row — gated behind unlock */}
                   <div className="flex flex-wrap gap-3 pt-1 border-t items-center" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
-                    {p.phone && (
-                      <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                        <Phone size={11} /> {p.phone}
-                      </a>
+                    {unlockedIds.has(p.id) ? (
+                      <>
+                        {p.phone && (
+                          <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                            <Phone size={11} /> {p.phone}
+                          </a>
+                        )}
+                        {p.website && (
+                          <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                            <Globe size={11} /> Website
+                          </a>
+                        )}
+                        {(p.phone || p.website) && (
+                          <a
+                            href={p.phone ? `tel:${p.phone}` : p.website ?? "#"}
+                            target={p.phone ? undefined : "_blank"}
+                            rel="noopener noreferrer"
+                            className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
+                            style={{ background: "var(--sage)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                          >
+                            <CheckCircle2 size={11} /> Request Info
+                          </a>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                          🔒 Contact details locked
+                        </span>
+                        {userCreditsCents > 0 && (
+                          <span className="text-xs" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
+                            🎁 Credit available
+                          </span>
+                        )}
+                        <button
+                          onClick={() => handleUnlock(p.id)}
+                          disabled={unlockingId === p.id}
+                          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                          style={{
+                            background: userCreditsCents > 0 ? "var(--hpf-amber)" : "var(--navy)",
+                            color: "white",
+                            border: "none",
+                            cursor: unlockingId === p.id ? "wait" : "pointer",
+                            fontFamily: "var(--app-font-sans)",
+                            opacity: unlockingId === p.id ? 0.7 : 1,
+                          }}
+                        >
+                          {unlockingId === p.id ? <Loader2 size={11} className="animate-spin" /> : <Unlock size={11} />}
+                          {userCreditsCents > 0 ? "Unlock Free" : "Unlock"}
+                        </button>
+                      </>
                     )}
-                    {p.website && (
-                      <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
-                        <Globe size={11} /> Website
-                      </a>
-                    )}
-                    {p.phone ? (
-                      <a
-                        href={`tel:${p.phone}`}
-                        className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
-                        style={{ background: "var(--navy)", color: "white", fontFamily: "var(--app-font-sans)" }}
-                      >
-                        Request Info
-                      </a>
-                    ) : p.website ? (
-                      <a
-                        href={p.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
-                        style={{ background: "var(--navy)", color: "white", fontFamily: "var(--app-font-sans)" }}
-                      >
-                        Request Info
-                      </a>
-                    ) : null}
                   </div>
                 </div>
               );

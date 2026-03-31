@@ -1326,33 +1326,21 @@ paths:
     post:
       operationId: postReferralTrack
       tags: [referrals]
-      summary: Explicitly track a referral event (e.g. first plan generated)
+      summary: Trigger referral reward check for the authenticated member (e.g. after first plan is generated). Idempotent — safe to call multiple times.
       security:
         - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                referralCode:
-                  type: string
-                  description: The referral code to track against.
-                event:
-                  type: string
-                  description: The event type (e.g. "plan_generated").
-              required: [referralCode]
       responses:
         '200':
-          description: Track event recorded.
+          description: Referral reward check completed (reward issued if conditions were met).
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  ok:
-                    type: boolean
+                  message:
+                    type: string
+                    example: ok
+                required: [message]
         '401':
           $ref: '#/components/responses/Unauthorized'
 

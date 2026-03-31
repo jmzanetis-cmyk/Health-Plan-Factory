@@ -958,15 +958,8 @@ export type PostReferralRegister200 = {
   alreadyRegistered?: boolean;
 };
 
-export type PostReferralTrackBody = {
-  /** The referral code to track against. */
-  referralCode: string;
-  /** The event type (e.g. "plan_generated"). */
-  event?: string;
-};
-
 export type PostReferralTrack200 = {
-  ok?: boolean;
+  message: string;
 };
 
 export type GetReferralNewCreditSince200 = {

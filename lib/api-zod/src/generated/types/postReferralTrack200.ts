@@ -7,5 +7,5 @@
  */
 
 export type PostReferralTrack200 = {
-  ok?: boolean;
+  message: string;
 };

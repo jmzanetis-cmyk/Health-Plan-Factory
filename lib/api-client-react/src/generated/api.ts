@@ -73,7 +73,6 @@ import type {
   PostProviderUnlockBody,
   PostReferralRegister200,
   PostReferralTrack200,
-  PostReferralTrackBody,
   ProgressLogRecord,
   ProviderRecord,
   RecordModalitySession201,
@@ -4841,21 +4840,18 @@ export const usePostReferralRegister = <
 };
 
 /**
- * @summary Explicitly track a referral event (e.g. first plan generated)
+ * @summary Trigger referral reward check for the authenticated member (e.g. after first plan is generated). Idempotent — safe to call multiple times.
  */
 export const getPostReferralTrackUrl = () => {
   return `/api/referrals/track`;
 };
 
 export const postReferralTrack = async (
-  postReferralTrackBody: PostReferralTrackBody,
   options?: RequestInit,
 ): Promise<PostReferralTrack200> => {
   return customFetch<PostReferralTrack200>(getPostReferralTrackUrl(), {
     ...options,
     method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(postReferralTrackBody),
   });
 };
 
@@ -4866,14 +4862,14 @@ export const getPostReferralTrackMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postReferralTrack>>,
     TError,
-    { data: BodyType<PostReferralTrackBody> },
+    void,
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postReferralTrack>>,
   TError,
-  { data: BodyType<PostReferralTrackBody> },
+  void,
   TContext
 > => {
   const mutationKey = ["postReferralTrack"];
@@ -4887,11 +4883,9 @@ export const getPostReferralTrackMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postReferralTrack>>,
-    { data: BodyType<PostReferralTrackBody> }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return postReferralTrack(data, requestOptions);
+    void
+  > = () => {
+    return postReferralTrack(requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -4900,11 +4894,11 @@ export const getPostReferralTrackMutationOptions = <
 export type PostReferralTrackMutationResult = NonNullable<
   Awaited<ReturnType<typeof postReferralTrack>>
 >;
-export type PostReferralTrackMutationBody = BodyType<PostReferralTrackBody>;
+
 export type PostReferralTrackMutationError = ErrorType<UnauthorizedResponse>;
 
 /**
- * @summary Explicitly track a referral event (e.g. first plan generated)
+ * @summary Trigger referral reward check for the authenticated member (e.g. after first plan is generated). Idempotent — safe to call multiple times.
  */
 export const usePostReferralTrack = <
   TError = ErrorType<UnauthorizedResponse>,
@@ -4913,14 +4907,14 @@ export const usePostReferralTrack = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postReferralTrack>>,
     TError,
-    { data: BodyType<PostReferralTrackBody> },
+    void,
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof postReferralTrack>>,
   TError,
-  { data: BodyType<PostReferralTrackBody> },
+  void,
   TContext
 > => {
   return useMutation(getPostReferralTrackMutationOptions(options));
