@@ -38,6 +38,12 @@ import AdminUsers from "@/pages/admin/Users";
 import AdminProviders from "@/pages/admin/Providers";
 import AdminModalities from "@/pages/admin/Modalities";
 import AdminSettings from "@/pages/admin/Settings";
+import AdminEmployers from "@/pages/admin/Employers";
+
+import EmployerPortal from "@/pages/employer/EmployerPortal";
+import EmployerDashboard from "@/pages/employer/EmployerDashboard";
+import EmployerMembers from "@/pages/employer/EmployerMembers";
+import EmployerSettings from "@/pages/employer/EmployerSettings";
 
 import NotFound from "@/pages/not-found";
 
@@ -89,6 +95,13 @@ function AppRoutes() {
       <Route path="/admin/providers" element={<Layout><ProtectedRoute role="admin"><AdminProviders /></ProtectedRoute></Layout>} />
       <Route path="/admin/modalities" element={<Layout><ProtectedRoute role="admin"><AdminModalities /></ProtectedRoute></Layout>} />
       <Route path="/admin/settings" element={<Layout><ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute></Layout>} />
+      <Route path="/admin/employers" element={<Layout><ProtectedRoute role="admin"><AdminEmployers /></ProtectedRoute></Layout>} />
+
+      {/* Employer routes */}
+      <Route path="/employer" element={<Layout><EmployerPortal /></Layout>} />
+      <Route path="/employer/dashboard" element={<Layout><ProtectedRoute><EmployerDashboard /></ProtectedRoute></Layout>} />
+      <Route path="/employer/members" element={<Layout><ProtectedRoute><EmployerMembers /></ProtectedRoute></Layout>} />
+      <Route path="/employer/settings" element={<Layout><ProtectedRoute><EmployerSettings /></ProtectedRoute></Layout>} />
 
       {/* 404 */}
       <Route path="*" element={<Layout><NotFound /></Layout>} />

@@ -116,7 +116,8 @@ React + Vite frontend for the **Health Plan Factory** product — a premium edit
   - **Public lead-capture** (no auth, no Layout wrapper): `/onboarding`, `/plan`
   - Member (protected): `/dashboard`, `/providers`, `/bookmarks`, `/progress`, `/profile`
   - Provider (protected): `/provider/dashboard`, `/provider/signup`, `/provider/profile`, `/provider/leads`
-  - Admin (protected): `/admin/dashboard`, `/admin/users`, `/admin/providers`, `/admin/modalities`, `/admin/settings`
+  - Admin (protected): `/admin/dashboard`, `/admin/users`, `/admin/providers`, `/admin/modalities`, `/admin/settings`, `/admin/employers`
+  - Employer (public landing + protected portal): `/employer`, `/employer/dashboard`, `/employer/members`, `/employer/settings`
 - All marketing/member pages use `<Layout>` (Navbar + Footer + DisclaimerBar)
 - Disclaimer bar with 911/988/741741 crisis numbers sitewide
 

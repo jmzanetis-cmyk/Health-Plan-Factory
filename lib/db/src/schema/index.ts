@@ -36,6 +36,7 @@ export const memberRoleEnum = pgEnum("member_role", [
   "member",
   "provider",
   "admin",
+  "employer",
 ]);
 
 export const providerStatusEnum = pgEnum("provider_status", [
@@ -339,3 +340,91 @@ export const insertAdminSettingSchema = createInsertSchema(adminSettings).omit({
 });
 export type InsertAdminSetting = InferInsertModel<typeof adminSettings>;
 export type AdminSetting = InferSelectModel<typeof adminSettings>;
+
+// ── employers ─────────────────────────────────────────────────────────────────
+// B2B employer accounts that fund employee wellness stipends
+
+export const employers = pgTable(
+  "employers",
+  {
+    id: text("id").primaryKey(),
+    companyName: text("company_name").notNull(),
+    adminContactName: text("admin_contact_name").notNull(),
+    adminContactEmail: text("admin_contact_email").notNull(),
+    billingContactEmail: text("billing_contact_email"),
+    adminProfileId: text("admin_profile_id").references(() => profiles.id),
+    numberOfEmployees: integer("number_of_employees").notNull(),
+    stipendPerEmployee: integer("stipend_per_employee").notNull(), // cents/month
+    platformFeePercent: integer("platform_fee_percent").notNull().default(8),
+    inviteCode: text("invite_code").notNull(),
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    status: text("status").notNull().default("active"), // pending | active | canceled
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("employers_invite_code_idx").on(t.inviteCode)],
+);
+
+export const insertEmployerSchema = createInsertSchema(employers).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertEmployer = InferInsertModel<typeof employers>;
+export type Employer = InferSelectModel<typeof employers>;
+
+// ── employer_members ──────────────────────────────────────────────────────────
+// Links member profiles to employer accounts and tracks stipend usage
+
+export const employerMembers = pgTable(
+  "employer_members",
+  {
+    id: text("id").primaryKey(),
+    employerId: text("employer_id")
+      .notNull()
+      .references(() => employers.id, { onDelete: "cascade" }),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    monthlyBudget: integer("monthly_budget").notNull(), // cents
+    spentThisMonth: integer("spent_this_month").notNull().default(0), // cents
+    budgetMonth: text("budget_month"), // YYYY-MM
+    linkedAt: timestamp("linked_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("employer_members_pk").on(t.employerId, t.profileId),
+    index("employer_members_employer_idx").on(t.employerId),
+    index("employer_members_profile_idx").on(t.profileId),
+  ],
+);
+
+export const insertEmployerMemberSchema = createInsertSchema(employerMembers).omit({
+  linkedAt: true,
+});
+export type InsertEmployerMember = InferInsertModel<typeof employerMembers>;
+export type EmployerMember = InferSelectModel<typeof employerMembers>;
+
+// ── employer_modality_rules ────────────────────────────────────────────────────
+// Per-employer coverage rules for which modalities are stipend-eligible
+
+export const employerModalityRules = pgTable(
+  "employer_modality_rules",
+  {
+    id: text("id").primaryKey(),
+    employerId: text("employer_id")
+      .notNull()
+      .references(() => employers.id, { onDelete: "cascade" }),
+    modalityId: text("modality_id")
+      .notNull()
+      .references(() => modalities.id, { onDelete: "cascade" }),
+    covered: boolean("covered").notNull().default(true),
+  },
+  (t) => [
+    uniqueIndex("employer_modality_rules_pk").on(t.employerId, t.modalityId),
+    index("employer_modality_rules_employer_idx").on(t.employerId),
+  ],
+);
+
+export const insertEmployerModalityRuleSchema = createInsertSchema(employerModalityRules);
+export type InsertEmployerModalityRule = InferInsertModel<typeof employerModalityRules>;
+export type EmployerModalityRule = InferSelectModel<typeof employerModalityRules>;

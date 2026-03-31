@@ -168,7 +168,7 @@ importers:
     dependencies:
       '@anthropic-ai/sdk':
         specifier: ^0.80.0
-        version: 0.80.0(zod@4.3.6)
+        version: 0.80.0(zod@3.25.76)
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
@@ -196,6 +196,9 @@ importers:
       pino-http:
         specifier: ^10
         version: 10.5.0
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
     devDependencies:
       '@types/cookie-parser':
         specifier: ^1.4.10
@@ -6218,11 +6221,11 @@ snapshots:
 
   '@0no-co/graphql.web@1.2.0': {}
 
-  '@anthropic-ai/sdk@0.80.0(zod@4.3.6)':
+  '@anthropic-ai/sdk@0.80.0(zod@3.25.76)':
     dependencies:
       json-schema-to-ts: 3.1.1
     optionalDependencies:
-      zod: 4.3.6
+      zod: 3.25.76
 
   '@babel/code-frame@7.10.4':
     dependencies:
