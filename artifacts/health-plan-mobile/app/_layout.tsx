@@ -45,8 +45,10 @@ function AuthGate() {
   useEffect(() => {
     if (isLoading) return;
     const inTabs = segments[0] === "(tabs)";
+    const inSettings = segments[0] === "settings";
     const onLogin = segments[0] === "login";
-    if (!isAuthenticated && inTabs) {
+    const needsAuth = inTabs || inSettings;
+    if (!isAuthenticated && needsAuth) {
       router.replace("/login");
     } else if (isAuthenticated && onLogin) {
       router.replace("/(tabs)");

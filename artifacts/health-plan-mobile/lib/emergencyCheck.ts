@@ -12,18 +12,28 @@ const EMERGENCY_KEYWORDS = [
   "crisis",
 ];
 
+const COOLDOWN_MS = 30_000;
+let lastAlertTime = 0;
+let alertVisible = false;
+
 export function containsEmergencyKeyword(text: string): boolean {
   const lower = text.toLowerCase();
   return EMERGENCY_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
 export function showEmergencyAlert(): void {
+  const now = Date.now();
+  if (alertVisible || now - lastAlertTime < COOLDOWN_MS) return;
+
+  alertVisible = true;
+  lastAlertTime = now;
+
   Alert.alert(
     "We care about you",
     "If you are in crisis or need immediate help, please reach out:\n\n988 Suicide & Crisis Lifeline: Call or text 988\nEmergency Services: Call 911\nCrisis Text Line: Text HOME to 741741",
     [
-      { text: "Call 988", onPress: () => Linking.openURL("tel:988"), style: "default" },
-      { text: "Dismiss", style: "cancel" },
+      { text: "Call 988", onPress: () => { alertVisible = false; Linking.openURL("tel:988"); }, style: "default" },
+      { text: "Dismiss", onPress: () => { alertVisible = false; }, style: "cancel" },
     ]
   );
 }
