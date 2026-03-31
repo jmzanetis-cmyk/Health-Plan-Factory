@@ -11,6 +11,7 @@ import adminRouter from "./admin";
 import coachRouter from "./coach";
 import employersRouter from "./employers";
 import lmnRouter from "./lmn";
+import insightsRouter from "./insights";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(adminRouter);
 router.use(coachRouter);
 router.use(employersRouter);
 router.use(lmnRouter);
+router.use(insightsRouter);
 
 export default router;

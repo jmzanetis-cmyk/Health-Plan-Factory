@@ -42,6 +42,7 @@ import type {
   GetEmployerDashboard200,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
+  InsightsResponse,
   IntakeRecord,
   ListFavoritesParams,
   ListIntakesParams,
@@ -338,6 +339,166 @@ export const useCreateModality = <
   TContext
 > => {
   return useMutation(getCreateModalityMutationOptions(options));
+};
+
+/**
+ * Returns pre-computed outcome correlations derived from journal entries and session history. Auto-refreshes if the cache is stale (> 24 hours). Requires at least 14 journal entries to surface correlations; returns empty arrays with journalCount < 14 otherwise.
+
+ * @summary Get cached longitudinal outcome insights for the current member
+ */
+export const getGetMyInsightsUrl = () => {
+  return `/api/insights/mine`;
+};
+
+export const getMyInsights = async (
+  options?: RequestInit,
+): Promise<InsightsResponse> => {
+  return customFetch<InsightsResponse>(getGetMyInsightsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyInsightsQueryKey = () => {
+  return [`/api/insights/mine`] as const;
+};
+
+export const getGetMyInsightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyInsights>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyInsights>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyInsightsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyInsights>>> = ({
+    signal,
+  }) => getMyInsights({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyInsights>>
+>;
+export type GetMyInsightsQueryError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Get cached longitudinal outcome insights for the current member
+ */
+
+export function useGetMyInsights<
+  TData = Awaited<ReturnType<typeof getMyInsights>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyInsights>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyInsightsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Triggers a synchronous recomputation of outcome correlations from all journal and session data, replacing any cached result.
+
+ * @summary Force-refresh the member's insights cache
+ */
+export const getRefreshMyInsightsUrl = () => {
+  return `/api/insights/refresh`;
+};
+
+export const refreshMyInsights = async (
+  options?: RequestInit,
+): Promise<InsightsResponse> => {
+  return customFetch<InsightsResponse>(getRefreshMyInsightsUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getRefreshMyInsightsMutationOptions = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refreshMyInsights>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof refreshMyInsights>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["refreshMyInsights"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof refreshMyInsights>>,
+    void
+  > = () => {
+    return refreshMyInsights(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RefreshMyInsightsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof refreshMyInsights>>
+>;
+
+export type RefreshMyInsightsMutationError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Force-refresh the member's insights cache
+ */
+export const useRefreshMyInsights = <
+  TError = ErrorType<UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refreshMyInsights>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof refreshMyInsights>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getRefreshMyInsightsMutationOptions(options));
 };
 
 /**

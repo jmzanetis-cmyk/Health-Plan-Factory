@@ -1,5 +1,8 @@
 import { Router, Request, Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
+import { db } from "@workspace/db";
+import { insightsCache } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 const router = Router();
 
@@ -73,13 +76,39 @@ router.post("/coach", async (req: Request, res: Response) => {
   const client = new Anthropic({ apiKey });
 
   let systemWithContext = SYSTEM_PROMPT;
+  const contextParts: string[] = [];
+
   if (context) {
-    const parts: string[] = [];
-    if (context.streakDays !== undefined) parts.push(`Member's current streak: ${context.streakDays} days`);
-    if (context.recentMood !== undefined) parts.push(`Recent mood score: ${context.recentMood}/5`);
-    if (parts.length > 0) {
-      systemWithContext += `\n\nCurrent member context:\n${parts.join("\n")}`;
+    if (context.streakDays !== undefined) contextParts.push(`Member's current streak: ${context.streakDays} days`);
+    if (context.recentMood !== undefined) contextParts.push(`Recent mood score: ${context.recentMood}/5`);
+  }
+
+  // Enrich with top insights from the insights cache
+  try {
+    const profileId = req.user!.id;
+    const cached = await db
+      .select({ insights: insightsCache.insights, wellnessScore: insightsCache.wellnessScore })
+      .from(insightsCache)
+      .where(eq(insightsCache.profileId, profileId))
+      .limit(1);
+
+    if (cached.length > 0 && Array.isArray(cached[0].insights) && cached[0].insights.length > 0) {
+      const topInsights = cached[0].insights.slice(0, 3);
+      const insightLines = topInsights.map(
+        (ins: { modalityName: string; percentDiff: number; metric: string }) =>
+          `- ${ins.modalityName} correlates with ${ins.percentDiff}% improvement in ${ins.metric} scores`
+      );
+      contextParts.push(`Per member data (longitudinal correlations):\n${insightLines.join("\n")}`);
     }
+    if (cached.length > 0 && cached[0].wellnessScore != null) {
+      contextParts.push(`Current wellness score: ${cached[0].wellnessScore}/100`);
+    }
+  } catch {
+    // Non-blocking — coach still works without insights context
+  }
+
+  if (contextParts.length > 0) {
+    systemWithContext += `\n\nCurrent member context:\n${contextParts.join("\n")}`;
   }
 
   res.setHeader("Content-Type", "text/event-stream");

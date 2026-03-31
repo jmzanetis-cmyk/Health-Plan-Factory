@@ -72,6 +72,66 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface InsightSparklinePoint {
+  date: string;
+  value: number;
+  hasSession: boolean;
+}
+
+export type InsightCardMetric =
+  (typeof InsightCardMetric)[keyof typeof InsightCardMetric];
+
+export const InsightCardMetric = {
+  pain: "pain",
+  energy: "energy",
+  mood: "mood",
+  rating: "rating",
+} as const;
+
+export interface InsightCard {
+  modalityId: string;
+  modalityName: string;
+  emoji: string;
+  metric: InsightCardMetric;
+  /** Plain-language correlation sentence shown on the insight card */
+  headline: string;
+  /** Average metric score on days with a session for this modality */
+  withSessionAvg: number;
+  /** Average metric score on days without a session for this modality */
+  withoutSessionAvg: number;
+  /** Improvement percentage (positive = better outcome with sessions) */
+  percentDiff: number;
+  sessionCount: number;
+  sparklineData: InsightSparklinePoint[];
+  /** Evidence-based explanation for the correlation */
+  whyItMatters: string;
+}
+
+export interface AttentionItem {
+  modalityId: string;
+  modalityName: string;
+  emoji: string;
+  /** Human-readable explanation of why this modality needs attention */
+  message: string;
+  daysSinceLastSession?: number | null;
+}
+
+export interface InsightsResponse {
+  id?: string;
+  profileId?: string;
+  /** Top positive outcome correlations, sorted by impact */
+  insights: InsightCard[];
+  /** Plan modalities with zero sessions in the last 30 days */
+  attentionItems: AttentionItem[];
+  /** Composite 0–100 score incorporating journal ratings, session completion rate, and trend direction */
+  wellnessScore?: number | null;
+  /** Total journal entries used for computation */
+  journalCount: number;
+  /** Total session logs */
+  sessionCount: number;
+  refreshedAt?: string;
+}
+
 export type ErrorResponseDetails = { [key: string]: unknown };
 
 export interface ErrorResponse {

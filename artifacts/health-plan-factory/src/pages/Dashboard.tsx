@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { LayoutDashboard, MapPin, TrendingUp, BookmarkIcon, Plus, ArrowRight, Loader2, DollarSign } from "lucide-react";
+import { LayoutDashboard, MapPin, TrendingUp, BookmarkIcon, Plus, ArrowRight, Loader2, DollarSign, Sparkles, AlertTriangle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -36,6 +36,35 @@ interface Favorite {
   providerId: string;
 }
 
+interface InsightCard {
+  modalityId: string;
+  modalityName: string;
+  emoji: string;
+  metric: "pain" | "energy" | "mood" | "rating";
+  headline: string;
+  withSessionAvg: number;
+  withoutSessionAvg: number;
+  percentDiff: number;
+  sessionCount: number;
+  whyItMatters: string;
+}
+
+interface AttentionItem {
+  modalityId: string;
+  modalityName: string;
+  emoji: string;
+  message: string;
+  daysSinceLastSession: number | null;
+}
+
+interface InsightsData {
+  insights: InsightCard[];
+  attentionItems: AttentionItem[];
+  wellnessScore: number | null;
+  journalCount: number;
+  sessionCount: number;
+}
+
 const cardStyle = {
   background: "white",
   border: "1px solid rgba(27,45,79,0.08)",
@@ -60,6 +89,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [lmnSavings, setLmnSavings] = useState<number | null>(null);
   const [lmnEligibleCount, setLmnEligibleCount] = useState(0);
+  const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
 
   // Auto-redeem employer invite code stored during signup
   useEffect(() => {
@@ -114,6 +144,12 @@ export default function Dashboard() {
         if (Array.isArray(d?.eligibleItems)) setLmnEligibleCount(d.eligibleItems.length);
       })
       .catch(() => {});
+
+    // Fetch longitudinal insights (non-blocking — shows after journal data exists)
+    fetch(`${BASE}/api/insights/mine`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setInsightsData(d); })
+      .catch(() => {});
   }, [user]);
 
   if (authLoading) {
@@ -166,8 +202,8 @@ export default function Dashboard() {
           {[
             { label: "Active Plan", value: plan ? "Yes" : "None", icon: <LayoutDashboard size={18} /> },
             { label: "Monthly Budget", value: plan ? `$${plan.budget}` : "—", icon: <TrendingUp size={18} /> },
-            { label: "Saved Providers", value: favorites.length.toString(), icon: <BookmarkIcon size={18} /> },
-            { label: "Wellness Logs", value: progressLogs.length.toString(), icon: <MapPin size={18} /> },
+            { label: "Wellness Score", value: insightsData?.wellnessScore != null ? `${insightsData.wellnessScore}/100` : "—", icon: <Sparkles size={18} /> },
+            { label: "Wellness Logs", value: (insightsData?.journalCount ?? progressLogs.length).toString(), icon: <MapPin size={18} /> },
           ].map((s) => (
             <div key={s.label} className="p-4 flex flex-col gap-2" style={cardStyle}>
               <div className="flex items-center gap-2" style={{ color: "var(--hpf-amber)" }}>
@@ -370,6 +406,91 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+
+        {/* ── Longitudinal Insights Sections ───────────────────────────────── */}
+        {/* Only shown after 14+ journal entries */}
+        {insightsData && insightsData.journalCount >= 14 && insightsData.insights.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles size={16} style={{ color: "var(--sage)" }} />
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+                What's Working for You
+              </h2>
+              <Link to="/progress" className="text-xs font-medium no-underline ml-auto" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                View all insights →
+              </Link>
+            </div>
+            <div className="flex flex-col gap-3">
+              {insightsData.insights.slice(0, 3).map((ins) => (
+                <div key={ins.modalityId + ins.metric} className="p-4 rounded-2xl flex items-start gap-4" style={{ background: "white", border: "1px solid rgba(61,107,82,0.15)" }}>
+                  <span className="text-2xl mt-0.5 flex-shrink-0">{ins.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-snug" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                      {ins.headline}
+                    </p>
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                      {ins.whyItMatters}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <div className="text-lg font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--sage)" }}>
+                      {ins.percentDiff}%
+                    </div>
+                    <div className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                      improvement
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {insightsData && insightsData.journalCount >= 14 && insightsData.attentionItems.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle size={16} style={{ color: "var(--hpf-amber)" }} />
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+                What Might Need Attention
+              </h2>
+            </div>
+            <div className="flex flex-col gap-3">
+              {insightsData.attentionItems.slice(0, 3).map((item) => (
+                <div key={item.modalityId} className="p-4 rounded-2xl flex items-center gap-4" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.15)" }}>
+                  <span className="text-2xl flex-shrink-0">{item.emoji}</span>
+                  <p className="text-sm flex-1" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                    {item.message}
+                  </p>
+                  <Link
+                    to={`/discover?modality=${item.modalityId}`}
+                    className="text-xs font-semibold no-underline flex-shrink-0 px-3 py-1.5 rounded-lg"
+                    style={{ background: "var(--hpf-amber)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                  >
+                    Book session →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Teaser: < 14 entries prompt */}
+        {insightsData && insightsData.journalCount < 14 && insightsData.journalCount > 0 && (
+          <div className="p-5 rounded-2xl flex items-center gap-5" style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.12)" }}>
+            <Sparkles size={32} style={{ color: "var(--sage)", flexShrink: 0 }} />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                Personalized insights unlock at 14 journal entries
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                You have {insightsData.journalCount} so far — {14 - insightsData.journalCount} more to go. HPF will then surface correlations between your sessions and outcomes.
+              </p>
+            </div>
+            <Link to="/progress" className="text-xs font-semibold no-underline flex-shrink-0 px-3 py-1.5 rounded-lg" style={{ background: "var(--sage)", color: "white", fontFamily: "var(--app-font-sans)" }}>
+              Log now →
+            </Link>
+          </div>
+        )}
 
         {/* Saved providers mini-section */}
         {(loading || favorites.length > 0) && (

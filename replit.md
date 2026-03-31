@@ -169,3 +169,38 @@ The GitHub OAuth connection is wired via the Replit integrations system (GitHub 
 ### Mobile App Icon Note
 
 `artifacts/health-plan-mobile/assets/images/icon.png` was resized from **1024×1024 to 512×512** (Task #13) to work within the Replit connectors proxy's ~1 MB request body limit during the initial GitHub push. The 512×512 size is fully functional for development and Expo preview builds. For App Store submission (iOS recommends 1024×1024), replace the icon with a higher-resolution original and push via standard git.
+
+## Longitudinal Outcome Insights Engine (Task #10)
+
+### DB — `insights_cache` table (`lib/db/src/schema/index.ts`)
+- Stores `InsightCard[]` JSON, `AttentionItem[]` JSON, `wellnessScore`, `journalCount`, `sessionCount`, `refreshedAt` per profile
+- Keyed by `profileId` (varchar FK → profiles.id), upserted on refresh
+
+### API Routes (`artifacts/api-server/src/routes/insights.ts`)
+- `GET /api/insights/mine` — returns cached insights; auto-recomputes if cache is >24 hours stale
+- `POST /api/insights/refresh` — force-recomputes and updates cache
+- **Correlation engine:** joins `journal_logs` with `modality_sessions` by date; computes per-modality per-metric correlations (pain, energy, mood, rating) using days-with-session vs days-without averages; generates 90-day sparkline data with `hasSession` flags
+- **Wellness score (0–100):** `base` (avg rating / 10 × 70) + `completion` (active modalities with sessions / plan modalities × 20) + `trend` (+10 if last-7-day avg > prev-7-day avg, +5 if equal)
+- **Unlock threshold:** 14+ journal entries required for correlation computation; returns empty arrays otherwise
+- **Attention items:** plan modalities with 0 sessions in the last 30 days
+
+### Coach enrichment (`artifacts/api-server/src/routes/coach.ts`)
+- Top-3 positive insights injected into system prompt for context-aware coaching responses
+
+### Dashboard (`artifacts/health-plan-factory/src/pages/Dashboard.tsx`)
+- Wellness Score stat card added to stats row (shows 0–100 or "–")
+- "What's Working for You" section: top 3 insight cards with correlation headlines; locked/teaser state if <14 entries
+- "What Might Need Attention" section: attention item CTA cards for neglected modalities
+
+### Progress Page (`artifacts/health-plan-factory/src/pages/Progress.tsx`)
+- Full insights panel with Recharts `ComposedChart` sparklines (metric line + session dot markers)
+- "Book a Session" CTAs link to `/discover?modality=:id`
+- "Share with Doctor" print section (`.print-only`, hidden on screen)
+
+### Print CSS
+- Global `.print-only` / `.no-print` utility classes added to `src/index.css`
+
+### OpenAPI spec (`lib/api-spec/openapi.yaml`)
+- `GET /insights/mine` and `POST /insights/refresh` endpoints documented
+- New schemas: `InsightSparklinePoint`, `InsightCard`, `AttentionItem`, `InsightsResponse`
+- Orval codegen regenerated after spec update

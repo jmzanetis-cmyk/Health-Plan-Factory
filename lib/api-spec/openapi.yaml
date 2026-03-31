@@ -95,6 +95,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /insights/mine:
+    get:
+      operationId: getMyInsights
+      tags: [insights]
+      summary: Get cached longitudinal outcome insights for the current member
+      description: >
+        Returns pre-computed outcome correlations derived from journal entries and
+        session history. Auto-refreshes if the cache is stale (> 24 hours).
+        Requires at least 14 journal entries to surface correlations; returns empty
+        arrays with journalCount < 14 otherwise.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Insights response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /insights/refresh:
+    post:
+      operationId: refreshMyInsights
+      tags: [insights]
+      summary: Force-refresh the member's insights cache
+      description: >
+        Triggers a synchronous recomputation of outcome correlations from all
+        journal and session data, replacing any cached result.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Fresh insights response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /modalities/{id}:
     get:
       operationId: getModalityById
@@ -1341,6 +1383,102 @@ components:
           type: string
       required:
         - status
+
+    InsightSparklinePoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        value:
+          type: number
+        hasSession:
+          type: boolean
+      required: [date, value, hasSession]
+
+    InsightCard:
+      type: object
+      properties:
+        modalityId:
+          type: string
+        modalityName:
+          type: string
+        emoji:
+          type: string
+        metric:
+          type: string
+          enum: [pain, energy, mood, rating]
+        headline:
+          type: string
+          description: Plain-language correlation sentence shown on the insight card
+        withSessionAvg:
+          type: number
+          description: Average metric score on days with a session for this modality
+        withoutSessionAvg:
+          type: number
+          description: Average metric score on days without a session for this modality
+        percentDiff:
+          type: integer
+          description: Improvement percentage (positive = better outcome with sessions)
+        sessionCount:
+          type: integer
+        sparklineData:
+          type: array
+          items:
+            $ref: "#/components/schemas/InsightSparklinePoint"
+        whyItMatters:
+          type: string
+          description: Evidence-based explanation for the correlation
+      required: [modalityId, modalityName, emoji, metric, headline, withSessionAvg, withoutSessionAvg, percentDiff, sessionCount, sparklineData, whyItMatters]
+
+    AttentionItem:
+      type: object
+      properties:
+        modalityId:
+          type: string
+        modalityName:
+          type: string
+        emoji:
+          type: string
+        message:
+          type: string
+          description: Human-readable explanation of why this modality needs attention
+        daysSinceLastSession:
+          type: integer
+          nullable: true
+      required: [modalityId, modalityName, emoji, message]
+
+    InsightsResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        profileId:
+          type: string
+        insights:
+          type: array
+          items:
+            $ref: "#/components/schemas/InsightCard"
+          description: Top positive outcome correlations, sorted by impact
+        attentionItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttentionItem"
+          description: Plan modalities with zero sessions in the last 30 days
+        wellnessScore:
+          type: integer
+          nullable: true
+          description: Composite 0–100 score incorporating journal ratings, session completion rate, and trend direction
+        journalCount:
+          type: integer
+          description: Total journal entries used for computation
+        sessionCount:
+          type: integer
+          description: Total session logs
+        refreshedAt:
+          type: string
+          format: date-time
+      required: [insights, attentionItems, journalCount, sessionCount]
 
     ErrorResponse:
       type: object

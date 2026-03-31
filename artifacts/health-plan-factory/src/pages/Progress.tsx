@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceDot,
 } from "recharts";
-import { Loader2, Plus, CheckCircle, BadgeCheck } from "lucide-react";
+import { Loader2, Plus, CheckCircle, BadgeCheck, Sparkles, AlertTriangle, Printer, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -39,6 +40,37 @@ interface ProgressLog {
 
 function SkeletonBlock({ h = 16 }: { h?: number }) {
   return <div className="animate-pulse rounded-md" style={{ height: h, background: "rgba(27,45,79,0.06)" }} />;
+}
+
+interface InsightCard {
+  modalityId: string;
+  modalityName: string;
+  emoji: string;
+  metric: "pain" | "energy" | "mood" | "rating";
+  headline: string;
+  withSessionAvg: number;
+  withoutSessionAvg: number;
+  percentDiff: number;
+  sessionCount: number;
+  sparklineData: Array<{ date: string; value: number; hasSession: boolean }>;
+  whyItMatters: string;
+}
+
+interface AttentionItem {
+  modalityId: string;
+  modalityName: string;
+  emoji: string;
+  message: string;
+  daysSinceLastSession: number | null;
+}
+
+interface InsightsData {
+  insights: InsightCard[];
+  attentionItems: AttentionItem[];
+  wellnessScore: number | null;
+  journalCount: number;
+  sessionCount: number;
+  refreshedAt?: string;
 }
 
 function MetricInput({ label, name, register }: { label: string; name: keyof LogForm; register: ReturnType<typeof useForm<LogForm>>["register"] }) {
@@ -77,6 +109,20 @@ export default function Progress() {
   const [isEnrolledWithEmployer, setIsEnrolledWithEmployer] = useState(false);
   const [lmnStatus, setLmnStatus] = useState<string>("none");
   const [lmnEligibleIds, setLmnEligibleIds] = useState<string[]>([]);
+  const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+
+  const fetchInsights = (refresh = false) => {
+    if (!user) return;
+    setInsightsLoading(true);
+    const url = refresh ? `${BASE}/api/insights/refresh` : `${BASE}/api/insights/mine`;
+    const method = refresh ? "POST" : "GET";
+    fetch(url, { method, credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setInsightsData(d); })
+      .catch(() => {})
+      .finally(() => setInsightsLoading(false));
+  };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<LogForm>({
     resolver: zodResolver(logSchema),
@@ -107,6 +153,9 @@ export default function Progress() {
         }
       })
       .catch(() => {});
+    // Fetch longitudinal insights
+    fetchInsights(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const onSubmit = async (data: LogForm) => {
@@ -401,6 +450,216 @@ export default function Progress() {
             </div>
           )}
         </div>
+
+        {/* ── Longitudinal Outcome Insights Panel ─────────────────────────── */}
+        <div className="p-6 flex flex-col gap-5" style={cardStyle}>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} style={{ color: "var(--sage)" }} />
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+                Outcome Insights
+              </h2>
+              {insightsData?.wellnessScore != null && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(61,107,82,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
+                  Wellness Score: {insightsData.wellnessScore}/100
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => fetchInsights(true)}
+              disabled={insightsLoading}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
+              style={{ background: "rgba(27,45,79,0.06)", color: "var(--navy)", border: "none", cursor: insightsLoading ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+            >
+              <RefreshCw size={12} className={insightsLoading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
+
+          {insightsLoading && !insightsData && (
+            <div className="flex flex-col gap-3">
+              <SkeletonBlock h={100} />
+              <SkeletonBlock h={100} />
+            </div>
+          )}
+
+          {!insightsLoading && insightsData && insightsData.journalCount < 14 && (
+            <div className="py-6 text-center flex flex-col items-center gap-2">
+              <Sparkles size={32} style={{ color: "var(--sage)", opacity: 0.4 }} />
+              <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                Personalized insights unlock at 14 journal entries
+              </p>
+              <p className="text-xs max-w-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                You have {insightsData.journalCount} so far. Once you hit 14, HPF will surface correlations between your modality sessions and your health outcomes.
+              </p>
+            </div>
+          )}
+
+          {!insightsLoading && insightsData && insightsData.journalCount >= 14 && insightsData.insights.length === 0 && (
+            <p className="text-sm py-4 text-center" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+              No statistically meaningful correlations yet — keep logging sessions and wellness metrics to build your dataset.
+            </p>
+          )}
+
+          {insightsData && insightsData.journalCount >= 14 && insightsData.insights.length > 0 && (
+            <div className="flex flex-col gap-6">
+              <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                Correlations are observational, not clinical claims. Consult a licensed provider before making health decisions.
+              </p>
+              {insightsData.insights.map((ins) => (
+                <div key={ins.modalityId + ins.metric} className="flex flex-col gap-3 pb-6" style={{ borderBottom: "1px solid rgba(27,45,79,0.06)" }}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{ins.emoji}</span>
+                      <h3 className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                        {ins.modalityName}
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(61,107,82,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
+                        {ins.percentDiff}% improvement
+                      </span>
+                    </div>
+                    <Link
+                      to={`/discover?modality=${ins.modalityId}`}
+                      className="text-xs font-semibold no-underline px-3 py-1.5 rounded-lg flex-shrink-0"
+                      style={{ background: "var(--navy)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                    >
+                      Book next session →
+                    </Link>
+                  </div>
+                  <p className="text-sm leading-snug" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                    {ins.headline}
+                  </p>
+                  {/* Recharts sparkline with session markers */}
+                  {ins.sparklineData.length >= 3 && (
+                    <div style={{ height: 100 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={ins.sparklineData} margin={{ top: 5, right: 8, left: -28, bottom: 0 }}>
+                          <XAxis dataKey="date" hide />
+                          <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
+                          <Tooltip
+                            contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 11, borderRadius: 6, border: "1px solid rgba(27,45,79,0.12)", padding: "4px 8px" }}
+                            formatter={(v: number) => [`${v}/10`, ins.metric.charAt(0).toUpperCase() + ins.metric.slice(1)]}
+                            labelFormatter={(label: string) => label}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="var(--sage)"
+                            strokeWidth={2}
+                            dot={(dotProps: { cx: number; cy: number; payload: { hasSession: boolean }; index: number }) => {
+                              const { cx, cy, payload, index } = dotProps;
+                              if (payload.hasSession) {
+                                return <circle key={index} cx={cx} cy={cy} r={5} fill="var(--hpf-amber)" stroke="white" strokeWidth={1.5} />;
+                              }
+                              return <circle key={index} cx={cx} cy={cy} r={2.5} fill="var(--sage)" />;
+                            }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                      <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "var(--hpf-amber)", verticalAlign: "middle", marginRight: 4 }} />
+                        Session days · Line = {ins.metric} score over time
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                    <strong>Why it matters:</strong> {ins.whyItMatters}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Attention items */}
+          {insightsData && insightsData.journalCount >= 14 && insightsData.attentionItems.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={14} style={{ color: "var(--hpf-amber)" }} />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  What Might Need Attention
+                </h3>
+              </div>
+              <div className="flex flex-col gap-2">
+                {insightsData.attentionItems.map((item) => (
+                  <div key={item.modalityId} className="flex items-center gap-3 px-3 py-3 rounded-xl" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.12)" }}>
+                    <span className="text-lg flex-shrink-0">{item.emoji}</span>
+                    <p className="text-sm flex-1" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>{item.message}</p>
+                    <Link
+                      to={`/discover?modality=${item.modalityId}`}
+                      className="text-xs font-semibold no-underline flex-shrink-0 px-2.5 py-1.5 rounded-lg"
+                      style={{ background: "var(--hpf-amber)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                    >
+                      Book →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Share with My Doctor ─────────────────────────────────────────── */}
+        {insightsData && insightsData.insights.length > 0 && (
+          <div>
+            <div className="no-print p-5 rounded-2xl flex items-center justify-between gap-4 flex-wrap" style={{ background: "rgba(27,45,79,0.04)", border: "1px solid rgba(27,45,79,0.08)" }}>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  Share your outcomes with your doctor
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                  Print a clinical summary of your wellness data and outcome correlations.
+                </p>
+              </div>
+              <button
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline"
+                style={{ background: "var(--navy)", color: "white", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                <Printer size={14} /> Print / Save PDF
+              </button>
+            </div>
+
+            {/* Print-only clinical summary */}
+            <div className="print-only" style={{ padding: "32px", fontFamily: "var(--app-font-sans)" }}>
+              <div style={{ borderBottom: "2px solid #1b2d4f", paddingBottom: 16, marginBottom: 24 }}>
+                <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: "#1b2d4f", margin: 0 }}>
+                  HealthPlanFactory — Wellness Outcomes Report
+                </h1>
+                <p style={{ fontSize: 12, color: "#666", margin: "4px 0 0" }}>
+                  Generated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · {insightsData.journalCount} journal entries · {insightsData.sessionCount} sessions logged
+                </p>
+              </div>
+
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: "#1b2d4f", marginBottom: 12 }}>Modality–Outcome Correlations</h2>
+              {insightsData.insights.map((ins) => (
+                <div key={ins.modalityId + ins.metric} style={{ marginBottom: 18, paddingBottom: 16, borderBottom: "1px solid #eee" }}>
+                  <p style={{ fontWeight: 700, fontSize: 13, color: "#1b2d4f", margin: "0 0 4px" }}>
+                    {ins.emoji} {ins.modalityName} — {ins.percentDiff}% improvement in {ins.metric}
+                  </p>
+                  <p style={{ fontSize: 12, color: "#444", margin: "0 0 4px", lineHeight: 1.5 }}>{ins.headline}</p>
+                  <p style={{ fontSize: 11, color: "#666", margin: 0, lineHeight: 1.5 }}>
+                    With sessions: {ins.withSessionAvg}/10 · Without sessions: {ins.withoutSessionAvg}/10 · {ins.sessionCount} sessions logged
+                  </p>
+                </div>
+              ))}
+
+              {insightsData.attentionItems.length > 0 && (
+                <>
+                  <h2 style={{ fontSize: 14, fontWeight: 700, color: "#1b2d4f", margin: "16px 0 12px" }}>Modalities Recommended But Not Yet Started</h2>
+                  {insightsData.attentionItems.map((item) => (
+                    <p key={item.modalityId} style={{ fontSize: 12, color: "#444", margin: "0 0 6px" }}>
+                      {item.emoji} {item.modalityName} — {item.message}
+                    </p>
+                  ))}
+                </>
+              )}
+
+              <p style={{ fontSize: 10, color: "#999", marginTop: 32, lineHeight: 1.6 }}>
+                <strong>Disclaimer:</strong> HealthPlanFactory is a wellness optimization platform, not a licensed medical provider. The correlations presented are observational and based on self-reported data. They are not clinical diagnoses or medical recommendations. Please consult a licensed healthcare provider before making changes to your healthcare routine. Data generated on {new Date().toLocaleDateString()}.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -82,6 +82,160 @@ export const CreateModalityBody = zod.object({
 });
 
 /**
+ * Returns pre-computed outcome correlations derived from journal entries and session history. Auto-refreshes if the cache is stale (> 24 hours). Requires at least 14 journal entries to surface correlations; returns empty arrays with journalCount < 14 otherwise.
+
+ * @summary Get cached longitudinal outcome insights for the current member
+ */
+export const GetMyInsightsResponse = zod.object({
+  id: zod.string().optional(),
+  profileId: zod.string().optional(),
+  insights: zod
+    .array(
+      zod.object({
+        modalityId: zod.string(),
+        modalityName: zod.string(),
+        emoji: zod.string(),
+        metric: zod.enum(["pain", "energy", "mood", "rating"]),
+        headline: zod
+          .string()
+          .describe(
+            "Plain-language correlation sentence shown on the insight card",
+          ),
+        withSessionAvg: zod
+          .number()
+          .describe(
+            "Average metric score on days with a session for this modality",
+          ),
+        withoutSessionAvg: zod
+          .number()
+          .describe(
+            "Average metric score on days without a session for this modality",
+          ),
+        percentDiff: zod
+          .number()
+          .describe(
+            "Improvement percentage (positive = better outcome with sessions)",
+          ),
+        sessionCount: zod.number(),
+        sparklineData: zod.array(
+          zod.object({
+            date: zod.coerce.date(),
+            value: zod.number(),
+            hasSession: zod.boolean(),
+          }),
+        ),
+        whyItMatters: zod
+          .string()
+          .describe("Evidence-based explanation for the correlation"),
+      }),
+    )
+    .describe("Top positive outcome correlations, sorted by impact"),
+  attentionItems: zod
+    .array(
+      zod.object({
+        modalityId: zod.string(),
+        modalityName: zod.string(),
+        emoji: zod.string(),
+        message: zod
+          .string()
+          .describe(
+            "Human-readable explanation of why this modality needs attention",
+          ),
+        daysSinceLastSession: zod.number().nullish(),
+      }),
+    )
+    .describe("Plan modalities with zero sessions in the last 30 days"),
+  wellnessScore: zod
+    .number()
+    .nullish()
+    .describe(
+      "Composite 0–100 score incorporating journal ratings, session completion rate, and trend direction",
+    ),
+  journalCount: zod
+    .number()
+    .describe("Total journal entries used for computation"),
+  sessionCount: zod.number().describe("Total session logs"),
+  refreshedAt: zod.coerce.date().optional(),
+});
+
+/**
+ * Triggers a synchronous recomputation of outcome correlations from all journal and session data, replacing any cached result.
+
+ * @summary Force-refresh the member's insights cache
+ */
+export const RefreshMyInsightsResponse = zod.object({
+  id: zod.string().optional(),
+  profileId: zod.string().optional(),
+  insights: zod
+    .array(
+      zod.object({
+        modalityId: zod.string(),
+        modalityName: zod.string(),
+        emoji: zod.string(),
+        metric: zod.enum(["pain", "energy", "mood", "rating"]),
+        headline: zod
+          .string()
+          .describe(
+            "Plain-language correlation sentence shown on the insight card",
+          ),
+        withSessionAvg: zod
+          .number()
+          .describe(
+            "Average metric score on days with a session for this modality",
+          ),
+        withoutSessionAvg: zod
+          .number()
+          .describe(
+            "Average metric score on days without a session for this modality",
+          ),
+        percentDiff: zod
+          .number()
+          .describe(
+            "Improvement percentage (positive = better outcome with sessions)",
+          ),
+        sessionCount: zod.number(),
+        sparklineData: zod.array(
+          zod.object({
+            date: zod.coerce.date(),
+            value: zod.number(),
+            hasSession: zod.boolean(),
+          }),
+        ),
+        whyItMatters: zod
+          .string()
+          .describe("Evidence-based explanation for the correlation"),
+      }),
+    )
+    .describe("Top positive outcome correlations, sorted by impact"),
+  attentionItems: zod
+    .array(
+      zod.object({
+        modalityId: zod.string(),
+        modalityName: zod.string(),
+        emoji: zod.string(),
+        message: zod
+          .string()
+          .describe(
+            "Human-readable explanation of why this modality needs attention",
+          ),
+        daysSinceLastSession: zod.number().nullish(),
+      }),
+    )
+    .describe("Plan modalities with zero sessions in the last 30 days"),
+  wellnessScore: zod
+    .number()
+    .nullish()
+    .describe(
+      "Composite 0–100 score incorporating journal ratings, session completion rate, and trend direction",
+    ),
+  journalCount: zod
+    .number()
+    .describe("Total journal entries used for computation"),
+  sessionCount: zod.number().describe("Total session logs"),
+  refreshedAt: zod.coerce.date().optional(),
+});
+
+/**
  * Returns full modality detail including evidence summary, meta description, and related modality IDs. Used by the public /modalities/:slug evidence library page.
 
  * @summary Get a modality by ID (slug)

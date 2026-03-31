@@ -468,3 +468,53 @@ export const insertLmnRequestSchema = createInsertSchema(lmnRequests).omit({
 });
 export type InsertLmnRequest = InferInsertModel<typeof lmnRequests>;
 export type LmnRequest = InferSelectModel<typeof lmnRequests>;
+
+// ── insights_cache ────────────────────────────────────────────────────────────
+// Pre-computed longitudinal outcome insights per member.
+// Refreshed on demand (stale if > 24 hours) or by a weekly job.
+
+export type InsightCard = {
+  modalityId: string;
+  modalityName: string;
+  emoji: string;
+  metric: "pain" | "energy" | "mood" | "rating";
+  headline: string;
+  withSessionAvg: number;
+  withoutSessionAvg: number;
+  percentDiff: number; // positive = improvement
+  sessionCount: number;
+  sparklineData: Array<{ date: string; value: number; hasSession: boolean }>;
+  whyItMatters: string;
+};
+
+export type AttentionItem = {
+  modalityId: string;
+  modalityName: string;
+  emoji: string;
+  message: string;
+  daysSinceLastSession: number | null;
+};
+
+export const insightsCache = pgTable(
+  "insights_cache",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    insights: jsonb("insights").notNull().default([]).$type<InsightCard[]>(),
+    attentionItems: jsonb("attention_items").notNull().default([]).$type<AttentionItem[]>(),
+    wellnessScore: integer("wellness_score"),
+    journalCount: integer("journal_count").notNull().default(0),
+    sessionCount: integer("session_count").notNull().default(0),
+    refreshedAt: timestamp("refreshed_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("insights_cache_profile_idx").on(t.profileId)],
+);
+
+export const insertInsightsCacheSchema = createInsertSchema(insightsCache).omit({
+  createdAt: true,
+});
+export type InsertInsightsCache = InferInsertModel<typeof insightsCache>;
+export type InsightsCache = InferSelectModel<typeof insightsCache>;
