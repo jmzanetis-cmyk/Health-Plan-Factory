@@ -1,8 +1,9 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { modalities, employerMembers, employerModalityRules, planProgressLogs } from "@workspace/db";
+import { modalities, employerMembers, employerModalityRules, planProgressLogs, lmnRequests, profiles, plans, planItems } from "@workspace/db";
 import type { Modality } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
+import crypto from "crypto";
 import { z } from "zod";
 import {
   ListModalitiesQueryParams,
@@ -167,6 +168,7 @@ router.post("/modalities/:id/sessions", async (req, res) => {
         .returning();
     });
 
+    // Send response immediately — don't await the LMN auto-draft trigger
     res.status(201).json({
       id: log.id,
       modalityId: log.modalityId,
@@ -174,6 +176,96 @@ router.post("/modalities/:id/sessions", async (req, res) => {
       employerCoveredCents: log.employerCoveredCents,
       outOfPocketCents: log.outOfPocketCents,
       createdAt: log.createdAt,
+    });
+
+    // ── Auto-create LMN draft after booking an LMN-eligible (DPC/medical) session ──
+    // Fire-and-forget: runs after response is sent to avoid latency impact.
+    setImmediate(async () => {
+      try {
+        const [modalityRow] = await db
+          .select({ lmnEligible: modalities.lmnEligible })
+          .from(modalities)
+          .where(eq(modalities.id, modalityId));
+
+        if (!modalityRow?.lmnEligible) return;
+
+        // Only auto-create if the member has no existing LMN request
+        const [existing] = await db
+          .select({ id: lmnRequests.id })
+          .from(lmnRequests)
+          .where(eq(lmnRequests.profileId, profileId))
+          .limit(1);
+
+        if (existing) return; // already has a draft
+
+        // Gather member name and most recent plan's LMN-eligible items
+        const [profile] = await db
+          .select({ displayName: profiles.displayName })
+          .from(profiles)
+          .where(eq(profiles.id, profileId));
+
+        const [latestPlan] = await db
+          .select({ id: plans.id })
+          .from(plans)
+          .where(eq(plans.profileId, profileId))
+          .orderBy(desc(plans.createdAt))
+          .limit(1);
+
+        let eligibleNames: string[] = [];
+        let eligibleIds: string[] = [];
+        let estimatedAnnualSavings = 0;
+
+        if (latestPlan) {
+          const items = await db
+            .select({
+              modalityId: planItems.modalityId,
+              name: modalities.name,
+              estimatedMonthlyCost: planItems.estimatedMonthlyCost,
+              lmnEligible: modalities.lmnEligible,
+            })
+            .from(planItems)
+            .innerJoin(modalities, eq(planItems.modalityId, modalities.id))
+            .where(eq(planItems.planId, latestPlan.id));
+
+          const eligible = items.filter((i) => i.lmnEligible);
+          eligibleNames = eligible.map((i) => i.name);
+          eligibleIds = eligible.map((i) => i.modalityId);
+          estimatedAnnualSavings = eligible.reduce((s, i) => s + (i.estimatedMonthlyCost ?? 0) * 12, 0);
+        }
+
+        const memberName = profile?.displayName ?? "Your patient";
+        const modalityList = eligibleNames.length > 0
+          ? eligibleNames.join(", ")
+          : "wellness services (massage, physical therapy, yoga, acupuncture)";
+
+        const draftMessage = `Dear Doctor,
+
+I am writing to request a Letter of Medical Necessity (LMN) for my HSA/FSA reimbursement.
+
+My name is ${memberName}. Based on my personalized wellness plan, I have been advised to pursue the following services that may qualify for HSA/FSA reimbursement when supported by an LMN:
+
+${eligibleNames.length > 0 ? eligibleNames.map((n) => `  • ${n}`).join("\n") : `  • ${modalityList}`}
+
+These services are part of my ongoing wellness plan. An LMN documenting medical necessity for these services would allow me to use my HSA/FSA funds to cover these costs, potentially saving ${estimatedAnnualSavings > 0 ? `$${(estimatedAnnualSavings / 100).toFixed(0)}/year` : "significant costs"}.
+
+Please let me know if you need any additional information to complete this letter.
+
+Thank you,
+${memberName}`;
+
+        await db.insert(lmnRequests).values({
+          id: crypto.randomUUID(),
+          profileId,
+          planId: latestPlan?.id ?? null,
+          status: "draft",
+          draftMessage,
+          eligibleModalities: eligibleIds,
+          estimatedAnnualSavings: estimatedAnnualSavings > 0 ? estimatedAnnualSavings : null,
+          updatedAt: new Date(),
+        });
+      } catch {
+        // Silent — LMN auto-draft is supplementary; do not surface errors to the session log caller
+      }
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";

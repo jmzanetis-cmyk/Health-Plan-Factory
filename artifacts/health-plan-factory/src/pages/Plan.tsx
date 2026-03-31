@@ -5,6 +5,8 @@ import { intakeSchema, type IntakeData } from "@/types/onboarding";
 import { type EvidenceLevel } from "@/data/modalities";
 import { Logo } from "@/components/Logo";
 
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
+
 function EvidenceBadge({ level }: { level: EvidenceLevel }) {
   const styles: Record<EvidenceLevel, { bg: string; color: string }> = {
     Strong:   { bg: "rgba(61,107,82,0.1)",  color: "var(--sage)" },
@@ -47,7 +49,12 @@ function HsaBadge() {
   );
 }
 
-function ModalityCard({ item, rank }: { item: PlanItem; rank: number }) {
+interface LmnContext {
+  eligibleCount: number;
+  estimatedAnnualSavingsCents: number;
+}
+
+function ModalityCard({ item, rank, lmnContext }: { item: PlanItem; rank: number; lmnContext?: LmnContext }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -194,10 +201,12 @@ function ModalityCard({ item, rank }: { item: PlanItem; rank: number }) {
               border: "1.5px solid rgba(184,137,42,0.2)",
             }}>
               <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 3 }}>
-                🩺 DPC physician can write an LMN for your plan
+                🩺 This DPC physician can write an LMN for your plan
               </p>
               <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 6 }}>
-                A Direct Primary Care physician can issue a Letter of Medical Necessity covering HSA/FSA-reimbursable services in your plan — potentially saving hundreds per year.
+                {lmnContext && lmnContext.eligibleCount > 0
+                  ? `A Letter of Medical Necessity from this physician can cover ${lmnContext.eligibleCount} item${lmnContext.eligibleCount !== 1 ? "s" : ""} in your plan for HSA/FSA reimbursement — saving an estimated $${Math.round(lmnContext.estimatedAnnualSavingsCents / 100)}/year.`
+                  : "A Direct Primary Care physician can issue a Letter of Medical Necessity covering HSA/FSA-reimbursable services in your plan — potentially saving hundreds per year."}
               </p>
               <Link
                 to="/hsa-unlock"
@@ -280,6 +289,19 @@ export default function Plan() {
   const navigate = useNavigate();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [intake, setIntake] = useState<IntakeData | null>(null);
+  const [lmnEligibleIds, setLmnEligibleIds] = useState<Set<string>>(new Set());
+
+  // Fetch LMN-eligible modality IDs for personalized physician callout
+  useEffect(() => {
+    fetch(`${BASE}/api/lmn/eligible-modalities`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (Array.isArray(data?.modalities)) {
+          setLmnEligibleIds(new Set(data.modalities.map((m: { id: string }) => m.id)));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     try {
@@ -489,9 +511,23 @@ export default function Plan() {
         {/* Recommended modalities */}
         <div style={{ marginBottom: "2.5rem" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {plan.included.map((item, i) => (
-              <ModalityCard key={item.modality.id} item={item} rank={i + 1} />
-            ))}
+            {plan.included.map((item, i) => {
+              // For physician cards, compute personalized LMN context:
+              // count non-physician plan items that are LMN-eligible + their savings
+              let lmnContext: LmnContext | undefined;
+              if (item.modality.category === "medical" && lmnEligibleIds.size > 0) {
+                const otherEligible = plan.included.filter(
+                  (pi) => pi.modality.id !== item.modality.id && lmnEligibleIds.has(pi.modality.id)
+                );
+                lmnContext = {
+                  eligibleCount: otherEligible.length,
+                  estimatedAnnualSavingsCents: otherEligible.reduce(
+                    (sum, pi) => sum + pi.estimatedMonthlyCost * 100 * 12, 0
+                  ),
+                };
+              }
+              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} />;
+            })}
           </div>
         </div>
 

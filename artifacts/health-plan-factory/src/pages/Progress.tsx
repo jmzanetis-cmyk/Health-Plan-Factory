@@ -34,6 +34,7 @@ interface ProgressLog {
   note: string | null;
   createdAt: string;
   sessionDate: string | null;
+  modalityId: string | null;
 }
 
 function SkeletonBlock({ h = 16 }: { h?: number }) {
@@ -362,12 +363,21 @@ export default function Progress() {
                   l.energy != null ? `Energy ${l.energy}` : null,
                   l.pain != null ? `Pain ${l.pain}` : null,
                 ].filter(Boolean);
+                const isLmnEligibleSession = lmnStatus === "received" && l.modalityId != null && lmnEligibleIds.includes(l.modalityId);
                 return (
                   <div key={l.id} className="flex items-start justify-between py-3 px-3 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.04)" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-mono)", margin: 0 }}>
-                        {metrics.join(" · ")}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-mono)", margin: 0 }}>
+                          {metrics.join(" · ")}
+                        </p>
+                        {isLmnEligibleSession && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(61,107,82,0.1)", border: "1px solid rgba(61,107,82,0.22)", borderRadius: 20, padding: "1px 7px", fontFamily: "var(--app-font-sans)", fontSize: 9, fontWeight: 700, color: "#3d6b52", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                            <BadgeCheck size={9} color="#3d6b52" />
+                            LMN on file
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
                         {l.note ?? <em style={{ color: "var(--text-muted)" }}>No notes</em>}
                       </p>

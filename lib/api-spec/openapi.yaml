@@ -30,6 +30,8 @@ tags:
     description: Admin management of employer accounts
   - name: Auth
     description: Browser and mobile authentication endpoints.
+  - name: lmn
+    description: Letter of Medical Necessity (LMN) and HSA unlock flow
 
 paths:
   /healthz:
@@ -710,6 +712,99 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthLogoutSuccess'
 
+  # ─── LMN (Letter of Medical Necessity) Endpoints ─────────────────────────
+
+  /lmn/status:
+    get:
+      operationId: getLmnStatus
+      tags: [lmn]
+      summary: Get member LMN status and HSA savings opportunity
+      description: >
+        Returns the authenticated member's LMN status, LMN-eligible modalities from their
+        most recent plan, estimated annual HSA/FSA savings, and the latest LMN request if any.
+      security:
+        - session: []
+      responses:
+        "200":
+          description: LMN status details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LmnStatusResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  /lmn/request:
+    post:
+      operationId: createLmnRequest
+      tags: [lmn]
+      summary: Create or refresh a draft LMN request
+      description: >
+        Creates a personalized draft Letter of Medical Necessity request for the
+        authenticated member, populated with their plan's LMN-eligible modalities.
+        Also updates member's lmnStatus to "requested" if currently "none".
+        Called manually from the HSA unlock flow or automatically after booking
+        an LMN-eligible (DPC/medical) session.
+      security:
+        - session: []
+      responses:
+        "201":
+          description: LMN draft created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LmnRequestResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  /lmn/mark-received:
+    post:
+      operationId: markLmnReceived
+      tags: [lmn]
+      summary: Member self-reports their physician delivered the LMN
+      description: >
+        Updates the member's lmnStatus to "received" and marks the latest
+        LMN request as received. This activates "LMN on file" badges on
+        eligible progress log entries.
+      security:
+        - session: []
+      responses:
+        "200":
+          description: LMN marked as received
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [lmnStatus]
+                properties:
+                  lmnStatus:
+                    type: string
+                    enum: [received]
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  /lmn/eligible-modalities:
+    get:
+      operationId: listLmnEligibleModalities
+      tags: [lmn]
+      summary: List all LMN-eligible modalities
+      description: >
+        Public endpoint. Returns all active modalities flagged as LMN-eligible
+        by an admin. Used by the plan page to show personalized physician callouts.
+      responses:
+        "200":
+          description: List of LMN-eligible modalities
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [modalities]
+                properties:
+                  modalities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LmnEligibleModality'
+
   # ─── Employer Stipend Endpoints ───────────────────────────────────────────
 
   /employer/signup:
@@ -1106,6 +1201,103 @@ paths:
 
 components:
   schemas:
+    # ─── LMN Schemas ──────────────────────────────────────────────────────────
+    LmnEligibleItem:
+      type: object
+      required: [modalityId, name, emoji, estimatedMonthlyCost]
+      properties:
+        modalityId:
+          type: string
+        name:
+          type: string
+        emoji:
+          type: string
+        estimatedMonthlyCost:
+          type: integer
+          description: Estimated monthly cost in cents
+
+    LmnStatusResponse:
+      type: object
+      required: [lmnStatus, eligibleItems, estimatedAnnualSavings, hasActivePlan]
+      properties:
+        lmnStatus:
+          type: string
+          enum: [none, requested, received]
+        eligibleItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/LmnEligibleItem'
+        estimatedAnnualSavings:
+          type: integer
+          description: Estimated annual HSA/FSA savings in cents
+        hasActivePlan:
+          type: boolean
+        latestRequest:
+          $ref: '#/components/schemas/LmnRequest'
+          nullable: true
+
+    LmnRequest:
+      type: object
+      required: [id, profileId, status, draftMessage, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        profileId:
+          type: string
+        planId:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, sent, received]
+        draftMessage:
+          type: string
+        eligibleModalities:
+          type: array
+          items:
+            type: string
+        estimatedAnnualSavings:
+          type: integer
+          nullable: true
+          description: Estimated annual savings in cents
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LmnRequestResponse:
+      type: object
+      required: [request, lmnStatus]
+      properties:
+        request:
+          $ref: '#/components/schemas/LmnRequest'
+        lmnStatus:
+          type: string
+
+    LmnEligibleModality:
+      type: object
+      required: [id, name, emoji, category]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        emoji:
+          type: string
+        category:
+          type: string
+        costLow:
+          type: integer
+          nullable: true
+        costHigh:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          nullable: true
+
     HealthStatus:
       type: object
       properties:
