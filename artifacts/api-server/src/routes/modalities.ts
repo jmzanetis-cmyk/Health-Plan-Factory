@@ -183,11 +183,13 @@ router.post("/modalities/:id/sessions", async (req, res) => {
     setImmediate(async () => {
       try {
         const [modalityRow] = await db
-          .select({ lmnEligible: modalities.lmnEligible })
+          .select({ lmnEligible: modalities.lmnEligible, category: modalities.category })
           .from(modalities)
           .where(eq(modalities.id, modalityId));
 
-        if (!modalityRow?.lmnEligible) return;
+        // Only trigger auto-draft for DPC/medical category AND LMN-eligible modalities
+        // (i.e. specifically after a DPC physician booking, not any LMN-eligible session)
+        if (!modalityRow?.lmnEligible || modalityRow.category !== "medical") return;
 
         // Only auto-create if the member has no existing LMN request
         const [existing] = await db
