@@ -25,6 +25,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "book", selected: "book.fill" }} />
         <Label>Journal</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="accountability">
+        <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
+        <Label>Track</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="coach">
         <Icon sf={{ default: "brain", selected: "brain.fill" }} />
         <Label>Coach</Label>
@@ -65,12 +69,7 @@ function ClassicTabLayout() {
               style={StyleSheet.absoluteFill}
             />
           ) : isWeb ? (
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: COLORS.warm },
-              ]}
-            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: COLORS.warm }]} />
           ) : null,
       }}
     >
@@ -107,6 +106,18 @@ function ClassicTabLayout() {
               <SymbolView name="book" tintColor={color} size={24} />
             ) : (
               <Feather name="book" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="accountability"
+        options={{
+          title: "Track",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="chart.bar" tintColor={color} size={24} />
+            ) : (
+              <Feather name="bar-chart-2" size={22} color={color} />
             ),
         }}
       />
