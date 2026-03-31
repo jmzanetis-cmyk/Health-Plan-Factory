@@ -140,20 +140,26 @@ export default function CoachScreen() {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let accumulated = "";
+        let lineBuffer = "";
+        let streamDone = false;
 
-        while (true) {
+        while (!streamDone) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
+          lineBuffer += decoder.decode(value, { stream: true });
+
+          const lines = lineBuffer.split("\n");
+          lineBuffer = lines.pop() ?? "";
 
           for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const json = line.slice(6);
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
+            const json = trimmed.slice(6).trim();
+            if (!json || json === "[DONE]") continue;
             try {
               const parsed = JSON.parse(json);
-              if (parsed.type === "text") {
+              if (parsed.type === "text" && typeof parsed.text === "string") {
                 accumulated += parsed.text;
                 setMessages((prev) =>
                   prev.map((m) =>
@@ -162,8 +168,23 @@ export default function CoachScreen() {
                       : m
                   )
                 );
-              } else if (parsed.type === "done") {
+              } else if (parsed.type === "done" || parsed.type === "error") {
+                streamDone = true;
                 break;
+              }
+            } catch {
+              // skip malformed frames — they arrive when lines span chunk boundaries
+            }
+          }
+        }
+
+        if (lineBuffer.trim().startsWith("data: ")) {
+          const json = lineBuffer.trim().slice(6).trim();
+          if (json && json !== "[DONE]") {
+            try {
+              const parsed = JSON.parse(json);
+              if (parsed.type === "text" && typeof parsed.text === "string") {
+                accumulated += parsed.text;
               }
             } catch {}
           }

@@ -16,8 +16,8 @@ import Svg, { Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/lib/auth";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
-import { useGetCurrentAuthUser, useListProgress } from "@workspace/api-client-react";
-import type { ProgressLogRecord } from "@workspace/api-client-react";
+import { useGetCurrentAuthUser, useListProgress, useListModalities } from "@workspace/api-client-react";
+import type { ProgressLogRecord, ModalityRecord } from "@workspace/api-client-react";
 import { setupNotifications, scheduleSessionReminder } from "@/lib/notifications";
 
 const RING_SIZE = 140;
@@ -25,14 +25,54 @@ const RING_STROKE = 14;
 const RING_R = (RING_SIZE - RING_STROKE) / 2;
 const RING_CIRC = 2 * Math.PI * RING_R;
 
-const TRIAL_START = new Date("2026-03-01");
 const TRIAL_DAYS = 30;
 
-function getDaysLeftInTrial(): number {
-  const end = new Date(TRIAL_START.getTime() + TRIAL_DAYS * 86400000);
-  const now = new Date();
-  const diff = Math.ceil((end.getTime() - now.getTime()) / 86400000);
+function getDaysLeftInTrial(createdAt?: string | null): number {
+  const start = createdAt ? new Date(createdAt) : new Date("2026-03-01");
+  const end = new Date(start.getTime() + TRIAL_DAYS * 86400000);
+  const diff = Math.ceil((end.getTime() - Date.now()) / 86400000);
   return Math.max(0, diff);
+}
+
+const MODALITY_EMOJIS: Record<string, string> = {
+  acupuncture: "🪡", yoga: "🧘", meditation: "🧘", massage: "💆",
+  "breathwork": "🌬️", "cold therapy": "🧊", "infrared sauna": "🌡️",
+  "float therapy": "🌊", chiropractic: "🦴", nutrition: "🥗",
+  naturopath: "🌿", "functional medicine": "🔬", herbalist: "🌱",
+  osteopath: "⚕️", "sound healing": "🔔", reiki: "✋",
+};
+
+const WEEK_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function buildUpcomingSessions(
+  modalities: ModalityRecord[],
+  entries: ProgressLogRecord[]
+): Array<{ id: string; name: string; day: string; time: string; emoji: string }> {
+  if (!modalities.length) return [];
+
+  const threeDaysAgo = Date.now() - 3 * 86400000;
+  const recentModalityIds = new Set(
+    entries
+      .filter((e) => new Date(e.createdAt).getTime() > threeDaysAgo)
+      .map((e) => e.modalityId)
+      .filter(Boolean)
+  );
+
+  const prioritized = modalities.filter((m) => !recentModalityIds.has(m.id));
+  const pool = prioritized.length >= 2 ? prioritized : modalities;
+  const top = pool.slice(0, 2);
+
+  const today = new Date();
+  return top.map((m, i) => {
+    const dayOffset = i + 1;
+    const d = new Date(today.getTime() + dayOffset * 86400000);
+    const dayName = dayOffset === 1 ? "Tomorrow" : WEEK_DAYS[d.getDay()];
+    const hour = 9 + i * 2;
+    const timeStr = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
+    const nameLower = m.name?.toLowerCase() ?? "";
+    const emoji = Object.entries(MODALITY_EMOJIS).find(([k]) => nameLower.includes(k))?.[1] ?? "✨";
+    return { id: m.id, name: m.name ?? "Session", day: dayName, time: timeStr, emoji };
+  });
 }
 
 function WellnessRing({ score }: { score: number }) {
@@ -87,10 +127,6 @@ const QUICK_ROUTINES: RoutineItem[] = [
   { id: "4", name: "Evening wind-down", emoji: "🌙", done: false },
 ];
 
-const UPCOMING_SESSIONS = [
-  { id: "1", name: "Acupuncture", day: "Tomorrow", time: "10:00 AM", emoji: "🪡" },
-  { id: "2", name: "Yoga Flow", day: "Thursday", time: "7:00 AM", emoji: "🧘" },
-];
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -106,13 +142,18 @@ export default function HomeScreen() {
     { query: { enabled: !!profileId } }
   );
 
+  const { data: modalitiesData } = useListModalities(undefined, {
+    query: { staleTime: 5 * 60 * 1000 },
+  });
+
   const [routines, setRoutines] = useState<RoutineItem[]>(QUICK_ROUTINES);
   const [refreshing, setRefreshing] = useState(false);
 
   const entries = progressData ?? [];
+  const modalities = modalitiesData ?? [];
   const streak = calculateStreak(entries);
   const wellnessScore = calculateWellnessScore(entries);
-  const trialDaysLeft = getDaysLeftInTrial();
+  const trialDaysLeft = getDaysLeftInTrial(authData?.user?.createdAt);
   const todayStr = new Date().toDateString();
   const hasEntryToday = entries.some(
     (e) => new Date(e.createdAt).toDateString() === todayStr
@@ -139,6 +180,7 @@ export default function HomeScreen() {
 
   const firstName = user?.firstName ?? authData?.user?.firstName ?? "there";
   const doneCount = routines.filter((r) => r.done).length;
+  const upcomingSessions = buildUpcomingSessions(modalities, entries);
 
   return (
     <ScrollView
@@ -203,9 +245,18 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
         <View style={styles.sessionsCard}>
-          {UPCOMING_SESSIONS.map((session, idx) => {
+          {upcomingSessions.length === 0 ? (
+            <View style={styles.sessionRow}>
+              <Feather name="calendar" size={20} color={COLORS.textMuted} />
+              <View style={styles.sessionInfo}>
+                <Text style={styles.sessionName}>No sessions scheduled</Text>
+                <Text style={styles.sessionTime}>Visit your plan to add modalities</Text>
+              </View>
+            </View>
+          ) : upcomingSessions.map((session, idx) => {
             const sessionDate = new Date();
-            sessionDate.setDate(sessionDate.getDate() + (session.day === "Tomorrow" ? 1 : 3));
+            const dayOffset = session.day === "Tomorrow" ? 1 : idx + 2;
+            sessionDate.setDate(sessionDate.getDate() + dayOffset);
             const [hours, minutes] = session.time.split(/[: ]/);
             const isPM = session.time.includes("PM");
             sessionDate.setHours(
@@ -218,7 +269,7 @@ export default function HomeScreen() {
                 key={session.id}
                 style={[
                   styles.sessionRow,
-                  idx < UPCOMING_SESSIONS.length - 1 && styles.sessionRowBorder,
+                  idx < upcomingSessions.length - 1 && styles.sessionRowBorder,
                 ]}
               >
                 <Text style={styles.sessionEmoji}>{session.emoji}</Text>

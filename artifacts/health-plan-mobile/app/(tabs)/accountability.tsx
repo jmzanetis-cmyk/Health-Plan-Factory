@@ -43,12 +43,23 @@ type BuddyMessage = {
   time: string;
 };
 
-const BUDDY_MESSAGES: BuddyMessage[] = [
-  { id: "1", sender: "buddy", text: "How did your acupuncture session go yesterday?", time: "Mon 9:12 AM" },
-  { id: "2", sender: "me", text: "It was great! My neck pain is down a lot. Did you try the breathwork?", time: "Mon 10:30 AM" },
-  { id: "3", sender: "buddy", text: "Yes! 5 days in a row now. Feeling clearer in the mornings.", time: "Mon 11:05 AM" },
-  { id: "4", sender: "buddy", text: "Don't forget your check-in tonight — we're both at 6 days!", time: "Today 8:00 AM" },
-];
+const TRIAL_DAYS = 30;
+
+function getDaysLeftInTrial(createdAt?: string | null): number {
+  const start = createdAt ? new Date(createdAt) : new Date("2026-03-01");
+  const end = new Date(start.getTime() + TRIAL_DAYS * 86400000);
+  const diff = Math.ceil((end.getTime() - Date.now()) / 86400000);
+  return Math.max(0, diff);
+}
+
+function getBuddyMessages(streak: number): BuddyMessage[] {
+  return [
+    { id: "1", sender: "buddy", text: "How did your last wellness session go?", time: "Mon 9:12 AM" },
+    { id: "2", sender: "me", text: "Really good! My symptoms have improved. Did you try the breathwork?", time: "Mon 10:30 AM" },
+    { id: "3", sender: "buddy", text: `Loved it! ${Math.max(streak - 1, 3)} days consistent now. Feeling clearer in the mornings.`, time: "Mon 11:05 AM" },
+    { id: "4", sender: "buddy", text: `Don't forget your check-in tonight — you're on a ${streak}-day streak! 🔥`, time: "Today 8:00 AM" },
+  ];
+}
 
 function GoalProgress({ label, icon, current, target }: GoalItem) {
   const pct = Math.min(1, target > 0 ? current / target : 0);
@@ -114,7 +125,8 @@ function DailyCommitmentList() {
   );
 }
 
-function BuddyChat() {
+function BuddyChat({ streak }: { streak: number }) {
+  const buddyMessages = getBuddyMessages(streak);
   return (
     <View style={styles.buddyChatCard}>
       <View style={styles.buddyHeader}>
@@ -123,11 +135,11 @@ function BuddyChat() {
         </View>
         <View>
           <Text style={styles.buddyName}>Alex — Accountability Buddy</Text>
-          <Text style={styles.buddyStatus}>Active · 6-day streak</Text>
+          <Text style={styles.buddyStatus}>Active · {streak > 0 ? `${streak}-day streak` : "just starting"}</Text>
         </View>
       </View>
       <View style={styles.messageList}>
-        {BUDDY_MESSAGES.map((msg) => (
+        {buddyMessages.map((msg) => (
           <View
             key={msg.id}
             style={[
@@ -237,10 +249,12 @@ export default function AccountabilityScreen() {
     setRefreshing(false);
   }
 
+  const trialDaysLeft = getDaysLeftInTrial(authData?.user?.createdAt);
+
   async function toggleReminders(val: boolean) {
     setRemindersOn(val);
     if (val) {
-      const granted = await setupNotifications({ streak, trialDaysLeft: 2 });
+      const granted = await setupNotifications({ streak, trialDaysLeft });
       if (!granted) setRemindersOn(false);
     }
   }
@@ -333,7 +347,7 @@ export default function AccountabilityScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Buddy Check-In</Text>
-            <BuddyChat />
+            <BuddyChat streak={streak} />
           </View>
 
           <View style={styles.section}>
