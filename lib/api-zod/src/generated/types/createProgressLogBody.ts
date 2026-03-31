@@ -12,5 +12,29 @@ export interface CreateProgressLogBody {
   modalityId?: string;
   note?: string;
   rating?: number;
+  /**
+   * Self-reported mood score (1-10)
+   * @minimum 1
+   * @maximum 10
+   */
+  mood?: number;
+  /**
+   * Self-reported pain level (1-10)
+   * @minimum 1
+   * @maximum 10
+   */
+  pain?: number;
+  /**
+   * Self-reported energy level (1-10)
+   * @minimum 1
+   * @maximum 10
+   */
+  energy?: number;
   sessionDate?: Date;
+  /**
+   * Actual out-of-pocket session cost in cents paid by the member. When provided, this amount is deducted from the member's employer wellness stipend balance (if enrolled). Do not use modality cost estimates for stipend deduction — always supply the real session cost.
+
+   * @minimum 0
+   */
+  sessionCostCents?: number;
 }

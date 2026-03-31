@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "@workspace/db";
-import { planProgressLogs, employerMembers, modalities, employerModalityRules } from "@workspace/db";
+import { planProgressLogs, employerMembers, employerModalityRules } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
 import {
   CreateProgressLogBody,
@@ -89,68 +89,62 @@ router.post("/progress", async (req, res) => {
 
     // ── Employer stipend deduction ───────────────────────────────────────────
     // If the member is enrolled in an employer wellness stipend, deduct the
-    // session cost (modality average cost) from their monthly employer budget.
-    // Employer-funded balance is consumed first; any overrun is the member's own.
-    if (body.data.modalityId) {
+    // actual session cost (provided by the caller) from their monthly budget.
+    // Only deduct when the caller explicitly supplies sessionCostCents — this
+    // avoids misusing modality monthly-estimate columns (costLow/costHigh) as
+    // per-session pricing, which would produce incorrect utilization data.
+    const sessionCostCents = body.data.sessionCostCents ?? 0;
+    if (body.data.modalityId && sessionCostCents > 0) {
       try {
-        const [mod] = await db
-          .select({ costLow: modalities.costLow, costHigh: modalities.costHigh })
-          .from(modalities)
-          .where(eq(modalities.id, body.data.modalityId))
+        const currentMonth = new Date().toISOString().slice(0, 7);
+
+        const [link] = await db
+          .select({
+            id: employerMembers.id,
+            employerId: employerMembers.employerId,
+            monthlyBudget: employerMembers.monthlyBudget,
+            spentThisMonth: employerMembers.spentThisMonth,
+            budgetMonth: employerMembers.budgetMonth,
+          })
+          .from(employerMembers)
+          .where(eq(employerMembers.profileId, body.data.profileId))
           .limit(1);
 
-        if (mod) {
-          const sessionCostCents = Math.round(((mod.costLow + mod.costHigh) / 2) * 100);
-          const currentMonth = new Date().toISOString().slice(0, 7);
-
-          const [link] = await db
-            .select({
-              id: employerMembers.id,
-              employerId: employerMembers.employerId,
-              monthlyBudget: employerMembers.monthlyBudget,
-              spentThisMonth: employerMembers.spentThisMonth,
-              budgetMonth: employerMembers.budgetMonth,
-            })
-            .from(employerMembers)
-            .where(eq(employerMembers.profileId, body.data.profileId))
+        if (link) {
+          // ── Check employer coverage rules for this modality ──────────────
+          // If the employer has explicitly set covered=false for this modality,
+          // skip the deduction — the session cost is the member's own expense.
+          const [rule] = await db
+            .select({ covered: employerModalityRules.covered })
+            .from(employerModalityRules)
+            .where(
+              and(
+                eq(employerModalityRules.employerId, link.employerId),
+                eq(employerModalityRules.modalityId, body.data.modalityId!)
+              )
+            )
             .limit(1);
 
-          if (link) {
-            // ── Check employer coverage rules for this modality ───────────────
-            // If the employer has explicitly set covered=false for this modality,
-            // skip the deduction — the session cost is the member's own expense.
-            const [rule] = await db
-              .select({ covered: employerModalityRules.covered })
-              .from(employerModalityRules)
-              .where(
-                and(
-                  eq(employerModalityRules.employerId, link.employerId),
-                  eq(employerModalityRules.modalityId, body.data.modalityId!)
-                )
-              )
-              .limit(1);
+          const isCovered = rule ? rule.covered : true; // default: covered
 
-            const isCovered = rule ? rule.covered : true; // default: covered
+          if (isCovered) {
+            // Reset spent counter if it's a new budget month
+            const effectiveSpent =
+              link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
+            const remaining = Math.max(0, link.monthlyBudget - effectiveSpent);
+            const deduction = Math.min(sessionCostCents, remaining);
 
-            if (isCovered) {
-              // Reset spent counter if it's a new budget month
-              const effectiveSpent =
-                link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
-              const remaining = Math.max(0, link.monthlyBudget - effectiveSpent);
-              const deduction = Math.min(sessionCostCents, remaining);
-
-              if (deduction > 0) {
-                await db
-                  .update(employerMembers)
-                  .set({
-                    spentThisMonth: effectiveSpent + deduction,
-                    budgetMonth: currentMonth,
-                  })
-                  .where(eq(employerMembers.id, link.id));
-              }
+            if (deduction > 0) {
+              await db
+                .update(employerMembers)
+                .set({
+                  spentThisMonth: effectiveSpent + deduction,
+                  budgetMonth: currentMonth,
+                })
+                .where(eq(employerMembers.id, link.id));
             }
-            // If !isCovered: modality explicitly excluded — no employer stipend deducted
           }
+          // If !isCovered: modality explicitly excluded — no employer stipend deducted
         }
       } catch (deductErr) {
         // Non-fatal — log but don't fail the progress log creation

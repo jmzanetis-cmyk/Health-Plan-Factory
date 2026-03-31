@@ -3484,6 +3484,92 @@ export function useAdminListEmployers<
 }
 
 /**
+ * @summary Create a new employer account (admin only)
+ */
+export const getAdminCreateEmployerUrl = () => {
+  return `/api/admin/employers`;
+};
+
+export const adminCreateEmployer = async (
+  createEmployerBody: CreateEmployerBody,
+  options?: RequestInit,
+): Promise<Employer> => {
+  return customFetch<Employer>(getAdminCreateEmployerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createEmployerBody),
+  });
+};
+
+export const getAdminCreateEmployerMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateEmployer>>,
+    TError,
+    { data: BodyType<CreateEmployerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateEmployer>>,
+  TError,
+  { data: BodyType<CreateEmployerBody> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateEmployer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateEmployer>>,
+    { data: BodyType<CreateEmployerBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateEmployer(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateEmployerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateEmployer>>
+>;
+export type AdminCreateEmployerMutationBody = BodyType<CreateEmployerBody>;
+export type AdminCreateEmployerMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a new employer account (admin only)
+ */
+export const useAdminCreateEmployer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateEmployer>>,
+    TError,
+    { data: BodyType<CreateEmployerBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateEmployer>>,
+  TError,
+  { data: BodyType<CreateEmployerBody> },
+  TContext
+> => {
+  return useMutation(getAdminCreateEmployerMutationOptions(options));
+};
+
+/**
  * @summary Get a specific employer account (admin only)
  */
 export const getAdminGetEmployerUrl = (id: string) => {
@@ -3655,4 +3741,88 @@ export const useAdminUpdateEmployer = <
   TContext
 > => {
   return useMutation(getAdminUpdateEmployerMutationOptions(options));
+};
+
+/**
+ * @summary Delete an employer account (admin only)
+ */
+export const getAdminDeleteEmployerUrl = (id: string) => {
+  return `/api/admin/employers/${id}`;
+};
+
+export const adminDeleteEmployer = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteEmployerUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteEmployerMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteEmployer>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteEmployer>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteEmployer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteEmployer>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteEmployer(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteEmployerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteEmployer>>
+>;
+
+export type AdminDeleteEmployerMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete an employer account (admin only)
+ */
+export const useAdminDeleteEmployer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteEmployer>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteEmployer>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getAdminDeleteEmployerMutationOptions(options));
 };

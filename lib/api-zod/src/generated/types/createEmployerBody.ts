@@ -9,6 +9,13 @@
 export interface CreateEmployerBody {
   /** @minLength 1 */
   companyName: string;
+  /**
+   * Full name of the primary admin contact
+   * @minLength 2
+   */
+  adminContactName: string;
+  /** Email address of the primary admin contact */
+  adminContactEmail: string;
   /** @minimum 1 */
   numberOfEmployees: number;
   /**

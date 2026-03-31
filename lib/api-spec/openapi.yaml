@@ -857,6 +857,25 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AdminEmployer'
+    post:
+      tags: [employer-admin]
+      operationId: adminCreateEmployer
+      summary: Create a new employer account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmployerBody'
+      responses:
+        '201':
+          description: Created employer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employer'
+        '400':
+          description: Invalid request body.
 
   /admin/employers/{id}:
     get:
@@ -901,6 +920,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Employer'
+        '404':
+          description: Employer not found.
+    delete:
+      tags: [employer-admin]
+      operationId: adminDeleteEmployer
+      summary: Delete an employer account (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Employer deleted.
         '404':
           description: Employer not found.
 
@@ -1427,9 +1461,32 @@ components:
           type: string
         rating:
           type: integer
+        mood:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Self-reported mood score (1-10)
+        pain:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Self-reported pain level (1-10)
+        energy:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Self-reported energy level (1-10)
         sessionDate:
           type: string
           format: date-time
+        sessionCostCents:
+          type: integer
+          minimum: 0
+          description: >
+            Actual out-of-pocket session cost in cents paid by the member.
+            When provided, this amount is deducted from the member's employer
+            wellness stipend balance (if enrolled). Do not use modality cost
+            estimates for stipend deduction — always supply the real session cost.
       required:
         - profileId
 
@@ -1546,11 +1603,19 @@ components:
 
     CreateEmployerBody:
       type: object
-      required: [companyName, numberOfEmployees, stipendPerEmployee]
+      required: [companyName, adminContactName, adminContactEmail, numberOfEmployees, stipendPerEmployee]
       properties:
         companyName:
           type: string
           minLength: 1
+        adminContactName:
+          type: string
+          minLength: 2
+          description: Full name of the primary admin contact
+        adminContactEmail:
+          type: string
+          format: email
+          description: Email address of the primary admin contact
         numberOfEmployees:
           type: integer
           minimum: 1

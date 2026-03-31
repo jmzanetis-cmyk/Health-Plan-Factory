@@ -283,13 +283,46 @@ export const ListProgressResponse = zod.array(ListProgressResponseItem);
 /**
  * @summary Log a wellness session or check-in
  */
+export const createProgressLogBodyMoodMax = 10;
+
+export const createProgressLogBodyPainMax = 10;
+
+export const createProgressLogBodyEnergyMax = 10;
+
+export const createProgressLogBodySessionCostCentsMin = 0;
+
 export const CreateProgressLogBody = zod.object({
   profileId: zod.string(),
   planId: zod.string().optional(),
   modalityId: zod.string().optional(),
   note: zod.string().optional(),
   rating: zod.number().optional(),
+  mood: zod
+    .number()
+    .min(1)
+    .max(createProgressLogBodyMoodMax)
+    .optional()
+    .describe("Self-reported mood score (1-10)"),
+  pain: zod
+    .number()
+    .min(1)
+    .max(createProgressLogBodyPainMax)
+    .optional()
+    .describe("Self-reported pain level (1-10)"),
+  energy: zod
+    .number()
+    .min(1)
+    .max(createProgressLogBodyEnergyMax)
+    .optional()
+    .describe("Self-reported energy level (1-10)"),
   sessionDate: zod.coerce.date().optional(),
+  sessionCostCents: zod
+    .number()
+    .min(createProgressLogBodySessionCostCentsMin)
+    .optional()
+    .describe(
+      "Actual out-of-pocket session cost in cents paid by the member. When provided, this amount is deducted from the member's employer wellness stipend balance (if enrolled). Do not use modality cost estimates for stipend deduction — always supply the real session cost.\n",
+    ),
 });
 
 /**
@@ -507,10 +540,20 @@ export const LogoutMobileSessionResponse = zod.object({
  * @summary Register a new employer wellness stipend account
  */
 
+export const createEmployerBodyAdminContactNameMin = 2;
+
 export const createEmployerBodyStipendPerEmployeeMin = 0;
 
 export const CreateEmployerBody = zod.object({
   companyName: zod.string().min(1),
+  adminContactName: zod
+    .string()
+    .min(createEmployerBodyAdminContactNameMin)
+    .describe("Full name of the primary admin contact"),
+  adminContactEmail: zod
+    .string()
+    .email()
+    .describe("Email address of the primary admin contact"),
   numberOfEmployees: zod.number().min(1),
   stipendPerEmployee: zod
     .number()
@@ -748,6 +791,39 @@ export const AdminListEmployersResponse = zod.array(
 );
 
 /**
+ * @summary Create a new employer account (admin only)
+ */
+
+export const adminCreateEmployerBodyAdminContactNameMin = 2;
+
+export const adminCreateEmployerBodyStipendPerEmployeeMin = 0;
+
+export const AdminCreateEmployerBody = zod.object({
+  companyName: zod.string().min(1),
+  adminContactName: zod
+    .string()
+    .min(adminCreateEmployerBodyAdminContactNameMin)
+    .describe("Full name of the primary admin contact"),
+  adminContactEmail: zod
+    .string()
+    .email()
+    .describe("Email address of the primary admin contact"),
+  numberOfEmployees: zod.number().min(1),
+  stipendPerEmployee: zod
+    .number()
+    .min(adminCreateEmployerBodyStipendPerEmployeeMin)
+    .describe("Monthly stipend per employee in cents"),
+  platformFeePercent: zod
+    .number()
+    .optional()
+    .describe("Platform fee percentage (default 8)"),
+  coveredModalities: zod
+    .array(zod.string())
+    .optional()
+    .describe("List of modality IDs covered by this employer"),
+});
+
+/**
  * @summary Get a specific employer account (admin only)
  */
 export const AdminGetEmployerParams = zod.object({
@@ -815,4 +891,11 @@ export const AdminUpdateEmployerResponse = zod.object({
     .describe("Monthly stipend per employee in cents"),
   platformFeePercent: zod.number().optional(),
   createdAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Delete an employer account (admin only)
+ */
+export const AdminDeleteEmployerParams = zod.object({
+  id: zod.coerce.string(),
 });
