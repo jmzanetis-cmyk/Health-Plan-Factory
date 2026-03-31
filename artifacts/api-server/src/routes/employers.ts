@@ -256,8 +256,7 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req, res) => {
         .map(([modalityId, sessionCount]) => ({ modalityId, sessionCount }));
     }
 
-    // Build 6-month spend chart from actual employerCoveredCents in progress logs.
-    // This provides real historical spend, not just the current-month snapshot.
+    // 6-month spend from actual employer-covered progress log amounts (real ledger)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
     sixMonthsAgo.setDate(1);
@@ -292,8 +291,7 @@ router.get("/employer/dashboard", requireEmployerAuth, async (req, res) => {
       monthlySpend.push({ month: m, totalCents: spendByMonth[m] ?? 0 });
     }
 
-    // K-anonymity floor: suppress utilization/wellness aggregates for small cohorts
-    // to prevent de-anonymization of individual member health data.
+    // K-anonymity: suppress sensitive aggregates for cohorts below the privacy floor
     const K_ANON_MIN = 5;
     const cohortTooSmall = totalEnrolled < K_ANON_MIN;
 
@@ -488,15 +486,17 @@ router.post("/employer/redeem-code", requireMemberAuth, async (req, res) => {
 
 // ── Get Member's Employer Budget ───────────────────────────────────────────────
 
-router.get("/employer/my-budget", requireEmployerAuth, async (req, res) => {
+router.get("/employer/my-budget", requireMemberAuth, async (req, res) => {
   try {
     const [link] = await db
       .select({
         monthlyBudget: employerMembers.monthlyBudget,
         spentThisMonth: employerMembers.spentThisMonth,
         budgetMonth: employerMembers.budgetMonth,
+        employerId: employerMembers.employerId,
         companyName: employers.companyName,
         inviteCode: employers.inviteCode,
+        status: employers.status,
       })
       .from(employerMembers)
       .innerJoin(employers, eq(employerMembers.employerId, employers.id))
@@ -504,22 +504,27 @@ router.get("/employer/my-budget", requireEmployerAuth, async (req, res) => {
       .limit(1);
 
     if (!link) {
-      res.json({ enrolled: false });
+      res.json({ enrolled: false, employer: null, member: null });
       return;
     }
 
-    // Apply effective-month reset at read time — avoids stale prior-month values
     const currentMonth = new Date().toISOString().slice(0, 7);
     const effectiveSpent = link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
 
     res.json({
       enrolled: true,
-      companyName: link.companyName,
-      inviteCode: link.inviteCode,
-      monthlyBudget: link.monthlyBudget,
-      spentThisMonth: effectiveSpent,
-      budgetMonth: currentMonth,
-      remainingCents: Math.max(0, link.monthlyBudget - effectiveSpent),
+      employer: {
+        id: link.employerId,
+        companyName: link.companyName,
+        inviteCode: link.inviteCode,
+        status: link.status,
+      },
+      member: {
+        monthlyBudget: link.monthlyBudget,
+        spentThisMonth: effectiveSpent,
+        budgetMonth: currentMonth,
+        remainingCents: Math.max(0, link.monthlyBudget - effectiveSpent),
+      },
     });
   } catch {
     res.status(500).json({ error: "Failed to fetch budget" });
@@ -554,7 +559,6 @@ router.get("/employer/enroll-status", requireMemberAuth, async (req, res) => {
     const currentMonth = new Date().toISOString().slice(0, 7);
     const effectiveSpent = link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
 
-    // Return { enrolled, employer, member } as specified by EnrollStatusResponse schema
     res.json({
       enrolled: true,
       employer: {
@@ -876,14 +880,13 @@ router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req
       return;
     }
 
-    // Enrolled count is for utilization display only; billing uses contracted headcount
     const enrolledResult = await db
       .select({ count: count() })
       .from(employerMembers)
       .where(eq(employerMembers.employerId, employer.id));
     const enrolled = enrolledResult[0]?.count ?? 0;
 
-    // Invoice = contracted headcount × stipend + platform fee (matches spec requirement #4)
+    // Billing on contracted headcount (not enrolled count); includes platform fee
     const headcount = employer.numberOfEmployees;
     const unitAmountCents = employer.stipendPerEmployee;
     const feeMultiplier = 1 + employer.platformFeePercent / 100;
