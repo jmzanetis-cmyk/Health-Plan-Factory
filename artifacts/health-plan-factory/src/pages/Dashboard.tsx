@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { LayoutDashboard, MapPin, TrendingUp, BookmarkIcon, Plus, ArrowRight, Loader2 } from "lucide-react";
+import { LayoutDashboard, MapPin, TrendingUp, BookmarkIcon, Plus, ArrowRight, Loader2, DollarSign } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -58,6 +58,8 @@ export default function Dashboard() {
   const [progressLogs, setProgressLogs] = useState<ProgressLog[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lmnSavings, setLmnSavings] = useState<number | null>(null);
+  const [lmnEligibleCount, setLmnEligibleCount] = useState(0);
 
   // Auto-redeem employer invite code stored during signup
   useEffect(() => {
@@ -103,6 +105,15 @@ export default function Dashboard() {
       if (Array.isArray(favData)) setFavorites(favData);
       setLoading(false);
     });
+
+    // Fetch LMN savings opportunity (non-blocking)
+    fetch(`${BASE}/api/lmn/status`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.estimatedAnnualSavings > 0) setLmnSavings(d.estimatedAnnualSavings);
+        if (Array.isArray(d?.eligibleItems)) setLmnEligibleCount(d.eligibleItems.length);
+      })
+      .catch(() => {});
   }, [user]);
 
   if (authLoading) {
@@ -175,6 +186,32 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+
+        {/* HSA Opportunity card — shown when member has LMN-eligible plan items */}
+        {!loading && lmnSavings !== null && lmnSavings > 0 && (
+          <div style={{ background: "linear-gradient(135deg, #1b2d4f 0%, #243d66 100%)", borderRadius: 16, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(184,137,42,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <DollarSign size={20} color="#b8892a" />
+              </div>
+              <div>
+                <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#b8892a", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Your HSA Opportunity</div>
+                <div style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, fontWeight: 700, color: "white", marginBottom: 3 }}>
+                  Save up to ${(lmnSavings / 100).toFixed(0)}/year with an LMN
+                </div>
+                <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
+                  {lmnEligibleCount} item{lmnEligibleCount !== 1 ? "s" : ""} in your plan may qualify for HSA/FSA reimbursement with a Letter of Medical Necessity from a DPC physician.
+                </div>
+              </div>
+            </div>
+            <Link
+              to="/hsa-unlock"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#b8892a", color: "white", padding: "10px 18px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 13, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap" }}
+            >
+              Unlock My HSA <ArrowRight size={14} />
+            </Link>
+          </div>
+        )}
 
         {/* Plan Snapshot + Budget */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -45,6 +45,9 @@ import EmployerDashboard from "@/pages/employer/EmployerDashboard";
 import EmployerMembers from "@/pages/employer/EmployerMembers";
 import EmployerSettings from "@/pages/employer/EmployerSettings";
 
+import LmnGuide from "@/pages/LmnGuide";
+import HsaUnlock from "@/pages/HsaUnlock";
+
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -70,6 +73,9 @@ function AppRoutes() {
       <Route path="/sign-in" element={<Layout hideFooter><SignIn /></Layout>} />
       <Route path="/sign-up" element={<Layout hideFooter><SignUp /></Layout>} />
 
+      {/* Public LMN/HSA guide */}
+      <Route path="/lmn-guide" element={<Layout><LmnGuide /></Layout>} />
+
       {/* Member app */}
       <Route path="/dashboard" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
       {/* PUBLIC lead-capture pages — intentionally no auth or Layout wrapper.
@@ -81,6 +87,7 @@ function AppRoutes() {
       <Route path="/bookmarks" element={<Layout><ProtectedRoute><Bookmarks /></ProtectedRoute></Layout>} />
       <Route path="/progress" element={<Layout><ProtectedRoute><Progress /></ProtectedRoute></Layout>} />
       <Route path="/profile" element={<Layout><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
+      <Route path="/hsa-unlock" element={<Layout><ProtectedRoute><HsaUnlock /></ProtectedRoute></Layout>} />
 
       {/* Provider routes — protected */}
       <Route path="/provider/dashboard" element={<Layout><ProtectedRoute role="provider"><ProviderDashboard /></ProtectedRoute></Layout>} />

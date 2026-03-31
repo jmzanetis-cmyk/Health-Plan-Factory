@@ -14,6 +14,7 @@ interface Modality {
   costLow: number;
   costHigh: number;
   isActive: boolean;
+  lmnEligible: boolean;
 }
 
 interface EditState {
@@ -30,6 +31,7 @@ export default function AdminModalities() {
   const [editState, setEditState] = useState<EditState>({ evidenceLevel: "", costLow: "", costHigh: "" });
   const [savingId, setSavingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [togglingLmnId, setTogglingLmnId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${BASE}/api/admin/modalities`, { credentials: "include" })
@@ -96,6 +98,26 @@ export default function AdminModalities() {
     }
   };
 
+  const toggleLmnEligible = async (id: string, current: boolean) => {
+    setTogglingLmnId(id);
+    try {
+      const res = await fetch(`${BASE}/api/admin/modalities/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ lmnEligible: !current }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setModalities((prev) => prev.map((m) => (m.id === id ? { ...m, ...data.modality } : m)));
+      toast({ title: `LMN eligibility ${!current ? "enabled" : "disabled"}` });
+    } catch {
+      toast({ title: "Error", description: "Could not update LMN eligibility.", variant: "destructive" });
+    } finally {
+      setTogglingLmnId(null);
+    }
+  };
+
   const evidenceLevels: Array<"Strong" | "Moderate" | "Emerging"> = ["Strong", "Moderate", "Emerging"];
 
   const evidenceBadge = (level: string | null) => {
@@ -136,7 +158,7 @@ export default function AdminModalities() {
               <table className="w-full border-collapse">
                 <thead style={{ background: "rgba(27,45,79,0.02)", borderBottom: "1px solid rgba(27,45,79,0.08)" }}>
                   <tr>
-                    {["Modality", "Category", "Evidence Level", "Cost Range", "Active", "Actions"].map((h) => (
+                    {["Modality", "Category", "Evidence Level", "Cost Range", "Active", "LMN Eligible", "Actions"].map((h) => (
                       <th key={h} className="text-left px-3 py-3" style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                         {h}
                       </th>
@@ -207,6 +229,24 @@ export default function AdminModalities() {
                             <span
                               className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform"
                               style={{ transform: m.isActive ? "translateX(18px)" : "translateX(2px)", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }}
+                            />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-3 py-3">
+                        <button
+                          onClick={() => toggleLmnEligible(m.id, m.lmnEligible)}
+                          disabled={togglingLmnId === m.id}
+                          title="Toggle LMN eligibility — enables HSA/FSA reimbursement flag with a physician's letter"
+                          className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                          style={{ background: m.lmnEligible ? "#b8892a" : "rgba(27,45,79,0.15)", border: "none", cursor: "pointer" }}
+                        >
+                          {togglingLmnId === m.id ? (
+                            <Loader2 size={10} className="animate-spin mx-auto" style={{ color: "white" }} />
+                          ) : (
+                            <span
+                              className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform"
+                              style={{ transform: m.lmnEligible ? "translateX(18px)" : "translateX(2px)", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }}
                             />
                           )}
                         </button>

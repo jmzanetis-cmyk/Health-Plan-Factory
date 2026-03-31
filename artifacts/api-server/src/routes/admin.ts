@@ -192,11 +192,12 @@ router.get("/admin/modalities", async (req, res) => {
 router.patch("/admin/modalities/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { evidenceLevel, costLow, costHigh, isActive } = req.body as {
+    const { evidenceLevel, costLow, costHigh, isActive, lmnEligible } = req.body as {
       evidenceLevel?: "Strong" | "Moderate" | "Emerging";
       costLow?: number;
       costHigh?: number;
       isActive?: boolean;
+      lmnEligible?: boolean;
     };
 
     const updatePayload: {
@@ -205,12 +206,14 @@ router.patch("/admin/modalities/:id", async (req, res) => {
       costLow?: number;
       costHigh?: number;
       isActive?: boolean;
+      lmnEligible?: boolean;
     } = { updatedAt: new Date() };
 
     if (evidenceLevel !== undefined) updatePayload.evidenceLevel = evidenceLevel;
     if (costLow !== undefined) updatePayload.costLow = costLow;
     if (costHigh !== undefined) updatePayload.costHigh = costHigh;
     if (isActive !== undefined) updatePayload.isActive = isActive;
+    if (lmnEligible !== undefined) updatePayload.lmnEligible = lmnEligible;
 
     const [updated] = await db
       .update(modalities)

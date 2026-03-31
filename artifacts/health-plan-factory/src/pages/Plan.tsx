@@ -498,6 +498,34 @@ export default function Plan() {
           </div>
         )}
 
+        {/* LMN / HSA opportunity callout */}
+        <div style={{
+          borderRadius: 16,
+          background: "rgba(184,137,42,0.06)",
+          border: "1.5px solid rgba(184,137,42,0.22)",
+          padding: "1.25rem",
+          marginBottom: "1.5rem",
+          display: "flex",
+          gap: "1rem",
+          alignItems: "flex-start",
+        }}>
+          <span style={{ fontSize: "1.4rem", flexShrink: 0 }}>💰</span>
+          <div>
+            <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 4 }}>
+              Items in your plan may qualify for HSA/FSA reimbursement with a physician's LMN
+            </p>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 8 }}>
+              A Letter of Medical Necessity from a Direct Primary Care physician can unlock tax-free HSA/FSA reimbursement for massage, PT, yoga, acupuncture, and more — potentially saving hundreds per year.
+            </p>
+            <Link
+              to="/lmn-guide"
+              style={{ fontSize: "0.75rem", fontWeight: 600, color: "#b8892a", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
+            >
+              Learn how LMNs work →
+            </Link>
+          </div>
+        </div>
+
         {/* CTA block */}
         <div style={{
           borderRadius: 20,

@@ -6,7 +6,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { Loader2, Plus, CheckCircle } from "lucide-react";
+import { Loader2, Plus, CheckCircle, BadgeCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -74,6 +74,8 @@ export default function Progress() {
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [isEnrolledWithEmployer, setIsEnrolledWithEmployer] = useState(false);
+  const [lmnStatus, setLmnStatus] = useState<string>("none");
+  const [lmnEligibleIds, setLmnEligibleIds] = useState<string[]>([]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<LogForm>({
     resolver: zodResolver(logSchema),
@@ -93,6 +95,16 @@ export default function Progress() {
     fetch(`${BASE}/api/employer/enroll-status`, { credentials: "include" })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => { if (data?.enrolled) setIsEnrolledWithEmployer(true); })
+      .catch(() => {});
+    // Check LMN status for badge display
+    fetch(`${BASE}/api/lmn/status`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.lmnStatus) setLmnStatus(data.lmnStatus);
+        if (Array.isArray(data?.eligibleItems)) {
+          setLmnEligibleIds(data.eligibleItems.map((i: { modalityId: string }) => i.modalityId));
+        }
+      })
       .catch(() => {});
   }, [user]);
 
@@ -339,10 +351,18 @@ export default function Progress() {
                 ].filter(Boolean);
                 return (
                   <div key={l.id} className="flex items-start justify-between py-3 px-3 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.04)" }}>
-                    <div>
-                      <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-mono)" }}>
-                        {metrics.join(" · ")}
-                      </p>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-mono)", margin: 0 }}>
+                          {metrics.join(" · ")}
+                        </p>
+                        {lmnStatus === "received" && lmnEligibleIds.length > 0 && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(61,107,82,0.1)", border: "1px solid rgba(61,107,82,0.22)", borderRadius: 20, padding: "2px 8px", fontFamily: "var(--app-font-sans)", fontSize: 10, fontWeight: 700, color: "#3d6b52", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                            <BadgeCheck size={10} color="#3d6b52" />
+                            LMN on file
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
                         {l.note ?? <em style={{ color: "var(--text-muted)" }}>No notes</em>}
                       </p>

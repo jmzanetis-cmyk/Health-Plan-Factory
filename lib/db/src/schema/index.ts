@@ -64,6 +64,7 @@ export const profiles = pgTable(
     role: memberRoleEnum("role").notNull().default("member"),
     stripeCustomerId: text("stripe_customer_id"),
     subscriptionStatus: text("subscription_status").default("free"), // free | plus | canceled
+    lmnStatus: text("lmn_status").notNull().default("none"), // none | requested | received
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -89,6 +90,7 @@ export const modalities = pgTable("modalities", {
   costHigh: integer("cost_high").notNull(),
   typicalFrequency: text("typical_frequency").notNull(),
   hsaEligible: boolean("hsa_eligible").notNull().default(false),
+  lmnEligible: boolean("lmn_eligible").notNull().default(false),
   description: text("description").notNull(),
   goals: jsonb("goals").notNull().default([]).$type<string[]>(),
   conditions: jsonb("conditions").notNull().default([]).$type<string[]>(),
@@ -432,3 +434,34 @@ export const employerModalityRules = pgTable(
 export const insertEmployerModalityRuleSchema = createInsertSchema(employerModalityRules);
 export type InsertEmployerModalityRule = InferInsertModel<typeof employerModalityRules>;
 export type EmployerModalityRule = InferSelectModel<typeof employerModalityRules>;
+
+// ── lmn_requests ──────────────────────────────────────────────────────────────
+// Draft LMN request messages auto-created after a member adds a DPC/medical provider.
+// Status: "draft" → "sent" → "received" (driven by member self-reporting)
+
+export const lmnRequests = pgTable(
+  "lmn_requests",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    planId: text("plan_id").references(() => plans.id, { onDelete: "set null" }),
+    status: text("status").notNull().default("draft"), // draft | sent | received
+    draftMessage: text("draft_message").notNull(),
+    eligibleModalities: jsonb("eligible_modalities").notNull().default([]).$type<string[]>(),
+    estimatedAnnualSavings: integer("estimated_annual_savings"), // cents
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("lmn_requests_profile_idx").on(t.profileId),
+  ],
+);
+
+export const insertLmnRequestSchema = createInsertSchema(lmnRequests).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertLmnRequest = InferInsertModel<typeof lmnRequests>;
+export type LmnRequest = InferSelectModel<typeof lmnRequests>;
