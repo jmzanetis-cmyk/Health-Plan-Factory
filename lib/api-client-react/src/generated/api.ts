@@ -39,6 +39,7 @@ import type {
   ErrorResponse,
   FavoriteRecord,
   GeneratePlanBody,
+  GetEmployerDashboard200,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
   IntakeRecord,
@@ -2756,6 +2757,160 @@ export const useUpdateEmployerAccount = <
 > => {
   return useMutation(getUpdateEmployerAccountMutationOptions(options));
 };
+
+/**
+ * Returns aggregate employer wellness programme statistics. Utilization and spend metrics are suppressed (null) when fewer than 5 members are enrolled to protect individual privacy (k-anonymity floor).
+
+ * @summary Get employer dashboard stats including spend, utilization, and top modalities
+ */
+export const getGetEmployerDashboardUrl = () => {
+  return `/api/employer/dashboard`;
+};
+
+export const getEmployerDashboard = async (
+  options?: RequestInit,
+): Promise<GetEmployerDashboard200> => {
+  return customFetch<GetEmployerDashboard200>(getGetEmployerDashboardUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEmployerDashboardQueryKey = () => {
+  return [`/api/employer/dashboard`] as const;
+};
+
+export const getGetEmployerDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEmployerDashboard>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetEmployerDashboardQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEmployerDashboard>>
+  > = ({ signal }) => getEmployerDashboard({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEmployerDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEmployerDashboard>>
+>;
+export type GetEmployerDashboardQueryError = ErrorType<void>;
+
+/**
+ * @summary Get employer dashboard stats including spend, utilization, and top modalities
+ */
+
+export function useGetEmployerDashboard<
+  TData = Awaited<ReturnType<typeof getEmployerDashboard>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployerDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEmployerDashboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns the authenticated member's employer enrollment and remaining monthly stipend balance. Only accessible by enrolled members.
+
+ * @summary Get the current member's employer stipend budget and spend status
+ */
+export const getGetMyEmployerBudgetUrl = () => {
+  return `/api/employer/my-budget`;
+};
+
+export const getMyEmployerBudget = async (
+  options?: RequestInit,
+): Promise<EnrollStatusResponse> => {
+  return customFetch<EnrollStatusResponse>(getGetMyEmployerBudgetUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyEmployerBudgetQueryKey = () => {
+  return [`/api/employer/my-budget`] as const;
+};
+
+export const getGetMyEmployerBudgetQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyEmployerBudget>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyEmployerBudget>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyEmployerBudgetQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMyEmployerBudget>>
+  > = ({ signal }) => getMyEmployerBudget({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyEmployerBudget>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyEmployerBudgetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyEmployerBudget>>
+>;
+export type GetMyEmployerBudgetQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the current member's employer stipend budget and spend status
+ */
+
+export function useGetMyEmployerBudget<
+  TData = Awaited<ReturnType<typeof getMyEmployerBudget>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyEmployerBudget>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyEmployerBudgetQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Returns anonymized aggregate statistics only — no individual member rows or identifiers are exposed to the employer.

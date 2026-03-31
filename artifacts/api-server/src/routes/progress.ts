@@ -79,7 +79,9 @@ router.post("/progress", async (req, res) => {
       let employerCovered = 0;
       let outOfPocket = sessionCostCents;
 
-      if (body.data.modalityId) {
+      // Deduct from employer stipend only when an explicit session cost is provided
+      // alongside a covered modality. We never fabricate or estimate session costs.
+      if (body.data.modalityId && sessionCostCents > 0) {
         const [link] = await tx
           .select({
             id: employerMembers.id,
@@ -110,11 +112,8 @@ router.post("/progress", async (req, res) => {
             const effectiveSpent =
               link.budgetMonth === currentMonth ? link.spentThisMonth : 0;
             const remaining = Math.max(0, link.monthlyBudget - effectiveSpent);
-            const deductCents = sessionCostCents > 0
-              ? sessionCostCents
-              : Math.round(link.monthlyBudget / 4); // fallback: 4 sessions/month
-            employerCovered = Math.min(deductCents, remaining);
-            outOfPocket = deductCents - employerCovered;
+            employerCovered = Math.min(sessionCostCents, remaining);
+            outOfPocket = sessionCostCents - employerCovered;
 
             if (employerCovered > 0) {
               await tx

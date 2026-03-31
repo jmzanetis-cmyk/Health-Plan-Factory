@@ -572,6 +572,38 @@ export type HandleBrowserLoginCallbackParams = {
   state?: string;
 };
 
+export type GetEmployerDashboard200Stats = {
+  totalEnrolled: number;
+  totalBudgetCents: number;
+  /** Suppressed (null) when cohort < 5 members */
+  totalSpentCents?: number | null;
+  /** Suppressed (null) when cohort < 5 members */
+  utilizationPct?: number | null;
+  /** Suppressed (null) when cohort < 5 members */
+  avgWellnessScore?: number | null;
+  monthlyInvoiceCents: number;
+  privacySuppressed?: boolean;
+};
+
+export type GetEmployerDashboard200TopModalitiesItem = {
+  modalityId: string;
+  sessionCount: number;
+};
+
+export type GetEmployerDashboard200MonthlySpendItem = {
+  /** YYYY-MM */
+  month: string;
+  totalCents: number;
+};
+
+export type GetEmployerDashboard200 = {
+  employer: Employer;
+  stats: GetEmployerDashboard200Stats;
+  topModalities: GetEmployerDashboard200TopModalitiesItem[];
+  /** 6-month historical spend derived from actual employer-covered session costs */
+  monthlySpend: GetEmployerDashboard200MonthlySpendItem[];
+};
+
 export type RedeemEmployerInviteCode201 = {
   success: boolean;
   companyName: string;

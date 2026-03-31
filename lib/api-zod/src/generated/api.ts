@@ -628,6 +628,89 @@ export const UpdateEmployerAccountResponse = zod.object({
 });
 
 /**
+ * Returns aggregate employer wellness programme statistics. Utilization and spend metrics are suppressed (null) when fewer than 5 members are enrolled to protect individual privacy (k-anonymity floor).
+
+ * @summary Get employer dashboard stats including spend, utilization, and top modalities
+ */
+export const GetEmployerDashboardResponse = zod.object({
+  employer: zod.object({
+    id: zod.string(),
+    companyName: zod.string(),
+    status: zod.enum(["pending", "active", "canceled"]),
+    inviteCode: zod.string(),
+    numberOfEmployees: zod.number().optional(),
+    stipendPerEmployee: zod
+      .number()
+      .optional()
+      .describe("Monthly stipend per employee in cents"),
+    platformFeePercent: zod.number().optional(),
+    createdAt: zod.coerce.date().optional(),
+  }),
+  stats: zod.object({
+    totalEnrolled: zod.number(),
+    totalBudgetCents: zod.number(),
+    totalSpentCents: zod
+      .number()
+      .nullish()
+      .describe("Suppressed (null) when cohort < 5 members"),
+    utilizationPct: zod
+      .number()
+      .nullish()
+      .describe("Suppressed (null) when cohort < 5 members"),
+    avgWellnessScore: zod
+      .number()
+      .nullish()
+      .describe("Suppressed (null) when cohort < 5 members"),
+    monthlyInvoiceCents: zod.number(),
+    privacySuppressed: zod.boolean().optional(),
+  }),
+  topModalities: zod.array(
+    zod.object({
+      modalityId: zod.string(),
+      sessionCount: zod.number(),
+    }),
+  ),
+  monthlySpend: zod
+    .array(
+      zod.object({
+        month: zod.string().describe("YYYY-MM"),
+        totalCents: zod.number(),
+      }),
+    )
+    .describe(
+      "6-month historical spend derived from actual employer-covered session costs",
+    ),
+});
+
+/**
+ * Returns the authenticated member's employer enrollment and remaining monthly stipend balance. Only accessible by enrolled members.
+
+ * @summary Get the current member's employer stipend budget and spend status
+ */
+export const GetMyEmployerBudgetResponse = zod.object({
+  enrolled: zod.boolean(),
+  employer: zod
+    .object({
+      id: zod.string().optional(),
+      companyName: zod.string().optional(),
+      inviteCode: zod.string().optional(),
+      status: zod.string().optional(),
+    })
+    .nullish(),
+  member: zod
+    .object({
+      monthlyBudget: zod.number().optional(),
+      spentThisMonth: zod
+        .number()
+        .optional()
+        .describe("Effective spend for current month (0 if prior-month data)"),
+      budgetMonth: zod.string().optional(),
+      remainingCents: zod.number().optional(),
+    })
+    .nullish(),
+});
+
+/**
  * Returns anonymized aggregate statistics only — no individual member rows or identifiers are exposed to the employer.
 
  * @summary Get aggregate-only cohort utilization statistics for enrolled employees

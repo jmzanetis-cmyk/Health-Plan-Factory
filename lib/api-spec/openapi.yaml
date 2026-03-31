@@ -701,6 +701,93 @@ paths:
         '404':
           description: No employer account found.
 
+  /employer/dashboard:
+    get:
+      tags: [employer]
+      operationId: getEmployerDashboard
+      summary: Get employer dashboard stats including spend, utilization, and top modalities
+      description: >
+        Returns aggregate employer wellness programme statistics. Utilization
+        and spend metrics are suppressed (null) when fewer than 5 members are
+        enrolled to protect individual privacy (k-anonymity floor).
+      responses:
+        '200':
+          description: Employer dashboard data.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [employer, stats, topModalities, monthlySpend]
+                properties:
+                  employer:
+                    $ref: '#/components/schemas/Employer'
+                  stats:
+                    type: object
+                    required: [totalEnrolled, totalBudgetCents, monthlyInvoiceCents]
+                    properties:
+                      totalEnrolled:
+                        type: integer
+                      totalBudgetCents:
+                        type: integer
+                      totalSpentCents:
+                        type: integer
+                        nullable: true
+                        description: Suppressed (null) when cohort < 5 members
+                      utilizationPct:
+                        type: integer
+                        nullable: true
+                        description: Suppressed (null) when cohort < 5 members
+                      avgWellnessScore:
+                        type: integer
+                        nullable: true
+                        description: Suppressed (null) when cohort < 5 members
+                      monthlyInvoiceCents:
+                        type: number
+                      privacySuppressed:
+                        type: boolean
+                  topModalities:
+                    type: array
+                    items:
+                      type: object
+                      required: [modalityId, sessionCount]
+                      properties:
+                        modalityId:
+                          type: string
+                        sessionCount:
+                          type: integer
+                  monthlySpend:
+                    type: array
+                    description: 6-month historical spend derived from actual employer-covered session costs
+                    items:
+                      type: object
+                      required: [month, totalCents]
+                      properties:
+                        month:
+                          type: string
+                          description: "YYYY-MM"
+                        totalCents:
+                          type: integer
+        '404':
+          description: No employer account found.
+
+  /employer/my-budget:
+    get:
+      tags: [employer]
+      operationId: getMyEmployerBudget
+      summary: Get the current member's employer stipend budget and spend status
+      description: >
+        Returns the authenticated member's employer enrollment and remaining
+        monthly stipend balance. Only accessible by enrolled members.
+      responses:
+        '200':
+          description: Member budget and enrollment details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollStatusResponse'
+        '404':
+          description: Member is not enrolled with any employer.
+
   /employer/members:
     get:
       tags: [employer]
