@@ -24,10 +24,11 @@ interface DashboardData {
   stats: {
     totalEnrolled: number;
     totalBudgetCents: number;
-    totalSpentCents: number;
-    utilizationPct: number;
-    avgWellnessScore: number;
+    totalSpentCents: number | null;
+    utilizationPct: number | null;
+    avgWellnessScore: number | null;
     monthlyInvoiceCents: number;
+    privacySuppressed?: boolean;
   };
   topModalities: Array<{ modalityId: string; sessionCount: number }>;
   monthlySpend: Array<{ month: string; totalCents: number }>;
@@ -282,7 +283,9 @@ export default function EmployerDashboard() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 28 }}>
           <StatCard icon={<Users size={18} />} label="Enrolled" value={String(data.stats.totalEnrolled)} sub={`of ${data.employer.numberOfEmployees} employees`} />
           <StatCard icon={<DollarSign size={18} />} label="Monthly Budget" value={fmt(data.stats.totalBudgetCents)} sub="total stipend pool" />
-          <StatCard icon={<TrendingUp size={18} />} label="Utilization" value={`${data.stats.utilizationPct}%`} sub={`${fmt(data.stats.totalSpentCents)} spent`} />
+          <StatCard icon={<TrendingUp size={18} />} label="Utilization"
+            value={data.stats.utilizationPct != null ? `${data.stats.utilizationPct}%` : "—"}
+            sub={data.stats.totalSpentCents != null ? `${fmt(data.stats.totalSpentCents)} spent` : "Suppressed (<5 members)"} />
           <StatCard icon={<DollarSign size={18} />} label="Next Invoice" value={fmt(data.stats.monthlyInvoiceCents)} sub="incl. 8% platform fee" />
         </div>
 
@@ -335,7 +338,7 @@ export default function EmployerDashboard() {
         </div>
 
         {/* Avg wellness score */}
-        {data.stats.avgWellnessScore > 0 && (
+        {data.stats.avgWellnessScore != null && data.stats.avgWellnessScore > 0 && (
           <div style={{
             background: `linear-gradient(120deg, ${navy} 0%, #243d68 100%)`,
             borderRadius: 12,

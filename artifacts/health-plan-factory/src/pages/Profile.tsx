@@ -192,7 +192,7 @@ export default function Profile() {
           <h2 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 700, color: navy, marginBottom: 20 }}>Account</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              { label: "Name", value: user?.displayName ?? "—" },
+              { label: "Name", value: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "—" },
               { label: "Email", value: user?.email ?? "—" },
               { label: "Role", value: user?.role ?? "member" },
             ].map((f) => (

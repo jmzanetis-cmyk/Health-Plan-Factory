@@ -51,14 +51,14 @@ function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-// Enrollment routes are member-only: employers/admins must not enroll as employees.
+// Enrollment routes are strictly member-only: only member-role accounts may
+// redeem invite codes or check enrollment status.
 function requireMemberAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Authentication required" });
     return;
   }
-  const role = req.user!.role;
-  if (role === "employer" || role === "admin") {
+  if (req.user!.role !== "member") {
     res.status(403).json({ error: "Enrollment is available to member accounts only" });
     return;
   }
