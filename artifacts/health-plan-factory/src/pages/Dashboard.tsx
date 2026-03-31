@@ -474,6 +474,27 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Fallback: 14+ entries but no strong correlations yet */}
+        {insightsData &&
+          insightsData.journalCount >= 14 &&
+          insightsData.insights.length === 0 &&
+          insightsData.attentionItems.length === 0 && (
+          <div className="p-5 rounded-2xl flex items-center gap-5" style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.12)" }}>
+            <Sparkles size={32} style={{ color: "var(--sage)", flexShrink: 0 }} />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                Building your personalized insights
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                You have {insightsData.journalCount} journal entries. Keep logging sessions alongside your entries and HPF will surface correlations as patterns emerge.
+              </p>
+            </div>
+            <Link to="/progress" className="text-xs font-semibold no-underline flex-shrink-0 px-3 py-1.5 rounded-lg" style={{ background: "var(--sage)", color: "white", fontFamily: "var(--app-font-sans)" }}>
+              View progress →
+            </Link>
+          </div>
+        )}
+
         {/* Teaser: < 14 entries prompt */}
         {insightsData && insightsData.journalCount < 14 && insightsData.journalCount > 0 && (
           <div className="p-5 rounded-2xl flex items-center gap-5" style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.12)" }}>

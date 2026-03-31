@@ -10,7 +10,6 @@
 import { schedule } from "node-cron";
 import { db } from "@workspace/db";
 import { insightsCache, plans } from "@workspace/db";
-import { sql } from "drizzle-orm";
 import { computeAndCacheInsights } from "../routes/insights";
 import { logger } from "../lib/logger";
 
@@ -18,14 +17,20 @@ async function refreshAllMemberInsights(): Promise<void> {
   logger.info("Weekly insights refresh job started");
 
   try {
-    // Collect all distinct profile IDs that have a plan (active or historical)
-    const profileRows = await db
-      .selectDistinct({ profileId: plans.profileId })
-      .from(plans);
+    // Collect distinct profile IDs from plans AND existing cache rows
+    // so members without a current plan still get their cache refreshed.
+    const [planRows, cacheRows] = await Promise.all([
+      db.selectDistinct({ profileId: plans.profileId }).from(plans),
+      db.selectDistinct({ profileId: insightsCache.profileId }).from(insightsCache),
+    ]);
 
-    const profileIds = profileRows
-      .map((r) => r.profileId)
-      .filter((id): id is string => id != null);
+    const profileIds = [
+      ...new Set(
+        [...planRows, ...cacheRows]
+          .map((r) => r.profileId)
+          .filter((id): id is string => id != null)
+      ),
+    ];
     logger.info({ count: profileIds.length }, "Refreshing insights for members");
 
     let succeeded = 0;
