@@ -90,6 +90,27 @@ export default function Dashboard() {
   const [lmnSavings, setLmnSavings] = useState<number | null>(null);
   const [lmnEligibleCount, setLmnEligibleCount] = useState(0);
   const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
+  const [referralWelcome, setReferralWelcome] = useState(false);
+
+  // Auto-register referral code stored when the user landed on the marketing site
+  useEffect(() => {
+    if (!user) return;
+    const refCode = localStorage.getItem("hpf_ref_code");
+    if (!refCode) return;
+    fetch(`${BASE}/api/referrals/register`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ referralCode: refCode }),
+    })
+      .then((r) => {
+        if (r.ok) {
+          localStorage.removeItem("hpf_ref_code");
+          setReferralWelcome(true);
+        }
+      })
+      .catch(() => {});
+  }, [user]);
 
   // Auto-redeem employer invite code stored during signup
   useEffect(() => {
@@ -196,6 +217,31 @@ export default function Dashboard() {
           <strong>Important:</strong> HealthPlanFactory is a wellness optimization platform — not a medical provider or substitute for professional care.
           For emergencies call <strong>911</strong>. Mental health crisis: <strong>988</strong>.
         </div>
+
+        {/* Referral welcome banner — shown once when a referred user first logs in */}
+        {referralWelcome && (
+          <div
+            className="px-5 py-4 rounded-2xl flex items-center gap-4"
+            style={{ background: "linear-gradient(135deg, #3d6b52 0%, #2e5240 100%)", border: "none" }}
+          >
+            <span className="text-3xl flex-shrink-0">🎁</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--app-font-sans)" }}>
+                Welcome! You have a $2.00 credit waiting
+              </p>
+              <p className="text-xs mt-0.5 text-white" style={{ fontFamily: "var(--app-font-sans)", opacity: 0.8 }}>
+                Your friend referred you to HealthPlanFactory. Build your first wellness plan and your $2.00 unlock credit will be applied automatically.
+              </p>
+            </div>
+            <Link
+              to="/referral"
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
+              style={{ background: "rgba(255,255,255,0.2)", color: "white", fontFamily: "var(--app-font-sans)" }}
+            >
+              View
+            </Link>
+          </div>
+        )}
 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -380,11 +426,12 @@ export default function Dashboard() {
           <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
             Quick Actions
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { to: "/onboarding", label: "Build New Plan", desc: "Update goals and get a fresh plan", emoji: "⚗️" },
               { to: "/providers", label: "Find Providers", desc: "Browse wellness providers near you", emoji: "🗺️" },
               { to: "/progress", label: "Log Progress", desc: "Track your mood, pain, and energy", emoji: "📈" },
+              { to: "/referral", label: "Refer & Earn", desc: "Share your link and earn free credits", emoji: "🎁" },
             ].map((a) => (
               <Link
                 key={a.to}

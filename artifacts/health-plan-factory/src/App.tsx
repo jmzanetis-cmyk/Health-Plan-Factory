@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +7,18 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@workspace/replit-auth-web";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+/** Silently captures ?ref=CODE from any URL and stores it in localStorage for post-auth registration */
+function ReferralCapture() {
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref && !localStorage.getItem("hpf_ref_code")) {
+      localStorage.setItem("hpf_ref_code", ref.trim().toUpperCase());
+    }
+  }, [searchParams]);
+  return null;
+}
 
 import Landing from "@/pages/Landing";
 import HowItWorks from "@/pages/HowItWorks";
@@ -49,6 +62,7 @@ import EmployerSettings from "@/pages/employer/EmployerSettings";
 import LmnGuide from "@/pages/LmnGuide";
 import HsaUnlock from "@/pages/HsaUnlock";
 import ModalityDetail from "@/pages/ModalityDetail";
+import Referral from "@/pages/Referral";
 
 import NotFound from "@/pages/not-found";
 
@@ -59,6 +73,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
 function AppRoutes() {
   return (
     <Routes>
+      {/* Capture ?ref= from any URL and store in localStorage */}
+      <Route path="*" element={<ReferralCapture />} />
       {/* Public / marketing */}
       <Route path="/" element={<Layout><Landing /></Layout>} />
       <Route path="/how-it-works" element={<Layout><HowItWorks /></Layout>} />
@@ -93,6 +109,7 @@ function AppRoutes() {
       <Route path="/progress" element={<Layout><ProtectedRoute><Progress /></ProtectedRoute></Layout>} />
       <Route path="/profile" element={<Layout><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
       <Route path="/hsa-unlock" element={<Layout><ProtectedRoute><HsaUnlock /></ProtectedRoute></Layout>} />
+      <Route path="/referral" element={<Layout><ProtectedRoute><Referral /></ProtectedRoute></Layout>} />
 
       {/* Provider routes — protected */}
       <Route path="/provider/dashboard" element={<Layout><ProtectedRoute role="provider"><ProviderDashboard /></ProtectedRoute></Layout>} />

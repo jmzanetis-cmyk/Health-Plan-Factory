@@ -1325,3 +1325,71 @@ export const AdminUpdateEmployerResponse = zod.object({
 export const AdminDeleteEmployerParams = zod.object({
   id: zod.coerce.string(),
 });
+
+/**
+ * @summary Get member's referral code, history, and credit summary
+ */
+export const GetReferralsMineResponse = zod.object({
+  referralCode: zod.string(),
+  referralHistory: zod.array(
+    zod.object({
+      id: zod.string(),
+      status: zod.enum(["pending", "rewarded"]),
+      code: zod.string(),
+      createdAt: zod.coerce.date(),
+      rewardedAt: zod.coerce.date().nullish(),
+      referredMemberName: zod.string().nullish(),
+      referredMemberEmail: zod.string().nullish(),
+    }),
+  ),
+  creditSummary: zod.object({
+    totalCredits: zod.number(),
+    unusedCreditsCents: zod.number(),
+    unusedCreditsFormatted: zod.string(),
+    credits: zod.array(
+      zod.object({
+        id: zod.string(),
+        profileId: zod.string(),
+        source: zod.enum(["referral", "promo"]),
+        amountCents: zod.number(),
+        used: zod.boolean(),
+        referralId: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+        usedAt: zod.coerce.date().nullish(),
+      }),
+    ),
+  }),
+});
+
+/**
+ * @summary Register a pending referral using a referral code
+ */
+export const PostReferralRegisterBody = zod.object({
+  referralCode: zod.string(),
+});
+
+export const PostReferralRegisterResponse = zod.object({
+  message: zod.string().optional(),
+  alreadyRegistered: zod.boolean().optional(),
+});
+
+/**
+ * @summary Get member's unused credit balance and history
+ */
+export const GetCreditsMineResponse = zod.object({
+  unusedCreditsCents: zod.number(),
+  unusedCreditsFormatted: zod.string(),
+  hasCredits: zod.boolean(),
+  credits: zod.array(
+    zod.object({
+      id: zod.string(),
+      profileId: zod.string(),
+      source: zod.enum(["referral", "promo"]),
+      amountCents: zod.number(),
+      used: zod.boolean(),
+      referralId: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+      usedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+});

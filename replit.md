@@ -204,3 +204,39 @@ The GitHub OAuth connection is wired via the Replit integrations system (GitHub 
 - `GET /insights/mine` and `POST /insights/refresh` endpoints documented
 - New schemas: `InsightSparklinePoint`, `InsightCard`, `AttentionItem`, `InsightsResponse`
 - Orval codegen regenerated after spec update
+
+## Member Referral Program (Task #11)
+
+### DB schema (`lib/db/src/schema/index.ts`)
+- `profiles.referralCode` — nullable unique text column `referral_code` with uniqueIndex; auto-generated on first `GET /api/referrals/mine` call
+- `referrals` table: `id`, `referrerId`, `referredMemberId`, `code`, `status` (pending|rewarded), `createdAt`, `rewardedAt`
+- `memberCredits` table: `id`, `profileId`, `source` (referral|promo), `amountCents`, `used`, `referralId` (FK → referrals.id), `createdAt`, `usedAt`
+
+### API Routes (`artifacts/api-server/src/routes/referrals.ts`)
+- `GET /api/referrals/mine` — returns/generates referral code, enriched referral history (with referred member name/email), and credit summary
+- `POST /api/referrals/register` — creates a pending referral row (self-referral blocked; one-per-member limit enforced)
+- `GET /api/credits/mine` — returns unused credit balance and full credit history
+- `maybeRewardReferrer(profileId)` — exported helper called from plans.ts; on first plan generation marks referral as rewarded and issues $2 (200 cents) to both referrer and referred member
+
+### Reward trigger (`artifacts/api-server/src/routes/plans.ts`)
+- After a plan is saved, `maybeRewardReferrer(profileId)` fires non-blocking (no impact on plan generation)
+
+### Referral code capture (frontend)
+- `ReferralCapture` component in `App.tsx` silently reads `?ref=CODE` from any URL and stores it in `localStorage` key `hpf_ref_code` (only if not already set, i.e. first referral wins)
+- Dashboard.tsx reads `hpf_ref_code` on mount and calls `POST /api/referrals/register`; clears the key on success and shows a green welcome banner
+
+### Referral page (`/referral`) — `artifacts/health-plan-factory/src/pages/Referral.tsx`
+- Shows referral link (copy + social share buttons: Email, SMS, WhatsApp, Twitter/X)
+- Shows referral history table with StatusPill (Pending / Rewarded) and join dates
+- Shows summary stats: total sent, rewarded, pending, available credit balance
+- Shows $2 credit balance banner when credits are unused
+- ProtectedRoute: redirects unauthenticated users to /sign-in
+
+### Dashboard (`artifacts/health-plan-factory/src/pages/Dashboard.tsx`)
+- Quick Actions grid updated to 4 items (2-col on sm, 4-col on lg): added "Refer & Earn" → `/referral`
+- Welcome banner shown once for referred users post-login (green gradient, $2 credit notice, View link)
+
+### OpenAPI spec
+- New paths: `GET /referrals/mine`, `POST /referrals/register`, `GET /credits/mine`
+- New schemas: `ReferralRow`, `MemberCreditRow`, `ReferralsMineResponse`, `RegisterReferralBody`, `CreditsMineResponse`
+- Orval codegen regenerated after spec update

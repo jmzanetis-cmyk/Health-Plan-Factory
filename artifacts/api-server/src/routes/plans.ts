@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { plans, planItems, memberIntakes, modalities } from "@workspace/db";
 import { eq, desc, inArray } from "drizzle-orm";
+import { maybeRewardReferrer } from "./referrals";
 import {
   GeneratePlanBody,
   GetPlanParams,
@@ -74,6 +75,14 @@ router.post("/plans/generate", async (req, res) => {
     const savedItems = itemValues.length > 0
       ? await db.insert(planItems).values(itemValues).returning()
       : [];
+
+    // Trigger referral reward if the member was referred and this is their first plan
+    if (body.data.profileId) {
+      maybeRewardReferrer(body.data.profileId).catch((err) => {
+        // Non-blocking — log but don't fail plan generation
+        console.error("[referral] maybeRewardReferrer error:", err);
+      });
+    }
 
     res.status(201).json(GetPlanResponse.parse({ plan, items: savedItems }));
   } catch (err: unknown) {

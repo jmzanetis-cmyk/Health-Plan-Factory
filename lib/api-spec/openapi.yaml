@@ -32,6 +32,8 @@ tags:
     description: Browser and mobile authentication endpoints.
   - name: lmn
     description: Letter of Medical Necessity (LMN) and HSA unlock flow
+  - name: referrals
+    description: Member referral program — share links, earn credits
 
 paths:
   /healthz:
@@ -1269,6 +1271,72 @@ paths:
         '404':
           description: Employer not found.
 
+  /referrals/mine:
+    get:
+      operationId: getReferralsMine
+      tags: [referrals]
+      summary: Get member's referral code, history, and credit summary
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Referral data for the authenticated member.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferralsMineResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /referrals/register:
+    post:
+      operationId: postReferralRegister
+      tags: [referrals]
+      summary: Register a pending referral using a referral code
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterReferralBody'
+      responses:
+        '200':
+          description: Referral registered (or already registered).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  alreadyRegistered:
+                    type: boolean
+        '400':
+          description: Invalid or self-referral code.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Referral code not found.
+
+  /credits/mine:
+    get:
+      operationId: getCreditsMine
+      tags: [referrals]
+      summary: Get member's unused credit balance and history
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Credit balance for the authenticated member.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditsMineResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   responses:
     Unauthorized:
@@ -2448,3 +2516,101 @@ components:
           minimum: 0
         platformFeePercent:
           type: number
+
+    ReferralRow:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, rewarded]
+        code:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        rewardedAt:
+          type: string
+          format: date-time
+          nullable: true
+        referredMemberName:
+          type: string
+          nullable: true
+        referredMemberEmail:
+          type: string
+          nullable: true
+      required: [id, status, code, createdAt]
+
+    MemberCreditRow:
+      type: object
+      properties:
+        id:
+          type: string
+        profileId:
+          type: string
+        source:
+          type: string
+          enum: [referral, promo]
+        amountCents:
+          type: integer
+        used:
+          type: boolean
+        referralId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        usedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, profileId, source, amountCents, used, createdAt]
+
+    ReferralsMineResponse:
+      type: object
+      properties:
+        referralCode:
+          type: string
+        referralHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferralRow'
+        creditSummary:
+          type: object
+          properties:
+            totalCredits:
+              type: integer
+            unusedCreditsCents:
+              type: integer
+            unusedCreditsFormatted:
+              type: string
+            credits:
+              type: array
+              items:
+                $ref: '#/components/schemas/MemberCreditRow'
+          required: [totalCredits, unusedCreditsCents, unusedCreditsFormatted, credits]
+      required: [referralCode, referralHistory, creditSummary]
+
+    RegisterReferralBody:
+      type: object
+      properties:
+        referralCode:
+          type: string
+      required: [referralCode]
+
+    CreditsMineResponse:
+      type: object
+      properties:
+        unusedCreditsCents:
+          type: integer
+        unusedCreditsFormatted:
+          type: string
+        hasCredits:
+          type: boolean
+        credits:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberCreditRow'
+      required: [unusedCreditsCents, unusedCreditsFormatted, hasCredits, credits]

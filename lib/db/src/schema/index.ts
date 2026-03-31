@@ -65,10 +65,14 @@ export const profiles = pgTable(
     stripeCustomerId: text("stripe_customer_id"),
     subscriptionStatus: text("subscription_status").default("free"), // free | plus | canceled
     lmnStatus: text("lmn_status").notNull().default("none"), // none | requested | received
+    referralCode: text("referral_code"),               // unique shareable code, e.g. "HPF-ABCD1234"
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("profiles_email_idx").on(t.email)],
+  (t) => [
+    uniqueIndex("profiles_email_idx").on(t.email),
+    uniqueIndex("profiles_referral_code_idx").on(t.referralCode),
+  ],
 );
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({
@@ -518,3 +522,73 @@ export const insertInsightsCacheSchema = createInsertSchema(insightsCache).omit(
 });
 export type InsertInsightsCache = InferInsertModel<typeof insightsCache>;
 export type InsightsCache = InferSelectModel<typeof insightsCache>;
+
+// ── referrals ─────────────────────────────────────────────────────────────────
+// Tracks referral relationships between members. A row is created when a
+// referred user registers with a valid referral code. Status advances from
+// pending → rewarded when the referred member generates their first plan.
+
+export const referralStatusEnum = pgEnum("referral_status", [
+  "pending",    // referred member signed up but hasn't generated a plan yet
+  "rewarded",   // referred member generated a plan; referrer received credit
+]);
+
+export const referrals = pgTable(
+  "referrals",
+  {
+    id: text("id").primaryKey(),
+    referrerId: text("referrer_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    referredMemberId: text("referred_member_id")
+      .references(() => profiles.id, { onDelete: "set null" }),
+    code: text("code").notNull(),               // the referral code used
+    status: referralStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    rewardedAt: timestamp("rewarded_at"),
+  },
+  (t) => [
+    index("referrals_referrer_idx").on(t.referrerId),
+    index("referrals_referred_member_idx").on(t.referredMemberId),
+  ],
+);
+
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  createdAt: true,
+});
+export type InsertReferral = InferInsertModel<typeof referrals>;
+export type Referral = InferSelectModel<typeof referrals>;
+
+// ── member_credits ────────────────────────────────────────────────────────────
+// Redeemable credits earned by members. Each credit represents a fixed
+// monetary discount (amountCents) applied at the next modality unlock or
+// subscription upgrade. source tracks how the credit was earned.
+
+export const creditSourceEnum = pgEnum("credit_source", [
+  "referral",   // earned by successfully referring a new member
+  "promo",      // awarded by admin as a promotional credit
+]);
+
+export const memberCredits = pgTable(
+  "member_credits",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    source: creditSourceEnum("source").notNull(),
+    amountCents: integer("amount_cents").notNull().default(200), // default: $2 unlock credit
+    used: boolean("used").notNull().default(false),
+    referralId: text("referral_id")               // FK back to referrals row (nullable for promos)
+      .references(() => referrals.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    usedAt: timestamp("used_at"),
+  },
+  (t) => [index("member_credits_profile_idx").on(t.profileId)],
+);
+
+export const insertMemberCreditSchema = createInsertSchema(memberCredits).omit({
+  createdAt: true,
+});
+export type InsertMemberCredit = InferInsertModel<typeof memberCredits>;
+export type MemberCredit = InferSelectModel<typeof memberCredits>;

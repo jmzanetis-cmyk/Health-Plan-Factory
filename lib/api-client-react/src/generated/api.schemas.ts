@@ -658,6 +658,67 @@ export interface AdminUpdateEmployerBody {
   platformFeePercent?: number;
 }
 
+export type ReferralRowStatus =
+  (typeof ReferralRowStatus)[keyof typeof ReferralRowStatus];
+
+export const ReferralRowStatus = {
+  pending: "pending",
+  rewarded: "rewarded",
+} as const;
+
+export interface ReferralRow {
+  id: string;
+  status: ReferralRowStatus;
+  code: string;
+  createdAt: string;
+  rewardedAt?: string | null;
+  referredMemberName?: string | null;
+  referredMemberEmail?: string | null;
+}
+
+export type MemberCreditRowSource =
+  (typeof MemberCreditRowSource)[keyof typeof MemberCreditRowSource];
+
+export const MemberCreditRowSource = {
+  referral: "referral",
+  promo: "promo",
+} as const;
+
+export interface MemberCreditRow {
+  id: string;
+  profileId: string;
+  source: MemberCreditRowSource;
+  amountCents: number;
+  used: boolean;
+  referralId?: string | null;
+  createdAt: string;
+  usedAt?: string | null;
+}
+
+export type ReferralsMineResponseCreditSummary = {
+  totalCredits: number;
+  unusedCreditsCents: number;
+  unusedCreditsFormatted: string;
+  credits: MemberCreditRow[];
+};
+
+export interface ReferralsMineResponse {
+  referralCode: string;
+  referralHistory: ReferralRow[];
+  creditSummary: ReferralsMineResponseCreditSummary;
+}
+
+export interface RegisterReferralBody {
+  referralCode: string;
+}
+
+export interface CreditsMineResponse {
+  unusedCreditsCents: number;
+  unusedCreditsFormatted: string;
+  hasCredits: boolean;
+  credits: MemberCreditRow[];
+}
+
 /**
  * Authentication required
  */
@@ -786,3 +847,8 @@ export type RedeemEmployerInviteCode201 = {
  * Raw Stripe webhook event payload.
  */
 export type StripeWebhookBody = { [key: string]: unknown };
+
+export type PostReferralRegister200 = {
+  message?: string;
+  alreadyRegistered?: boolean;
+};

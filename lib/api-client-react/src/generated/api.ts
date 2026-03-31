@@ -32,6 +32,7 @@ import type {
   CreateModalityBody,
   CreateProgressLogBody,
   CreateProviderBody,
+  CreditsMineResponse,
   Employer,
   EmployerAccount,
   EmployerCohortStats,
@@ -59,12 +60,15 @@ import type {
   ModalityRule,
   PlanRecord,
   PlanWithItems,
+  PostReferralRegister200,
   ProgressLogRecord,
   ProviderRecord,
   RecordModalitySession201,
   RecordModalitySessionBody,
   RedeemCodeBody,
   RedeemEmployerInviteCode201,
+  ReferralsMineResponse,
+  RegisterReferralBody,
   RemoveFavoriteParams,
   SetModalityRulesBody,
   StripeWebhookBody,
@@ -4659,3 +4663,240 @@ export const useAdminDeleteEmployer = <
 > => {
   return useMutation(getAdminDeleteEmployerMutationOptions(options));
 };
+
+/**
+ * @summary Get member's referral code, history, and credit summary
+ */
+export const getGetReferralsMineUrl = () => {
+  return `/api/referrals/mine`;
+};
+
+export const getReferralsMine = async (
+  options?: RequestInit,
+): Promise<ReferralsMineResponse> => {
+  return customFetch<ReferralsMineResponse>(getGetReferralsMineUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReferralsMineQueryKey = () => {
+  return [`/api/referrals/mine`] as const;
+};
+
+export const getGetReferralsMineQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReferralsMine>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getReferralsMine>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReferralsMineQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReferralsMine>>
+  > = ({ signal }) => getReferralsMine({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReferralsMine>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReferralsMineQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReferralsMine>>
+>;
+export type GetReferralsMineQueryError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Get member's referral code, history, and credit summary
+ */
+
+export function useGetReferralsMine<
+  TData = Awaited<ReturnType<typeof getReferralsMine>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getReferralsMine>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReferralsMineQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register a pending referral using a referral code
+ */
+export const getPostReferralRegisterUrl = () => {
+  return `/api/referrals/register`;
+};
+
+export const postReferralRegister = async (
+  registerReferralBody: RegisterReferralBody,
+  options?: RequestInit,
+): Promise<PostReferralRegister200> => {
+  return customFetch<PostReferralRegister200>(getPostReferralRegisterUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(registerReferralBody),
+  });
+};
+
+export const getPostReferralRegisterMutationOptions = <
+  TError = ErrorType<void | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postReferralRegister>>,
+    TError,
+    { data: BodyType<RegisterReferralBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postReferralRegister>>,
+  TError,
+  { data: BodyType<RegisterReferralBody> },
+  TContext
+> => {
+  const mutationKey = ["postReferralRegister"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postReferralRegister>>,
+    { data: BodyType<RegisterReferralBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postReferralRegister(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostReferralRegisterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postReferralRegister>>
+>;
+export type PostReferralRegisterMutationBody = BodyType<RegisterReferralBody>;
+export type PostReferralRegisterMutationError =
+  ErrorType<void | UnauthorizedResponse>;
+
+/**
+ * @summary Register a pending referral using a referral code
+ */
+export const usePostReferralRegister = <
+  TError = ErrorType<void | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postReferralRegister>>,
+    TError,
+    { data: BodyType<RegisterReferralBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof postReferralRegister>>,
+  TError,
+  { data: BodyType<RegisterReferralBody> },
+  TContext
+> => {
+  return useMutation(getPostReferralRegisterMutationOptions(options));
+};
+
+/**
+ * @summary Get member's unused credit balance and history
+ */
+export const getGetCreditsMineUrl = () => {
+  return `/api/credits/mine`;
+};
+
+export const getCreditsMine = async (
+  options?: RequestInit,
+): Promise<CreditsMineResponse> => {
+  return customFetch<CreditsMineResponse>(getGetCreditsMineUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCreditsMineQueryKey = () => {
+  return [`/api/credits/mine`] as const;
+};
+
+export const getGetCreditsMineQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCreditsMine>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCreditsMine>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCreditsMineQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCreditsMine>>> = ({
+    signal,
+  }) => getCreditsMine({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCreditsMine>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCreditsMineQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCreditsMine>>
+>;
+export type GetCreditsMineQueryError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary Get member's unused credit balance and history
+ */
+
+export function useGetCreditsMine<
+  TData = Awaited<ReturnType<typeof getCreditsMine>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCreditsMine>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCreditsMineQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
