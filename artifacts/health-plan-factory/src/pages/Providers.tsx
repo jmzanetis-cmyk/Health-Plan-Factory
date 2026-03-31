@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -52,14 +52,16 @@ function SkeletonCard() {
 export default function Providers() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  // Filters
-  const [selectedModality, setSelectedModality] = useState("");
+  // Filters — initialise selectedModality from ?modality= query param
+  // (supports deep-link from /modalities/:slug evidence library pages)
+  const [selectedModality, setSelectedModality] = useState(searchParams.get("modality") ?? "");
   const [zipCode, setZipCode] = useState("");
   const [telehealth, setTelehealth] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
