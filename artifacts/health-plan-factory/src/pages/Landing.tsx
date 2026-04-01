@@ -251,9 +251,14 @@ export default function Landing() {
 
         {/* Right — interactive plan speculator (desktop); on mobile it appears below the hero CTAs */}
         <div className="relative z-10 flex flex-col items-center gap-4">
-          {/* Factory illustration — small decorative position above speculator on desktop */}
-          <div className="hidden md:block w-full max-w-xs mx-auto mb-1 opacity-40" style={{ pointerEvents: "none" }}>
-            <FactoryIllustration />
+          {/* Factory illustration — decorative position above speculator on desktop */}
+          <div className="hidden md:block w-full max-w-sm mx-auto mb-1" style={{ pointerEvents: "none" }}>
+            <img
+              src="/assets/factory-hero.png"
+              alt="Health Plan Factory illustration with worker character"
+              className="w-full h-auto"
+              style={{ filter: "drop-shadow(0 16px 40px rgba(212,34,126,0.18))" }}
+            />
           </div>
           <PlanSpeculator />
         </div>
@@ -960,129 +965,3 @@ export default function Landing() {
   );
 }
 
-function FactoryIllustration() {
-  return (
-    <svg viewBox="0 0 480 280" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto" style={{ filter: "drop-shadow(0 16px 40px rgba(212,34,126,0.15))" }}>
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#e8f4fd" />
-          <stop offset="100%" stopColor="#f4f2ee" />
-        </linearGradient>
-        <style>{`
-          .smoke1{animation:smokeRise 3s ease-in-out infinite}
-          .smoke2{animation:smokeRise 3s 1s ease-in-out infinite}
-          .smoke3{animation:smokeRise 3s 2s ease-in-out infinite}
-          @keyframes smokeRise{0%{transform:translateY(0) scaleX(1);opacity:.5}100%{transform:translateY(-40px) scaleX(1.4);opacity:0}}
-          .gear-anim{animation:gearSpin 4s linear infinite;transform-origin:50% 50%}
-          .gear-anim2{animation:gearSpin 4s linear infinite reverse;transform-origin:50% 50%}
-          @keyframes gearSpin{to{transform:rotate(360deg)}}
-          .win-blink{animation:winBlink 4s ease-in-out infinite}
-          @keyframes winBlink{0%,90%,100%{opacity:1}95%{opacity:0.3}}
-        `}</style>
-        <clipPath id="smokeClip"><rect x="0" y="0" width="480" height="180" /></clipPath>
-      </defs>
-
-      {/* Sky */}
-      <rect width="480" height="280" fill="url(#sky)" rx="16" />
-
-      {/* Ground */}
-      <rect x="0" y="238" width="480" height="42" fill="#e8dfc8" />
-      <rect x="0" y="234" width="480" height="7" fill="#d4c9b0" />
-
-      {/* Smoke */}
-      <g clipPath="url(#smokeClip)">
-        <circle className="smoke1" cx="130" cy="85" r="12" fill="rgba(180,200,220,0.6)" />
-        <circle className="smoke1" cx="138" cy="80" r="9" fill="rgba(180,200,220,0.5)" />
-        <circle className="smoke2" cx="200" cy="75" r="11" fill="rgba(180,200,220,0.6)" />
-        <circle className="smoke2" cx="208" cy="70" r="8" fill="rgba(180,200,220,0.5)" />
-        <circle className="smoke3" cx="265" cy="72" r="10" fill="rgba(180,200,220,0.5)" />
-      </g>
-
-      {/* Main building */}
-      <rect x="60" y="138" width="360" height="100" fill="#D4227E" rx="4" />
-      <rect x="60" y="134" width="360" height="8" fill="#b81c6a" rx="2" />
-      <rect x="40" y="165" width="38" height="73" fill="#b81c6a" rx="2" />
-      <rect x="402" y="155" width="38" height="83" fill="#b81c6a" rx="2" />
-
-      {/* Chimneys */}
-      <rect x="110" y="92" width="22" height="50" fill="#e04d95" rx="3" />
-      <rect x="106" y="88" width="30" height="9" fill="#3a5a8a" rx="2" />
-      <rect x="178" y="80" width="22" height="58" fill="#e04d95" rx="3" />
-      <rect x="174" y="76" width="30" height="9" fill="#3a5a8a" rx="2" />
-      <rect x="248" y="74" width="18" height="64" fill="#e04d95" rx="3" />
-      <rect x="244" y="70" width="26" height="9" fill="#3a5a8a" rx="2" />
-
-      {/* Windows */}
-      <rect x="80" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
-      <rect x="80" y="152" width="26" height="18" fill="#E02040" rx="3" opacity="0.3" />
-      <rect x="118" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
-      <rect className="win-blink" x="156" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
-      <rect className="win-blink" x="156" y="152" width="26" height="18" fill="#E02040" rx="3" opacity="0.3" />
-      <rect x="194" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
-      <rect x="232" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
-      <rect x="270" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
-      <rect x="308" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
-      <rect x="346" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
-      <rect x="85" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
-      <rect x="122" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
-      <rect x="159" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
-      <rect x="196" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
-      <rect x="233" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
-      <rect x="270" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
-      <rect x="307" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
-      <rect x="344" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
-
-      {/* Door */}
-      <rect x="202" y="205" width="46" height="33" fill="#b81c6a" rx="4" />
-      <rect x="206" y="209" width="38" height="25" fill="#1a2840" rx="3" />
-      <circle cx="238" cy="223" r="2.5" fill="#E02040" />
-      <path d="M202 209 Q225 195 248 209" fill="none" stroke="#E02040" strokeWidth="2" />
-
-      {/* Sign */}
-      <rect x="152" y="120" width="126" height="24" fill="#E02040" rx="4" />
-      <text x="215" y="136" fontSize="9" fontWeight="bold" fill="white" textAnchor="middle" fontFamily="Arial, sans-serif">HEALTH PLAN FACTORY</text>
-
-      {/* Gear system */}
-      <g transform="translate(385, 205)" className="gear-anim">
-        <circle r="20" fill="none" stroke="#E02040" strokeWidth="4" />
-        <circle r="12" fill="#D4227E" />
-        <circle r="3.5" fill="#E02040" />
-        <rect x="-3.5" y="-24" width="7" height="7" rx="1" fill="#E02040" />
-        <rect x="-3.5" y="17" width="7" height="7" rx="1" fill="#E02040" />
-        <rect x="-24" y="-3.5" width="7" height="7" rx="1" fill="#E02040" />
-        <rect x="17" y="-3.5" width="7" height="7" rx="1" fill="#E02040" />
-      </g>
-      <g transform="translate(365, 190)" className="gear-anim2">
-        <circle r="13" fill="none" stroke="#e84d65" strokeWidth="3" />
-        <circle r="7" fill="#D4227E" />
-        <circle r="2" fill="#e84d65" />
-        <rect x="-2" y="-16" width="4" height="5" rx="1" fill="#e84d65" />
-        <rect x="-2" y="11" width="4" height="5" rx="1" fill="#e84d65" />
-        <rect x="-16" y="-2" width="5" height="4" rx="1" fill="#e84d65" />
-        <rect x="11" y="-2" width="5" height="4" rx="1" fill="#e84d65" />
-      </g>
-
-      {/* Conveyor belt */}
-      <rect x="60" y="228" width="115" height="10" fill="#e04d95" rx="3" />
-      <line x1="70" y1="229" x2="70" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-      <line x1="85" y1="229" x2="85" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-      <line x1="100" y1="229" x2="100" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-      <line x1="115" y1="229" x2="115" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-      <line x1="130" y1="229" x2="130" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-      <line x1="155" y1="229" x2="155" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-      <circle cx="64" cy="233" r="5" fill="#b81c6a" stroke="#E02040" strokeWidth="2" />
-      <circle cx="170" cy="233" r="5" fill="#b81c6a" stroke="#E02040" strokeWidth="2" />
-      <rect x="86" y="219" width="16" height="14" fill="#7DB55C" rx="2" />
-      <rect x="88" y="221" width="12" height="4" fill="rgba(255,255,255,.3)" rx="1" />
-      <rect x="112" y="221" width="13" height="13" fill="#E02040" rx="2" />
-      <text x="118" y="230" fontSize="7" fill="white" textAnchor="middle" fontFamily="Arial">✓</text>
-
-      {/* Worker character */}
-      <circle cx="310" cy="225" r="7" fill="#fdf0f2" stroke="#D4227E" strokeWidth="1.5" />
-      <rect x="304" y="215" width="12" height="4" fill="#E02040" rx="2" />
-      <rect x="303" y="218" width="14" height="3" fill="#e84d65" rx="1" />
-      <circle cx="307" cy="224" r="1" fill="#D4227E" />
-      <circle cx="313" cy="224" r="1" fill="#D4227E" />
-    </svg>
-  );
-}
