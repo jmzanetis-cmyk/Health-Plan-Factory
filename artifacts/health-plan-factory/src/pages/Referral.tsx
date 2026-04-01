@@ -5,13 +5,13 @@ import { Copy, Check, Gift, Users, Star, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
-const navy = "#1b2d4f";
-const amber = "#b8892a";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const amber = "#E02040";
+const sage = "#7DB55C";
 
 const cardStyle: React.CSSProperties = {
   background: "white",
-  border: "1px solid rgba(27,45,79,0.08)",
+  border: "1px solid rgba(212,34,126,0.08)",
   borderRadius: 18,
 };
 
@@ -51,7 +51,7 @@ function StatusPill({ status }: { status: "pending" | "rewarded" }) {
     <span
       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
       style={{
-        background: isRewarded ? "rgba(61,107,82,0.1)" : "rgba(184,137,42,0.1)",
+        background: isRewarded ? "rgba(125,181,92,0.1)" : "rgba(224,32,64,0.1)",
         color: isRewarded ? sage : amber,
         fontFamily: "var(--app-font-sans)",
       }}
@@ -151,7 +151,7 @@ export default function Referral() {
       {unusedCents > 0 && (
         <div
           className="p-5 rounded-2xl flex items-center gap-5"
-          style={{ background: "rgba(61,107,82,0.07)", border: `1.5px solid rgba(61,107,82,0.2)` }}
+          style={{ background: "rgba(125,181,92,0.07)", border: `1.5px solid rgba(125,181,92,0.2)` }}
         >
           <Star size={28} style={{ color: sage, flexShrink: 0 }} />
           <div className="flex-1">
@@ -197,15 +197,15 @@ export default function Referral() {
           Your referral link
         </h2>
         {loading ? (
-          <div className="h-10 rounded-lg animate-pulse" style={{ background: "rgba(27,45,79,0.06)" }} />
+          <div className="h-10 rounded-lg animate-pulse" style={{ background: "rgba(212,34,126,0.06)" }} />
         ) : referralLink ? (
           <>
             <div className="flex items-center gap-2">
               <div
                 className="flex-1 px-3 py-2.5 rounded-lg text-sm truncate select-all"
                 style={{
-                  background: "rgba(27,45,79,0.04)",
-                  border: "1px solid rgba(27,45,79,0.12)",
+                  background: "rgba(212,34,126,0.04)",
+                  border: "1px solid rgba(212,34,126,0.12)",
                   color: navy,
                   fontFamily: "var(--app-font-sans)",
                   fontSize: 13,
@@ -282,7 +282,7 @@ export default function Referral() {
           {(data?.referralHistory.length ?? 0) > 0 && (
             <span
               className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: "rgba(27,45,79,0.08)", color: navy, fontFamily: "var(--app-font-sans)" }}
+              style={{ background: "rgba(212,34,126,0.08)", color: navy, fontFamily: "var(--app-font-sans)" }}
             >
               {data?.referralHistory.length} total
             </span>
@@ -292,7 +292,7 @@ export default function Referral() {
         {loading ? (
           <div className="flex flex-col gap-2">
             {[1, 2].map((n) => (
-              <div key={n} className="h-14 rounded-xl animate-pulse" style={{ background: "rgba(27,45,79,0.04)" }} />
+              <div key={n} className="h-14 rounded-xl animate-pulse" style={{ background: "rgba(212,34,126,0.04)" }} />
             ))}
           </div>
         ) : (data?.referralHistory.length ?? 0) === 0 ? (
@@ -307,7 +307,7 @@ export default function Referral() {
               <div
                 key={row.id}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                style={{ background: "rgba(27,45,79,0.03)", border: "1px solid rgba(27,45,79,0.06)" }}
+                style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.06)" }}
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: navy, fontFamily: "var(--app-font-sans)" }}>
@@ -326,7 +326,7 @@ export default function Referral() {
 
         {/* Stats summary */}
         {(data?.referralHistory.length ?? 0) > 0 && (
-          <div className="flex gap-4 pt-2 border-t" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
+          <div className="flex gap-4 pt-2 border-t" style={{ borderColor: "rgba(212,34,126,0.06)" }}>
             <div className="text-center flex-1">
               <div className="text-xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: navy }}>
                 {data?.referralHistory.length ?? 0}

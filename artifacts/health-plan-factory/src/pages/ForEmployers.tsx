@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-const navy = "#1b2d4f";
-const amber = "#b8892a";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const amber = "#E02040";
+const sage = "#7DB55C";
 
 const CONTACT_EMAIL = "employers@healthplanfactory.com";
 
@@ -59,7 +59,7 @@ export default function ForEmployers() {
             <div>
               <div
                 className="inline-flex items-center gap-2 mb-6 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"
-                style={{ background: "rgba(184,137,42,0.15)", border: "1px solid rgba(184,137,42,0.3)", color: "#d4a84b" }}
+                style={{ background: "rgba(224,32,64,0.15)", border: "1px solid rgba(224,32,64,0.3)", color: "#e84d65" }}
               >
                 ✦ Employer Benefits
               </div>
@@ -91,7 +91,7 @@ export default function ForEmployers() {
                     background: amber,
                     color: "white",
                     fontFamily: "var(--app-font-sans)",
-                    boxShadow: "0 4px 16px rgba(184,137,42,0.35)",
+                    boxShadow: "0 4px 16px rgba(224,32,64,0.35)",
                     letterSpacing: "0.01em",
                   }}
                 >
@@ -157,7 +157,7 @@ export default function ForEmployers() {
           <div className="text-center mb-14">
             <div
               className="inline-flex items-center gap-2 mb-4 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"
-              style={{ background: "rgba(184,137,42,0.08)", border: "1px solid rgba(184,137,42,0.12)", color: amber }}
+              style={{ background: "rgba(224,32,64,0.08)", border: "1px solid rgba(224,32,64,0.12)", color: amber }}
             >
               Why it works
             </div>
@@ -199,7 +199,7 @@ export default function ForEmployers() {
               <div
                 key={card.title}
                 className="rounded-2xl p-6 flex flex-col gap-3"
-                style={{ background: "white", border: "1px solid rgba(27,45,79,0.07)", boxShadow: "0 2px 12px rgba(27,45,79,0.05)" }}
+                style={{ background: "white", border: "1px solid rgba(212,34,126,0.07)", boxShadow: "0 2px 12px rgba(212,34,126,0.05)" }}
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
@@ -216,7 +216,7 @@ export default function ForEmployers() {
       </div>
 
       {/* ── WHAT YOUR TEAM GETS ── */}
-      <div className="px-6 md:px-12 py-16" style={{ background: "var(--off-white)", borderTop: "1px solid rgba(27,45,79,0.06)", borderBottom: "1px solid rgba(27,45,79,0.06)" }}>
+      <div className="px-6 md:px-12 py-16" style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.06)", borderBottom: "1px solid rgba(212,34,126,0.06)" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             {/* Left — sample plan card */}
@@ -224,11 +224,11 @@ export default function ForEmployers() {
               className="rounded-2xl p-5"
               style={{
                 background: "white",
-                border: "1.5px solid rgba(27,45,79,0.1)",
-                boxShadow: "0 8px 32px rgba(27,45,79,0.08)",
+                border: "1.5px solid rgba(212,34,126,0.1)",
+                boxShadow: "0 8px 32px rgba(212,34,126,0.08)",
               }}
             >
-              <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: "1px solid rgba(27,45,79,0.06)" }}>
+              <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: "1px solid rgba(212,34,126,0.06)" }}>
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
                   style={{ background: navy }}
@@ -241,7 +241,7 @@ export default function ForEmployers() {
                 </div>
                 <div
                   className="ml-auto px-2 py-1 rounded-md text-xs font-semibold"
-                  style={{ background: "rgba(61,107,82,0.1)", color: sage, fontFamily: "var(--app-font-sans)" }}
+                  style={{ background: "rgba(125,181,92,0.1)", color: sage, fontFamily: "var(--app-font-sans)" }}
                 >
                   Active
                 </div>
@@ -267,7 +267,7 @@ export default function ForEmployers() {
                     <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{item.freq}</span>
                     <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: navy }}>{item.cost}</span>
                     {item.hsa && (
-                      <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color: sage, background: "rgba(61,107,82,0.08)", fontFamily: "var(--app-font-sans)" }}>
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color: sage, background: "rgba(125,181,92,0.08)", fontFamily: "var(--app-font-sans)" }}>
                         HSA
                       </span>
                     )}
@@ -298,7 +298,7 @@ export default function ForEmployers() {
             <div>
               <div
                 className="inline-flex items-center gap-2 mb-4 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"
-                style={{ background: "rgba(27,45,79,0.06)", color: navy, fontFamily: "var(--app-font-sans)" }}
+                style={{ background: "rgba(212,34,126,0.06)", color: navy, fontFamily: "var(--app-font-sans)" }}
               >
                 The employee experience
               </div>
@@ -319,7 +319,7 @@ export default function ForEmployers() {
                   <div key={step.num} className="flex items-start gap-4">
                     <div
                       className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: "rgba(27,45,79,0.08)", color: navy, fontFamily: "var(--app-font-sans)" }}
+                      style={{ background: "rgba(212,34,126,0.08)", color: navy, fontFamily: "var(--app-font-sans)" }}
                     >
                       {step.num}
                     </div>
@@ -394,8 +394,8 @@ export default function ForEmployers() {
                 className="rounded-2xl p-6 flex flex-col"
                 style={{
                   background: plan.highlight ? navy : "white",
-                  border: plan.highlight ? `2px solid ${amber}` : "1px solid rgba(27,45,79,0.08)",
-                  boxShadow: plan.highlight ? "0 12px 40px rgba(27,45,79,0.18)" : "0 2px 12px rgba(27,45,79,0.05)",
+                  border: plan.highlight ? `2px solid ${amber}` : "1px solid rgba(212,34,126,0.08)",
+                  boxShadow: plan.highlight ? "0 12px 40px rgba(212,34,126,0.18)" : "0 2px 12px rgba(212,34,126,0.05)",
                 }}
               >
                 <div className="mb-4">
@@ -429,7 +429,7 @@ export default function ForEmployers() {
                   href="#request-demo"
                   className="block text-center px-5 py-3 rounded-lg text-sm font-semibold no-underline transition-all"
                   style={{
-                    background: plan.highlight ? amber : "rgba(27,45,79,0.08)",
+                    background: plan.highlight ? amber : "rgba(212,34,126,0.08)",
                     color: plan.highlight ? "white" : navy,
                     fontFamily: "var(--app-font-sans)",
                   }}

@@ -16,7 +16,7 @@ export function StepRegion({ control }: StepRegionProps) {
           <div>
             <label
               className="block text-xs font-semibold mb-1.5"
-              style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.01em" }}
+              style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.01em" }}
             >
               ZIP Code
             </label>
@@ -33,11 +33,11 @@ export function StepRegion({ control }: StepRegionProps) {
                 padding: "0.8rem 1rem",
                 border: fieldState.error
                   ? "1.5px solid var(--rose, #dc2626)"
-                  : "1.5px solid rgba(27,45,79,0.2)",
+                  : "1.5px solid rgba(212,34,126,0.2)",
                 borderRadius: 8,
                 fontFamily: "var(--app-font-mono)",
                 fontSize: "1rem",
-                color: "var(--navy)",
+                color: "var(--hpf-pink)",
                 background: fieldState.error ? "rgba(220,38,38,0.04)" : "white",
                 outline: "none",
                 transition: "border-color 0.15s",
@@ -60,7 +60,7 @@ export function StepRegion({ control }: StepRegionProps) {
           <div>
             <label
               className="block text-xs font-semibold mb-2"
-              style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+              style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               Search Radius
             </label>
@@ -74,9 +74,9 @@ export function StepRegion({ control }: StepRegionProps) {
                     padding: "0.4rem 0.75rem",
                     borderRadius: 100,
                     border: field.value === r
-                      ? "1.5px solid var(--navy)"
-                      : "1.5px solid rgba(27,45,79,0.2)",
-                    background: field.value === r ? "var(--navy)" : "white",
+                      ? "1.5px solid var(--hpf-pink)"
+                      : "1.5px solid rgba(212,34,126,0.2)",
+                    background: field.value === r ? "var(--hpf-pink)" : "white",
                     color: field.value === r ? "white" : "var(--text-secondary)",
                     fontSize: "0.8rem",
                     fontWeight: 500,
@@ -105,12 +105,12 @@ export function StepRegion({ control }: StepRegionProps) {
               justifyContent: "space-between",
               padding: "1rem 1.25rem",
               borderRadius: 12,
-              border: "1.5px solid rgba(27,45,79,0.1)",
-              background: field.value ? "rgba(27,45,79,0.04)" : "white",
+              border: "1.5px solid rgba(212,34,126,0.1)",
+              background: field.value ? "rgba(212,34,126,0.04)" : "white",
             }}
           >
             <div>
-              <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+              <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                 Include telehealth options
               </p>
               <p className="text-xs" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -127,7 +127,7 @@ export function StepRegion({ control }: StepRegionProps) {
                 height: 24,
                 borderRadius: 100,
                 border: "none",
-                background: field.value ? "var(--navy)" : "rgba(27,45,79,0.15)",
+                background: field.value ? "var(--hpf-pink)" : "rgba(212,34,126,0.15)",
                 cursor: "pointer",
                 position: "relative",
                 flexShrink: 0,

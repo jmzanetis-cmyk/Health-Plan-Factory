@@ -48,19 +48,19 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>;
 
 const inputStyle = {
-  border: "1px solid rgba(27,45,79,0.15)",
+  border: "1px solid rgba(212,34,126,0.15)",
   background: "var(--warm-white)",
-  color: "var(--navy)",
+  color: "var(--hpf-pink)",
   fontFamily: "var(--app-font-sans)",
 };
-const labelStyle = { color: "var(--navy)", fontFamily: "var(--app-font-sans)" };
+const labelStyle = { color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" };
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; color: string; label: string }> = {
-    pending: { bg: "rgba(184,137,42,0.08)", color: "var(--hpf-amber)", label: "Pending review" },
-    approved: { bg: "rgba(61,107,82,0.08)", color: "var(--sage)", label: "Active listing" },
+    pending: { bg: "rgba(224,32,64,0.08)", color: "var(--hpf-crimson)", label: "Pending review" },
+    approved: { bg: "rgba(125,181,92,0.08)", color: "var(--sage)", label: "Active listing" },
     rejected: { bg: "rgba(192,57,43,0.08)", color: "#c0392b", label: "Not approved" },
-    suspended: { bg: "rgba(27,45,79,0.08)", color: "var(--text-muted)", label: "Suspended" },
+    suspended: { bg: "rgba(212,34,126,0.08)", color: "var(--text-muted)", label: "Suspended" },
   };
   const c = config[status] ?? config.pending;
   return (
@@ -146,7 +146,7 @@ export default function ProviderProfile() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--warm-white)" }}>
-        <Loader2 className="animate-spin" size={28} style={{ color: "var(--navy)" }} />
+        <Loader2 className="animate-spin" size={28} style={{ color: "var(--hpf-pink)" }} />
       </div>
     );
   }
@@ -155,11 +155,11 @@ export default function ProviderProfile() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "var(--warm-white)" }}>
         <div className="text-center max-w-sm">
-          <h1 className="mb-3 text-2xl" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)", fontWeight: 700 }}>No profile yet</h1>
+          <h1 className="mb-3 text-2xl" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)", fontWeight: 700 }}>No profile yet</h1>
           <p className="text-sm mb-6" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
             Complete your provider application to create a listing.
           </p>
-          <Link to="/provider/signup" className="px-5 py-3 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+          <Link to="/provider/signup" className="px-5 py-3 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
             Apply as a provider →
           </Link>
         </div>
@@ -172,7 +172,7 @@ export default function ProviderProfile() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-start justify-between mb-8 gap-4 flex-wrap">
           <div>
-            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
               Edit Profile
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -188,16 +188,16 @@ export default function ProviderProfile() {
         </div>
 
         {provider.status === "pending" && (
-          <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.15)" }}>
-            <p className="text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
-              <strong style={{ color: "var(--hpf-amber)" }}>Under review</strong> — our team is verifying your application.
+          <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(224,32,64,0.06)", border: "1px solid rgba(224,32,64,0.15)" }}>
+            <p className="text-sm" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+              <strong style={{ color: "var(--hpf-crimson)" }}>Under review</strong> — our team is verifying your application.
               You can update your profile while you wait. We'll notify you by email when approved.
             </p>
           </div>
         )}
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
-          <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+          <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Practice Info</h2>
             <div className="flex flex-col gap-4">
               <div>
@@ -213,7 +213,7 @@ export default function ProviderProfile() {
             </div>
           </div>
 
-          <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+          <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Contact & Location</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -242,7 +242,7 @@ export default function ProviderProfile() {
             </div>
           </div>
 
-          <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+          <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Services & Pricing</h2>
             <div className="flex flex-col gap-4">
               <div>
@@ -250,18 +250,18 @@ export default function ProviderProfile() {
                 <input {...form.register("costPerSession")} type="number" min={0} className="w-full sm:w-1/2 px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
               </div>
               <div className="flex flex-col gap-3">
-                <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(27,45,79,0.03)", border: "1px solid rgba(27,45,79,0.08)" }}>
+                <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
                   <input type="checkbox" {...form.register("offersTelehealth")} className="w-4 h-4" />
                   <div>
-                    <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                    <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                       <Video size={13} /> Offer telehealth / virtual sessions
                     </p>
                   </div>
                 </label>
-                <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(27,45,79,0.03)", border: "1px solid rgba(27,45,79,0.08)" }}>
+                <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
                   <input type="checkbox" {...form.register("acceptsInsurance")} className="w-4 h-4" />
                   <div>
-                    <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                    <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                       <Shield size={13} /> Accepts insurance
                     </p>
                   </div>
@@ -270,7 +270,7 @@ export default function ProviderProfile() {
             </div>
           </div>
 
-          <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+          <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Modalities</h2>
             <div className="flex flex-wrap gap-2">
               {modalities.map((m) => {
@@ -285,9 +285,9 @@ export default function ProviderProfile() {
                     }}
                     className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                     style={{
-                      background: selected ? "var(--navy)" : "rgba(27,45,79,0.05)",
-                      color: selected ? "white" : "var(--navy)",
-                      border: `1.5px solid ${selected ? "var(--navy)" : "rgba(27,45,79,0.12)"}`,
+                      background: selected ? "var(--hpf-pink)" : "rgba(212,34,126,0.05)",
+                      color: selected ? "white" : "var(--hpf-pink)",
+                      border: `1.5px solid ${selected ? "var(--hpf-pink)" : "rgba(212,34,126,0.12)"}`,
                       cursor: "pointer",
                       fontFamily: "var(--app-font-sans)",
                     }}
@@ -315,7 +315,7 @@ export default function ProviderProfile() {
               disabled={saving}
               className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white"
               style={{
-                background: saving ? "rgba(27,45,79,0.4)" : "var(--navy)",
+                background: saving ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)",
                 border: "none",
                 cursor: saving ? "not-allowed" : "pointer",
                 fontFamily: "var(--app-font-sans)",

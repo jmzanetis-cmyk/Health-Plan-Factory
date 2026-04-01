@@ -39,8 +39,8 @@ export function ChipSelect({ options, selected, onChange, maxSelect, singleExclu
             style={{
               padding: "0.45rem 0.875rem",
               borderRadius: 100,
-              border: isSelected ? "1.5px solid var(--navy)" : "1.5px solid rgba(27,45,79,0.2)",
-              background: isSelected ? "var(--navy)" : "white",
+              border: isSelected ? "1.5px solid var(--hpf-pink)" : "1.5px solid rgba(212,34,126,0.2)",
+              background: isSelected ? "var(--hpf-pink)" : "white",
               color: isSelected ? "white" : "var(--text-secondary)",
               fontSize: "0.8rem",
               fontWeight: 500,

@@ -3,7 +3,7 @@ export default function Terms() {
     <div className="min-h-screen px-6 md:px-12 py-20" style={{ background: "var(--warm-white)" }}>
       <div className="max-w-3xl mx-auto">
         <div className="section-tag">Legal</div>
-        <h1 className="mb-8" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.2rem,4vw,3.5rem)", fontWeight: 700, color: "var(--navy)", letterSpacing: "-0.02em" }}>
+        <h1 className="mb-8" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.2rem,4vw,3.5rem)", fontWeight: 700, color: "var(--hpf-deep)", letterSpacing: "-0.02em" }}>
           Terms of Service
         </h1>
         <div style={{ fontFamily: "var(--app-font-sans)" }}>
@@ -20,12 +20,12 @@ export default function Terms() {
             { title: "10. Contact", body: "Questions? Email legal@healthplanfactory.com." },
           ].map((section) => (
             <div key={section.title} className="mb-8">
-              <h2 className="text-base font-semibold mb-2" style={{ color: "var(--navy)" }}>{section.title}</h2>
+              <h2 className="text-base font-semibold mb-2" style={{ color: "var(--hpf-deep)" }}>{section.title}</h2>
               <p className="text-sm font-light leading-relaxed" style={{ color: "var(--text-secondary)" }}>{section.body}</p>
             </div>
           ))}
         </div>
-        <p className="text-xs mt-8 pt-4" style={{ color: "var(--text-muted)", borderTop: "1px solid rgba(27,45,79,0.1)" }}>
+        <p className="text-xs mt-8 pt-4" style={{ color: "var(--text-muted)", borderTop: "1px solid rgba(212,34,126,0.1)" }}>
           Last updated: {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </p>
       </div>

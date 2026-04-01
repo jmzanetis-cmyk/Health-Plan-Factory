@@ -3,7 +3,7 @@ export default function Contact() {
     <div className="min-h-screen px-6 md:px-12 py-20" style={{ background: "var(--warm-white)" }}>
       <div className="max-w-xl mx-auto">
         <div className="section-tag">Get in touch</div>
-        <h1 className="mb-4" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.2rem,4vw,3.5rem)", fontWeight: 700, color: "var(--navy)", letterSpacing: "-0.02em" }}>
+        <h1 className="mb-4" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.2rem,4vw,3.5rem)", fontWeight: 700, color: "var(--hpf-deep)", letterSpacing: "-0.02em" }}>
           Contact Us
         </h1>
         <p className="text-sm font-light leading-relaxed mb-10" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -16,9 +16,9 @@ export default function Contact() {
             { label: "Privacy & data requests", email: "privacy@healthplanfactory.com" },
             { label: "Legal", email: "legal@healthplanfactory.com" },
           ].map((item) => (
-            <div key={item.email} className="rounded-xl p-5" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+            <div key={item.email} className="rounded-xl p-5" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
               <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{item.label}</p>
-              <a href={`mailto:${item.email}`} className="text-sm font-medium no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>{item.email}</a>
+              <a href={`mailto:${item.email}`} className="text-sm font-medium no-underline" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>{item.email}</a>
             </div>
           ))}
         </div>

@@ -1,9 +1,9 @@
 export default {
   light: {
-    text: "#1b2d4f",
+    text: "#1A1A1A",
     background: "#fafaf8",
-    tint: "#b8892a",
+    tint: "#D4227E",
     tabIconDefault: "#9ca3af",
-    tabIconSelected: "#1b2d4f",
+    tabIconSelected: "#D4227E",
   },
 };

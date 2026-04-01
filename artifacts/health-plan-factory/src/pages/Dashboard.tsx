@@ -68,7 +68,7 @@ interface InsightsData {
 
 const cardStyle = {
   background: "white",
-  border: "1px solid rgba(27,45,79,0.08)",
+  border: "1px solid rgba(212,34,126,0.08)",
   borderRadius: "16px",
 };
 
@@ -76,7 +76,7 @@ function SkeletonBlock({ h = 16, w = "100%" }: { h?: number; w?: string }) {
   return (
     <div
       className="animate-pulse rounded-md"
-      style={{ height: h, width: w, background: "rgba(27,45,79,0.06)" }}
+      style={{ height: h, width: w, background: "rgba(212,34,126,0.06)" }}
     />
   );
 }
@@ -202,7 +202,7 @@ export default function Dashboard() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--warm-white)" }}>
-        <Loader2 className="animate-spin" size={28} style={{ color: "var(--navy)" }} />
+        <Loader2 className="animate-spin" size={28} style={{ color: "var(--hpf-pink)" }} />
       </div>
     );
   }
@@ -222,7 +222,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
               Good day, {firstName}.
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -232,14 +232,14 @@ export default function Dashboard() {
           <Link
             to="/onboarding"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white no-underline"
-            style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+            style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
           >
             <Plus size={15} /> Build New Plan
           </Link>
         </div>
 
         {/* Crisis disclaimer */}
-        <div className="px-4 py-3 rounded-lg text-xs leading-relaxed" style={{ background: "rgba(184,137,42,0.08)", border: "1px solid rgba(184,137,42,0.2)", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+        <div className="px-4 py-3 rounded-lg text-xs leading-relaxed" style={{ background: "rgba(224,32,64,0.08)", border: "1px solid rgba(224,32,64,0.2)", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
           <strong>Important:</strong> HealthPlanFactory is a wellness optimization platform — not a medical provider or substitute for professional care.
           For emergencies call <strong>911</strong>. Mental health crisis: <strong>988</strong>.
         </div>
@@ -248,7 +248,7 @@ export default function Dashboard() {
         {referralWelcome && (
           <div
             className="px-5 py-4 rounded-2xl flex items-center gap-4"
-            style={{ background: "linear-gradient(135deg, #3d6b52 0%, #2e5240 100%)", border: "none" }}
+            style={{ background: "linear-gradient(135deg, #7DB55C 0%, #5a9642 100%)", border: "none" }}
           >
             <span className="text-3xl flex-shrink-0">🎁</span>
             <div className="flex-1">
@@ -280,7 +280,7 @@ export default function Dashboard() {
             { label: "Wellness Logs", value: (insightsData?.journalCount ?? progressLogs.length).toString(), icon: <MapPin size={18} /> },
           ].map((s) => (
             <div key={s.label} className="p-4 flex flex-col gap-2" style={cardStyle}>
-              <div className="flex items-center gap-2" style={{ color: "var(--hpf-amber)" }}>
+              <div className="flex items-center gap-2" style={{ color: "var(--hpf-crimson)" }}>
                 {s.icon}
                 <span className="text-xs font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-muted)", letterSpacing: "0.08em" }}>
                   {s.label}
@@ -289,7 +289,7 @@ export default function Dashboard() {
               {loading ? (
                 <SkeletonBlock h={24} w="60%" />
               ) : (
-                <span className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+                <span className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
                   {s.value}
                 </span>
               )}
@@ -299,13 +299,13 @@ export default function Dashboard() {
 
         {/* HSA Opportunity card — shown when member has LMN-eligible plan items */}
         {!loading && lmnSavings !== null && lmnSavings > 0 && (
-          <div style={{ background: "linear-gradient(135deg, #1b2d4f 0%, #243d66 100%)", borderRadius: 16, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ background: "linear-gradient(135deg, #D4227E 0%, #b81c6a 100%)", borderRadius: 16, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(184,137,42,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <DollarSign size={20} color="#b8892a" />
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(224,32,64,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <DollarSign size={20} color="#E02040" />
               </div>
               <div>
-                <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#b8892a", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Your HSA Opportunity</div>
+                <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#E02040", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Your HSA Opportunity</div>
                 <div style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, fontWeight: 700, color: "white", marginBottom: 3 }}>
                   Save up to ${(lmnSavings / 100).toFixed(0)}/year with an LMN
                 </div>
@@ -316,7 +316,7 @@ export default function Dashboard() {
             </div>
             <Link
               to="/hsa-unlock"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#b8892a", color: "white", padding: "10px 18px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 13, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#E02040", color: "white", padding: "10px 18px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 13, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap" }}
             >
               Unlock My HSA <ArrowRight size={14} />
             </Link>
@@ -328,11 +328,11 @@ export default function Dashboard() {
           {/* Plan snapshot */}
           <div className="p-6 flex flex-col gap-4" style={cardStyle}>
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
                 Your Plan
               </h2>
               {plan && (
-                <Link to="/plan" className="text-xs font-medium no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                <Link to="/plan" className="text-xs font-medium no-underline" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                   View full plan →
                 </Link>
               )}
@@ -352,7 +352,7 @@ export default function Dashboard() {
                 <Link
                   to="/onboarding"
                   className="px-4 py-2 rounded-lg text-sm font-semibold text-white no-underline"
-                  style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+                  style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
                 >
                   Start onboarding →
                 </Link>
@@ -360,15 +360,15 @@ export default function Dashboard() {
             ) : (
               <div className="flex flex-col gap-3">
                 {planItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.06)" }}>
+                  <div key={item.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(212,34,126,0.06)" }}>
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{item.modality?.emoji ?? "✨"}</span>
-                      <span className="text-sm font-medium" style={{ fontFamily: "var(--app-font-sans)", color: "var(--navy)" }}>
+                      <span className="text-sm font-medium" style={{ fontFamily: "var(--app-font-sans)", color: "var(--hpf-pink)" }}>
                         {item.modality?.name ?? "—"}
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-semibold" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-amber)" }}>
+                      <span className="text-sm font-semibold" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-crimson)" }}>
                         ${item.estimatedMonthlyCost}/mo
                       </span>
                     </div>
@@ -383,7 +383,7 @@ export default function Dashboard() {
 
           {/* Budget bar + progress */}
           <div className="p-6 flex flex-col gap-5" style={cardStyle}>
-            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
               Budget Status
             </h2>
 
@@ -398,12 +398,12 @@ export default function Dashboard() {
                     <span>${plan.totalMonthlyCost} used</span>
                     <span>${plan.budget} budget</span>
                   </div>
-                  <div className="rounded-full overflow-hidden" style={{ height: 10, background: "rgba(27,45,79,0.08)" }}>
+                  <div className="rounded-full overflow-hidden" style={{ height: 10, background: "rgba(212,34,126,0.08)" }}>
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
                         width: `${budgetPct}%`,
-                        background: budgetPct > 90 ? "#c0392b" : budgetPct > 70 ? "var(--hpf-amber)" : "var(--sage)",
+                        background: budgetPct > 90 ? "#c0392b" : budgetPct > 70 ? "var(--hpf-crimson)" : "var(--sage)",
                       }}
                     />
                   </div>
@@ -413,7 +413,7 @@ export default function Dashboard() {
                 </div>
 
                 {progressLogs.length > 0 && (
-                  <div className="pt-2 border-t" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
+                  <div className="pt-2 border-t" style={{ borderColor: "rgba(212,34,126,0.06)" }}>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Progress Trend</p>
                       {avgRating && (
@@ -433,13 +433,13 @@ export default function Dashboard() {
                         <XAxis dataKey="date" hide />
                         <YAxis domain={[0, 10]} hide />
                         <Tooltip
-                          contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 11, borderRadius: 6, border: "1px solid rgba(27,45,79,0.12)", padding: "4px 8px" }}
+                          contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 11, borderRadius: 6, border: "1px solid rgba(212,34,126,0.12)", padding: "4px 8px" }}
                           formatter={(v: number) => [`${v}/10`, "Score"]}
                         />
                         <Line type="monotone" dataKey="score" stroke="var(--sage)" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
-                    <Link to="/progress" className="text-xs font-medium no-underline mt-1 block text-right" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                    <Link to="/progress" className="text-xs font-medium no-underline mt-1 block text-right" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                       View full tracker →
                     </Link>
                   </div>
@@ -451,7 +451,7 @@ export default function Dashboard() {
 
         {/* Quick actions */}
         <div>
-          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
             Quick Actions
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -469,14 +469,14 @@ export default function Dashboard() {
               >
                 <span className="text-3xl">{a.emoji}</span>
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                     {a.label}
                   </p>
                   <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
                     {a.desc}
                   </p>
                 </div>
-                <ArrowRight size={14} className="ml-auto opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: "var(--navy)" }} />
+                <ArrowRight size={14} className="ml-auto opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: "var(--hpf-pink)" }} />
               </Link>
             ))}
           </div>
@@ -488,19 +488,19 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Sparkles size={16} style={{ color: "var(--sage)" }} />
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
                 What's Working for You
               </h2>
-              <Link to="/progress" className="text-xs font-medium no-underline ml-auto" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+              <Link to="/progress" className="text-xs font-medium no-underline ml-auto" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                 View all insights →
               </Link>
             </div>
             <div className="flex flex-col gap-3">
               {insightsData.insights.slice(0, 3).map((ins) => (
-                <div key={ins.modalityId + ins.metric} className="p-4 rounded-2xl flex items-start gap-4" style={{ background: "white", border: "1px solid rgba(61,107,82,0.15)" }}>
+                <div key={ins.modalityId + ins.metric} className="p-4 rounded-2xl flex items-start gap-4" style={{ background: "white", border: "1px solid rgba(125,181,92,0.15)" }}>
                   <span className="text-2xl mt-0.5 flex-shrink-0">{ins.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium leading-snug" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                    <p className="text-sm font-medium leading-snug" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                       {ins.headline}
                     </p>
                     <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -524,22 +524,22 @@ export default function Dashboard() {
         {insightsData && insightsData.journalCount >= 14 && insightsData.attentionItems.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle size={16} style={{ color: "var(--hpf-amber)" }} />
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+              <AlertTriangle size={16} style={{ color: "var(--hpf-crimson)" }} />
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
                 What Might Need Attention
               </h2>
             </div>
             <div className="flex flex-col gap-3">
               {insightsData.attentionItems.slice(0, 3).map((item) => (
-                <div key={item.modalityId} className="p-4 rounded-2xl flex items-center gap-4" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.15)" }}>
+                <div key={item.modalityId} className="p-4 rounded-2xl flex items-center gap-4" style={{ background: "rgba(224,32,64,0.06)", border: "1px solid rgba(224,32,64,0.15)" }}>
                   <span className="text-2xl flex-shrink-0">{item.emoji}</span>
-                  <p className="text-sm flex-1" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  <p className="text-sm flex-1" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                     {item.message}
                   </p>
                   <Link
                     to={`/discover?modality=${item.modalityId}`}
                     className="text-xs font-semibold no-underline flex-shrink-0 px-3 py-1.5 rounded-lg"
-                    style={{ background: "var(--hpf-amber)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                    style={{ background: "var(--hpf-crimson)", color: "white", fontFamily: "var(--app-font-sans)" }}
                   >
                     Book session →
                   </Link>
@@ -554,10 +554,10 @@ export default function Dashboard() {
           insightsData.journalCount >= 14 &&
           insightsData.insights.length === 0 &&
           insightsData.attentionItems.length === 0 && (
-          <div className="p-5 rounded-2xl flex items-center gap-5" style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.12)" }}>
+          <div className="p-5 rounded-2xl flex items-center gap-5" style={{ background: "rgba(125,181,92,0.06)", border: "1px solid rgba(125,181,92,0.12)" }}>
             <Sparkles size={32} style={{ color: "var(--sage)", flexShrink: 0 }} />
             <div>
-              <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+              <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                 Building your personalized insights
               </p>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -572,10 +572,10 @@ export default function Dashboard() {
 
         {/* Teaser: < 14 entries prompt */}
         {insightsData && insightsData.journalCount < 14 && insightsData.journalCount > 0 && (
-          <div className="p-5 rounded-2xl flex items-center gap-5" style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.12)" }}>
+          <div className="p-5 rounded-2xl flex items-center gap-5" style={{ background: "rgba(125,181,92,0.06)", border: "1px solid rgba(125,181,92,0.12)" }}>
             <Sparkles size={32} style={{ color: "var(--sage)", flexShrink: 0 }} />
             <div>
-              <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+              <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                 Personalized insights unlock at 14 journal entries
               </p>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -592,10 +592,10 @@ export default function Dashboard() {
         {(loading || favorites.length > 0) && (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
                 Saved Providers
               </h2>
-              <Link to="/bookmarks" className="text-xs font-medium no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+              <Link to="/bookmarks" className="text-xs font-medium no-underline" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                 View all →
               </Link>
             </div>
@@ -609,7 +609,7 @@ export default function Dashboard() {
                   <div
                     key={f.providerId}
                     className="px-4 py-2 rounded-full text-xs font-medium"
-                    style={{ background: "rgba(61,107,82,0.08)", color: "var(--sage)", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(61,107,82,0.15)" }}
+                    style={{ background: "rgba(125,181,92,0.08)", color: "var(--sage)", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(125,181,92,0.15)" }}
                   >
                     Saved #{f.providerId.slice(0, 6)}
                   </div>

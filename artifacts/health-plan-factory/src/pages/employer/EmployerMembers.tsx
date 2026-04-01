@@ -4,9 +4,9 @@ import { Users, Loader2, TrendingUp, Download, BarChart2, Lock } from "lucide-re
 import { EmployerNav } from "./EmployerDashboard";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
-const navy = "#1b2d4f";
-const sage = "#3d6b52";
-const amber = "#b8892a";
+const navy = "#2C2825";
+const sage = "#7DB55C";
+const amber = "#E02040";
 
 interface UtilizationBucket {
   label: string;
@@ -38,7 +38,7 @@ function fmt(cents: number) {
 function bucketColor(barMin: number) {
   if (barMin >= 75) return sage;
   if (barMin >= 25) return amber;
-  return "rgba(27,45,79,0.25)";
+  return "rgba(212,34,126,0.25)";
 }
 
 export default function EmployerMembers() {
@@ -93,7 +93,7 @@ export default function EmployerMembers() {
         <EmployerNav active="/employer/members" />
 
         {/* Privacy notice */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(61,107,82,0.07)", border: "1px solid rgba(61,107,82,0.2)", borderRadius: 8, padding: "10px 14px", marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(125,181,92,0.07)", border: "1px solid rgba(125,181,92,0.2)", borderRadius: 8, padding: "10px 14px", marginBottom: 24 }}>
           <Lock size={14} color={sage} />
           <p style={{ margin: 0, fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage }}>
             All data is aggregate-only. No individual employee identifiers or personal health information are disclosed.
@@ -110,7 +110,7 @@ export default function EmployerMembers() {
           <>
             {/* Privacy suppression notice */}
             {stats.privacySuppressed && (
-              <div style={{ background: "rgba(184,137,42,0.08)", border: "1.5px solid rgba(184,137,42,0.3)", borderRadius: 10, padding: "12px 18px", marginBottom: 20, fontFamily: "var(--app-font-sans)", fontSize: 13, color: amber }}>
+              <div style={{ background: "rgba(224,32,64,0.08)", border: "1.5px solid rgba(224,32,64,0.3)", borderRadius: 10, padding: "12px 18px", marginBottom: 20, fontFamily: "var(--app-font-sans)", fontSize: 13, color: amber }}>
                 Utilization metrics are suppressed until at least 5 employees have enrolled (privacy protection).
               </div>
             )}
@@ -143,7 +143,7 @@ export default function EmployerMembers() {
                   icon: <TrendingUp size={16} />,
                 },
               ].map((s) => (
-                <div key={s.label} style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 10, padding: "16px 20px" }}>
+                <div key={s.label} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 10, padding: "16px 20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, color: "var(--text-muted)" }}>
                     {s.icon}
                     <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>{s.label}</span>
@@ -156,8 +156,8 @@ export default function EmployerMembers() {
 
             {/* Utilization Distribution */}
             {stats.totalEnrolled === 0 ? (
-              <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, padding: 60, textAlign: "center" }}>
-                <Users size={40} color="rgba(27,45,79,0.15)" style={{ marginBottom: 16 }} />
+              <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: 60, textAlign: "center" }}>
+                <Users size={40} color="rgba(212,34,126,0.15)" style={{ marginBottom: 16 }} />
                 <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 600, color: navy, marginBottom: 8 }}>No enrolled members yet</h3>
                 <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>
                   Share the invite code from your dashboard to enroll employees.
@@ -167,7 +167,7 @@ export default function EmployerMembers() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
 
                 {/* Utilization distribution */}
-                <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, padding: "20px 24px" }}>
+                <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: "20px 24px" }}>
                   <h2 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, margin: "0 0 18px", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>
                     Utilization Distribution
                   </h2>
@@ -180,7 +180,7 @@ export default function EmployerMembers() {
                             {b.count} {b.count === 1 ? "employee" : "employees"} ({b.pct}%)
                           </span>
                         </div>
-                        <div style={{ height: 8, background: "rgba(27,45,79,0.06)", borderRadius: 4, overflow: "hidden" }}>
+                        <div style={{ height: 8, background: "rgba(212,34,126,0.06)", borderRadius: 4, overflow: "hidden" }}>
                           <div
                             style={{
                               height: "100%",
@@ -200,7 +200,7 @@ export default function EmployerMembers() {
                 </div>
 
                 {/* Enrollment trend */}
-                <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, padding: "20px 24px" }}>
+                <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: "20px 24px" }}>
                   <h2 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, margin: "0 0 18px", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>
                     Monthly Enrollment
                   </h2>

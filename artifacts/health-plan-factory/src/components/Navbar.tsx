@@ -43,7 +43,7 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
         ) : (
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-            style={{ background: "var(--navy)" }}
+            style={{ background: "var(--hpf-pink)" }}
           >
             {initials}
           </div>
@@ -58,12 +58,12 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
             className="absolute right-0 top-10 z-50 w-52 rounded-xl py-2 shadow-xl"
             style={{
               background: "white",
-              border: "1px solid rgba(27,45,79,0.08)",
-              boxShadow: "0 8px 32px rgba(27,45,79,0.12)",
+              border: "1px solid rgba(212,34,126,0.08)",
+              boxShadow: "0 8px 32px rgba(212,34,126,0.12)",
             }}
           >
-            <div className="px-4 py-2 border-b" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
-              <p className="text-xs font-semibold truncate" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+            <div className="px-4 py-2 border-b" style={{ borderColor: "rgba(212,34,126,0.06)" }}>
+              <p className="text-xs font-semibold truncate" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                 {user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : user?.email || "Account"}
               </p>
               {user?.role && (
@@ -75,7 +75,7 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
             <button
               onClick={() => { setOpen(false); onClose?.(); navigate(dashboardPath); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50"
-              style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+              style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               <LayoutDashboard size={15} />
               Dashboard
@@ -83,12 +83,12 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
             <button
               onClick={() => { setOpen(false); onClose?.(); navigate("/profile"); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50"
-              style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+              style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               <User size={15} />
               Profile
             </button>
-            <div className="border-t mt-1" style={{ borderColor: "rgba(27,45,79,0.06)" }} />
+            <div className="border-t mt-1" style={{ borderColor: "rgba(212,34,126,0.06)" }} />
             <button
               onClick={() => { setOpen(false); onClose?.(); logout(); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-red-50"
@@ -116,7 +116,7 @@ export function Navbar() {
         style={{
           background: "rgba(250,250,248,0.95)",
           backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(27,45,79,0.1)",
+          borderBottom: "1px solid rgba(212,34,126,0.1)",
         }}
       >
         <Logo />
@@ -129,7 +129,7 @@ export function Navbar() {
               to={link.href}
               className="text-sm font-medium transition-colors no-underline"
               style={{
-                color: location.pathname === link.href ? "var(--navy)" : "var(--text-secondary)",
+                color: location.pathname === link.href ? "var(--hpf-pink)" : "var(--text-secondary)",
                 fontFamily: "var(--app-font-sans)",
               }}
             >
@@ -153,9 +153,9 @@ export function Navbar() {
                 to="/sign-up"
                 className="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-white no-underline transition-all"
                 style={{
-                  background: "var(--navy)",
+                  background: "var(--hpf-pink)",
                   fontFamily: "var(--app-font-sans)",
-                  boxShadow: "0 2px 8px rgba(27,45,79,0.2)",
+                  boxShadow: "0 2px 8px rgba(212,34,126,0.2)",
                 }}
               >
                 Build My Plan →
@@ -169,7 +169,7 @@ export function Navbar() {
         {/* Mobile hamburger */}
         <button
           className="md:hidden p-2 rounded-md transition-colors"
-          style={{ color: "var(--navy)" }}
+          style={{ color: "var(--hpf-pink)" }}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle menu"
         >
@@ -190,8 +190,8 @@ export function Navbar() {
                 to={link.href}
                 className="text-lg font-medium py-3 border-b no-underline transition-colors"
                 style={{
-                  color: "var(--navy)",
-                  borderColor: "rgba(27,45,79,0.08)",
+                  color: "var(--hpf-pink)",
+                  borderColor: "rgba(212,34,126,0.08)",
                   fontFamily: "var(--app-font-sans)",
                 }}
                 onClick={() => setMobileOpen(false)}
@@ -204,7 +204,7 @@ export function Navbar() {
                 <button
                   onClick={() => { setMobileOpen(false); login(); }}
                   className="text-lg font-medium py-3 border-b text-left"
-                  style={{ color: "var(--text-secondary)", borderColor: "rgba(27,45,79,0.08)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)", borderBottom: "1px solid rgba(27,45,79,0.08)" }}
+                  style={{ color: "var(--text-secondary)", borderColor: "rgba(212,34,126,0.08)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}
                 >
                   Sign In
                 </button>
@@ -212,7 +212,7 @@ export function Navbar() {
                   <button
                     onClick={() => { setMobileOpen(false); login(); }}
                     className="block w-full text-center px-6 py-3.5 rounded-lg text-base font-semibold text-white"
-                    style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)", border: "none", cursor: "pointer" }}
+                    style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", border: "none", cursor: "pointer" }}
                   >
                     Build My Plan →
                   </button>

@@ -68,28 +68,38 @@
 
 /* HPF Brand Tokens */
 :root {
-  --navy:          #1b2d4f;
-  --navy-mid:      #243a62;
-  --navy-light:    #2f4a7a;
-  --navy-10:       rgba(27,45,79,0.08);
-  --navy-20:       rgba(27,45,79,0.15);
-  --navy-40:       rgba(27,45,79,0.4);
-  --navy-60:       rgba(27,45,79,0.6);
+  /* Primary: Hot Pink / Magenta #D4227E — interactive elements only */
+  --hpf-pink:      #D4227E;
+  --hpf-pink-mid:  #b81c6a;
+  --hpf-pink-light:#e04d95;
+  --hpf-pink-10:   rgba(212,34,126,0.08);
+  --hpf-pink-20:   rgba(212,34,126,0.15);
+  --hpf-pink-40:   rgba(212,34,126,0.4);
+  --hpf-pink-60:   rgba(212,34,126,0.6);
+  /* Deep: Warm Charcoal #2C2825 — headings, structural text */
+  --hpf-deep:      #2C2825;
+  --hpf-deep-mid:  #3d3834;
+  --hpf-deep-10:   rgba(44,40,37,0.08);
+  --hpf-deep-20:   rgba(44,40,37,0.15);
   --warm-white:    #fafaf8;
   --off-white:     #f4f2ee;
   --parchment:     #edeae3;
-  --hpf-amber:     #b8892a;
-  --amber-light:   #d4a44c;
-  --amber-pale:    #fdf5e6;
-  --amber-10:      rgba(184,137,42,0.12);
-  --sage:          #3d6b52;
+  /* Accent: Crimson #E02040 — highlights, key moments */
+  --hpf-crimson:   #E02040;
+  --crimson-light: #e84d65;
+  --crimson-pale:  #fdf0f2;
+  --crimson-10:    rgba(224,32,64,0.12);
+  /* Nature: Sage Green #7DB55C — success, health indicators */
+  --sage:          #7DB55C;
   --sage-pale:     #eaf2ec;
   --rose:          #e07060;
   --sky:           #5b9bd5;
-  --text-secondary:#4a5e7a;
-  --text-muted:    #8496b0;
-  --border-color:  rgba(27,45,79,0.1);
-  --border-strong: rgba(27,45,79,0.2);
+  /* Text */
+  --text-primary:  #2C2825;
+  --text-secondary:#5C5652;
+  --text-muted:    #9c9490;
+  --border-color:  rgba(44,40,37,0.08);
+  --border-strong: rgba(44,40,37,0.15);
 
   /* Shadcn system mapped to brand */
   --button-outline: rgba(0,0,0,.10);
@@ -100,57 +110,57 @@
 
   /* Background = warm white #fafaf8 */
   --background: 60 17% 98%;
-  /* Foreground = navy #1b2d4f */
-  --foreground: 219 48% 21%;
-  /* Border = subtle navy-tinted */
-  --border: 219 30% 88%;
+  /* Foreground = warm charcoal #2C2825 */
+  --foreground: 20 10% 16%;
+  /* Border = subtle warm-tinted */
+  --border: 30 15% 88%;
   /* Card = white */
   --card: 0 0% 100%;
-  --card-foreground: 219 48% 21%;
-  --card-border: 219 30% 90%;
+  --card-foreground: 20 10% 16%;
+  --card-border: 30 15% 90%;
 
-  /* Sidebar = navy */
-  --sidebar: 219 48% 21%;
+  /* Sidebar = hot pink */
+  --sidebar: 330 66% 49%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 219 46% 26%;
-  --sidebar-primary: 40 62% 44%;
+  --sidebar-border: 330 60% 43%;
+  --sidebar-primary: 351 74% 50%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 219 46% 26%;
+  --sidebar-accent: 330 60% 42%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 40 62% 44%;
+  --sidebar-ring: 351 74% 50%;
 
   /* Popover */
   --popover: 0 0% 100%;
-  --popover-foreground: 219 48% 21%;
-  --popover-border: 219 30% 88%;
+  --popover-foreground: 20 10% 16%;
+  --popover-border: 30 15% 88%;
 
-  /* Primary = navy */
-  --primary: 219 48% 21%;
+  /* Primary = hot pink #D4227E */
+  --primary: 330 66% 49%;
   --primary-foreground: 0 0% 100%;
 
   /* Secondary = off-white */
-  --secondary: 40 14% 94%;
-  --secondary-foreground: 219 48% 21%;
+  --secondary: 30 14% 94%;
+  --secondary-foreground: 20 10% 16%;
 
   /* Muted = off-white */
-  --muted: 40 14% 94%;
-  --muted-foreground: 219 25% 40%;
+  --muted: 30 14% 94%;
+  --muted-foreground: 20 8% 42%;
 
-  /* Accent = amber pale */
-  --accent: 40 87% 95%;
-  --accent-foreground: 219 48% 21%;
+  /* Accent = crimson pale */
+  --accent: 351 87% 95%;
+  --accent-foreground: 0 0% 10%;
 
-  /* Destructive = rose */
-  --destructive: 6 65% 63%;
+  /* Destructive = crimson #E02040 */
+  --destructive: 351 74% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 219 30% 88%;
-  --ring: 40 62% 44%;
+  --input: 330 30% 88%;
+  --ring: 330 66% 49%;
 
   /* Charts */
-  --chart-1: 219 48% 21%;
-  --chart-2: 40 62% 44%;
-  --chart-3: 147 27% 33%;
+  --chart-1: 330 66% 49%;
+  --chart-2: 351 74% 50%;
+  --chart-3: 101 34% 54%;
   --chart-4: 214 57% 57%;
   --chart-5: 6 65% 63%;
 
@@ -161,15 +171,15 @@
 
   --radius: 0.5rem;
 
-  /* Shadows */
-  --shadow-2xs: 0 1px 2px rgba(27,45,79,0.06);
-  --shadow-xs:  0 2px 4px rgba(27,45,79,0.08);
-  --shadow-sm:  0 2px 8px rgba(27,45,79,0.08), 0 1px 2px rgba(27,45,79,0.06);
-  --shadow:     0 4px 12px rgba(27,45,79,0.10), 0 1px 3px rgba(27,45,79,0.08);
-  --shadow-md:  0 6px 20px rgba(27,45,79,0.12), 0 2px 6px rgba(27,45,79,0.08);
-  --shadow-lg:  0 12px 32px rgba(27,45,79,0.14), 0 4px 8px rgba(27,45,79,0.08);
-  --shadow-xl:  0 20px 48px rgba(27,45,79,0.18), 0 8px 16px rgba(27,45,79,0.10);
-  --shadow-2xl: 0 32px 64px rgba(27,45,79,0.22);
+  /* Shadows — warm charcoal base for a grounded, natural feel */
+  --shadow-2xs: 0 1px 2px rgba(44,40,37,0.06);
+  --shadow-xs:  0 2px 4px rgba(44,40,37,0.08);
+  --shadow-sm:  0 2px 8px rgba(44,40,37,0.08), 0 1px 2px rgba(44,40,37,0.05);
+  --shadow:     0 4px 12px rgba(44,40,37,0.10), 0 1px 3px rgba(44,40,37,0.06);
+  --shadow-md:  0 6px 20px rgba(44,40,37,0.12), 0 2px 6px rgba(44,40,37,0.06);
+  --shadow-lg:  0 12px 32px rgba(44,40,37,0.12), 0 4px 8px rgba(44,40,37,0.07);
+  --shadow-xl:  0 20px 48px rgba(44,40,37,0.14), 0 8px 16px rgba(44,40,37,0.08);
+  --shadow-2xl: 0 32px 64px rgba(44,40,37,0.18);
 
   --tracking-normal: 0em;
   --spacing: 0.25rem;
@@ -191,45 +201,45 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
-/* No dark mode — brand is light-only */
+/* Dark mode — updated to pink/crimson palette */
 .dark {
   --button-outline: rgba(255,255,255,.10);
   --badge-outline: rgba(255,255,255,.05);
   --opaque-button-border-intensity: 9;
   --elevate-1: rgba(255,255,255,.04);
   --elevate-2: rgba(255,255,255,.09);
-  --background: 219 48% 10%;
+  --background: 330 20% 10%;
   --foreground: 0 0% 96%;
-  --border: 219 30% 22%;
-  --card: 219 46% 14%;
+  --border: 330 20% 22%;
+  --card: 330 18% 14%;
   --card-foreground: 0 0% 96%;
-  --card-border: 219 30% 22%;
-  --sidebar: 219 48% 8%;
+  --card-border: 330 20% 22%;
+  --sidebar: 330 25% 8%;
   --sidebar-foreground: 0 0% 96%;
-  --sidebar-border: 219 30% 16%;
-  --sidebar-primary: 40 62% 44%;
+  --sidebar-border: 330 20% 16%;
+  --sidebar-primary: 330 66% 55%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 219 46% 18%;
+  --sidebar-accent: 330 20% 18%;
   --sidebar-accent-foreground: 0 0% 96%;
-  --sidebar-ring: 40 62% 44%;
-  --popover: 219 46% 14%;
+  --sidebar-ring: 330 66% 55%;
+  --popover: 330 18% 14%;
   --popover-foreground: 0 0% 96%;
-  --popover-border: 219 30% 22%;
-  --primary: 40 62% 44%;
+  --popover-border: 330 20% 22%;
+  --primary: 330 66% 55%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 219 30% 18%;
+  --secondary: 330 15% 18%;
   --secondary-foreground: 0 0% 90%;
-  --muted: 219 30% 18%;
-  --muted-foreground: 219 20% 60%;
-  --accent: 219 30% 22%;
+  --muted: 330 15% 18%;
+  --muted-foreground: 330 10% 60%;
+  --accent: 330 15% 22%;
   --accent-foreground: 0 0% 90%;
-  --destructive: 6 65% 55%;
+  --destructive: 351 74% 55%;
   --destructive-foreground: 0 0% 100%;
-  --input: 219 30% 22%;
-  --ring: 40 62% 44%;
-  --chart-1: 40 62% 56%;
-  --chart-2: 219 48% 60%;
-  --chart-3: 147 27% 50%;
+  --input: 330 20% 22%;
+  --ring: 330 66% 55%;
+  --chart-1: 330 66% 65%;
+  --chart-2: 351 74% 65%;
+  --chart-3: 101 34% 60%;
   --chart-4: 214 57% 65%;
   --chart-5: 6 65% 63%;
   --shadow-2xs: 0 1px 2px rgba(0,0,0,0.3);
@@ -273,22 +283,24 @@
 .font-sans  { font-family: var(--app-font-sans); }
 
 /* HPF Color utilities */
-.text-navy         { color: var(--navy); }
-.text-amber        { color: var(--hpf-amber); }
-.text-amber-light  { color: var(--amber-light); }
-.text-sage         { color: var(--sage); }
-.text-secondary-hpf{ color: var(--text-secondary); }
-.text-muted-hpf    { color: var(--text-muted); }
-.bg-navy           { background-color: var(--navy); }
-.bg-warm-white     { background-color: var(--warm-white); }
-.bg-off-white      { background-color: var(--off-white); }
-.bg-parchment      { background-color: var(--parchment); }
-.bg-amber-pale     { background-color: var(--amber-pale); }
-.bg-sage-pale      { background-color: var(--sage-pale); }
-.border-amber      { border-color: var(--hpf-amber); }
-.border-hpf        { border-color: var(--border-color); }
+.text-deep          { color: var(--hpf-deep); }
+.text-pink          { color: var(--hpf-pink); }
+.text-crimson       { color: var(--hpf-crimson); }
+.text-crimson-light { color: var(--crimson-light); }
+.text-sage          { color: var(--sage); }
+.text-secondary-hpf { color: var(--text-secondary); }
+.text-muted-hpf     { color: var(--text-muted); }
+.bg-deep            { background-color: var(--hpf-deep); }
+.bg-pink            { background-color: var(--hpf-pink); }
+.bg-warm-white      { background-color: var(--warm-white); }
+.bg-off-white       { background-color: var(--off-white); }
+.bg-parchment       { background-color: var(--parchment); }
+.bg-crimson-pale    { background-color: var(--crimson-pale); }
+.bg-sage-pale       { background-color: var(--sage-pale); }
+.border-crimson     { border-color: var(--hpf-crimson); }
+.border-hpf         { border-color: var(--border-color); }
 
-/* Section tag (amber dash before text) */
+/* Section tag (crimson dash before text) */
 .section-tag {
   display: inline-flex;
   align-items: center;
@@ -297,14 +309,14 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--hpf-amber);
+  color: var(--hpf-crimson);
   margin-bottom: 1rem;
 }
 .section-tag::before {
   content: '';
   width: 20px;
   height: 1.5px;
-  background: var(--hpf-amber);
+  background: var(--hpf-crimson);
   display: block;
   flex-shrink: 0;
 }

@@ -13,9 +13,9 @@ import {
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
-const navy = "#1b2d4f";
-const amber = "#b8892a";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const amber = "#E02040";
+const sage = "#7DB55C";
 
 interface ModalityRow {
   id: string;
@@ -65,15 +65,15 @@ const CONDITION_LABEL: Record<string, string> = {
 const EVIDENCE_DETAIL: Record<string, { color: string; bg: string; border: string; icon: typeof CheckCircle2; description: string }> = {
   Strong: {
     color: sage,
-    bg: "rgba(61,107,82,0.07)",
-    border: "rgba(61,107,82,0.25)",
+    bg: "rgba(125,181,92,0.07)",
+    border: "rgba(125,181,92,0.25)",
     icon: CheckCircle2,
     description: "Multiple randomized controlled trials and systematic reviews support the effectiveness of this modality.",
   },
   Moderate: {
     color: amber,
-    bg: "rgba(184,137,42,0.07)",
-    border: "rgba(184,137,42,0.25)",
+    bg: "rgba(224,32,64,0.07)",
+    border: "rgba(224,32,64,0.25)",
     icon: Info,
     description: "Clinical studies and observational research show promising results, though larger trials are ongoing.",
   },
@@ -248,8 +248,8 @@ export default function ModalityDetail() {
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px 80px" }}>
           {/* Printable section header */}
           <div className="print-section" style={{ display: "none" }} ref={printRef}>
-            <div style={{ borderBottom: "2px solid #1b2d4f", paddingBottom: 16, marginBottom: 24 }}>
-              <h1 style={{ fontFamily: "serif", fontSize: 28, margin: "0 0 4px", color: "#1b2d4f" }}>{modality.emoji} {modality.name}</h1>
+            <div style={{ borderBottom: "2px solid #D4227E", paddingBottom: 16, marginBottom: 24 }}>
+              <h1 style={{ fontFamily: "serif", fontSize: 28, margin: "0 0 4px", color: "#D4227E" }}>{modality.emoji} {modality.name}</h1>
               <p style={{ margin: 0, fontSize: 13, color: "#666" }}>Evidence Summary — Health Plan Factory | healthplanfactory.com</p>
             </div>
           </div>
@@ -262,7 +262,7 @@ export default function ModalityDetail() {
               { label: "HSA/FSA eligible", value: modality.hsaEligible ? "Often yes" : "Typically no" },
               { label: "Evidence level", value: modality.evidenceLevel ?? "Emerging" },
             ].map(({ label, value }) => (
-              <div key={label} style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 12, padding: "16px 18px" }}>
+              <div key={label} style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", borderRadius: 12, padding: "16px 18px" }}>
                 <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 6px" }}>{label}</p>
                 <p style={{ fontFamily: "var(--app-font-mono, 'DM Mono', monospace)", fontSize: 15, fontWeight: 600, color: navy, margin: 0 }}>{value}</p>
               </div>
@@ -310,8 +310,8 @@ export default function ModalityDetail() {
                       fontFamily: "var(--app-font-sans)",
                       fontSize: 13,
                       color: navy,
-                      background: "rgba(27,45,79,0.07)",
-                      border: "1px solid rgba(27,45,79,0.12)",
+                      background: "rgba(212,34,126,0.07)",
+                      border: "1px solid rgba(212,34,126,0.12)",
                       padding: "5px 12px",
                       borderRadius: 20,
                     }}
@@ -324,7 +324,7 @@ export default function ModalityDetail() {
           )}
 
           {/* HSA/FSA note */}
-          <section className="print-section" style={{ marginBottom: 40, background: modality.hsaEligible ? "rgba(61,107,82,0.06)" : "rgba(184,137,42,0.06)", border: `1px solid ${modality.hsaEligible ? "rgba(61,107,82,0.2)" : "rgba(184,137,42,0.2)"}`, borderRadius: 12, padding: "20px 22px" }}>
+          <section className="print-section" style={{ marginBottom: 40, background: modality.hsaEligible ? "rgba(125,181,92,0.06)" : "rgba(224,32,64,0.06)", border: `1px solid ${modality.hsaEligible ? "rgba(125,181,92,0.2)" : "rgba(224,32,64,0.2)"}`, borderRadius: 12, padding: "20px 22px" }}>
             <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: modality.hsaEligible ? sage : amber, margin: "0 0 8px" }}>
               HSA / FSA Eligibility
             </h3>
@@ -363,7 +363,7 @@ export default function ModalityDetail() {
           </section>
 
           {/* Share with doctor / Print CTA */}
-          <section className="print-section no-print" style={{ marginBottom: 48, background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 14, padding: "24px 28px" }}>
+          <section className="print-section no-print" style={{ marginBottom: 48, background: "white", border: "1px solid rgba(212,34,126,0.08)", borderRadius: 14, padding: "24px 28px" }}>
             <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: 18, color: navy, margin: "0 0 8px" }}>Share with your doctor</h3>
@@ -377,7 +377,7 @@ export default function ModalityDetail() {
                   <Printer size={15} /> Print / Save as PDF
                 </button>
               </div>
-              <div style={{ padding: "16px 20px", background: "rgba(27,45,79,0.04)", borderRadius: 10, fontSize: 11, fontFamily: "var(--app-font-sans)", color: "var(--text-muted)", maxWidth: 220, lineHeight: 1.5 }}>
+              <div style={{ padding: "16px 20px", background: "rgba(212,34,126,0.04)", borderRadius: 10, fontSize: 11, fontFamily: "var(--app-font-sans)", color: "var(--text-muted)", maxWidth: 220, lineHeight: 1.5 }}>
                 <strong>Disclaimer:</strong> Health Plan Factory is a wellness referral platform, not a medical provider. This summary is educational and not a substitute for professional medical advice.
               </div>
             </div>
@@ -416,8 +416,8 @@ export default function ModalityDetail() {
                     to={`/modalities/${rel.id}`}
                     style={{ textDecoration: "none" }}
                   >
-                    <div style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 12, padding: "18px 16px", transition: "box-shadow 0.15s" }}
-                      onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(27,45,79,0.08)"}
+                    <div style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", borderRadius: 12, padding: "18px 16px", transition: "box-shadow 0.15s" }}
+                      onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(212,34,126,0.08)"}
                       onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.boxShadow = "none"}
                     >
                       <span style={{ fontSize: 26, display: "block", marginBottom: 10 }}>{rel.emoji}</span>

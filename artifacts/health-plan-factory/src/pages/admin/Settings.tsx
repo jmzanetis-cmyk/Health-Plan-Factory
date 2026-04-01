@@ -69,8 +69,8 @@ export default function AdminSettings() {
 
   const inputStyle = {
     background: "var(--warm-white)",
-    border: "1.5px solid rgba(27,45,79,0.12)",
-    color: "var(--navy)",
+    border: "1.5px solid rgba(212,34,126,0.12)",
+    color: "var(--hpf-pink)",
     fontFamily: "var(--app-font-sans)",
     outline: "none",
     borderRadius: 8,
@@ -78,7 +78,7 @@ export default function AdminSettings() {
 
   const sectionCard = {
     background: "white",
-    border: "1px solid rgba(27,45,79,0.08)",
+    border: "1px solid rgba(212,34,126,0.08)",
     borderRadius: 16,
   };
 
@@ -87,7 +87,7 @@ export default function AdminSettings() {
       onClick={onClick}
       disabled={saving === k}
       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white"
-      style={{ background: saving === k ? "rgba(27,45,79,0.4)" : "var(--navy)", border: "none", cursor: saving === k ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+      style={{ background: saving === k ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: saving === k ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
     >
       {saving === k ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
       Save
@@ -97,7 +97,7 @@ export default function AdminSettings() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--warm-white)" }}>
-        <Loader2 className="animate-spin" size={28} style={{ color: "var(--navy)" }} />
+        <Loader2 className="animate-spin" size={28} style={{ color: "var(--hpf-pink)" }} />
       </div>
     );
   }
@@ -106,7 +106,7 @@ export default function AdminSettings() {
     <div className="min-h-screen px-4 md:px-10 py-10" style={{ background: "var(--warm-white)" }}>
       <div className="max-w-4xl mx-auto flex flex-col gap-8">
         <div>
-          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
             Platform Settings
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -119,7 +119,7 @@ export default function AdminSettings() {
         {/* Disclaimer */}
         <div className="p-6 flex flex-col gap-4" style={sectionCard}>
           <div>
-            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>Disclaimer Text</h2>
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>Disclaimer Text</h2>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
               Shown in the sticky bar at the bottom of all member-facing pages
             </p>
@@ -139,7 +139,7 @@ export default function AdminSettings() {
         {/* Pricing tier labels */}
         <div className="p-6 flex flex-col gap-4" style={sectionCard}>
           <div>
-            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>Pricing Tier Labels</h2>
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>Pricing Tier Labels</h2>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
               Labels displayed on the public pricing page
             </p>
@@ -147,7 +147,7 @@ export default function AdminSettings() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {Object.entries(pricingLabels).map(([key, val]) => (
               <div key={key}>
-                <label className="block text-xs font-semibold mb-1 capitalize" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                <label className="block text-xs font-semibold mb-1 capitalize" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                   {key} tier
                 </label>
                 <input
@@ -169,7 +169,7 @@ export default function AdminSettings() {
         <div className="p-6 flex flex-col gap-4" style={sectionCard}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>FAQ Entries</h2>
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>FAQ Entries</h2>
               <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
                 Manage the questions shown on the public FAQ page
               </p>
@@ -177,7 +177,7 @@ export default function AdminSettings() {
             <button
               onClick={() => setFaqs((prev) => [...prev, { question: "", answer: "" }])}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium"
-              style={{ background: "rgba(27,45,79,0.06)", border: "none", cursor: "pointer", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+              style={{ background: "rgba(212,34,126,0.06)", border: "none", cursor: "pointer", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               <Plus size={14} /> Add Question
             </button>
@@ -190,7 +190,7 @@ export default function AdminSettings() {
               </p>
             )}
             {faqs.map((faq, i) => (
-              <div key={i} className="p-4 rounded-xl flex flex-col gap-3" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.06)" }}>
+              <div key={i} className="p-4 rounded-xl flex flex-col gap-3" style={{ background: "var(--warm-white)", border: "1px solid rgba(212,34,126,0.06)" }}>
                 <div className="flex items-start justify-between gap-2">
                   <input
                     type="text"

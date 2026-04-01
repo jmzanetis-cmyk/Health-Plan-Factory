@@ -3,9 +3,9 @@ import { Building2, Plus, ChevronDown, ChevronUp, Loader2, X, Check, Pencil, Tra
 import { AdminNav } from "./Dashboard";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
-const navy = "#1b2d4f";
-const sage = "#3d6b52";
-const amber = "#b8892a";
+const navy = "#2C2825";
+const sage = "#7DB55C";
+const amber = "#E02040";
 
 interface Employer {
   id: string;
@@ -29,11 +29,11 @@ function fmt(cents: number) {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string }> = {
-    active: { bg: "rgba(61,107,82,0.1)", color: sage },
-    pending: { bg: "rgba(184,137,42,0.1)", color: amber },
+    active: { bg: "rgba(125,181,92,0.1)", color: sage },
+    pending: { bg: "rgba(224,32,64,0.1)", color: amber },
     canceled: { bg: "rgba(220,53,53,0.1)", color: "#c42b2b" },
   };
-  const s = map[status] ?? { bg: "rgba(27,45,79,0.07)", color: navy };
+  const s = map[status] ?? { bg: "rgba(212,34,126,0.07)", color: navy };
   return (
     <span style={{ ...s, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
       {status}
@@ -97,7 +97,7 @@ function EmployerForm({
 
   const inputStyle = {
     width: "100%",
-    border: "1.5px solid rgba(27,45,79,0.18)",
+    border: "1.5px solid rgba(212,34,126,0.18)",
     borderRadius: 7,
     padding: "9px 12px",
     fontFamily: "var(--app-font-sans)",
@@ -120,7 +120,7 @@ function EmployerForm({
   };
 
   return (
-    <form onSubmit={submit} style={{ padding: "20px 24px", background: "rgba(27,45,79,0.02)", borderTop: "1px solid rgba(27,45,79,0.08)" }}>
+    <form onSubmit={submit} style={{ padding: "20px 24px", background: "rgba(212,34,126,0.02)", borderTop: "1px solid rgba(212,34,126,0.08)" }}>
       {error && (
         <div style={{ background: "rgba(220,53,53,0.08)", border: "1px solid rgba(220,53,53,0.2)", borderRadius: 7, padding: "9px 12px", marginBottom: 16, color: "#c42b2b", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>
           {error}
@@ -165,7 +165,7 @@ function EmployerForm({
           {loading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
           {initial?.id ? "Update" : "Create"} Employer
         </button>
-        <button type="button" onClick={onCancel} style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.15)", borderRadius: 7, padding: "9px 14px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+        <button type="button" onClick={onCancel} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 7, padding: "9px 14px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
           <X size={13} /> Cancel
         </button>
       </div>
@@ -257,7 +257,7 @@ export default function AdminEmployers() {
     userSelect: "none" as const,
     textAlign: "left" as const,
     whiteSpace: "nowrap" as const,
-    borderBottom: "1px solid rgba(27,45,79,0.08)",
+    borderBottom: "1px solid rgba(212,34,126,0.08)",
   };
 
   return (
@@ -282,8 +282,8 @@ export default function AdminEmployers() {
 
         {/* Create form */}
         {showCreate && (
-          <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, marginBottom: 24, overflow: "hidden" }}>
-            <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(27,45,79,0.08)", fontFamily: "var(--app-font-sans)", fontSize: 15, fontWeight: 700, color: navy }}>
+          <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, marginBottom: 24, overflow: "hidden" }}>
+            <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(212,34,126,0.08)", fontFamily: "var(--app-font-sans)", fontSize: 15, fontWeight: 700, color: navy }}>
               New Employer Account
             </div>
             <EmployerForm onSave={createEmployer} onCancel={() => setShowCreate(false)} />
@@ -298,7 +298,7 @@ export default function AdminEmployers() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-              border: "1.5px solid rgba(27,45,79,0.15)",
+              border: "1.5px solid rgba(212,34,126,0.15)",
               borderRadius: 8,
               padding: "9px 14px",
               fontFamily: "var(--app-font-sans)",
@@ -317,16 +317,16 @@ export default function AdminEmployers() {
         {loading ? (
           <div style={{ textAlign: "center", padding: 60 }}><Loader2 size={24} className="animate-spin" style={{ color: navy }} /></div>
         ) : employers.length === 0 ? (
-          <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, padding: 60, textAlign: "center" }}>
-            <Building2 size={40} color="rgba(27,45,79,0.15)" style={{ marginBottom: 16 }} />
+          <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: 60, textAlign: "center" }}>
+            <Building2 size={40} color="rgba(212,34,126,0.15)" style={{ marginBottom: 16 }} />
             <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 600, color: navy }}>No employer accounts yet</h3>
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>Click "New Employer" to create the first one.</p>
           </div>
         ) : (
-          <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ background: "rgba(27,45,79,0.02)" }}>
+                <tr style={{ background: "rgba(212,34,126,0.02)" }}>
                   <th style={thStyle} onClick={() => toggleSort("companyName")}>Company <SortIcon k="companyName" /></th>
                   <th style={thStyle}>Contact</th>
                   <th style={thStyle}>Invite Code</th>
@@ -341,32 +341,32 @@ export default function AdminEmployers() {
                 {sorted.map((emp) => (
                   <>
                     <tr key={emp.id}>
-                      <td style={{ padding: "12px 14px", fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, color: navy, borderBottom: editId === emp.id ? "none" : "1px solid rgba(27,45,79,0.06)" }}>
+                      <td style={{ padding: "12px 14px", fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, color: navy, borderBottom: editId === emp.id ? "none" : "1px solid rgba(212,34,126,0.06)" }}>
                         {emp.companyName}
                       </td>
-                      <td style={{ padding: "12px 14px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", borderBottom: editId === emp.id ? "none" : "1px solid rgba(27,45,79,0.06)" }}>
+                      <td style={{ padding: "12px 14px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", borderBottom: editId === emp.id ? "none" : "1px solid rgba(212,34,126,0.06)" }}>
                         <div style={{ fontWeight: 600, color: navy }}>{emp.adminContactName}</div>
                         <div style={{ fontSize: 12 }}>{emp.adminContactEmail}</div>
                       </td>
-                      <td style={{ padding: "12px 14px", borderBottom: editId === emp.id ? "none" : "1px solid rgba(27,45,79,0.06)" }}>
-                        <span style={{ fontFamily: "monospace", fontSize: 13, background: "rgba(27,45,79,0.05)", padding: "3px 8px", borderRadius: 5, letterSpacing: "0.1em", color: navy, fontWeight: 700 }}>
+                      <td style={{ padding: "12px 14px", borderBottom: editId === emp.id ? "none" : "1px solid rgba(212,34,126,0.06)" }}>
+                        <span style={{ fontFamily: "monospace", fontSize: 13, background: "rgba(212,34,126,0.05)", padding: "3px 8px", borderRadius: 5, letterSpacing: "0.1em", color: navy, fontWeight: 700 }}>
                           {emp.inviteCode}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, color: navy, borderBottom: editId === emp.id ? "none" : "1px solid rgba(27,45,79,0.06)" }}>
+                      <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, color: navy, borderBottom: editId === emp.id ? "none" : "1px solid rgba(212,34,126,0.06)" }}>
                         {fmt(emp.stipendPerEmployee)}
                         <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{emp.numberOfEmployees} employees</div>
                       </td>
-                      <td style={{ padding: "12px 14px", textAlign: "center", fontFamily: "var(--app-font-sans)", fontSize: 14, color: navy, borderBottom: editId === emp.id ? "none" : "1px solid rgba(27,45,79,0.06)" }}>
+                      <td style={{ padding: "12px 14px", textAlign: "center", fontFamily: "var(--app-font-sans)", fontSize: 14, color: navy, borderBottom: editId === emp.id ? "none" : "1px solid rgba(212,34,126,0.06)" }}>
                         {emp.memberCount}
                       </td>
-                      <td style={{ padding: "12px 14px", borderBottom: editId === emp.id ? "none" : "1px solid rgba(27,45,79,0.06)" }}>
+                      <td style={{ padding: "12px 14px", borderBottom: editId === emp.id ? "none" : "1px solid rgba(212,34,126,0.06)" }}>
                         <StatusBadge status={emp.status} />
                       </td>
-                      <td style={{ padding: "12px 14px", fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-muted)", borderBottom: editId === emp.id ? "none" : "1px solid rgba(27,45,79,0.06)" }}>
+                      <td style={{ padding: "12px 14px", fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-muted)", borderBottom: editId === emp.id ? "none" : "1px solid rgba(212,34,126,0.06)" }}>
                         {new Date(emp.createdAt).toLocaleDateString()}
                       </td>
-                      <td style={{ padding: "12px 14px", borderBottom: editId === emp.id ? "none" : "1px solid rgba(27,45,79,0.06)" }}>
+                      <td style={{ padding: "12px 14px", borderBottom: editId === emp.id ? "none" : "1px solid rgba(212,34,126,0.06)" }}>
                         <div style={{ display: "flex", gap: 6 }}>
                           <button
                             onClick={() => setEditId(editId === emp.id ? null : emp.id)}
@@ -387,7 +387,7 @@ export default function AdminEmployers() {
                     </tr>
                     {editId === emp.id && (
                       <tr key={`${emp.id}-edit`}>
-                        <td colSpan={8} style={{ padding: 0, borderBottom: "1px solid rgba(27,45,79,0.08)" }}>
+                        <td colSpan={8} style={{ padding: 0, borderBottom: "1px solid rgba(212,34,126,0.08)" }}>
                           <EmployerForm
                             initial={emp}
                             onSave={(data) => updateEmployer(emp.id, data)}

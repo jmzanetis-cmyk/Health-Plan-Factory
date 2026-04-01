@@ -4,9 +4,9 @@ import { ArrowRight, Loader2 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
-const navy = "#1b2d4f";
-const amber = "#b8892a";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const amber = "#E02040";
+const sage = "#7DB55C";
 
 interface Modality {
   id: string;
@@ -26,8 +26,8 @@ interface Modality {
 }
 
 const EVIDENCE_BADGE: Record<string, { bg: string; color: string }> = {
-  Strong: { bg: "rgba(61,107,82,0.12)", color: sage },
-  Moderate: { bg: "rgba(184,137,42,0.12)", color: amber },
+  Strong: { bg: "rgba(125,181,92,0.12)", color: sage },
+  Moderate: { bg: "rgba(224,32,64,0.12)", color: amber },
   Emerging: { bg: "rgba(91,155,213,0.12)", color: "#5b9bd5" },
 };
 
@@ -69,8 +69,8 @@ export default function Modalities() {
             <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
             <span style={{ color: "rgba(255,255,255,0.9)" }}>Modalities</span>
           </nav>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(184,137,42,0.15)", border: "1px solid rgba(184,137,42,0.3)", borderRadius: 20, padding: "4px 14px", marginBottom: 16 }}>
-            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#d4a84b", textTransform: "uppercase", letterSpacing: "0.07em" }}>Evidence Library</span>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(224,32,64,0.15)", border: "1px solid rgba(224,32,64,0.3)", borderRadius: 20, padding: "4px 14px", marginBottom: 16 }}>
+            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#e84d65", textTransform: "uppercase", letterSpacing: "0.07em" }}>Evidence Library</span>
           </div>
           <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2rem,5vw,3.5rem)", fontWeight: 700, color: "white", letterSpacing: "-0.02em", margin: "0 0 16px" }}>
             12 Evidence-Led Modalities
@@ -82,7 +82,7 @@ export default function Modalities() {
       </div>
 
       {/* Filter tabs */}
-      <div style={{ background: "white", borderBottom: "1px solid rgba(27,45,79,0.08)", position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ background: "white", borderBottom: "1px solid rgba(212,34,126,0.08)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px", display: "flex", gap: 4, overflowX: "auto" }}>
           {categories.map((cat) => (
             <button
@@ -127,7 +127,7 @@ export default function Modalities() {
                   <div
                     style={{
                       background: "white",
-                      border: "1px solid rgba(27,45,79,0.08)",
+                      border: "1px solid rgba(212,34,126,0.08)",
                       borderRadius: 14,
                       padding: "24px 20px",
                       height: "100%",
@@ -135,7 +135,7 @@ export default function Modalities() {
                       cursor: "pointer",
                     }}
                     onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 20px rgba(27,45,79,0.1)";
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 20px rgba(212,34,126,0.1)";
                       (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
                     }}
                     onMouseLeave={(e) => {
@@ -161,11 +161,11 @@ export default function Modalities() {
                     </p>
 
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-                      <span style={{ fontFamily: "var(--app-font-mono, 'DM Mono', monospace)", fontSize: 12, color: navy, background: "rgba(27,45,79,0.06)", padding: "3px 8px", borderRadius: 6 }}>
+                      <span style={{ fontFamily: "var(--app-font-mono, 'DM Mono', monospace)", fontSize: 12, color: navy, background: "rgba(212,34,126,0.06)", padding: "3px 8px", borderRadius: 6 }}>
                         ${m.costLow}–${m.costHigh}/mo
                       </span>
                       {m.hsaEligible && (
-                        <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, color: sage, background: "rgba(61,107,82,0.1)", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>
+                        <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, color: sage, background: "rgba(125,181,92,0.1)", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>
                           HSA/FSA
                         </span>
                       )}

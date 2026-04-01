@@ -15,9 +15,9 @@ const FAQS = [
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b cursor-pointer" style={{ borderColor: "rgba(27,45,79,0.1)" }} onClick={() => setOpen(!open)}>
+    <div className="border-b cursor-pointer" style={{ borderColor: "rgba(212,34,126,0.1)" }} onClick={() => setOpen(!open)}>
       <div className="flex justify-between items-center py-5 gap-4">
-        <h3 className="font-medium text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>{q}</h3>
+        <h3 className="font-medium text-sm" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{q}</h3>
         {open ? <ChevronUp size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} /> : <ChevronDown size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} />}
       </div>
       {open && <p className="text-sm font-light leading-relaxed pb-5" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>{a}</p>}
@@ -30,14 +30,14 @@ export default function FAQ() {
     <div className="min-h-screen px-6 md:px-12 py-20" style={{ background: "var(--off-white)" }}>
       <div className="max-w-2xl mx-auto">
         <div className="section-tag">FAQ</div>
-        <h1 className="mb-10" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.5rem,5vw,4rem)", fontWeight: 700, color: "var(--navy)", letterSpacing: "-0.02em" }}>
+        <h1 className="mb-10" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.5rem,5vw,4rem)", fontWeight: 700, color: "var(--hpf-deep)", letterSpacing: "-0.02em" }}>
           Frequently Asked Questions
         </h1>
         {FAQS.map((faq) => <FAQItem key={faq.q} q={faq.q} a={faq.a} />)}
 
-        <div className="mt-10 rounded-xl p-6 text-sm" style={{ background: "var(--amber-pale)", border: "1px solid rgba(184,137,42,0.12)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
-          <strong style={{ color: "var(--hpf-amber)" }}>Still have questions?</strong> Reach out at{" "}
-          <a href="mailto:hello@healthplanfactory.com" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>
+        <div className="mt-10 rounded-xl p-6 text-sm" style={{ background: "var(--crimson-pale)", border: "1px solid rgba(224,32,64,0.12)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+          <strong style={{ color: "var(--hpf-crimson)" }}>Still have questions?</strong> Reach out at{" "}
+          <a href="mailto:hello@healthplanfactory.com" className="no-underline" style={{ color: "var(--hpf-crimson)", textDecoration: "underline" }}>
             hello@healthplanfactory.com
           </a>
         </div>

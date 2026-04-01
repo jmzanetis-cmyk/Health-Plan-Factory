@@ -78,7 +78,7 @@ export default function Bookmarks() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--warm-white)" }}>
-        <Loader2 className="animate-spin" size={28} style={{ color: "var(--navy)" }} />
+        <Loader2 className="animate-spin" size={28} style={{ color: "var(--hpf-pink)" }} />
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function Bookmarks() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
               Saved Providers
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -99,7 +99,7 @@ export default function Bookmarks() {
           <Link
             to="/providers"
             className="px-4 py-2.5 rounded-lg text-sm font-semibold no-underline"
-            style={{ background: "var(--navy)", color: "white", fontFamily: "var(--app-font-sans)" }}
+            style={{ background: "var(--hpf-pink)", color: "white", fontFamily: "var(--app-font-sans)" }}
           >
             Browse more →
           </Link>
@@ -108,20 +108,20 @@ export default function Bookmarks() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse rounded-2xl p-5 h-36" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }} />
+              <div key={i} className="animate-pulse rounded-2xl p-5 h-36" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }} />
             ))}
           </div>
         ) : providers.length === 0 ? (
-          <div className="py-20 text-center rounded-2xl" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+          <div className="py-20 text-center rounded-2xl" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <div className="text-4xl mb-4">🔖</div>
-            <p className="text-base mb-2" style={{ color: "var(--navy)", fontFamily: "var(--app-font-serif)" }}>No saved providers yet</p>
+            <p className="text-base mb-2" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-serif)" }}>No saved providers yet</p>
             <p className="text-sm mb-6" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
               Browse the provider directory and save providers that match your plan.
             </p>
             <Link
               to="/providers"
               className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white no-underline"
-              style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+              style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               Browse providers
             </Link>
@@ -132,7 +132,7 @@ export default function Bookmarks() {
               <div
                 key={p.id}
                 className="p-5 flex flex-col gap-3 rounded-2xl relative"
-                style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}
+                style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}
               >
                 {/* Remove button */}
                 <button
@@ -148,12 +148,12 @@ export default function Bookmarks() {
                 <div className="flex items-center gap-3 pr-8">
                   <div
                     className="w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold"
-                    style={{ background: "rgba(61,107,82,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-serif)" }}
+                    style={{ background: "rgba(125,181,92,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-serif)" }}
                   >
                     <BookmarkCheck size={16} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>{p.name}</p>
+                    <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{p.name}</p>
                     {(p.city || p.state) && (
                       <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
                         {[p.city, p.state].filter(Boolean).join(", ")}
@@ -170,28 +170,28 @@ export default function Bookmarks() {
 
                 <div className="flex flex-wrap gap-1.5">
                   {p.offersTelehealth && (
-                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(27,45,79,0.06)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Telehealth</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Telehealth</span>
                   )}
                   {p.offersInPerson && (
-                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(27,45,79,0.06)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>In-person</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>In-person</span>
                   )}
                   {p.acceptsInsurance && (
-                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(184,137,42,0.1)", color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>Insurance</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(224,32,64,0.1)", color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>Insurance</span>
                   )}
                   {p.costPerSession != null && (
-                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(61,107,82,0.08)", color: "var(--sage)", fontFamily: "var(--app-font-mono)" }}>${p.costPerSession}/session</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(125,181,92,0.08)", color: "var(--sage)", fontFamily: "var(--app-font-mono)" }}>${p.costPerSession}/session</span>
                   )}
                 </div>
 
                 {(p.phone || p.website) && (
-                  <div className="flex gap-3 pt-1 border-t" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
+                  <div className="flex gap-3 pt-1 border-t" style={{ borderColor: "rgba(212,34,126,0.06)" }}>
                     {p.phone && (
                       <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
                         <Phone size={11} /> {p.phone}
                       </a>
                     )}
                     {p.website && (
-                      <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                      <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                         <Globe size={11} /> Website
                       </a>
                     )}

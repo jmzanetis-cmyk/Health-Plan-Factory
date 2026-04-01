@@ -124,11 +124,11 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   return (
     <div
       className="border-b cursor-pointer"
-      style={{ borderColor: "rgba(27,45,79,0.1)" }}
+      style={{ borderColor: "rgba(212,34,126,0.1)" }}
       onClick={() => setOpen(!open)}
     >
       <div className="flex justify-between items-center py-5 gap-4">
-        <h3 className="font-sans font-medium text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+        <h3 className="font-sans font-medium text-sm" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)" }}>
           {q}
         </h3>
         {open ? (
@@ -158,7 +158,7 @@ export default function Landing() {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: "radial-gradient(rgba(27,45,79,0.08) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(rgba(212,34,126,0.08) 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />
@@ -167,7 +167,7 @@ export default function Landing() {
         <div className="relative z-10">
           <div
             className="inline-flex items-center gap-2 mb-6 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"
-            style={{ background: "var(--amber-pale)", border: "1px solid rgba(184,137,42,0.12)", color: "var(--hpf-amber)" }}
+            style={{ background: "var(--crimson-pale)", border: "1px solid rgba(224,32,64,0.12)", color: "var(--hpf-crimson)" }}
           >
             ✦ Your personalized wellness plan
           </div>
@@ -179,14 +179,14 @@ export default function Landing() {
               fontSize: "clamp(2.8rem, 5vw, 5rem)",
               fontWeight: 700,
               letterSpacing: "-0.02em",
-              color: "var(--navy)",
+              color: "var(--hpf-deep)",
             }}
           >
             A health plan
             <br />
             built around
             <br />
-            <em style={{ color: "var(--hpf-amber)" }}>your life.</em>
+            <em style={{ color: "var(--hpf-crimson)" }}>your life.</em>
           </h1>
 
           <p
@@ -195,7 +195,7 @@ export default function Landing() {
           >
             Tell us your budget, your conditions, and your goals.
             HealthPlanFactory assembles a{" "}
-            <strong style={{ color: "var(--navy)", fontWeight: 600 }}>prioritized, costed wellness plan</strong>
+            <strong style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>prioritized, costed wellness plan</strong>
             {" "}— fitted to what you can actually spend, built around your goals.
           </p>
 
@@ -204,9 +204,9 @@ export default function Landing() {
               to="/sign-up"
               className="inline-flex items-center px-7 py-3.5 rounded-md text-sm font-semibold text-white no-underline transition-all hover:-translate-y-0.5"
               style={{
-                background: "var(--navy)",
+                background: "var(--hpf-pink)",
                 fontFamily: "var(--app-font-sans)",
-                boxShadow: "0 4px 16px rgba(27,45,79,0.25)",
+                boxShadow: "0 4px 16px rgba(212,34,126,0.25)",
                 letterSpacing: "0.01em",
               }}
             >
@@ -217,8 +217,8 @@ export default function Landing() {
               className="inline-flex items-center px-6 py-3.5 rounded-md text-sm font-medium no-underline transition-all"
               style={{
                 background: "transparent",
-                color: "var(--navy)",
-                border: "1.5px solid rgba(27,45,79,0.2)",
+                color: "var(--hpf-pink)",
+                border: "1.5px solid rgba(212,34,126,0.2)",
                 fontFamily: "var(--app-font-sans)",
               }}
             >
@@ -231,8 +231,8 @@ export default function Landing() {
             className="md:hidden mb-8 w-full rounded-2xl p-5"
             style={{
               background: "white",
-              border: "1.5px solid rgba(27,45,79,0.1)",
-              boxShadow: "0 8px 32px rgba(27,45,79,0.1)",
+              border: "1.5px solid rgba(212,34,126,0.1)",
+              boxShadow: "0 8px 32px rgba(212,34,126,0.1)",
             }}
           >
             <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--text-muted)" }}>
@@ -240,7 +240,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col gap-2 mb-4">
               {[
-                { emoji: "💆", name: "Massage Therapy", freq: "2×/month", cost: "$120", hsa: true, border: "var(--hpf-amber)" },
+                { emoji: "💆", name: "Massage Therapy", freq: "2×/month", cost: "$120", hsa: true, border: "var(--hpf-crimson)" },
                 { emoji: "🧘", name: "Yoga / Mind-Body", freq: "8×/month", cost: "$60", hsa: false, border: "var(--sage)" },
               ].map((item) => (
                 <div
@@ -249,28 +249,28 @@ export default function Landing() {
                   style={{ background: "var(--off-white)", borderLeft: `3px solid ${item.border}` }}
                 >
                   <span className="text-base flex-shrink-0">{item.emoji}</span>
-                  <span className="text-xs font-semibold flex-1" style={{ color: "var(--navy)" }}>{item.name}</span>
+                  <span className="text-xs font-semibold flex-1" style={{ color: "var(--hpf-pink)" }}>{item.name}</span>
                   <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.freq}</span>
-                  <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--navy)" }}>{item.cost}</span>
+                  <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>{item.cost}</span>
                   {item.hsa && (
                     <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color: "var(--sage)", background: "var(--sage-pale)" }}>HSA</span>
                   )}
                 </div>
               ))}
             </div>
-            <div className="flex justify-between items-center px-3 py-2.5 rounded-lg" style={{ background: "var(--navy)" }}>
+            <div className="flex justify-between items-center px-3 py-2.5 rounded-lg" style={{ background: "var(--hpf-pink)" }}>
               <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Monthly total</span>
               <span className="text-sm font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "white" }}>$225 / $260 budget</span>
             </div>
             <div className="mt-3">
               <div className="flex justify-between text-xs mb-1" style={{ color: "var(--text-muted)" }}>
                 <span>Budget utilization</span>
-                <strong style={{ color: "var(--navy)" }}>87%</strong>
+                <strong style={{ color: "var(--hpf-pink)" }}>87%</strong>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--off-white)" }}>
                 <div
                   className="h-full rounded-full"
-                  style={{ width: "87%", background: "linear-gradient(90deg, var(--navy), var(--hpf-amber))" }}
+                  style={{ width: "87%", background: "linear-gradient(90deg, var(--hpf-pink), var(--hpf-crimson))" }}
                 />
               </div>
             </div>
@@ -303,9 +303,9 @@ export default function Landing() {
               className="absolute -top-5 right-4 z-10 animate-bobble text-xs font-semibold px-3 py-2 rounded-2xl"
               style={{
                 background: "white",
-                border: "2px solid var(--navy)",
-                color: "var(--navy)",
-                boxShadow: "3px 3px 0 var(--navy)",
+                border: "2px solid var(--hpf-pink)",
+                color: "var(--hpf-pink)",
+                boxShadow: "3px 3px 0 var(--hpf-pink)",
                 whiteSpace: "nowrap",
               }}
             >
@@ -321,8 +321,8 @@ export default function Landing() {
             className="w-full max-w-md animate-float rounded-2xl p-5"
             style={{
               background: "white",
-              border: "1.5px solid rgba(27,45,79,0.1)",
-              boxShadow: "0 8px 32px rgba(27,45,79,0.1)",
+              border: "1.5px solid rgba(212,34,126,0.1)",
+              boxShadow: "0 8px 32px rgba(212,34,126,0.1)",
             }}
           >
             <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--text-muted)" }}>
@@ -330,7 +330,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col gap-2 mb-4">
               {[
-                { emoji: "💆", name: "Massage Therapy", freq: "2×/month", cost: "$120", hsa: true, border: "var(--hpf-amber)" },
+                { emoji: "💆", name: "Massage Therapy", freq: "2×/month", cost: "$120", hsa: true, border: "var(--hpf-crimson)" },
                 { emoji: "🧘", name: "Yoga / Mind-Body", freq: "8×/month", cost: "$60", hsa: false, border: "var(--sage)" },
                 { emoji: "🥗", name: "Nutrition Coaching", freq: "1×/month", cost: "$45", hsa: false, border: "var(--sky)" },
               ].map((item, idx) => (
@@ -343,9 +343,9 @@ export default function Landing() {
                   }}
                 >
                   <span className="text-base flex-shrink-0">{item.emoji}</span>
-                  <span className="text-xs font-semibold flex-1" style={{ color: "var(--navy)" }}>{item.name}</span>
+                  <span className="text-xs font-semibold flex-1" style={{ color: "var(--hpf-pink)" }}>{item.name}</span>
                   <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.freq}</span>
-                  <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--navy)" }}>{item.cost}</span>
+                  <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>{item.cost}</span>
                   {item.hsa && (
                     <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color: "var(--sage)", background: "var(--sage-pale)" }}>
                       HSA
@@ -354,19 +354,19 @@ export default function Landing() {
                 </div>
               ))}
             </div>
-            <div className="flex justify-between items-center px-3 py-2.5 rounded-lg" style={{ background: "var(--navy)" }}>
+            <div className="flex justify-between items-center px-3 py-2.5 rounded-lg" style={{ background: "var(--hpf-pink)" }}>
               <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Monthly total</span>
               <span className="text-sm font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "white" }}>$225 / $260 budget</span>
             </div>
             <div className="mt-3">
               <div className="flex justify-between text-xs mb-1" style={{ color: "var(--text-muted)" }}>
                 <span>Budget utilization</span>
-                <strong style={{ color: "var(--navy)" }}>87%</strong>
+                <strong style={{ color: "var(--hpf-pink)" }}>87%</strong>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--off-white)" }}>
                 <div
                   className="h-full rounded-full"
-                  style={{ width: "87%", background: "linear-gradient(90deg, var(--navy), var(--hpf-amber))" }}
+                  style={{ width: "87%", background: "linear-gradient(90deg, var(--hpf-pink), var(--hpf-crimson))" }}
                 />
               </div>
             </div>
@@ -377,7 +377,7 @@ export default function Landing() {
       {/* ── TRUST BAR ── */}
       <div
         className="flex items-center justify-center flex-wrap gap-10 px-6 py-3.5"
-        style={{ background: "var(--navy)" }}
+        style={{ background: "var(--hpf-pink)" }}
       >
         {[
           { icon: "✓", text: "Evidence-led modality library" },
@@ -386,7 +386,7 @@ export default function Landing() {
           { icon: "✓", text: "Budget-aware by design" },
         ].map((item) => (
           <div key={item.text} className="flex items-center gap-2 text-xs font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>
-            <span style={{ color: "var(--amber-light)" }}>{item.icon}</span>
+            <span style={{ color: "var(--crimson-light)" }}>{item.icon}</span>
             {item.text}
           </div>
         ))}
@@ -396,7 +396,7 @@ export default function Landing() {
       <section
         id="how"
         className="px-6 md:px-12 py-20"
-        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(27,45,79,0.08)" }}
+        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-5xl mx-auto">
           <div className="section-tag">How it works</div>
@@ -408,11 +408,11 @@ export default function Landing() {
               fontWeight: 700,
               lineHeight: 1.1,
               letterSpacing: "-0.015em",
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
               maxWidth: "480px",
             }}
           >
-            From intake to <em style={{ color: "var(--hpf-amber)" }}>action plan</em> in minutes
+            From intake to <em style={{ color: "var(--hpf-crimson)" }}>action plan</em> in minutes
           </h2>
 
           {/* Conveyor connector (desktop) */}
@@ -424,7 +424,7 @@ export default function Landing() {
                 left: "10%",
                 right: "10%",
                 height: "3px",
-                background: "repeating-linear-gradient(90deg, rgba(27,45,79,0.2) 0, rgba(27,45,79,0.2) 12px, transparent 12px, transparent 20px)",
+                background: "repeating-linear-gradient(90deg, rgba(212,34,126,0.2) 0, rgba(212,34,126,0.2) 12px, transparent 12px, transparent 20px)",
                 borderRadius: "2px",
                 animation: "conveyor 2s linear infinite",
               }}
@@ -436,13 +436,13 @@ export default function Landing() {
                   className="rounded-2xl p-6 text-center transition-all hover:-translate-y-1.5 cursor-default"
                   style={{
                     background: "white",
-                    border: "1px solid rgba(27,45,79,0.08)",
+                    border: "1px solid rgba(212,34,126,0.08)",
                   }}
                 >
                   <div
                     className="w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-4 text-xs font-medium transition-all"
                     style={{
-                      background: "var(--navy)",
+                      background: "var(--hpf-pink)",
                       color: "white",
                       fontFamily: "var(--app-font-mono)",
                     }}
@@ -452,7 +452,7 @@ export default function Landing() {
                   <div className="text-2xl mb-3">{step.icon}</div>
                   <h3
                     className="mb-2 text-base font-bold"
-                    style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}
+                    style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}
                   >
                     {step.title}
                   </h3>
@@ -470,7 +470,7 @@ export default function Landing() {
       <section
         id="modalities"
         className="relative px-6 md:px-12 py-20 overflow-hidden"
-        style={{ background: "var(--navy)" }}
+        style={{ background: "var(--hpf-pink)" }}
       >
         {/* Grid background */}
         <div
@@ -496,7 +496,7 @@ export default function Landing() {
         </div>
 
         <div className="max-w-5xl mx-auto relative z-10">
-          <div className="section-tag" style={{ color: "var(--amber-light)" }}>
+          <div className="section-tag" style={{ color: "var(--crimson-light)" }}>
             What's included
           </div>
           <h2
@@ -512,7 +512,7 @@ export default function Landing() {
             }}
           >
             12 evidence-led modalities,{" "}
-            <em style={{ color: "var(--amber-light)" }}>one unified plan</em>
+            <em style={{ color: "var(--crimson-light)" }}>one unified plan</em>
           </h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
@@ -527,7 +527,7 @@ export default function Landing() {
                 onMouseEnter={(e) => {
                   const el = e.currentTarget as HTMLElement;
                   el.style.background = "rgba(255,255,255,0.1)";
-                  el.style.borderColor = "rgba(184,137,42,0.4)";
+                  el.style.borderColor = "rgba(224,32,64,0.4)";
                 }}
                 onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLElement;
@@ -543,9 +543,9 @@ export default function Landing() {
                   className="text-xs font-semibold px-1.5 py-0.5 rounded inline-block"
                   style={
                     mod.badgeType === "strong"
-                      ? { background: "rgba(61,107,82,0.5)", color: "#82c99a" }
+                      ? { background: "rgba(125,181,92,0.5)", color: "#82c99a" }
                       : mod.badgeType === "moderate"
-                      ? { background: "rgba(184,137,42,0.25)", color: "#e4b94e" }
+                      ? { background: "rgba(224,32,64,0.25)", color: "#e4b94e" }
                       : { background: "rgba(91,155,213,0.25)", color: "#7ab9e8" }
                   }
                 >
@@ -565,9 +565,9 @@ export default function Landing() {
       <section
         className="px-6 md:px-12 py-16"
         style={{
-          background: "var(--amber-pale)",
-          borderTop: "3px solid var(--hpf-amber)",
-          borderBottom: "3px solid var(--hpf-amber)",
+          background: "var(--crimson-pale)",
+          borderTop: "3px solid var(--hpf-crimson)",
+          borderBottom: "3px solid var(--hpf-crimson)",
         }}
       >
         <div className="max-w-3xl mx-auto">
@@ -577,7 +577,7 @@ export default function Landing() {
                 fontFamily: "var(--app-font-serif)",
                 fontSize: "clamp(1.75rem, 3vw, 2.5rem)",
                 fontWeight: 700,
-                color: "var(--navy)",
+                color: "var(--hpf-pink)",
                 marginBottom: "0.5rem",
               }}
             >
@@ -606,7 +606,7 @@ export default function Landing() {
                   "An AI-powered wellness accountability coach",
                   "A modality research library based on evidence",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm leading-snug" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  <li key={item} className="flex items-start gap-2.5 text-sm leading-snug" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                     <span className="font-bold mt-0.5 flex-shrink-0" style={{ color: "var(--sage)" }}>✓</span>
                     {item}
                   </li>
@@ -631,7 +631,7 @@ export default function Landing() {
                   "A prescription management or clinical platform",
                   "Regulated by HIPAA as a covered entity",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm leading-snug" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  <li key={item} className="flex items-start gap-2.5 text-sm leading-snug" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                     <span className="font-bold mt-0.5 flex-shrink-0" style={{ color: "#b91c1c" }}>✗</span>
                     {item}
                   </li>
@@ -640,9 +640,9 @@ export default function Landing() {
             </div>
           </div>
 
-          <p className="text-xs text-center mt-8 leading-relaxed pt-6" style={{ color: "var(--text-secondary)", borderTop: "1px solid rgba(184,137,42,0.3)", fontFamily: "var(--app-font-sans)" }}>
-            <strong style={{ color: "var(--navy)" }}>For emergencies:</strong> Call 911 immediately.{" "}
-            <strong style={{ color: "var(--navy)" }}>For mental health crisis:</strong> Call or text 988 (Suicide & Crisis Lifeline) or text HOME to 741741 (Crisis Text Line).
+          <p className="text-xs text-center mt-8 leading-relaxed pt-6" style={{ color: "var(--text-secondary)", borderTop: "1px solid rgba(224,32,64,0.3)", fontFamily: "var(--app-font-sans)" }}>
+            <strong style={{ color: "var(--hpf-pink)" }}>For emergencies:</strong> Call 911 immediately.{" "}
+            <strong style={{ color: "var(--hpf-pink)" }}>For mental health crisis:</strong> Call or text 988 (Suicide & Crisis Lifeline) or text HOME to 741741 (Crisis Text Line).
           </p>
         </div>
       </section>
@@ -650,7 +650,7 @@ export default function Landing() {
       {/* ── PROBLEM / STATS ── */}
       <section
         className="px-6 md:px-12 py-20"
-        style={{ background: "var(--warm-white)", borderTop: "1px solid rgba(27,45,79,0.08)" }}
+        style={{ background: "var(--warm-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center mb-14">
@@ -661,7 +661,7 @@ export default function Landing() {
                   fontFamily: "var(--app-font-serif)",
                   fontSize: "clamp(5rem, 12vw, 9rem)",
                   fontWeight: 700,
-                  color: "var(--navy)",
+                  color: "var(--hpf-pink)",
                   letterSpacing: "-0.03em",
                   position: "relative",
                   display: "inline-block",
@@ -679,7 +679,7 @@ export default function Landing() {
                   fontFamily: "var(--app-font-serif)",
                   fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
                   fontWeight: 700,
-                  color: "var(--navy)",
+                  color: "var(--hpf-pink)",
                   lineHeight: 1.2,
                   marginBottom: "1rem",
                 }}
@@ -702,12 +702,12 @@ export default function Landing() {
                 className="rounded-xl p-6 relative overflow-hidden"
                 style={{
                   background: "white",
-                  border: "1px solid rgba(27,45,79,0.08)",
+                  border: "1px solid rgba(212,34,126,0.08)",
                 }}
               >
                 <div
                   className="absolute top-0 left-0 right-0"
-                  style={{ height: "3px", background: "linear-gradient(90deg, var(--navy), var(--hpf-amber))" }}
+                  style={{ height: "3px", background: "linear-gradient(90deg, var(--hpf-pink), var(--hpf-crimson))" }}
                 />
                 <div
                   className="mb-2 leading-none"
@@ -715,7 +715,7 @@ export default function Landing() {
                     fontFamily: "var(--app-font-serif)",
                     fontSize: "2.2rem",
                     fontWeight: 700,
-                    color: "var(--navy)",
+                    color: "var(--hpf-pink)",
                   }}
                 >
                   {stat.num}
@@ -733,7 +733,7 @@ export default function Landing() {
       <section
         id="pricing"
         className="px-6 md:px-12 py-20"
-        style={{ background: "var(--parchment)", borderTop: "1px solid rgba(27,45,79,0.08)" }}
+        style={{ background: "var(--parchment)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
@@ -746,10 +746,10 @@ export default function Landing() {
                 fontWeight: 700,
                 lineHeight: 1.1,
                 letterSpacing: "-0.015em",
-                color: "var(--navy)",
+                color: "var(--hpf-pink)",
               }}
             >
-              Start free. Upgrade when you're <em style={{ color: "var(--hpf-amber)" }}>ready.</em>
+              Start free. Upgrade when you're <em style={{ color: "var(--hpf-crimson)" }}>ready.</em>
             </h2>
             <p className="text-sm font-light max-w-md mx-auto leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
               No subscription required to build your plan. Pay small unlock fees only for the provider contacts you actually want.
@@ -764,19 +764,19 @@ export default function Landing() {
                 style={
                   tier.featured
                     ? {
-                        background: "var(--navy)",
-                        boxShadow: "0 16px 48px rgba(27,45,79,0.28)",
+                        background: "var(--hpf-pink)",
+                        boxShadow: "0 16px 48px rgba(212,34,126,0.28)",
                       }
                     : {
                         background: "white",
-                        border: "1px solid rgba(27,45,79,0.08)",
+                        border: "1px solid rgba(212,34,126,0.08)",
                       }
                 }
               >
                 {tier.featured && (
                   <div
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest text-white whitespace-nowrap"
-                    style={{ background: "var(--hpf-amber)", letterSpacing: "0.1em" }}
+                    style={{ background: "var(--hpf-crimson)", letterSpacing: "0.1em" }}
                   >
                     Most Popular
                   </div>
@@ -794,7 +794,7 @@ export default function Landing() {
                     fontFamily: "var(--app-font-serif)",
                     fontSize: "3rem",
                     fontWeight: 700,
-                    color: tier.featured ? "white" : "var(--navy)",
+                    color: tier.featured ? "white" : "var(--hpf-pink)",
                   }}
                 >
                   {tier.price}
@@ -806,7 +806,7 @@ export default function Landing() {
                   className="text-xs font-light leading-relaxed mb-5 pb-5"
                   style={{
                     color: tier.featured ? "rgba(255,255,255,0.5)" : "var(--text-secondary)",
-                    borderBottom: tier.featured ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(27,45,79,0.08)",
+                    borderBottom: tier.featured ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(212,34,126,0.08)",
                     fontFamily: "var(--app-font-sans)",
                   }}
                 >
@@ -820,13 +820,13 @@ export default function Landing() {
                       className="flex items-start gap-2.5 py-2 text-xs font-light leading-snug border-b"
                       style={{
                         color: tier.featured ? "rgba(255,255,255,0.65)" : "var(--text-secondary)",
-                        borderColor: tier.featured ? "rgba(255,255,255,0.1)" : "rgba(27,45,79,0.08)",
+                        borderColor: tier.featured ? "rgba(255,255,255,0.1)" : "rgba(212,34,126,0.08)",
                         fontFamily: "var(--app-font-sans)",
                       }}
                     >
                       <span
                         className="text-xs font-bold flex-shrink-0 mt-0.5"
-                        style={{ color: tier.featured ? "var(--amber-light)" : "var(--sage)" }}
+                        style={{ color: tier.featured ? "var(--crimson-light)" : "var(--sage)" }}
                       >
                         ✓
                       </span>
@@ -841,12 +841,12 @@ export default function Landing() {
                   style={
                     tier.featured
                       ? {
-                          background: "var(--hpf-amber)",
+                          background: "var(--hpf-crimson)",
                           color: "white",
                           fontFamily: "var(--app-font-sans)",
                         }
                       : {
-                          background: "var(--navy)",
+                          background: "var(--hpf-pink)",
                           color: "white",
                           fontFamily: "var(--app-font-sans)",
                         }
@@ -867,11 +867,11 @@ export default function Landing() {
       {/* ── TESTIMONIALS ── */}
       <section
         className="px-6 md:px-12 py-16"
-        style={{ background: "var(--warm-white)", borderTop: "1px solid rgba(27,45,79,0.08)" }}
+        style={{ background: "var(--warm-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
-            <div className="text-xl mb-2" style={{ color: "var(--hpf-amber)", letterSpacing: "2px" }}>
+            <div className="text-xl mb-2" style={{ color: "var(--hpf-crimson)", letterSpacing: "2px" }}>
               ★★★★★
             </div>
             <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
@@ -883,24 +883,24 @@ export default function Landing() {
               <div
                 key={t.name}
                 className="rounded-2xl p-6 transition-all hover:-translate-y-0.5"
-                style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}
+                style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}
               >
-                <div className="text-sm mb-3" style={{ color: "var(--hpf-amber)" }}>{t.stars}</div>
+                <div className="text-sm mb-3" style={{ color: "var(--hpf-crimson)" }}>{t.stars}</div>
                 <blockquote
                   className="text-base font-normal italic leading-relaxed mb-5"
-                  style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}
+                  style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}
                 >
                   "{t.quote}"
                 </blockquote>
                 <div className="flex items-center gap-3">
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-                    style={{ background: "var(--parchment)", border: "1.5px solid rgba(27,45,79,0.1)", color: "var(--navy)" }}
+                    style={{ background: "var(--parchment)", border: "1.5px solid rgba(212,34,126,0.1)", color: "var(--hpf-pink)" }}
                   >
                     {t.name.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold" style={{ color: "var(--navy)" }}>{t.name}</p>
+                    <p className="text-xs font-semibold" style={{ color: "var(--hpf-pink)" }}>{t.name}</p>
                     <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t.desc}</p>
                   </div>
                 </div>
@@ -914,7 +914,7 @@ export default function Landing() {
       <section
         id="faq"
         className="px-6 md:px-12 py-20"
-        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(27,45,79,0.08)" }}
+        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-2xl mx-auto">
           <div className="section-tag">FAQ</div>
@@ -925,7 +925,7 @@ export default function Landing() {
               fontSize: "clamp(2rem, 3vw, 2.8rem)",
               fontWeight: 700,
               lineHeight: 1.1,
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
             }}
           >
             Common questions
@@ -939,7 +939,7 @@ export default function Landing() {
       {/* ── FINAL CTA ── */}
       <section
         className="relative px-6 md:px-12 py-24 text-center overflow-hidden"
-        style={{ background: "var(--navy)" }}
+        style={{ background: "var(--hpf-pink)" }}
       >
         <div
           className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
@@ -947,7 +947,7 @@ export default function Landing() {
             width: "700px",
             height: "700px",
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(184,137,42,0.12) 0%, transparent 65%)",
+            background: "radial-gradient(circle, rgba(224,32,64,0.12) 0%, transparent 65%)",
             top: "-40%",
           }}
         />
@@ -962,11 +962,11 @@ export default function Landing() {
         <div className="relative z-10 max-w-2xl mx-auto">
           <div
             className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest mb-6"
-            style={{ color: "var(--amber-light)" }}
+            style={{ color: "var(--crimson-light)" }}
           >
-            <span className="w-6 h-px" style={{ background: "var(--amber-light)" }} />
+            <span className="w-6 h-px" style={{ background: "var(--crimson-light)" }} />
             Ready to build your plan
-            <span className="w-6 h-px" style={{ background: "var(--amber-light)" }} />
+            <span className="w-6 h-px" style={{ background: "var(--crimson-light)" }} />
           </div>
 
           <h2
@@ -980,7 +980,7 @@ export default function Landing() {
             }}
           >
             Your wellness plan,{" "}
-            <em style={{ color: "var(--amber-light)" }}>built in minutes.</em>
+            <em style={{ color: "var(--crimson-light)" }}>built in minutes.</em>
           </h2>
 
           <p
@@ -995,7 +995,7 @@ export default function Landing() {
             className="inline-flex items-center gap-2 px-8 py-4 rounded-lg text-sm font-semibold no-underline transition-all hover:-translate-y-0.5"
             style={{
               background: "white",
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
               boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
               fontFamily: "var(--app-font-sans)",
               letterSpacing: "0.01em",
@@ -1014,12 +1014,12 @@ export default function Landing() {
       <section
         id="full-disclaimer"
         className="px-6 md:px-12 py-16"
-        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(27,45,79,0.08)" }}
+        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-3xl mx-auto">
           <h3
             className="flex items-center gap-2 mb-8"
-            style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.6rem", fontWeight: 700, color: "var(--navy)" }}
+            style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.6rem", fontWeight: 700, color: "var(--hpf-pink)" }}
           >
             ⚖️ Full Platform Disclaimer
           </h3>
@@ -1053,7 +1053,7 @@ export default function Landing() {
               },
             ].map((block) => (
               <div key={block.title} className="mb-2">
-                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--hpf-amber)" }}>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--hpf-crimson)" }}>
                   {block.title}
                 </h4>
                 <p className="text-xs font-light leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -1063,9 +1063,9 @@ export default function Landing() {
             ))}
           </div>
 
-          <p className="text-xs mt-6 pt-4" style={{ color: "var(--text-muted)", borderTop: "1px solid rgba(27,45,79,0.1)", fontFamily: "var(--app-font-sans)" }}>
+          <p className="text-xs mt-6 pt-4" style={{ color: "var(--text-muted)", borderTop: "1px solid rgba(212,34,126,0.1)", fontFamily: "var(--app-font-sans)" }}>
             Last updated: {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })} ·{" "}
-            <Link to="/legal" className="no-underline" style={{ color: "var(--hpf-amber)", textDecoration: "underline" }}>
+            <Link to="/legal" className="no-underline" style={{ color: "var(--hpf-crimson)", textDecoration: "underline" }}>
               View full legal disclaimer
             </Link>
           </p>
@@ -1077,7 +1077,7 @@ export default function Landing() {
 
 function FactoryIllustration() {
   return (
-    <svg viewBox="0 0 480 280" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto" style={{ filter: "drop-shadow(0 16px 40px rgba(27,45,79,0.15))" }}>
+    <svg viewBox="0 0 480 280" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto" style={{ filter: "drop-shadow(0 16px 40px rgba(212,34,126,0.15))" }}>
       <defs>
         <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#e8f4fd" />
@@ -1114,90 +1114,90 @@ function FactoryIllustration() {
       </g>
 
       {/* Main building */}
-      <rect x="60" y="138" width="360" height="100" fill="#1b2d4f" rx="4" />
-      <rect x="60" y="134" width="360" height="8" fill="#243a62" rx="2" />
-      <rect x="40" y="165" width="38" height="73" fill="#243a62" rx="2" />
-      <rect x="402" y="155" width="38" height="83" fill="#243a62" rx="2" />
+      <rect x="60" y="138" width="360" height="100" fill="#D4227E" rx="4" />
+      <rect x="60" y="134" width="360" height="8" fill="#b81c6a" rx="2" />
+      <rect x="40" y="165" width="38" height="73" fill="#b81c6a" rx="2" />
+      <rect x="402" y="155" width="38" height="83" fill="#b81c6a" rx="2" />
 
       {/* Chimneys */}
-      <rect x="110" y="92" width="22" height="50" fill="#2f4a7a" rx="3" />
+      <rect x="110" y="92" width="22" height="50" fill="#e04d95" rx="3" />
       <rect x="106" y="88" width="30" height="9" fill="#3a5a8a" rx="2" />
-      <rect x="178" y="80" width="22" height="58" fill="#2f4a7a" rx="3" />
+      <rect x="178" y="80" width="22" height="58" fill="#e04d95" rx="3" />
       <rect x="174" y="76" width="30" height="9" fill="#3a5a8a" rx="2" />
-      <rect x="248" y="74" width="18" height="64" fill="#2f4a7a" rx="3" />
+      <rect x="248" y="74" width="18" height="64" fill="#e04d95" rx="3" />
       <rect x="244" y="70" width="26" height="9" fill="#3a5a8a" rx="2" />
 
       {/* Windows */}
-      <rect x="80" y="152" width="26" height="18" fill="#fdf5e6" rx="3" opacity="0.9" />
-      <rect x="80" y="152" width="26" height="18" fill="#b8892a" rx="3" opacity="0.3" />
-      <rect x="118" y="152" width="26" height="18" fill="#fdf5e6" rx="3" opacity="0.9" />
-      <rect className="win-blink" x="156" y="152" width="26" height="18" fill="#fdf5e6" rx="3" opacity="0.9" />
-      <rect className="win-blink" x="156" y="152" width="26" height="18" fill="#b8892a" rx="3" opacity="0.3" />
-      <rect x="194" y="152" width="26" height="18" fill="#fdf5e6" rx="3" opacity="0.9" />
-      <rect x="232" y="152" width="26" height="18" fill="#fdf5e6" rx="3" opacity="0.9" />
-      <rect x="270" y="152" width="26" height="18" fill="#fdf5e6" rx="3" opacity="0.9" />
-      <rect x="308" y="152" width="26" height="18" fill="#fdf5e6" rx="3" opacity="0.9" />
-      <rect x="346" y="152" width="26" height="18" fill="#fdf5e6" rx="3" opacity="0.9" />
-      <rect x="85" y="184" width="16" height="12" fill="#fdf5e6" rx="2" opacity="0.7" />
-      <rect x="122" y="184" width="16" height="12" fill="#fdf5e6" rx="2" opacity="0.7" />
-      <rect x="159" y="184" width="16" height="12" fill="#fdf5e6" rx="2" opacity="0.7" />
-      <rect x="196" y="184" width="16" height="12" fill="#fdf5e6" rx="2" opacity="0.7" />
-      <rect x="233" y="184" width="16" height="12" fill="#fdf5e6" rx="2" opacity="0.7" />
-      <rect x="270" y="184" width="16" height="12" fill="#fdf5e6" rx="2" opacity="0.7" />
-      <rect x="307" y="184" width="16" height="12" fill="#fdf5e6" rx="2" opacity="0.7" />
-      <rect x="344" y="184" width="16" height="12" fill="#fdf5e6" rx="2" opacity="0.7" />
+      <rect x="80" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
+      <rect x="80" y="152" width="26" height="18" fill="#E02040" rx="3" opacity="0.3" />
+      <rect x="118" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
+      <rect className="win-blink" x="156" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
+      <rect className="win-blink" x="156" y="152" width="26" height="18" fill="#E02040" rx="3" opacity="0.3" />
+      <rect x="194" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
+      <rect x="232" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
+      <rect x="270" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
+      <rect x="308" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
+      <rect x="346" y="152" width="26" height="18" fill="#fdf0f2" rx="3" opacity="0.9" />
+      <rect x="85" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
+      <rect x="122" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
+      <rect x="159" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
+      <rect x="196" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
+      <rect x="233" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
+      <rect x="270" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
+      <rect x="307" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
+      <rect x="344" y="184" width="16" height="12" fill="#fdf0f2" rx="2" opacity="0.7" />
 
       {/* Door */}
-      <rect x="202" y="205" width="46" height="33" fill="#243a62" rx="4" />
+      <rect x="202" y="205" width="46" height="33" fill="#b81c6a" rx="4" />
       <rect x="206" y="209" width="38" height="25" fill="#1a2840" rx="3" />
-      <circle cx="238" cy="223" r="2.5" fill="#b8892a" />
-      <path d="M202 209 Q225 195 248 209" fill="none" stroke="#b8892a" strokeWidth="2" />
+      <circle cx="238" cy="223" r="2.5" fill="#E02040" />
+      <path d="M202 209 Q225 195 248 209" fill="none" stroke="#E02040" strokeWidth="2" />
 
       {/* Sign */}
-      <rect x="152" y="120" width="126" height="24" fill="#b8892a" rx="4" />
+      <rect x="152" y="120" width="126" height="24" fill="#E02040" rx="4" />
       <text x="215" y="136" fontSize="9" fontWeight="bold" fill="white" textAnchor="middle" fontFamily="Arial, sans-serif">HEALTH PLAN FACTORY</text>
 
       {/* Gear system */}
       <g transform="translate(385, 205)" className="gear-anim">
-        <circle r="20" fill="none" stroke="#b8892a" strokeWidth="4" />
-        <circle r="12" fill="#1b2d4f" />
-        <circle r="3.5" fill="#b8892a" />
-        <rect x="-3.5" y="-24" width="7" height="7" rx="1" fill="#b8892a" />
-        <rect x="-3.5" y="17" width="7" height="7" rx="1" fill="#b8892a" />
-        <rect x="-24" y="-3.5" width="7" height="7" rx="1" fill="#b8892a" />
-        <rect x="17" y="-3.5" width="7" height="7" rx="1" fill="#b8892a" />
+        <circle r="20" fill="none" stroke="#E02040" strokeWidth="4" />
+        <circle r="12" fill="#D4227E" />
+        <circle r="3.5" fill="#E02040" />
+        <rect x="-3.5" y="-24" width="7" height="7" rx="1" fill="#E02040" />
+        <rect x="-3.5" y="17" width="7" height="7" rx="1" fill="#E02040" />
+        <rect x="-24" y="-3.5" width="7" height="7" rx="1" fill="#E02040" />
+        <rect x="17" y="-3.5" width="7" height="7" rx="1" fill="#E02040" />
       </g>
       <g transform="translate(365, 190)" className="gear-anim2">
-        <circle r="13" fill="none" stroke="#d4a44c" strokeWidth="3" />
-        <circle r="7" fill="#1b2d4f" />
-        <circle r="2" fill="#d4a44c" />
-        <rect x="-2" y="-16" width="4" height="5" rx="1" fill="#d4a44c" />
-        <rect x="-2" y="11" width="4" height="5" rx="1" fill="#d4a44c" />
-        <rect x="-16" y="-2" width="5" height="4" rx="1" fill="#d4a44c" />
-        <rect x="11" y="-2" width="5" height="4" rx="1" fill="#d4a44c" />
+        <circle r="13" fill="none" stroke="#e84d65" strokeWidth="3" />
+        <circle r="7" fill="#D4227E" />
+        <circle r="2" fill="#e84d65" />
+        <rect x="-2" y="-16" width="4" height="5" rx="1" fill="#e84d65" />
+        <rect x="-2" y="11" width="4" height="5" rx="1" fill="#e84d65" />
+        <rect x="-16" y="-2" width="5" height="4" rx="1" fill="#e84d65" />
+        <rect x="11" y="-2" width="5" height="4" rx="1" fill="#e84d65" />
       </g>
 
       {/* Conveyor belt */}
-      <rect x="60" y="228" width="115" height="10" fill="#2f4a7a" rx="3" />
+      <rect x="60" y="228" width="115" height="10" fill="#e04d95" rx="3" />
       <line x1="70" y1="229" x2="70" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
       <line x1="85" y1="229" x2="85" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
       <line x1="100" y1="229" x2="100" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
       <line x1="115" y1="229" x2="115" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
       <line x1="130" y1="229" x2="130" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
       <line x1="155" y1="229" x2="155" y2="237" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" />
-      <circle cx="64" cy="233" r="5" fill="#243a62" stroke="#b8892a" strokeWidth="2" />
-      <circle cx="170" cy="233" r="5" fill="#243a62" stroke="#b8892a" strokeWidth="2" />
-      <rect x="86" y="219" width="16" height="14" fill="#3d6b52" rx="2" />
+      <circle cx="64" cy="233" r="5" fill="#b81c6a" stroke="#E02040" strokeWidth="2" />
+      <circle cx="170" cy="233" r="5" fill="#b81c6a" stroke="#E02040" strokeWidth="2" />
+      <rect x="86" y="219" width="16" height="14" fill="#7DB55C" rx="2" />
       <rect x="88" y="221" width="12" height="4" fill="rgba(255,255,255,.3)" rx="1" />
-      <rect x="112" y="221" width="13" height="13" fill="#b8892a" rx="2" />
+      <rect x="112" y="221" width="13" height="13" fill="#E02040" rx="2" />
       <text x="118" y="230" fontSize="7" fill="white" textAnchor="middle" fontFamily="Arial">✓</text>
 
       {/* Worker character */}
-      <circle cx="310" cy="225" r="7" fill="#fdf5e6" stroke="#1b2d4f" strokeWidth="1.5" />
-      <rect x="304" y="215" width="12" height="4" fill="#b8892a" rx="2" />
-      <rect x="303" y="218" width="14" height="3" fill="#d4a44c" rx="1" />
-      <circle cx="307" cy="224" r="1" fill="#1b2d4f" />
-      <circle cx="313" cy="224" r="1" fill="#1b2d4f" />
+      <circle cx="310" cy="225" r="7" fill="#fdf0f2" stroke="#D4227E" strokeWidth="1.5" />
+      <rect x="304" y="215" width="12" height="4" fill="#E02040" rx="2" />
+      <rect x="303" y="218" width="14" height="3" fill="#e84d65" rx="1" />
+      <circle cx="307" cy="224" r="1" fill="#D4227E" />
+      <circle cx="313" cy="224" r="1" fill="#D4227E" />
     </svg>
   );
 }

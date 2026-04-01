@@ -10,7 +10,7 @@ export default function NotFound() {
           fontFamily: "var(--app-font-serif)",
           fontSize: "2.5rem",
           fontWeight: 700,
-          color: "var(--navy)",
+          color: "var(--hpf-pink)",
         }}
       >
         This page got lost on the factory floor.
@@ -24,7 +24,7 @@ export default function NotFound() {
       <Link
         to="/"
         className="px-6 py-3 rounded-lg text-sm font-semibold no-underline text-white"
-        style={{ background: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}
+        style={{ background: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}
       >
         Back to HealthPlanFactory →
       </Link>

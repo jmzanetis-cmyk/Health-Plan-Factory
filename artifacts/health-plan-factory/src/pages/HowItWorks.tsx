@@ -14,8 +14,8 @@ const STAGES = [
       "Flag any conditions or concerns so the AI can prioritize the right modalities.",
       "Share your location and how you prefer to engage — in-person, virtual, or both.",
     ],
-    color: "var(--hpf-amber)",
-    pale: "var(--amber-pale)",
+    color: "var(--hpf-crimson)",
+    pale: "var(--crimson-pale)",
   },
   {
     num: "02",
@@ -56,8 +56,8 @@ const STAGES = [
       "Log sessions directly on your plan page and watch your wellness score climb over time.",
       "Your AI accountability coach (Plus) sends nudges and helps you stay on track between sessions.",
     ],
-    color: "var(--navy)",
-    pale: "rgba(27,45,79,0.06)",
+    color: "var(--hpf-pink)",
+    pale: "rgba(212,34,126,0.06)",
   },
 ];
 
@@ -89,11 +89,11 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   return (
     <div
       className="border-b cursor-pointer"
-      style={{ borderColor: "rgba(27,45,79,0.1)" }}
+      style={{ borderColor: "rgba(212,34,126,0.1)" }}
       onClick={() => setOpen(!open)}
     >
       <div className="flex justify-between items-center py-5 gap-4">
-        <h3 className="font-medium text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+        <h3 className="font-medium text-sm" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)" }}>
           {q}
         </h3>
         {open ? (
@@ -120,13 +120,13 @@ export default function HowItWorks() {
         className="relative px-6 md:px-12 py-20"
         style={{
           background: "var(--off-white)",
-          borderBottom: "1px solid rgba(27,45,79,0.08)",
+          borderBottom: "1px solid rgba(212,34,126,0.08)",
         }}
       >
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: "radial-gradient(rgba(27,45,79,0.06) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(rgba(212,34,126,0.06) 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />
@@ -139,11 +139,11 @@ export default function HowItWorks() {
               fontSize: "clamp(2.5rem, 5vw, 4rem)",
               fontWeight: 700,
               letterSpacing: "-0.02em",
-              color: "var(--navy)",
+              color: "var(--hpf-deep)",
             }}
           >
             From intake to{" "}
-            <em style={{ color: "var(--hpf-amber)" }}>wellness plan</em>
+            <em style={{ color: "var(--hpf-crimson)" }}>wellness plan</em>
             <br />
             in 5 minutes.
           </h1>
@@ -158,14 +158,14 @@ export default function HowItWorks() {
             <Link
               to="/sign-up"
               className="inline-flex items-center px-7 py-3.5 rounded-md text-sm font-semibold text-white no-underline"
-              style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)", boxShadow: "0 4px 16px rgba(27,45,79,0.2)" }}
+              style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", boxShadow: "0 4px 16px rgba(212,34,126,0.2)" }}
             >
               Build my plan free →
             </Link>
             <Link
               to="/modalities"
               className="inline-flex items-center px-6 py-3.5 rounded-md text-sm font-medium no-underline"
-              style={{ border: "1.5px solid rgba(27,45,79,0.2)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+              style={{ border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               Browse modalities
             </Link>
@@ -184,7 +184,7 @@ export default function HowItWorks() {
               fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
               fontWeight: 700,
               letterSpacing: "-0.015em",
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
               maxWidth: 480,
             }}
           >
@@ -198,13 +198,13 @@ export default function HowItWorks() {
                 className="rounded-2xl overflow-hidden"
                 style={{
                   background: "white",
-                  border: "1px solid rgba(27,45,79,0.08)",
-                  boxShadow: "0 2px 12px rgba(27,45,79,0.04)",
+                  border: "1px solid rgba(212,34,126,0.08)",
+                  boxShadow: "0 2px 12px rgba(212,34,126,0.04)",
                 }}
               >
                 <div
                   className="px-6 md:px-8 py-5 flex items-center gap-4"
-                  style={{ background: stage.pale, borderBottom: "1px solid rgba(27,45,79,0.06)" }}
+                  style={{ background: stage.pale, borderBottom: "1px solid rgba(212,34,126,0.06)" }}
                 >
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
@@ -219,7 +219,7 @@ export default function HowItWorks() {
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <h3
                       className="font-bold text-lg leading-tight"
-                      style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}
+                      style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}
                     >
                       <span className="mr-2">{stage.emoji}</span>
                       {stage.title}
@@ -252,7 +252,7 @@ export default function HowItWorks() {
                         <span
                           key={tag}
                           className="text-xs font-medium px-2.5 py-1 rounded-full"
-                          style={{ background: "var(--amber-pale)", color: "var(--hpf-amber)", border: "1px solid rgba(184,137,42,0.15)" }}
+                          style={{ background: "var(--crimson-pale)", color: "var(--hpf-crimson)", border: "1px solid rgba(224,32,64,0.15)" }}
                         >
                           {tag}
                         </span>
@@ -262,7 +262,7 @@ export default function HowItWorks() {
                   {i === 1 && (
                     <div
                       className="mt-5 rounded-xl p-4"
-                      style={{ background: "var(--off-white)", border: "1px solid rgba(27,45,79,0.06)" }}
+                      style={{ background: "var(--off-white)", border: "1px solid rgba(212,34,126,0.06)" }}
                     >
                       <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--text-muted)" }}>
                         Example plan preview
@@ -276,12 +276,12 @@ export default function HowItWorks() {
                           <div
                             key={item.name}
                             className="flex items-center gap-3 px-3 py-2 rounded-lg"
-                            style={{ background: "white", borderLeft: `3px solid ${item.hsa ? "var(--hpf-amber)" : "rgba(27,45,79,0.15)"}` }}
+                            style={{ background: "white", borderLeft: `3px solid ${item.hsa ? "var(--hpf-crimson)" : "rgba(212,34,126,0.15)"}` }}
                           >
                             <span className="text-sm flex-shrink-0">{item.emoji}</span>
-                            <span className="text-xs font-semibold flex-1" style={{ color: "var(--navy)" }}>{item.name}</span>
+                            <span className="text-xs font-semibold flex-1" style={{ color: "var(--hpf-pink)" }}>{item.name}</span>
                             <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.freq}</span>
-                            <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--navy)" }}>{item.cost}</span>
+                            <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>{item.cost}</span>
                             {item.hsa && (
                               <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color: "var(--sage)", background: "var(--sage-pale)" }}>
                                 HSA
@@ -290,7 +290,7 @@ export default function HowItWorks() {
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-between items-center px-3 py-2 rounded-lg mt-2" style={{ background: "var(--navy)" }}>
+                      <div className="flex justify-between items-center px-3 py-2 rounded-lg mt-2" style={{ background: "var(--hpf-pink)" }}>
                         <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Monthly total</span>
                         <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "white" }}>$225 / $260 budget</span>
                       </div>
@@ -299,24 +299,24 @@ export default function HowItWorks() {
                   {i === 2 && (
                     <div
                       className="mt-5 rounded-xl overflow-hidden"
-                      style={{ border: "1px solid rgba(27,45,79,0.08)" }}
+                      style={{ border: "1px solid rgba(212,34,126,0.08)" }}
                     >
-                      <div className="px-4 py-3" style={{ background: "var(--navy)" }}>
+                      <div className="px-4 py-3" style={{ background: "var(--hpf-pink)" }}>
                         <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.5)" }}>
                           Sample provider card
                         </p>
                       </div>
                       <div className="px-4 py-4 flex items-center gap-4" style={{ background: "white" }}>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold text-white flex-shrink-0" style={{ background: "var(--navy)" }}>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold text-white flex-shrink-0" style={{ background: "var(--hpf-pink)" }}>
                           S
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold" style={{ color: "var(--navy)" }}>Sarah K., LMT</p>
+                          <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)" }}>Sarah K., LMT</p>
                           <p className="text-xs" style={{ color: "var(--text-muted)" }}>Licensed Massage Therapist · Denver, CO</p>
                         </div>
                         <div
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                          style={{ background: "var(--amber-pale)", color: "var(--hpf-amber)", border: "1px solid rgba(184,137,42,0.15)" }}
+                          style={{ background: "var(--crimson-pale)", color: "var(--hpf-crimson)", border: "1px solid rgba(224,32,64,0.15)" }}
                         >
                           Unlock $5 →
                         </div>
@@ -334,9 +334,9 @@ export default function HowItWorks() {
                         <div
                           key={item.label}
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium"
-                          style={{ background: "var(--off-white)", border: "1px solid rgba(27,45,79,0.08)", color: "var(--navy)" }}
+                          style={{ background: "var(--off-white)", border: "1px solid rgba(212,34,126,0.08)", color: "var(--hpf-pink)" }}
                         >
-                          <span style={{ fontFamily: "var(--app-font-mono)", fontWeight: 700, color: "var(--navy)" }}>
+                          <span style={{ fontFamily: "var(--app-font-mono)", fontWeight: 700, color: "var(--hpf-pink)" }}>
                             {item.price}
                           </span>
                           {item.label}
@@ -354,7 +354,7 @@ export default function HowItWorks() {
       {/* ── SNAPSHOT STATS ── */}
       <section
         className="px-6 md:px-12 py-14"
-        style={{ background: "var(--navy)" }}
+        style={{ background: "var(--hpf-pink)" }}
       >
         <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
           {[
@@ -365,7 +365,7 @@ export default function HowItWorks() {
             <div key={stat.label}>
               <div
                 className="text-4xl font-bold mb-2"
-                style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-amber)", letterSpacing: "-0.02em" }}
+                style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-crimson)", letterSpacing: "-0.02em" }}
               >
                 {stat.num}
               </div>
@@ -388,7 +388,7 @@ export default function HowItWorks() {
               fontSize: "clamp(1.8rem, 3vw, 2.5rem)",
               fontWeight: 700,
               letterSpacing: "-0.015em",
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
             }}
           >
             Still have questions?
@@ -404,7 +404,7 @@ export default function HowItWorks() {
       {/* ── CTA ── */}
       <section
         className="px-6 md:px-12 py-20 text-center"
-        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(27,45,79,0.08)" }}
+        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-2xl mx-auto">
           <div className="text-3xl mb-4">🏭</div>
@@ -415,7 +415,7 @@ export default function HowItWorks() {
               fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
               fontWeight: 700,
               letterSpacing: "-0.02em",
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
             }}
           >
             Ready to build yours?
@@ -430,9 +430,9 @@ export default function HowItWorks() {
             to="/sign-up"
             className="inline-flex items-center px-8 py-4 rounded-lg text-sm font-semibold text-white no-underline"
             style={{
-              background: "var(--navy)",
+              background: "var(--hpf-pink)",
               fontFamily: "var(--app-font-sans)",
-              boxShadow: "0 4px 20px rgba(27,45,79,0.25)",
+              boxShadow: "0 4px 20px rgba(212,34,126,0.25)",
               letterSpacing: "0.01em",
             }}
           >

@@ -3,7 +3,7 @@ export default function Legal() {
     <div className="min-h-screen px-6 md:px-12 py-20" style={{ background: "var(--warm-white)" }}>
       <div className="max-w-3xl mx-auto">
         <div className="section-tag">Legal</div>
-        <h1 className="mb-8" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.2rem,4vw,3.5rem)", fontWeight: 700, color: "var(--navy)", letterSpacing: "-0.02em" }}>
+        <h1 className="mb-8" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.2rem,4vw,3.5rem)", fontWeight: 700, color: "var(--hpf-deep)", letterSpacing: "-0.02em" }}>
           Platform Disclaimer
         </h1>
 
@@ -22,13 +22,13 @@ export default function Legal() {
             { title: "7. Limitation of Liability", body: "To the maximum extent permitted by applicable law, HealthPlanFactory, its officers, directors, employees, and agents shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages arising from your use of this platform, including without limitation, any damages resulting from reliance on content provided by this platform." },
           ].map((section) => (
             <div key={section.title} className="mb-8">
-              <h2 className="text-base font-semibold mb-2" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>{section.title}</h2>
+              <h2 className="text-base font-semibold mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{section.title}</h2>
               <p className="text-sm font-light leading-relaxed" style={{ color: "var(--text-secondary)" }}>{section.body}</p>
             </div>
           ))}
         </div>
 
-        <p className="text-xs mt-8 pt-4" style={{ color: "var(--text-muted)", borderTop: "1px solid rgba(27,45,79,0.1)" }}>
+        <p className="text-xs mt-8 pt-4" style={{ color: "var(--text-muted)", borderTop: "1px solid rgba(212,34,126,0.1)" }}>
           Last updated: {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </p>
       </div>

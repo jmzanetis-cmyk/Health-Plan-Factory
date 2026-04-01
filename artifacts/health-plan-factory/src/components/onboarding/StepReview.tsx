@@ -24,7 +24,7 @@ function ReviewRow({ label, value, onEdit }: ReviewRowProps) {
         justifyContent: "space-between",
         alignItems: "flex-start",
         padding: "0.875rem 0",
-        borderBottom: "1px solid rgba(27,45,79,0.07)",
+        borderBottom: "1px solid rgba(212,34,126,0.07)",
         gap: "1rem",
       }}
     >
@@ -32,7 +32,7 @@ function ReviewRow({ label, value, onEdit }: ReviewRowProps) {
         <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           {label}
         </p>
-        <p className="text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)", lineHeight: 1.4 }}>
+        <p className="text-sm" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", lineHeight: 1.4 }}>
           {value}
         </p>
       </div>
@@ -43,7 +43,7 @@ function ReviewRow({ label, value, onEdit }: ReviewRowProps) {
         style={{
           background: "none",
           border: "none",
-          color: "var(--hpf-amber)",
+          color: "var(--hpf-crimson)",
           cursor: "pointer",
           padding: "0.25rem 0",
           fontFamily: "var(--app-font-sans)",
@@ -92,9 +92,9 @@ export function StepReview({ data, onEdit }: StepReviewProps) {
       <div
         className="mt-4 rounded-xl p-4 text-xs leading-relaxed"
         style={{
-          background: "rgba(61,107,82,0.06)",
-          border: "1px solid rgba(61,107,82,0.15)",
-          color: "var(--navy)",
+          background: "rgba(125,181,92,0.06)",
+          border: "1px solid rgba(125,181,92,0.15)",
+          color: "var(--hpf-pink)",
           fontFamily: "var(--app-font-sans)",
         }}
       >

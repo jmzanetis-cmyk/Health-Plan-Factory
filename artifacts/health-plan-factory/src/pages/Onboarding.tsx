@@ -159,7 +159,7 @@ export default function Onboarding() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        borderBottom: "1px solid rgba(27,45,79,0.06)",
+        borderBottom: "1px solid rgba(212,34,126,0.06)",
       }}>
         <Logo />
         <button
@@ -179,11 +179,11 @@ export default function Onboarding() {
       </header>
 
       {/* Progress bar */}
-      <div style={{ height: 3, background: "rgba(27,45,79,0.07)" }}>
+      <div style={{ height: 3, background: "rgba(212,34,126,0.07)" }}>
         <div style={{
           height: "100%",
           width: `${pct}%`,
-          background: "var(--navy)",
+          background: "var(--hpf-pink)",
           transition: "width 0.35s ease",
           borderRadius: "0 100px 100px 0",
         }} />
@@ -208,7 +208,7 @@ export default function Onboarding() {
           maxWidth: 540,
           background: "white",
           borderRadius: 20,
-          boxShadow: "0 2px 24px rgba(27,45,79,0.07)",
+          boxShadow: "0 2px 24px rgba(212,34,126,0.07)",
           padding: "2rem 2rem 1.75rem",
           overflow: "hidden",
         }}>
@@ -218,7 +218,7 @@ export default function Onboarding() {
               fontFamily: "var(--app-font-serif)",
               fontSize: "1.6rem",
               fontWeight: 700,
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
               lineHeight: 1.2,
               marginBottom: "0.45rem",
             }}>
@@ -261,7 +261,7 @@ export default function Onboarding() {
             gap: "0.75rem",
             marginTop: "2rem",
             paddingTop: "1.25rem",
-            borderTop: "1px solid rgba(27,45,79,0.07)",
+            borderTop: "1px solid rgba(212,34,126,0.07)",
           }}>
             {step > 0 && (
               <button
@@ -271,9 +271,9 @@ export default function Onboarding() {
                   flex: 1,
                   padding: "0.875rem",
                   borderRadius: 10,
-                  border: "1.5px solid rgba(27,45,79,0.2)",
+                  border: "1.5px solid rgba(212,34,126,0.2)",
                   background: "white",
-                  color: "var(--navy)",
+                  color: "var(--hpf-pink)",
                   fontWeight: 600,
                   fontSize: "0.875rem",
                   cursor: "pointer",
@@ -292,7 +292,7 @@ export default function Onboarding() {
                 padding: "0.875rem",
                 borderRadius: 10,
                 border: "none",
-                background: stepValid ? "var(--navy)" : "rgba(27,45,79,0.25)",
+                background: stepValid ? "var(--hpf-pink)" : "rgba(212,34,126,0.25)",
                 color: "white",
                 fontWeight: 600,
                 fontSize: "0.875rem",

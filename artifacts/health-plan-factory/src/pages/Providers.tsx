@@ -48,15 +48,15 @@ interface Favorite {
 
 function SkeletonCard() {
   return (
-    <div className="p-5 rounded-2xl animate-pulse" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+    <div className="p-5 rounded-2xl animate-pulse" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-12 h-12 rounded-full flex-shrink-0" style={{ background: "rgba(27,45,79,0.08)" }} />
+        <div className="w-12 h-12 rounded-full flex-shrink-0" style={{ background: "rgba(212,34,126,0.08)" }} />
         <div className="flex-1 flex flex-col gap-2">
-          <div className="h-4 rounded" style={{ background: "rgba(27,45,79,0.08)", width: "60%" }} />
-          <div className="h-3 rounded" style={{ background: "rgba(27,45,79,0.06)", width: "40%" }} />
+          <div className="h-4 rounded" style={{ background: "rgba(212,34,126,0.08)", width: "60%" }} />
+          <div className="h-3 rounded" style={{ background: "rgba(212,34,126,0.06)", width: "40%" }} />
         </div>
       </div>
-      <div className="h-12 rounded" style={{ background: "rgba(27,45,79,0.04)" }} />
+      <div className="h-12 rounded" style={{ background: "rgba(212,34,126,0.04)" }} />
     </div>
   );
 }
@@ -235,8 +235,8 @@ export default function Providers() {
   const hasFilters = selectedModality || zipCode || telehealth;
   const inputStyle = {
     background: "var(--warm-white)",
-    border: "1.5px solid rgba(27,45,79,0.12)",
-    color: "var(--navy)",
+    border: "1.5px solid rgba(212,34,126,0.12)",
+    color: "var(--hpf-pink)",
     fontFamily: "var(--app-font-sans)",
     outline: "none",
     borderRadius: 8,
@@ -250,45 +250,45 @@ export default function Providers() {
         <div
           style={{
             position: "fixed", inset: 0, zIndex: 50,
-            background: "rgba(27,45,79,0.55)", backdropFilter: "blur(4px)",
+            background: "rgba(212,34,126,0.55)", backdropFilter: "blur(4px)",
             display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
           }}
           onClick={() => setUnlockModal(null)}
         >
           <div
-            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(27,45,79,0.22)" }}
+            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(212,34,126,0.22)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2 mb-4">
               {unlockModal.unlocked
                 ? <CheckCircle2 size={20} style={{ color: "var(--sage)" }} />
-                : <Unlock size={20} style={{ color: "var(--hpf-amber)" }} />}
-              <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--navy)", margin: 0 }}>
+                : <Unlock size={20} style={{ color: "var(--hpf-crimson)" }} />}
+              <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--hpf-pink)", margin: 0 }}>
                 {unlockModal.unlocked ? "Provider Unlocked" : "Complete Payment to Unlock"}
               </h3>
             </div>
 
             {/* Price breakdown — shown for both immediate unlock and Stripe redirect cases */}
-            <div style={{ background: "rgba(27,45,79,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(27,45,79,0.08)" }}>
+            <div style={{ background: "rgba(212,34,126,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(212,34,126,0.08)" }}>
               <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
                 <span style={{ color: "var(--text-secondary)" }}>Unlock fee</span>
-                <span style={{ color: "var(--navy)", fontWeight: 600 }}>
+                <span style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>
                   ${((unlockModal.amount_charged_cents + unlockModal.credit_applied_cents) / 100).toFixed(2)}
                 </span>
               </div>
               {unlockModal.credit_applied_cents > 0 && (
                 <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
-                  <span style={{ color: "var(--hpf-amber)", fontWeight: 600 }}>🎁 Referral credit applied</span>
-                  <span style={{ color: "var(--hpf-amber)", fontWeight: 700 }}>
+                  <span style={{ color: "var(--hpf-crimson)", fontWeight: 600 }}>🎁 Referral credit applied</span>
+                  <span style={{ color: "var(--hpf-crimson)", fontWeight: 700 }}>
                     −${(unlockModal.credit_applied_cents / 100).toFixed(2)}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(27,45,79,0.08)", fontFamily: "var(--app-font-sans)" }}>
-                <span style={{ color: "var(--navy)", fontWeight: 700 }}>
+              <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(212,34,126,0.08)", fontFamily: "var(--app-font-sans)" }}>
+                <span style={{ color: "var(--hpf-pink)", fontWeight: 700 }}>
                   {unlockModal.unlocked ? "Total charged" : "Due now"}
                 </span>
-                <span style={{ color: unlockModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--navy)", fontWeight: 700 }}>
+                <span style={{ color: unlockModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--hpf-pink)", fontWeight: 700 }}>
                   {unlockModal.amount_charged_cents === 0 ? "Free" : unlockModal.amount_charged_formatted}
                 </span>
               </div>
@@ -305,7 +305,7 @@ export default function Providers() {
             {unlockModal.unlocked ? (
               <button
                 onClick={() => setUnlockModal(null)}
-                style={{ width: "100%", padding: "0.75rem", borderRadius: 10, background: "var(--navy)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                style={{ width: "100%", padding: "0.75rem", borderRadius: 10, background: "var(--hpf-pink)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
                 View Provider
               </button>
@@ -313,7 +313,7 @@ export default function Providers() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setUnlockModal(null)}
-                  style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--navy)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(27,45,79,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                  style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
                 >
                   Cancel
                 </button>
@@ -323,7 +323,7 @@ export default function Providers() {
                     else setUnlockModal(null);
                   }}
                   disabled={!!unlockModal.stripe_required}
-                  style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: unlockModal.stripe_required ? "rgba(27,45,79,0.1)" : "var(--hpf-amber)", color: unlockModal.stripe_required ? "var(--text-muted)" : "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: unlockModal.stripe_required ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+                  style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: unlockModal.stripe_required ? "rgba(212,34,126,0.1)" : "var(--hpf-crimson)", color: unlockModal.stripe_required ? "var(--text-muted)" : "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: unlockModal.stripe_required ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
                 >
                   {unlockModal.stripe_required ? "Not yet available" : "Proceed to payment →"}
                 </button>
@@ -337,14 +337,14 @@ export default function Providers() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
               Provider Directory
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
               Browse verified wellness providers matched to your plan
             </p>
             {user && userCreditsCents > 0 && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", marginTop: "0.5rem", background: "rgba(184,137,42,0.1)", border: "1px solid rgba(184,137,42,0.3)", borderRadius: 8, padding: "0.25rem 0.625rem", fontSize: "0.72rem", fontWeight: 600, color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", marginTop: "0.5rem", background: "rgba(224,32,64,0.1)", border: "1px solid rgba(224,32,64,0.3)", borderRadius: 8, padding: "0.25rem 0.625rem", fontSize: "0.72rem", fontWeight: 600, color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                 🎁 {(userCreditsCents / 100).toFixed(2)} referral credit available
               </span>
             )}
@@ -353,9 +353,9 @@ export default function Providers() {
             onClick={() => setShowFilters((v) => !v)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
             style={{
-              background: showFilters ? "var(--navy)" : "white",
-              color: showFilters ? "white" : "var(--navy)",
-              border: "1.5px solid rgba(27,45,79,0.15)",
+              background: showFilters ? "var(--hpf-pink)" : "white",
+              color: showFilters ? "white" : "var(--hpf-pink)",
+              border: "1.5px solid rgba(212,34,126,0.15)",
               cursor: "pointer",
               fontFamily: "var(--app-font-sans)",
             }}
@@ -367,9 +367,9 @@ export default function Providers() {
 
         {/* Filters panel */}
         {showFilters && (
-          <div className="p-5 rounded-2xl flex flex-wrap gap-4 items-end" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+          <div className="p-5 rounded-2xl flex flex-wrap gap-4 items-end" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Modality</label>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Modality</label>
               <select
                 value={selectedModality}
                 onChange={(e) => setSelectedModality(e.target.value)}
@@ -383,7 +383,7 @@ export default function Providers() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>ZIP Code</label>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>ZIP Code</label>
               <input
                 type="text"
                 value={zipCode}
@@ -401,7 +401,7 @@ export default function Providers() {
                 onChange={(e) => setTelehealth(e.target.checked)}
                 className="w-4 h-4"
               />
-              <span className="text-sm font-medium" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Telehealth only</span>
+              <span className="text-sm font-medium" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Telehealth only</span>
             </label>
             {hasFilters && (
               <button
@@ -426,8 +426,8 @@ export default function Providers() {
         {selectedModality && modalities.find((m) => m.id === selectedModality)?.category === "medical" && (
           <div style={{
             borderRadius: 12,
-            background: "rgba(184,137,42,0.06)",
-            border: "1.5px solid rgba(184,137,42,0.22)",
+            background: "rgba(224,32,64,0.06)",
+            border: "1.5px solid rgba(224,32,64,0.22)",
             padding: "1rem 1.25rem",
             display: "flex",
             gap: "0.875rem",
@@ -435,7 +435,7 @@ export default function Providers() {
           }}>
             <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>🩺</span>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 3 }}>
+              <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", marginBottom: 3 }}>
                 DPC physicians can write a Letter of Medical Necessity for your plan
               </p>
               <p style={{ fontSize: "0.73rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 8 }}>
@@ -443,7 +443,7 @@ export default function Providers() {
               </p>
               <Link
                 to="/hsa-unlock"
-                style={{ fontSize: "0.73rem", fontWeight: 600, color: "#b8892a", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
+                style={{ fontSize: "0.73rem", fontWeight: 600, color: "#E02040", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
               >
                 See how to unlock your HSA →
               </Link>
@@ -457,7 +457,7 @@ export default function Providers() {
             [1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} />)
           ) : providers.length === 0 ? (
             <div className="col-span-full py-16 text-center">
-              <p className="text-base mb-2" style={{ color: "var(--navy)", fontFamily: "var(--app-font-serif)" }}>No providers found</p>
+              <p className="text-base mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-serif)" }}>No providers found</p>
               <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
                 Try adjusting your filters or clearing your search.
               </p>
@@ -469,19 +469,19 @@ export default function Providers() {
                 <div
                   key={p.id}
                   className="p-5 flex flex-col gap-3 rounded-2xl"
-                  style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}
+                  style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}
                 >
                   {/* Provider header */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
                       <div
                         className="w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold"
-                        style={{ background: "rgba(27,45,79,0.08)", color: "var(--navy)", fontFamily: "var(--app-font-serif)" }}
+                        style={{ background: "rgba(212,34,126,0.08)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-serif)" }}
                       >
                         {p.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold leading-tight" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                        <p className="text-sm font-semibold leading-tight" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                           {p.name}
                         </p>
                         {(p.city || p.state) && (
@@ -496,7 +496,7 @@ export default function Providers() {
                       disabled={savingId === p.id}
                       className="p-1.5 rounded-lg transition-colors"
                       style={{
-                        background: isSaved ? "rgba(61,107,82,0.1)" : "rgba(27,45,79,0.04)",
+                        background: isSaved ? "rgba(125,181,92,0.1)" : "rgba(212,34,126,0.04)",
                         border: "none",
                         cursor: savingId === p.id ? "wait" : "pointer",
                         color: isSaved ? "var(--sage)" : "var(--text-muted)",
@@ -521,7 +521,7 @@ export default function Providers() {
                         <span
                           key={cred}
                           className="px-2 py-0.5 rounded text-xs font-medium"
-                          style={{ background: "rgba(27,45,79,0.05)", color: "var(--navy)", fontFamily: "var(--app-font-mono)", fontSize: "0.68rem", border: "1px solid rgba(27,45,79,0.1)" }}
+                          style={{ background: "rgba(212,34,126,0.05)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-mono)", fontSize: "0.68rem", border: "1px solid rgba(212,34,126,0.1)" }}
                         >
                           {cred}
                         </span>
@@ -532,29 +532,29 @@ export default function Providers() {
                   {/* Badges */}
                   <div className="flex flex-wrap gap-1.5">
                     {p.offersTelehealth && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(27,45,79,0.06)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                         Telehealth
                       </span>
                     )}
                     {p.offersInPerson && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(27,45,79,0.06)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                         In-person
                       </span>
                     )}
                     {p.acceptsInsurance && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(184,137,42,0.1)", color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(224,32,64,0.1)", color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                         HSA/FSA
                       </span>
                     )}
                     {p.costPerSession != null && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(61,107,82,0.08)", color: "var(--sage)", fontFamily: "var(--app-font-mono)" }}>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(125,181,92,0.08)", color: "var(--sage)", fontFamily: "var(--app-font-mono)" }}>
                         ${p.costPerSession}/session
                       </span>
                     )}
                   </div>
 
                   {/* Contact row — gated behind unlock */}
-                  <div className="flex flex-wrap gap-3 pt-1 border-t items-center" style={{ borderColor: "rgba(27,45,79,0.06)" }}>
+                  <div className="flex flex-wrap gap-3 pt-1 border-t items-center" style={{ borderColor: "rgba(212,34,126,0.06)" }}>
                     {unlockedIds.has(p.id) ? (
                       <>
                         {p.phone && (
@@ -563,7 +563,7 @@ export default function Providers() {
                           </a>
                         )}
                         {p.website && (
-                          <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                          <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                             <Globe size={11} /> Website
                           </a>
                         )}
@@ -585,7 +585,7 @@ export default function Providers() {
                           🔒 Contact details locked
                         </span>
                         {userCreditsCents > 0 && (
-                          <span className="text-xs" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
+                          <span className="text-xs" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
                             🎁 Credit available
                           </span>
                         )}
@@ -594,7 +594,7 @@ export default function Providers() {
                           disabled={unlockingId === p.id}
                           className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
                           style={{
-                            background: userCreditsCents > 0 ? "var(--hpf-amber)" : "var(--navy)",
+                            background: userCreditsCents > 0 ? "var(--hpf-crimson)" : "var(--hpf-pink)",
                             color: "white",
                             border: "none",
                             cursor: unlockingId === p.id ? "wait" : "pointer",

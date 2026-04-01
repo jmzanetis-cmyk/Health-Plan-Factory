@@ -38,7 +38,7 @@ export default function SignIn() {
           <div className="flex justify-center mb-6">
             <Logo variant="auth" />
           </div>
-          <h1 className="mb-2" style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+          <h1 className="mb-2" style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
             Welcome back
           </h1>
           <p className="text-sm font-light" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -46,7 +46,7 @@ export default function SignIn() {
           </p>
         </div>
 
-        <div className="rounded-2xl p-8" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", boxShadow: "0 8px 32px rgba(27,45,79,0.08)" }}>
+        <div className="rounded-2xl p-8" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", boxShadow: "0 8px 32px rgba(212,34,126,0.08)" }}>
           {error && (
             <div className="mb-4 rounded-lg px-4 py-3 text-sm" style={{ background: "rgba(220,38,38,0.06)", color: "#b91c1c", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(220,38,38,0.15)" }}>
               {error === "github_oauth_failed"
@@ -62,7 +62,7 @@ export default function SignIn() {
             disabled={isLoading}
             className="w-full py-3.5 rounded-lg text-sm font-semibold text-white transition-all flex items-center justify-center gap-3"
             style={{
-              background: isLoading ? "rgba(27,45,79,0.4)" : "var(--navy)",
+              background: isLoading ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)",
               fontFamily: "var(--app-font-sans)",
               cursor: isLoading ? "not-allowed" : "pointer",
               border: "none",
@@ -83,7 +83,7 @@ export default function SignIn() {
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" style={{ borderColor: "rgba(27,45,79,0.08)" }} />
+              <div className="w-full border-t" style={{ borderColor: "rgba(212,34,126,0.08)" }} />
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 text-xs" style={{ background: "white", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -98,10 +98,10 @@ export default function SignIn() {
             className="w-full py-3.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-3"
             style={{
               background: "white",
-              color: isLoading ? "rgba(27,45,79,0.4)" : "#24292f",
+              color: isLoading ? "rgba(212,34,126,0.4)" : "#24292f",
               fontFamily: "var(--app-font-sans)",
               cursor: isLoading ? "not-allowed" : "pointer",
-              border: "1px solid rgba(27,45,79,0.18)",
+              border: "1px solid rgba(212,34,126,0.18)",
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -112,7 +112,7 @@ export default function SignIn() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" style={{ borderColor: "rgba(27,45,79,0.08)" }} />
+              <div className="w-full border-t" style={{ borderColor: "rgba(212,34,126,0.08)" }} />
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 text-xs" style={{ background: "white", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -126,7 +126,7 @@ export default function SignIn() {
             <button
               onClick={() => login()}
               className="font-semibold"
-              style={{ color: "var(--hpf-amber)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              style={{ color: "var(--hpf-crimson)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
             >
               create one for free →
             </button>
@@ -135,9 +135,9 @@ export default function SignIn() {
 
         <p className="text-center text-xs mt-6" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
           By continuing, you agree to our{" "}
-          <a href="/terms" className="no-underline" style={{ color: "var(--hpf-amber)" }}>Terms</a>
+          <a href="/terms" className="no-underline" style={{ color: "var(--hpf-crimson)" }}>Terms</a>
           {" "}and{" "}
-          <a href="/privacy" className="no-underline" style={{ color: "var(--hpf-amber)" }}>Privacy Policy</a>
+          <a href="/privacy" className="no-underline" style={{ color: "var(--hpf-crimson)" }}>Privacy Policy</a>
         </p>
       </div>
     </div>

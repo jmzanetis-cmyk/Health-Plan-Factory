@@ -78,16 +78,16 @@ export default function AdminProviders() {
   });
 
   const statusBadge = (status: string) => {
-    if (status === "approved") return { background: "rgba(61,107,82,0.1)", color: "var(--sage)", icon: <CheckCircle size={11} /> };
+    if (status === "approved") return { background: "rgba(125,181,92,0.1)", color: "var(--sage)", icon: <CheckCircle size={11} /> };
     if (status === "rejected") return { background: "rgba(192,57,43,0.08)", color: "#c0392b", icon: <XCircle size={11} /> };
-    return { background: "rgba(184,137,42,0.1)", color: "var(--hpf-amber)", icon: <Clock size={11} /> };
+    return { background: "rgba(224,32,64,0.1)", color: "var(--hpf-crimson)", icon: <Clock size={11} /> };
   };
 
   return (
     <div className="min-h-screen px-4 md:px-10 py-10" style={{ background: "var(--warm-white)" }}>
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>Provider Management</h1>
+          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>Provider Management</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>Review applications and manage provider listings</p>
         </div>
 
@@ -101,9 +101,9 @@ export default function AdminProviders() {
               onClick={() => setFilter(f)}
               className="px-4 py-1.5 rounded-full text-xs font-semibold capitalize"
               style={{
-                background: filter === f ? "var(--navy)" : "white",
-                color: filter === f ? "white" : "var(--navy)",
-                border: "1.5px solid rgba(27,45,79,0.12)",
+                background: filter === f ? "var(--hpf-pink)" : "white",
+                color: filter === f ? "white" : "var(--hpf-pink)",
+                border: "1.5px solid rgba(212,34,126,0.12)",
                 cursor: "pointer",
                 fontFamily: "var(--app-font-sans)",
               }}
@@ -113,13 +113,13 @@ export default function AdminProviders() {
           ))}
         </div>
 
-        <div className="rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
           {loading ? (
-            <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} style={{ color: "var(--navy)" }} /></div>
+            <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} style={{ color: "var(--hpf-pink)" }} /></div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead style={{ background: "rgba(27,45,79,0.02)", borderBottom: "1px solid rgba(27,45,79,0.08)" }}>
+                <thead style={{ background: "rgba(212,34,126,0.02)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}>
                   <tr>
                     {["Name", "Location", "Format", "Applied", "Status", "Actions"].map((h) => (
                       <th key={h} className="text-left px-3 py-3" style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
@@ -139,9 +139,9 @@ export default function AdminProviders() {
                     filtered.map((p, i) => {
                       const badge = statusBadge(p.status);
                       return (
-                        <tr key={p.id} style={{ borderTop: i === 0 ? "none" : "1px solid rgba(27,45,79,0.04)" }}>
+                        <tr key={p.id} style={{ borderTop: i === 0 ? "none" : "1px solid rgba(212,34,126,0.04)" }}>
                           <td className="px-3 py-3">
-                            <p className="text-sm font-medium" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>{p.name}</p>
+                            <p className="text-sm font-medium" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{p.name}</p>
                             {p.bio && <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{p.bio}</p>}
                           </td>
                           <td className="px-3 py-3 text-xs" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -207,7 +207,7 @@ export default function AdminProviders() {
         {rejectTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }}>
             <div className="w-full max-w-md p-6 rounded-2xl" style={{ background: "white" }}>
-              <h3 className="text-base font-semibold mb-3" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+              <h3 className="text-base font-semibold mb-3" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
                 Reject Provider Application
               </h3>
               <p className="text-sm mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -219,13 +219,13 @@ export default function AdminProviders() {
                 placeholder="Reason for rejection (optional)…"
                 rows={3}
                 className="w-full px-4 py-3 rounded-lg text-sm resize-none outline-none mb-4"
-                style={{ background: "var(--warm-white)", border: "1.5px solid rgba(27,45,79,0.12)", color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}
+                style={{ background: "var(--warm-white)", border: "1.5px solid rgba(212,34,126,0.12)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
               />
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => { setRejectTarget(null); setRejectReason(""); }}
                   className="px-4 py-2 rounded-lg text-sm font-medium"
-                  style={{ background: "none", border: "1.5px solid rgba(27,45,79,0.15)", color: "var(--navy)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                  style={{ background: "none", border: "1.5px solid rgba(212,34,126,0.15)", color: "var(--hpf-pink)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
                 >
                   Cancel
                 </button>

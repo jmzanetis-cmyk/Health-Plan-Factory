@@ -16,7 +16,7 @@ const footerLinks = [
 
 export function Footer() {
   return (
-    <footer style={{ background: "#111d30", padding: "2.5rem 3rem 5rem" }}>
+    <footer style={{ background: "#1C1A18", padding: "2.5rem 3rem 5rem" }}>
       <div
         className="flex justify-between items-start flex-wrap gap-8 pb-8 mb-8"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
@@ -52,11 +52,11 @@ export function Footer() {
         HSA/FSA eligibility is determined by your plan administrator — consult your plan documents before assuming eligibility.
         Provider listings are for informational purposes only. HealthPlanFactory does not endorse, verify credentials of, or guarantee results from
         any listed provider. Use of this platform is subject to our{" "}
-        <Link to="/terms" className="no-underline" style={{ color: "rgba(184,137,42,0.6)", textDecoration: "underline" }}>
+        <Link to="/terms" className="no-underline" style={{ color: "rgba(224,32,64,0.6)", textDecoration: "underline" }}>
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link to="/privacy" className="no-underline" style={{ color: "rgba(184,137,42,0.6)", textDecoration: "underline" }}>
+        <Link to="/privacy" className="no-underline" style={{ color: "rgba(224,32,64,0.6)", textDecoration: "underline" }}>
           Privacy Policy
         </Link>
         .

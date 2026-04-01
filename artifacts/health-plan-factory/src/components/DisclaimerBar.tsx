@@ -25,16 +25,16 @@ export function DisclaimerBar() {
     <div
       className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between gap-3 px-6 py-2.5 text-xs leading-relaxed"
       style={{
-        background: "rgba(27,45,79,0.97)",
+        background: "rgba(212,34,126,0.97)",
         backdropFilter: "blur(8px)",
-        borderTop: "2px solid rgba(184,137,42,0.4)",
+        borderTop: "2px solid rgba(224,32,64,0.4)",
         color: "rgba(255,255,255,0.65)",
       }}
     >
       <p className="flex-1">
         <strong className="text-white/90 font-semibold">Important:</strong>{" "}
         {text}{" "}
-        <Link to="/legal" className="text-[#d4a44c] underline underline-offset-2 hover:text-[#b8892a] transition-colors whitespace-nowrap">
+        <Link to="/legal" className="text-[#e84d65] underline underline-offset-2 hover:text-[#E02040] transition-colors whitespace-nowrap">
           Full disclaimer ↓
         </Link>
       </p>

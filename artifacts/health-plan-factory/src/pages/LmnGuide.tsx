@@ -5,9 +5,9 @@ import { FileText, DollarSign, Stethoscope, CheckCircle, ArrowRight, Info } from
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
-const navy = "#1b2d4f";
-const amber = "#b8892a";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const amber = "#E02040";
+const sage = "#7DB55C";
 
 interface EligibleModality {
   id: string;
@@ -49,9 +49,9 @@ export default function LmnGuide() {
   return (
     <div style={{ background: "var(--warm-white)", minHeight: "100vh" }}>
       {/* Hero */}
-      <div style={{ background: `linear-gradient(135deg, ${navy} 0%, #243d66 100%)`, color: "white", padding: "72px 24px 64px" }}>
+      <div style={{ background: `linear-gradient(135deg, ${navy} 0%, #1a1816 100%)`, color: "white", padding: "72px 24px 64px" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(184,137,42,0.18)", border: "1px solid rgba(184,137,42,0.35)", borderRadius: 20, padding: "6px 16px", marginBottom: 24 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(224,32,64,0.18)", border: "1px solid rgba(224,32,64,0.35)", borderRadius: 20, padding: "6px 16px", marginBottom: 24 }}>
             <DollarSign size={14} color={amber} />
             <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: amber, letterSpacing: "0.06em", textTransform: "uppercase" }}>HSA/FSA Savings Guide</span>
           </div>
@@ -87,7 +87,7 @@ export default function LmnGuide() {
       <section style={{ padding: "64px 24px 48px" }}>
         <div style={sectionStyle}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: `rgba(27,45,79,0.08)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: `rgba(212,34,126,0.08)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FileText size={20} color={navy} />
             </div>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 26, fontWeight: 700, color: navy, margin: 0 }}>What is a Letter of Medical Necessity?</h2>
@@ -98,7 +98,7 @@ export default function LmnGuide() {
           <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.7, margin: 0 }}>
             The IRS allows HSA/FSA reimbursement for services that are primarily for treatment of a medical condition — an LMN from your physician is the documentation that makes this possible.
           </p>
-          <div style={{ background: "rgba(184,137,42,0.07)", border: "1px solid rgba(184,137,42,0.2)", borderRadius: 10, padding: "14px 18px", marginTop: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <div style={{ background: "rgba(224,32,64,0.07)", border: "1px solid rgba(224,32,64,0.2)", borderRadius: 10, padding: "14px 18px", marginTop: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
             <Info size={16} color={amber} style={{ flexShrink: 0, marginTop: 2 }} />
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
               <strong style={{ color: navy }}>Disclaimer:</strong> Health Plan Factory is a wellness referral platform, not a medical provider. We do not write, review, or guarantee LMNs. Always consult your physician and HSA/FSA administrator regarding eligibility. Tax rules vary; consult a tax professional for advice.
@@ -111,7 +111,7 @@ export default function LmnGuide() {
       <section style={{ padding: "48px 24px", background: "white" }}>
         <div style={sectionStyle}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: `rgba(61,107,82,0.08)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: `rgba(125,181,92,0.08)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <CheckCircle size={20} color={sage} />
             </div>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 26, fontWeight: 700, color: navy, margin: 0 }}>Wellness Modalities That May Qualify with an LMN</h2>
@@ -122,7 +122,7 @@ export default function LmnGuide() {
           {eligibleModalities.length > 0 ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
               {eligibleModalities.map((m) => (
-                <div key={m.id} style={{ border: "1px solid rgba(27,45,79,0.08)", borderRadius: 12, padding: "18px 20px", background: "var(--warm-white)" }}>
+                <div key={m.id} style={{ border: "1px solid rgba(212,34,126,0.08)", borderRadius: 12, padding: "18px 20px", background: "var(--warm-white)" }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{m.emoji}</div>
                   <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, fontWeight: 700, color: navy, marginBottom: 4 }}>{m.name}</div>
                   <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-muted)", marginBottom: 8 }}>
@@ -144,7 +144,7 @@ export default function LmnGuide() {
                 { emoji: "🧠", name: "Mental Health Counseling", desc: "Broadly HSA/FSA eligible and often LMN-supported." },
                 { emoji: "🍃", name: "Naturopathy", desc: "May qualify with documented medical necessity." },
               ].map((m) => (
-                <div key={m.name} style={{ border: "1px solid rgba(27,45,79,0.08)", borderRadius: 12, padding: "18px 20px", background: "var(--warm-white)" }}>
+                <div key={m.name} style={{ border: "1px solid rgba(212,34,126,0.08)", borderRadius: 12, padding: "18px 20px", background: "var(--warm-white)" }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{m.emoji}</div>
                   <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, fontWeight: 700, color: navy, marginBottom: 4 }}>{m.name}</div>
                   <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{m.desc}</div>
@@ -159,7 +159,7 @@ export default function LmnGuide() {
       <section style={{ padding: "64px 24px" }}>
         <div style={sectionStyle}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: `rgba(27,45,79,0.08)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: `rgba(212,34,126,0.08)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Stethoscope size={20} color={navy} />
             </div>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 26, fontWeight: 700, color: navy, margin: 0 }}>How Direct Primary Care Physicians Help</h2>
@@ -174,7 +174,7 @@ export default function LmnGuide() {
               { title: "Written LMNs", desc: "DPC physicians can write LMNs for qualifying wellness services in your plan." },
               { title: "Telehealth included", desc: "Many DPC physicians offer telehealth — get your LMN without leaving home." },
             ].map((item) => (
-              <div key={item.title} style={{ border: "1px solid rgba(27,45,79,0.08)", borderRadius: 12, padding: "18px 20px", background: "white" }}>
+              <div key={item.title} style={{ border: "1px solid rgba(212,34,126,0.08)", borderRadius: 12, padding: "18px 20px", background: "white" }}>
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, marginBottom: 6 }}>{item.title}</div>
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{item.desc}</div>
               </div>
@@ -207,7 +207,7 @@ export default function LmnGuide() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: "72px 24px", background: `linear-gradient(135deg, ${navy} 0%, #243d66 100%)`, textAlign: "center" }}>
+      <section style={{ padding: "72px 24px", background: `linear-gradient(135deg, ${navy} 0%, #1a1816 100%)`, textAlign: "center" }}>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(22px, 4vw, 34px)", fontWeight: 700, color: "white", margin: "0 0 16px" }}>
             See How Much Your Plan Could Save with an LMN

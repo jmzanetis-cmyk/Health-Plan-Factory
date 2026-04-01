@@ -40,7 +40,7 @@ interface ProgressLog {
 }
 
 function SkeletonBlock({ h = 16 }: { h?: number }) {
-  return <div className="animate-pulse rounded-md" style={{ height: h, background: "rgba(27,45,79,0.06)" }} />;
+  return <div className="animate-pulse rounded-md" style={{ height: h, background: "rgba(212,34,126,0.06)" }} />;
 }
 
 interface InsightCard {
@@ -193,8 +193,8 @@ function generateInsightsPdf(data: InsightsData, userName?: string): void {
 function MetricInput({ label, name, register }: { label: string; name: keyof LogForm; register: ReturnType<typeof useForm<LogForm>>["register"] }) {
   const inputStyle = {
     background: "var(--warm-white)",
-    border: "1.5px solid rgba(27,45,79,0.12)",
-    color: "var(--navy)",
+    border: "1.5px solid rgba(212,34,126,0.12)",
+    color: "var(--hpf-pink)",
     fontFamily: "var(--app-font-sans)",
     outline: "none",
     borderRadius: 8,
@@ -328,16 +328,16 @@ export default function Progress() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--warm-white)" }}>
-        <Loader2 className="animate-spin" size={28} style={{ color: "var(--navy)" }} />
+        <Loader2 className="animate-spin" size={28} style={{ color: "var(--hpf-pink)" }} />
       </div>
     );
   }
 
-  const cardStyle = { background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 16 };
+  const cardStyle = { background: "white", border: "1px solid rgba(212,34,126,0.08)", borderRadius: 16 };
   const inputStyle = {
     background: "var(--warm-white)",
-    border: "1.5px solid rgba(27,45,79,0.12)",
-    color: "var(--navy)",
+    border: "1.5px solid rgba(212,34,126,0.12)",
+    color: "var(--hpf-pink)",
     fontFamily: "var(--app-font-sans)",
     outline: "none",
     borderRadius: 8,
@@ -349,7 +349,7 @@ export default function Progress() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
               Progress Tracker
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -359,7 +359,7 @@ export default function Progress() {
           <button
             onClick={() => setShowForm((v) => !v)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white"
-            style={{ background: "var(--navy)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+            style={{ background: "var(--hpf-pink)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
           >
             <Plus size={15} /> Log Entry
           </button>
@@ -368,7 +368,7 @@ export default function Progress() {
         {/* Log form */}
         {showForm && (
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 flex flex-col gap-5" style={cardStyle}>
-            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
               New Wellness Log
             </h2>
             <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -388,7 +388,7 @@ export default function Progress() {
             {errors.rating && <p className="text-xs" style={{ color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>{errors.rating.message}</p>}
 
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                 Notes (optional)
               </label>
               <textarea
@@ -403,7 +403,7 @@ export default function Progress() {
             {/* Session cost field — only shown when the member is enrolled in an employer stipend */}
             {isEnrolledWithEmployer && (
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                   Session Cost (optional, $)
                 </label>
                 <p className="text-xs mb-2" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -426,7 +426,7 @@ export default function Progress() {
                 type="button"
                 onClick={() => setShowForm(false)}
                 className="px-4 py-2 rounded-lg text-sm font-medium"
-                style={{ background: "none", border: "1.5px solid rgba(27,45,79,0.15)", color: "var(--navy)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                style={{ background: "none", border: "1.5px solid rgba(212,34,126,0.15)", color: "var(--hpf-pink)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
                 Cancel
               </button>
@@ -434,7 +434,7 @@ export default function Progress() {
                 type="submit"
                 disabled={submitting}
                 className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white"
-                style={{ background: submitting ? "rgba(27,45,79,0.4)" : "var(--navy)", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+                style={{ background: submitting ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
               >
                 {submitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
                 {submitting ? "Saving..." : "Save Log"}
@@ -456,7 +456,7 @@ export default function Progress() {
                 {s.label}
               </p>
               {loading ? <SkeletonBlock h={32} /> : (
-                <p className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
                   {s.value}
                 </p>
               )}
@@ -466,7 +466,7 @@ export default function Progress() {
 
         {/* Chart */}
         <div className="p-6" style={cardStyle}>
-          <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+          <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
             Trends Over Time
           </h2>
           {loading ? (
@@ -480,14 +480,14 @@ export default function Progress() {
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,45,79,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,34,126,0.06)" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
                 <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
-                <Tooltip contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, borderRadius: 8, border: "1px solid rgba(27,45,79,0.12)" }} />
+                <Tooltip contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, borderRadius: 8, border: "1px solid rgba(212,34,126,0.12)" }} />
                 <Legend wrapperStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12 }} />
-                <Line type="monotone" dataKey="Wellness" stroke="#1b2d4f" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
-                <Line type="monotone" dataKey="Mood" stroke="#3d6b52" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                <Line type="monotone" dataKey="Energy" stroke="#b8892a" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                <Line type="monotone" dataKey="Wellness" stroke="#D4227E" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                <Line type="monotone" dataKey="Mood" stroke="#7DB55C" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                <Line type="monotone" dataKey="Energy" stroke="#E02040" strokeWidth={2} dot={{ r: 3 }} connectNulls />
                 <Line type="monotone" dataKey="Pain" stroke="#c0392b" strokeWidth={1.5} dot={{ r: 3 }} strokeDasharray="4 3" connectNulls />
               </LineChart>
             </ResponsiveContainer>
@@ -496,10 +496,10 @@ export default function Progress() {
 
         {/* LMN on file banner — shown only when physician has confirmed LMN and member has eligible modalities */}
         {lmnStatus === "received" && lmnEligibleIds.length > 0 && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "rgba(61,107,82,0.07)", border: "1px solid rgba(61,107,82,0.2)" }}>
-            <BadgeCheck size={18} style={{ color: "#3d6b52", flexShrink: 0 }} />
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "rgba(125,181,92,0.07)", border: "1px solid rgba(125,181,92,0.2)" }}>
+            <BadgeCheck size={18} style={{ color: "#7DB55C", flexShrink: 0 }} />
             <div>
-              <p className="text-sm font-semibold" style={{ color: "#3d6b52", fontFamily: "var(--app-font-sans)" }}>LMN on file</p>
+              <p className="text-sm font-semibold" style={{ color: "#7DB55C", fontFamily: "var(--app-font-sans)" }}>LMN on file</p>
               <p className="text-xs" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
                 Your Letter of Medical Necessity covers {lmnEligibleIds.length} modality{lmnEligibleIds.length !== 1 ? "ies" : ""} in your plan — sessions may be HSA/FSA reimbursable.
               </p>
@@ -509,7 +509,7 @@ export default function Progress() {
 
         {/* Recent logs */}
         <div className="p-6" style={cardStyle}>
-          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+          <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
             Recent Entries
           </h2>
           {loading ? (
@@ -531,20 +531,20 @@ export default function Progress() {
                 ].filter(Boolean);
                 const isLmnEligibleSession = lmnStatus === "received" && l.modalityId != null && lmnEligibleIds.includes(l.modalityId);
                 return (
-                  <div key={l.id} className="flex items-start justify-between py-3 px-3 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(27,45,79,0.04)" }}>
+                  <div key={l.id} className="flex items-start justify-between py-3 px-3 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(212,34,126,0.04)" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-mono)", margin: 0 }}>
                           {metrics.join(" · ")}
                         </p>
                         {isLmnEligibleSession && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(61,107,82,0.1)", border: "1px solid rgba(61,107,82,0.22)", borderRadius: 20, padding: "1px 7px", fontFamily: "var(--app-font-sans)", fontSize: 9, fontWeight: 700, color: "#3d6b52", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
-                            <BadgeCheck size={9} color="#3d6b52" />
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(125,181,92,0.1)", border: "1px solid rgba(125,181,92,0.22)", borderRadius: 20, padding: "1px 7px", fontFamily: "var(--app-font-sans)", fontSize: 9, fontWeight: 700, color: "#7DB55C", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                            <BadgeCheck size={9} color="#7DB55C" />
                             LMN on file
                           </span>
                         )}
                       </div>
-                      <p className="text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                      <p className="text-sm" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                         {l.note ?? <em style={{ color: "var(--text-muted)" }}>No notes</em>}
                       </p>
                       <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -554,8 +554,8 @@ export default function Progress() {
                     <div
                       className="ml-4 shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
                       style={{
-                        background: (l.rating ?? 0) >= 7 ? "rgba(61,107,82,0.1)" : (l.rating ?? 0) >= 5 ? "rgba(184,137,42,0.1)" : "rgba(192,57,43,0.08)",
-                        color: (l.rating ?? 0) >= 7 ? "var(--sage)" : (l.rating ?? 0) >= 5 ? "var(--hpf-amber)" : "#c0392b",
+                        background: (l.rating ?? 0) >= 7 ? "rgba(125,181,92,0.1)" : (l.rating ?? 0) >= 5 ? "rgba(224,32,64,0.1)" : "rgba(192,57,43,0.08)",
+                        color: (l.rating ?? 0) >= 7 ? "var(--sage)" : (l.rating ?? 0) >= 5 ? "var(--hpf-crimson)" : "#c0392b",
                         fontFamily: "var(--app-font-serif)",
                       }}
                     >
@@ -573,11 +573,11 @@ export default function Progress() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <Sparkles size={18} style={{ color: "var(--sage)" }} />
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
                 Outcome Insights
               </h2>
               {insightsData?.wellnessScore != null && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(61,107,82,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(125,181,92,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
                   Wellness Score: {insightsData.wellnessScore}/100
                 </span>
               )}
@@ -586,7 +586,7 @@ export default function Progress() {
               onClick={() => fetchInsights(true)}
               disabled={insightsLoading}
               className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
-              style={{ background: "rgba(27,45,79,0.06)", color: "var(--navy)", border: "none", cursor: insightsLoading ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+              style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", border: "none", cursor: insightsLoading ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
             >
               <RefreshCw size={12} className={insightsLoading ? "animate-spin" : ""} />
               Refresh
@@ -603,7 +603,7 @@ export default function Progress() {
           {!insightsLoading && insightsData && insightsData.journalCount < 14 && (
             <div className="py-6 text-center flex flex-col items-center gap-2">
               <Sparkles size={32} style={{ color: "var(--sage)", opacity: 0.4 }} />
-              <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+              <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                 Personalized insights unlock at 14 journal entries
               </p>
               <p className="text-xs max-w-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -624,26 +624,26 @@ export default function Progress() {
                 Correlations are observational, not clinical claims. Consult a licensed provider before making health decisions.
               </p>
               {insightsData.insights.map((ins) => (
-                <div key={ins.modalityId + ins.metric} className="flex flex-col gap-3 pb-6" style={{ borderBottom: "1px solid rgba(27,45,79,0.06)" }}>
+                <div key={ins.modalityId + ins.metric} className="flex flex-col gap-3 pb-6" style={{ borderBottom: "1px solid rgba(212,34,126,0.06)" }}>
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{ins.emoji}</span>
-                      <h3 className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                      <h3 className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                         {ins.modalityName}
                       </h3>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(61,107,82,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(125,181,92,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
                         {ins.percentDiff}% improvement
                       </span>
                     </div>
                     <Link
                       to={`/discover?modality=${ins.modalityId}`}
                       className="text-xs font-semibold no-underline px-3 py-1.5 rounded-lg flex-shrink-0"
-                      style={{ background: "var(--navy)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                      style={{ background: "var(--hpf-pink)", color: "white", fontFamily: "var(--app-font-sans)" }}
                     >
                       Book next session →
                     </Link>
                   </div>
-                  <p className="text-sm leading-snug" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  <p className="text-sm leading-snug" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                     {ins.headline}
                   </p>
                   {/* Recharts sparkline with session markers */}
@@ -654,7 +654,7 @@ export default function Progress() {
                           <XAxis dataKey="date" hide />
                           <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
                           <Tooltip
-                            contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 11, borderRadius: 6, border: "1px solid rgba(27,45,79,0.12)", padding: "4px 8px" }}
+                            contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 11, borderRadius: 6, border: "1px solid rgba(212,34,126,0.12)", padding: "4px 8px" }}
                             formatter={(v: number) => [`${v}/10`, ins.metric.charAt(0).toUpperCase() + ins.metric.slice(1)]}
                             labelFormatter={(label: string) => label}
                           />
@@ -666,7 +666,7 @@ export default function Progress() {
                             dot={(dotProps: { cx: number; cy: number; payload: { hasSession: boolean }; index: number }) => {
                               const { cx, cy, payload, index } = dotProps;
                               if (payload.hasSession) {
-                                return <circle key={index} cx={cx} cy={cy} r={5} fill="var(--hpf-amber)" stroke="white" strokeWidth={1.5} />;
+                                return <circle key={index} cx={cx} cy={cy} r={5} fill="var(--hpf-crimson)" stroke="white" strokeWidth={1.5} />;
                               }
                               return <circle key={index} cx={cx} cy={cy} r={2.5} fill="var(--sage)" />;
                             }}
@@ -674,7 +674,7 @@ export default function Progress() {
                         </LineChart>
                       </ResponsiveContainer>
                       <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "var(--hpf-amber)", verticalAlign: "middle", marginRight: 4 }} />
+                        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "var(--hpf-crimson)", verticalAlign: "middle", marginRight: 4 }} />
                         Session days · Line = {ins.metric} score over time
                       </p>
                     </div>
@@ -691,20 +691,20 @@ export default function Progress() {
           {insightsData && insightsData.journalCount >= 14 && insightsData.attentionItems.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={14} style={{ color: "var(--hpf-amber)" }} />
-                <h3 className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                <AlertTriangle size={14} style={{ color: "var(--hpf-crimson)" }} />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                   What Might Need Attention
                 </h3>
               </div>
               <div className="flex flex-col gap-2">
                 {insightsData.attentionItems.map((item) => (
-                  <div key={item.modalityId} className="flex items-center gap-3 px-3 py-3 rounded-xl" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.12)" }}>
+                  <div key={item.modalityId} className="flex items-center gap-3 px-3 py-3 rounded-xl" style={{ background: "rgba(224,32,64,0.06)", border: "1px solid rgba(224,32,64,0.12)" }}>
                     <span className="text-lg flex-shrink-0">{item.emoji}</span>
-                    <p className="text-sm flex-1" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>{item.message}</p>
+                    <p className="text-sm flex-1" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{item.message}</p>
                     <Link
                       to={`/discover?modality=${item.modalityId}`}
                       className="text-xs font-semibold no-underline flex-shrink-0 px-2.5 py-1.5 rounded-lg"
-                      style={{ background: "var(--hpf-amber)", color: "white", fontFamily: "var(--app-font-sans)" }}
+                      style={{ background: "var(--hpf-crimson)", color: "white", fontFamily: "var(--app-font-sans)" }}
                     >
                       Book →
                     </Link>
@@ -718,9 +718,9 @@ export default function Progress() {
         {/* ── Share with My Doctor ─────────────────────────────────────────── */}
         {insightsData && insightsData.insights.length > 0 && (
           <div>
-            <div className="p-5 rounded-2xl flex items-center justify-between gap-4 flex-wrap" style={{ background: "rgba(27,45,79,0.04)", border: "1px solid rgba(27,45,79,0.08)" }}>
+            <div className="p-5 rounded-2xl flex items-center justify-between gap-4 flex-wrap" style={{ background: "rgba(212,34,126,0.04)", border: "1px solid rgba(212,34,126,0.08)" }}>
               <div>
-                <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                   Share your outcomes with your doctor
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -730,7 +730,7 @@ export default function Progress() {
               <button
                 onClick={() => generateInsightsPdf(insightsData)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline"
-                style={{ background: "var(--navy)", color: "white", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                style={{ background: "var(--hpf-pink)", color: "white", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
                 <Printer size={14} /> Download PDF
               </button>
@@ -738,8 +738,8 @@ export default function Progress() {
 
             {/* Print-only clinical summary */}
             <div className="print-only" style={{ padding: "32px", fontFamily: "var(--app-font-sans)" }}>
-              <div style={{ borderBottom: "2px solid #1b2d4f", paddingBottom: 16, marginBottom: 24 }}>
-                <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: "#1b2d4f", margin: 0 }}>
+              <div style={{ borderBottom: "2px solid #D4227E", paddingBottom: 16, marginBottom: 24 }}>
+                <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: "#D4227E", margin: 0 }}>
                   HealthPlanFactory — Wellness Outcomes Report
                 </h1>
                 <p style={{ fontSize: 12, color: "#666", margin: "4px 0 0" }}>
@@ -747,10 +747,10 @@ export default function Progress() {
                 </p>
               </div>
 
-              <h2 style={{ fontSize: 14, fontWeight: 700, color: "#1b2d4f", marginBottom: 12 }}>Modality–Outcome Correlations</h2>
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: "#D4227E", marginBottom: 12 }}>Modality–Outcome Correlations</h2>
               {insightsData.insights.map((ins) => (
                 <div key={ins.modalityId + ins.metric} style={{ marginBottom: 18, paddingBottom: 16, borderBottom: "1px solid #eee" }}>
-                  <p style={{ fontWeight: 700, fontSize: 13, color: "#1b2d4f", margin: "0 0 4px" }}>
+                  <p style={{ fontWeight: 700, fontSize: 13, color: "#D4227E", margin: "0 0 4px" }}>
                     {ins.emoji} {ins.modalityName} — {ins.percentDiff}% improvement in {ins.metric}
                   </p>
                   <p style={{ fontSize: 12, color: "#444", margin: "0 0 4px", lineHeight: 1.5 }}>{ins.headline}</p>
@@ -762,7 +762,7 @@ export default function Progress() {
 
               {insightsData.attentionItems.length > 0 && (
                 <>
-                  <h2 style={{ fontSize: 14, fontWeight: 700, color: "#1b2d4f", margin: "16px 0 12px" }}>Modalities Recommended But Not Yet Started</h2>
+                  <h2 style={{ fontSize: 14, fontWeight: 700, color: "#D4227E", margin: "16px 0 12px" }}>Modalities Recommended But Not Yet Started</h2>
                   {insightsData.attentionItems.map((item) => (
                     <p key={item.modalityId} style={{ fontSize: 12, color: "#444", margin: "0 0 6px" }}>
                       {item.emoji} {item.modalityName} — {item.message}

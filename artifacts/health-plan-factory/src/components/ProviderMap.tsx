@@ -99,7 +99,7 @@ export function ProviderMap({ lat, lng, providerName, address, className }: Prov
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "rgba(27,45,79,0.04)",
+          background: "rgba(212,34,126,0.04)",
           borderRadius: "12px",
           color: "var(--text-muted)",
           fontSize: "0.875rem",

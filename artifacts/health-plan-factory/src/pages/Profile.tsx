@@ -3,8 +3,8 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { Building2, Loader2, CheckCircle2, AlertCircle, Bell, Phone, Mail } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
-const navy = "#1b2d4f";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const sage = "#7DB55C";
 
 interface EmployerBudget {
   enrolled: boolean;
@@ -76,7 +76,7 @@ function EmployerStipendSection() {
   return (
     <div style={{
       background: "white",
-      border: "1.5px solid rgba(27,45,79,0.1)",
+      border: "1.5px solid rgba(212,34,126,0.1)",
       borderRadius: 12,
       padding: 28,
       marginBottom: 24,
@@ -94,7 +94,7 @@ function EmployerStipendSection() {
         </div>
       ) : budget?.enrolled && budget.employer && budget.member ? (
         <div>
-          <div style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.2)", borderRadius: 10, padding: "16px 20px", marginBottom: 16 }}>
+          <div style={{ background: "rgba(125,181,92,0.06)", border: "1px solid rgba(125,181,92,0.2)", borderRadius: 10, padding: "16px 20px", marginBottom: 16 }}>
             <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: sage, marginBottom: 4 }}>
               ✓ Enrolled — {budget.employer.companyName}
             </div>
@@ -108,7 +108,7 @@ function EmployerStipendSection() {
               { label: "Spent", value: fmt(budget.member.spentThisMonth) },
               { label: "Remaining", value: fmt(budget.member.remainingCents) },
             ].map((s) => (
-              <div key={s.label} style={{ background: "rgba(27,45,79,0.03)", borderRadius: 8, padding: "12px 16px" }}>
+              <div key={s.label} style={{ background: "rgba(212,34,126,0.03)", borderRadius: 8, padding: "12px 16px" }}>
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>{s.label}</div>
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 18, fontWeight: 700, color: navy }}>{s.value}</div>
               </div>
@@ -121,7 +121,7 @@ function EmployerStipendSection() {
             Your employer may offer a wellness stipend through Health Plan Factory. Enter the invite code your HR team provided.
           </p>
           {redeemResult?.success && (
-            <div style={{ background: "rgba(61,107,82,0.08)", border: "1px solid rgba(61,107,82,0.2)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 8, color: sage, fontFamily: "var(--app-font-sans)", fontSize: 14 }}>
+            <div style={{ background: "rgba(125,181,92,0.08)", border: "1px solid rgba(125,181,92,0.2)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 8, color: sage, fontFamily: "var(--app-font-sans)", fontSize: 14 }}>
               <CheckCircle2 size={16} /> Stipend enrolled successfully!
             </div>
           )}
@@ -139,7 +139,7 @@ function EmployerStipendSection() {
               maxLength={12}
               style={{
                 flex: 1,
-                border: "1.5px solid rgba(27,45,79,0.18)",
+                border: "1.5px solid rgba(212,34,126,0.18)",
                 borderRadius: 8,
                 padding: "10px 14px",
                 fontFamily: "monospace",
@@ -226,7 +226,7 @@ function NotificationPrefsSection() {
   return (
     <div style={{
       background: "white",
-      border: "1.5px solid rgba(27,45,79,0.1)",
+      border: "1.5px solid rgba(212,34,126,0.1)",
       borderRadius: 12,
       padding: 28,
       marginBottom: 24,
@@ -248,7 +248,7 @@ function NotificationPrefsSection() {
             Choose how you'd like to receive reminders, plan updates, and accountability nudges.
           </p>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "12px 16px", borderRadius: 8, border: "1.5px solid rgba(27,45,79,0.1)", background: "rgba(27,45,79,0.02)" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "12px 16px", borderRadius: 8, border: "1.5px solid rgba(212,34,126,0.1)", background: "rgba(212,34,126,0.02)" }}>
             <input
               type="checkbox"
               checked={prefs.email}
@@ -262,7 +262,7 @@ function NotificationPrefsSection() {
             </div>
           </label>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "12px 16px", borderRadius: 8, border: "1.5px solid rgba(27,45,79,0.1)", background: "rgba(27,45,79,0.02)" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "12px 16px", borderRadius: 8, border: "1.5px solid rgba(212,34,126,0.1)", background: "rgba(212,34,126,0.02)" }}>
             <input
               type="checkbox"
               checked={prefs.sms}
@@ -288,7 +288,7 @@ function NotificationPrefsSection() {
                 placeholder="+1 555 000 0000"
                 style={{
                   width: "100%",
-                  border: "1.5px solid rgba(27,45,79,0.18)",
+                  border: "1.5px solid rgba(212,34,126,0.18)",
                   borderRadius: 8,
                   padding: "10px 14px",
                   fontFamily: "var(--app-font-sans)",
@@ -321,7 +321,7 @@ function NotificationPrefsSection() {
               onClick={save}
               disabled={saving}
               style={{
-                background: saving ? "rgba(27,45,79,0.4)" : navy,
+                background: saving ? "rgba(212,34,126,0.4)" : navy,
                 color: "white",
                 border: "none",
                 borderRadius: 8,
@@ -365,7 +365,7 @@ export default function Profile() {
         </p>
 
         {/* Account info */}
-        <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, padding: 28, marginBottom: 24 }}>
+        <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: 28, marginBottom: 24 }}>
           <h2 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 700, color: navy, marginBottom: 20 }}>Account</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
@@ -373,7 +373,7 @@ export default function Profile() {
               { label: "Email", value: user?.email ?? "—" },
               { label: "Role", value: user?.role ?? "member" },
             ].map((f) => (
-              <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, borderBottom: "1px solid rgba(27,45,79,0.06)" }}>
+              <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, borderBottom: "1px solid rgba(212,34,126,0.06)" }}>
                 <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</span>
                 <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, color: navy, fontWeight: 500 }}>{f.value}</span>
               </div>

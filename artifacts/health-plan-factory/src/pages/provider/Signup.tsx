@@ -55,12 +55,12 @@ interface Modality {
 const STEPS = ["Practice & credentials", "Location & format", "Specialties & pricing"];
 
 const inputStyle = {
-  border: "1px solid rgba(27,45,79,0.15)",
+  border: "1px solid rgba(212,34,126,0.15)",
   background: "var(--warm-white)",
-  color: "var(--navy)",
+  color: "var(--hpf-pink)",
   fontFamily: "var(--app-font-sans)",
 };
-const labelStyle = { color: "var(--navy)", fontFamily: "var(--app-font-sans)" };
+const labelStyle = { color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" };
 const errorStyle = { color: "#c0392b", fontFamily: "var(--app-font-sans)" };
 
 export default function ProviderSignup() {
@@ -127,7 +127,7 @@ export default function ProviderSignup() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--warm-white)" }}>
-        <Loader2 className="animate-spin" size={28} style={{ color: "var(--navy)" }} />
+        <Loader2 className="animate-spin" size={28} style={{ color: "var(--hpf-pink)" }} />
       </div>
     );
   }
@@ -137,7 +137,7 @@ export default function ProviderSignup() {
       <div className="min-h-screen flex flex-col items-center justify-center px-6 py-16" style={{ background: "var(--warm-white)" }}>
         <div className="w-full max-w-sm text-center">
           <div className="flex justify-center mb-6"><Logo variant="auth" /></div>
-          <h1 className="mb-3" style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.75rem", fontWeight: 700, color: "var(--navy)" }}>
+          <h1 className="mb-3" style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.75rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
             Provider Application
           </h1>
           <p className="text-sm mb-8" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -146,7 +146,7 @@ export default function ProviderSignup() {
           <button
             onClick={() => login()}
             className="w-full py-3.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-3"
-            style={{ background: "var(--navy)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+            style={{ background: "var(--hpf-pink)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
           >
             Sign in to apply →
           </button>
@@ -160,7 +160,7 @@ export default function ProviderSignup() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-6"><Logo variant="auth" /></div>
-          <h1 className="mb-2" style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+          <h1 className="mb-2" style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
             Provider Application
           </h1>
           <p className="text-sm font-light" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -176,22 +176,22 @@ export default function ProviderSignup() {
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
                   style={{
-                    background: i < step ? "var(--sage)" : i === step ? "var(--navy)" : "rgba(27,45,79,0.1)",
+                    background: i < step ? "var(--sage)" : i === step ? "var(--hpf-pink)" : "rgba(212,34,126,0.1)",
                     color: i <= step ? "white" : "var(--text-muted)",
                   }}
                 >
                   {i < step ? <Check size={12} /> : i + 1}
                 </div>
-                <span className="hidden sm:block text-xs font-medium" style={{ color: i === step ? "var(--navy)" : "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                <span className="hidden sm:block text-xs font-medium" style={{ color: i === step ? "var(--hpf-pink)" : "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
                   {label}
                 </span>
               </div>
-              {i < STEPS.length - 1 && <div className="w-8 h-px" style={{ background: "rgba(27,45,79,0.12)" }} />}
+              {i < STEPS.length - 1 && <div className="w-8 h-px" style={{ background: "rgba(212,34,126,0.12)" }} />}
             </div>
           ))}
         </div>
 
-        <div className="rounded-2xl p-8 md:p-10" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", boxShadow: "0 8px 32px rgba(27,45,79,0.06)" }}>
+        <div className="rounded-2xl p-8 md:p-10" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", boxShadow: "0 8px 32px rgba(212,34,126,0.06)" }}>
 
           {/* Step 1 — Practice info & credentials */}
           {step === 0 && (
@@ -203,7 +203,7 @@ export default function ProviderSignup() {
                 <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Profile photo</label>
                 <div
                   className="relative flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer transition-all"
-                  style={{ border: "2px dashed rgba(27,45,79,0.15)", background: "rgba(27,45,79,0.02)", minHeight: "96px" }}
+                  style={{ border: "2px dashed rgba(212,34,126,0.15)", background: "rgba(212,34,126,0.02)", minHeight: "96px" }}
                   onClick={() => setPhotoNote("Photo uploads will be available after your application is approved.")}
                 >
                   <Upload size={20} style={{ color: "var(--text-muted)" }} />
@@ -228,7 +228,7 @@ export default function ProviderSignup() {
                 {form1.formState.errors.website && <p className="text-xs mt-1" style={errorStyle}>{form1.formState.errors.website.message}</p>}
               </div>
 
-              <div style={{ borderTop: "1px solid rgba(27,45,79,0.06)", paddingTop: "16px" }}>
+              <div style={{ borderTop: "1px solid rgba(212,34,126,0.06)", paddingTop: "16px" }}>
                 <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Credentials & licensing</p>
                 <div className="flex flex-col gap-4">
                   <div>
@@ -246,14 +246,14 @@ export default function ProviderSignup() {
                       <input {...form1.register("licenseState")} placeholder="TX" maxLength={2} className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
                     </div>
                   </div>
-                  <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.12)", color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+                  <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "rgba(224,32,64,0.06)", border: "1px solid rgba(224,32,64,0.12)", color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
                     License info is used for verification and not shown publicly.
                   </p>
                 </div>
               </div>
 
               <div className="mt-2 flex justify-end">
-                <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white" style={{ background: "var(--navy)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
+                <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white" style={{ background: "var(--hpf-pink)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
                   Next <ChevronRight size={16} />
                 </button>
               </div>
@@ -289,20 +289,20 @@ export default function ProviderSignup() {
                 </div>
               </div>
 
-              <div style={{ borderTop: "1px solid rgba(27,45,79,0.06)", paddingTop: "16px" }}>
+              <div style={{ borderTop: "1px solid rgba(212,34,126,0.06)", paddingTop: "16px" }}>
                 <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Session formats *</p>
                 <div className="flex flex-col gap-3">
-                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(27,45,79,0.03)", border: "1px solid rgba(27,45,79,0.08)" }}>
+                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
                     <input type="checkbox" {...form2.register("offersInPerson")} className="w-4 h-4" />
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>In-person sessions</p>
+                      <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>In-person sessions</p>
                       <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Members can book appointments at your location</p>
                     </div>
                   </label>
-                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(27,45,79,0.03)", border: "1px solid rgba(27,45,79,0.08)" }}>
+                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
                     <input type="checkbox" {...form2.register("offersTelehealth")} className="w-4 h-4" />
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Telehealth / virtual sessions</p>
+                      <p className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Telehealth / virtual sessions</p>
                       <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Expand your reach to members statewide</p>
                     </div>
                   </label>
@@ -311,10 +311,10 @@ export default function ProviderSignup() {
               </div>
 
               <div className="mt-2 flex justify-between">
-                <button type="button" onClick={() => setStep(0)} className="flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium" style={{ border: "1.5px solid rgba(27,45,79,0.2)", color: "var(--navy)", background: "transparent", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
+                <button type="button" onClick={() => setStep(0)} className="flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium" style={{ border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", background: "transparent", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
                   <ChevronLeft size={16} /> Back
                 </button>
-                <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white" style={{ background: "var(--navy)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
+                <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white" style={{ background: "var(--hpf-pink)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
                   Next <ChevronRight size={16} />
                 </button>
               </div>
@@ -344,9 +344,9 @@ export default function ProviderSignup() {
                           }}
                           className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                           style={{
-                            background: selected ? "var(--navy)" : "rgba(27,45,79,0.05)",
-                            color: selected ? "white" : "var(--navy)",
-                            border: `1.5px solid ${selected ? "var(--navy)" : "rgba(27,45,79,0.12)"}`,
+                            background: selected ? "var(--hpf-pink)" : "rgba(212,34,126,0.05)",
+                            color: selected ? "white" : "var(--hpf-pink)",
+                            border: `1.5px solid ${selected ? "var(--hpf-pink)" : "rgba(212,34,126,0.12)"}`,
                             cursor: "pointer",
                             fontFamily: "var(--app-font-sans)",
                           }}
@@ -367,7 +367,7 @@ export default function ProviderSignup() {
                       const mod = modalities.find((m) => m.id === mId);
                       return (
                         <div key={mId} className="flex items-center gap-2">
-                          <span className="text-xs w-32 shrink-0" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)", fontWeight: 500 }}>{mod?.name ?? mId}</span>
+                          <span className="text-xs w-32 shrink-0" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", fontWeight: 500 }}>{mod?.name ?? mId}</span>
                           <input
                             type="number"
                             min={0}
@@ -398,11 +398,11 @@ export default function ProviderSignup() {
                 {form3.formState.errors.bio && <p className="text-xs mt-1" style={errorStyle}>{form3.formState.errors.bio.message}</p>}
               </div>
 
-              <div style={{ borderTop: "1px solid rgba(27,45,79,0.06)", paddingTop: "16px" }}>
+              <div style={{ borderTop: "1px solid rgba(212,34,126,0.06)", paddingTop: "16px" }}>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" {...form3.register("acceptsInsurance")} className="w-4 h-4" />
                   <div>
-                    <span className="text-sm font-semibold block" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>Accepts insurance</span>
+                    <span className="text-sm font-semibold block" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Accepts insurance</span>
                     <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Shown as a filter on member search</span>
                   </div>
                 </label>
@@ -414,10 +414,10 @@ export default function ProviderSignup() {
                 </div>
               )}
               <div className="mt-2 flex justify-between">
-                <button type="button" onClick={() => setStep(1)} className="flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium" style={{ border: "1.5px solid rgba(27,45,79,0.2)", color: "var(--navy)", background: "transparent", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
+                <button type="button" onClick={() => setStep(1)} className="flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium" style={{ border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", background: "transparent", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
                   <ChevronLeft size={16} /> Back
                 </button>
-                <button type="submit" disabled={submitting} className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white" style={{ background: submitting ? "rgba(27,45,79,0.4)" : "var(--navy)", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}>
+                <button type="submit" disabled={submitting} className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white" style={{ background: submitting ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}>
                   {submitting ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
                   {submitting ? "Submitting..." : "Submit application →"}
                 </button>
@@ -426,9 +426,9 @@ export default function ProviderSignup() {
           )}
         </div>
 
-        <div className="mt-6 rounded-xl p-5" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.12)" }}>
-          <p className="text-xs leading-relaxed" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
-            <strong style={{ color: "var(--hpf-amber)" }}>Founding Provider Program:</strong>{" "}
+        <div className="mt-6 rounded-xl p-5" style={{ background: "rgba(224,32,64,0.06)", border: "1px solid rgba(224,32,64,0.12)" }}>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+            <strong style={{ color: "var(--hpf-crimson)" }}>Founding Provider Program:</strong>{" "}
             Providers who join during our early access period pay <strong>0% commission</strong> on bookings for 90 days.
             After that, a small platform fee applies. Limited spots available.
           </p>

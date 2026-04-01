@@ -10,9 +10,9 @@ const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
 function EvidenceBadge({ level }: { level: EvidenceLevel }) {
   const styles: Record<EvidenceLevel, { bg: string; color: string }> = {
-    Strong:   { bg: "rgba(61,107,82,0.1)",  color: "var(--sage)" },
-    Moderate: { bg: "rgba(184,137,42,0.1)", color: "var(--hpf-amber)" },
-    Emerging: { bg: "rgba(27,45,79,0.07)",  color: "var(--navy)" },
+    Strong:   { bg: "rgba(125,181,92,0.1)",  color: "var(--sage)" },
+    Moderate: { bg: "rgba(224,32,64,0.1)", color: "var(--hpf-crimson)" },
+    Emerging: { bg: "rgba(212,34,126,0.07)",  color: "var(--hpf-pink)" },
   };
   const s = styles[level];
   return (
@@ -40,8 +40,8 @@ function HsaBadge() {
       borderRadius: 100,
       fontSize: "0.7rem",
       fontWeight: 600,
-      background: "rgba(27,45,79,0.06)",
-      color: "var(--navy)",
+      background: "rgba(212,34,126,0.06)",
+      color: "var(--hpf-pink)",
       fontFamily: "var(--app-font-sans)",
       letterSpacing: "0.02em",
     }}>
@@ -62,7 +62,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
     <div style={{
       background: "white",
       borderRadius: 16,
-      border: "1px solid rgba(27,45,79,0.08)",
+      border: "1px solid rgba(212,34,126,0.08)",
       overflow: "hidden",
       transition: "box-shadow 0.2s",
     }}>
@@ -74,7 +74,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
             width: 36,
             height: 36,
             borderRadius: "50%",
-            background: rank === 1 ? "var(--navy)" : "rgba(27,45,79,0.07)",
+            background: rank === 1 ? "var(--hpf-pink)" : "rgba(212,34,126,0.07)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -97,7 +97,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
                 fontFamily: "var(--app-font-serif)",
                 fontSize: "1.15rem",
                 fontWeight: 700,
-                color: "var(--navy)",
+                color: "var(--hpf-pink)",
                 lineHeight: 1.2,
               }}>
                 {item.modality.name}
@@ -126,18 +126,18 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
       {/* Cost & frequency row */}
       <div style={{
         padding: "0.875rem 1.25rem",
-        borderTop: "1px solid rgba(27,45,79,0.05)",
+        borderTop: "1px solid rgba(212,34,126,0.05)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        background: "rgba(27,45,79,0.02)",
+        background: "rgba(212,34,126,0.02)",
       }}>
         <div style={{ display: "flex", gap: "1.5rem" }}>
           <div>
             <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
               Est. cost
             </p>
-            <p style={{ fontFamily: "var(--app-font-mono)", fontSize: "1rem", fontWeight: 600, color: "var(--navy)" }}>
+            <p style={{ fontFamily: "var(--app-font-mono)", fontSize: "1rem", fontWeight: 600, color: "var(--hpf-pink)" }}>
               ${item.estimatedMonthlyCost}/mo
             </p>
           </div>
@@ -157,7 +157,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
           style={{
             background: "none",
             border: "none",
-            color: "var(--hpf-amber)",
+            color: "var(--hpf-crimson)",
             fontSize: "0.8rem",
             fontWeight: 600,
             cursor: "pointer",
@@ -170,7 +170,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
 
       {/* Expanded details */}
       {expanded && (
-        <div style={{ padding: "1rem 1.25rem 1.25rem", borderTop: "1px solid rgba(27,45,79,0.05)" }}>
+        <div style={{ padding: "1rem 1.25rem 1.25rem", borderTop: "1px solid rgba(212,34,126,0.05)" }}>
           <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.65, marginBottom: "1rem" }}>
             {item.modality.description}
           </p>
@@ -183,7 +183,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
                 borderRadius: 100,
                 fontSize: "0.7rem",
                 fontWeight: 500,
-                background: "rgba(27,45,79,0.05)",
+                background: "rgba(212,34,126,0.05)",
                 color: "var(--text-secondary)",
                 fontFamily: "var(--app-font-sans)",
               }}>
@@ -198,10 +198,10 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
               marginBottom: "1rem",
               padding: "0.875rem",
               borderRadius: 10,
-              background: "rgba(184,137,42,0.06)",
-              border: "1.5px solid rgba(184,137,42,0.2)",
+              background: "rgba(224,32,64,0.06)",
+              border: "1.5px solid rgba(224,32,64,0.2)",
             }}>
-              <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 3 }}>
+              <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", marginBottom: 3 }}>
                 🩺 This DPC physician can write an LMN for your plan
               </p>
               <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 6 }}>
@@ -211,7 +211,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
               </p>
               <Link
                 to="/hsa-unlock"
-                style={{ fontSize: "0.72rem", fontWeight: 600, color: "#b8892a", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
+                style={{ fontSize: "0.72rem", fontWeight: 600, color: "#E02040", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
               >
                 Unlock your HSA →
               </Link>
@@ -223,22 +223,22 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
             padding: "1rem",
             borderRadius: 10,
             border: unusedCredits && unusedCredits > 0
-              ? "1.5px solid rgba(184,137,42,0.35)"
-              : "1.5px dashed rgba(27,45,79,0.2)",
+              ? "1.5px solid rgba(224,32,64,0.35)"
+              : "1.5px dashed rgba(212,34,126,0.2)",
             background: unusedCredits && unusedCredits > 0
-              ? "rgba(184,137,42,0.05)"
-              : "rgba(27,45,79,0.02)",
+              ? "rgba(224,32,64,0.05)"
+              : "rgba(212,34,126,0.02)",
             display: "flex",
             alignItems: "center",
             gap: "0.75rem",
           }}>
             <span style={{ fontSize: "1.25rem" }}>{unusedCredits && unusedCredits > 0 ? "🎁" : "🔒"}</span>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 2 }}>
+              <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", marginBottom: 2 }}>
                 See vetted providers near you
               </p>
               {unusedCredits && unusedCredits > 0 ? (
-                <p style={{ fontSize: "0.72rem", color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
+                <p style={{ fontSize: "0.72rem", color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
                   1 referral credit applied — $3.00 discount
                 </p>
               ) : (
@@ -252,7 +252,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
               style={{
                 padding: "0.5rem 0.875rem",
                 borderRadius: 8,
-                background: unusedCredits && unusedCredits > 0 ? "var(--hpf-amber)" : "var(--navy)",
+                background: unusedCredits && unusedCredits > 0 ? "var(--hpf-crimson)" : "var(--hpf-pink)",
                 color: "white",
                 fontSize: "0.75rem",
                 fontWeight: 600,
@@ -279,12 +279,12 @@ function DeprioritizedCard({ item }: { item: PlanItem }) {
       padding: "0.875rem 1rem",
       background: "white",
       borderRadius: 12,
-      border: "1px solid rgba(27,45,79,0.06)",
+      border: "1px solid rgba(212,34,126,0.06)",
       opacity: 0.7,
     }}>
       <span style={{ fontSize: "1.1rem" }}>{item.modality.emoji}</span>
       <div style={{ flex: 1 }}>
-        <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+        <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
           {item.modality.name}
         </p>
         <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -373,7 +373,7 @@ export default function Plan() {
       <div style={{ minHeight: "100vh", background: "var(--warm-white)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
         <div style={{ textAlign: "center", maxWidth: 440 }}>
           <span style={{ fontSize: "3rem", display: "block", marginBottom: "1rem" }}>📋</span>
-          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)", marginBottom: "0.75rem" }}>
+          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)", marginBottom: "0.75rem" }}>
             No plan yet
           </h1>
           <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.65, marginBottom: "1.5rem" }}>
@@ -386,7 +386,7 @@ export default function Plan() {
               padding: "0.875rem 2rem",
               borderRadius: 10,
               border: "none",
-              background: "var(--navy)",
+              background: "var(--hpf-pink)",
               color: "white",
               fontWeight: 600,
               fontSize: "0.9rem",
@@ -406,7 +406,7 @@ export default function Plan() {
       {/* Header */}
       <header style={{
         background: "white",
-        borderBottom: "1px solid rgba(27,45,79,0.07)",
+        borderBottom: "1px solid rgba(212,34,126,0.07)",
         padding: "1.25rem 1.5rem",
         display: "flex",
         alignItems: "center",
@@ -423,9 +423,9 @@ export default function Plan() {
             style={{
               padding: "0.5rem 0.875rem",
               borderRadius: 8,
-              border: "1.5px solid rgba(27,45,79,0.2)",
+              border: "1.5px solid rgba(212,34,126,0.2)",
               background: "white",
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
               fontWeight: 600,
               fontSize: "0.78rem",
               cursor: "pointer",
@@ -439,7 +439,7 @@ export default function Plan() {
             style={{
               padding: "0.5rem 0.875rem",
               borderRadius: 8,
-              background: "var(--navy)",
+              background: "var(--hpf-pink)",
               color: "white",
               fontWeight: 600,
               fontSize: "0.78rem",
@@ -459,7 +459,7 @@ export default function Plan() {
           <p style={{
             fontSize: "0.7rem",
             fontFamily: "var(--app-font-mono)",
-            color: "var(--hpf-amber)",
+            color: "var(--hpf-crimson)",
             textTransform: "uppercase",
             letterSpacing: "0.12em",
             marginBottom: "0.5rem",
@@ -470,7 +470,7 @@ export default function Plan() {
             fontFamily: "var(--app-font-serif)",
             fontSize: "clamp(1.8rem, 5vw, 2.4rem)",
             fontWeight: 700,
-            color: "var(--navy)",
+            color: "var(--hpf-pink)",
             lineHeight: 1.15,
             marginBottom: "0.75rem",
           }}>
@@ -482,7 +482,7 @@ export default function Plan() {
             fontFamily: "var(--app-font-sans)",
             lineHeight: 1.7,
           }}>
-            Based on your goals and <strong style={{ fontFamily: "var(--app-font-mono)", color: "var(--navy)" }}>${intake.budget}/mo</strong> budget, we've identified{" "}
+            Based on your goals and <strong style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>${intake.budget}/mo</strong> budget, we've identified{" "}
             <strong>{plan.included.length} high-fit modalities</strong> for your wellness plan.
           </p>
         </div>
@@ -491,16 +491,16 @@ export default function Plan() {
         <div style={{
           background: "white",
           borderRadius: 16,
-          border: "1px solid rgba(27,45,79,0.08)",
+          border: "1px solid rgba(212,34,126,0.08)",
           padding: "1.25rem",
           marginBottom: "1.75rem",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.75rem" }}>
-            <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--navy)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Budget Allocation
             </p>
             <div style={{ textAlign: "right" }}>
-              <span style={{ fontFamily: "var(--app-font-mono)", fontSize: "1.1rem", fontWeight: 600, color: "var(--navy)" }}>
+              <span style={{ fontFamily: "var(--app-font-mono)", fontSize: "1.1rem", fontWeight: 600, color: "var(--hpf-pink)" }}>
                 ${plan.totalMonthlyCost}
               </span>
               <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -510,15 +510,15 @@ export default function Plan() {
           </div>
 
           {/* Bar */}
-          <div style={{ height: 8, borderRadius: 100, background: "rgba(27,45,79,0.07)", marginBottom: "0.5rem", overflow: "hidden" }}>
+          <div style={{ height: 8, borderRadius: 100, background: "rgba(212,34,126,0.07)", marginBottom: "0.5rem", overflow: "hidden" }}>
             <div style={{
               height: "100%",
               width: `${plan.budgetUtilization}%`,
               background: plan.budgetUtilization > 90
                 ? "var(--sage)"
                 : plan.budgetUtilization > 60
-                ? "var(--hpf-amber)"
-                : "var(--navy)",
+                ? "var(--hpf-crimson)"
+                : "var(--hpf-pink)",
               borderRadius: 100,
               transition: "width 0.6s ease",
             }} />
@@ -561,7 +561,7 @@ export default function Plan() {
         {plan.deprioritized.length > 0 && (
           <div style={{ marginBottom: "2.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(27,45,79,0.08)" }} />
+              <div style={{ flex: 1, height: 1, background: "rgba(212,34,126,0.08)" }} />
               <p style={{
                 fontSize: "0.7rem",
                 fontWeight: 600,
@@ -573,7 +573,7 @@ export default function Plan() {
               }}>
                 Over Budget This Cycle
               </p>
-              <div style={{ flex: 1, height: 1, background: "rgba(27,45,79,0.08)" }} />
+              <div style={{ flex: 1, height: 1, background: "rgba(212,34,126,0.08)" }} />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
@@ -587,8 +587,8 @@ export default function Plan() {
         {/* LMN / HSA opportunity callout */}
         <div style={{
           borderRadius: 16,
-          background: "rgba(184,137,42,0.06)",
-          border: "1.5px solid rgba(184,137,42,0.22)",
+          background: "rgba(224,32,64,0.06)",
+          border: "1.5px solid rgba(224,32,64,0.22)",
           padding: "1.25rem",
           marginBottom: "1.5rem",
           display: "flex",
@@ -597,7 +597,7 @@ export default function Plan() {
         }}>
           <span style={{ fontSize: "1.4rem", flexShrink: 0 }}>💰</span>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--navy)", fontFamily: "var(--app-font-sans)", marginBottom: 4 }}>
+            <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", marginBottom: 4 }}>
               Items in your plan may qualify for HSA/FSA reimbursement with a physician's LMN
             </p>
             <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: 10 }}>
@@ -609,7 +609,7 @@ export default function Plan() {
                 style={{
                   padding: "0.45rem 0.875rem",
                   borderRadius: 8,
-                  background: "#b8892a",
+                  background: "#E02040",
                   color: "white",
                   fontSize: "0.75rem",
                   fontWeight: 600,
@@ -621,7 +621,7 @@ export default function Plan() {
               </Link>
               <Link
                 to="/lmn-guide"
-                style={{ fontSize: "0.72rem", fontWeight: 500, color: "#b8892a", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
+                style={{ fontSize: "0.72rem", fontWeight: 500, color: "#E02040", fontFamily: "var(--app-font-sans)", textDecoration: "underline" }}
               >
                 How does it work?
               </Link>
@@ -632,14 +632,14 @@ export default function Plan() {
         {/* CTA block */}
         <div style={{
           borderRadius: 20,
-          background: "var(--navy)",
+          background: "var(--hpf-pink)",
           padding: "2rem",
           textAlign: "center",
         }}>
           <p style={{
             fontSize: "0.7rem",
             fontFamily: "var(--app-font-mono)",
-            color: "var(--amber-light)",
+            color: "var(--crimson-light)",
             textTransform: "uppercase",
             letterSpacing: "0.12em",
             marginBottom: "0.75rem",
@@ -661,14 +661,14 @@ export default function Plan() {
               display: "inline-flex",
               alignItems: "center",
               gap: "0.5rem",
-              background: "rgba(184,137,42,0.2)",
-              border: "1px solid rgba(184,137,42,0.4)",
+              background: "rgba(224,32,64,0.2)",
+              border: "1px solid rgba(224,32,64,0.4)",
               borderRadius: 8,
               padding: "0.4rem 0.875rem",
               marginBottom: "1rem",
             }}>
               <span style={{ fontSize: "0.85rem" }}>🎁</span>
-              <span style={{ fontSize: "0.75rem", color: "var(--amber-light)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
+              <span style={{ fontSize: "0.75rem", color: "var(--crimson-light)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
                 1 referral credit applied — ${(unusedCreditsCents / 100).toFixed(2)} discount
               </span>
             </div>
@@ -693,7 +693,7 @@ export default function Plan() {
               style={{
                 padding: "0.875rem 1.75rem",
                 borderRadius: 10,
-                background: "var(--hpf-amber)",
+                background: "var(--hpf-crimson)",
                 color: "white",
                 fontWeight: 700,
                 fontSize: "0.9rem",

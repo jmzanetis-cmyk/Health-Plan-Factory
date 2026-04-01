@@ -4,9 +4,9 @@ import { ShieldCheck, Loader2, Save } from "lucide-react";
 import { EmployerNav } from "./EmployerDashboard";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
-const navy = "#1b2d4f";
-const sage = "#3d6b52";
-const amber = "#b8892a";
+const navy = "#2C2825";
+const sage = "#7DB55C";
+const amber = "#E02040";
 
 interface Modality {
   id: string;
@@ -110,10 +110,10 @@ export default function EmployerSettings() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button onClick={() => toggleAll(true)} style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy }}>
+            <button onClick={() => toggleAll(true)} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy }}>
               All On
             </button>
-            <button onClick={() => toggleAll(false)} style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy }}>
+            <button onClick={() => toggleAll(false)} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy }}>
               All Off
             </button>
             <button
@@ -176,10 +176,10 @@ export default function EmployerSettings() {
                           key={m.id}
                           onClick={() => toggle(m.id)}
                           style={{
-                            background: covered ? "white" : "rgba(27,45,79,0.02)",
+                            background: covered ? "white" : "rgba(212,34,126,0.02)",
                             border: covered
                               ? `2px solid ${catColor}30`
-                              : "1.5px solid rgba(27,45,79,0.1)",
+                              : "1.5px solid rgba(212,34,126,0.1)",
                             borderRadius: 10,
                             padding: "14px 16px",
                             cursor: "pointer",
@@ -204,7 +204,7 @@ export default function EmployerSettings() {
                             width: 18,
                             height: 18,
                             borderRadius: "50%",
-                            border: covered ? `2px solid ${catColor}` : "2px solid rgba(27,45,79,0.2)",
+                            border: covered ? `2px solid ${catColor}` : "2px solid rgba(212,34,126,0.2)",
                             background: covered ? catColor : "transparent",
                             flexShrink: 0,
                             display: "flex",
@@ -227,7 +227,7 @@ export default function EmployerSettings() {
           </div>
         )}
 
-        <div style={{ marginTop: 28, background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.2)", borderRadius: 10, padding: "14px 18px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ marginTop: 28, background: "rgba(125,181,92,0.06)", border: "1px solid rgba(125,181,92,0.2)", borderRadius: 10, padding: "14px 18px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, display: "flex", alignItems: "center", gap: 10 }}>
           <ShieldCheck size={16} />
           Coverage rules apply to new stipend reimbursements. Existing claims are not affected. Changes take effect immediately.
         </div>

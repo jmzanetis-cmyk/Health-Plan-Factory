@@ -38,7 +38,7 @@ export function BuildingScreen({ onComplete }: BuildingScreenProps) {
     <div
       style={{
         minHeight: "100vh",
-        background: "var(--navy)",
+        background: "var(--hpf-pink)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -70,7 +70,7 @@ export function BuildingScreen({ onComplete }: BuildingScreenProps) {
           }}
         >
           Building your{" "}
-          <em style={{ fontStyle: "italic", color: "var(--amber-light)" }}>
+          <em style={{ fontStyle: "italic", color: "var(--crimson-light)" }}>
             wellness plan
           </em>
         </h1>
@@ -102,14 +102,14 @@ export function BuildingScreen({ onComplete }: BuildingScreenProps) {
                   padding: "0.875rem 1.25rem",
                   borderRadius: 10,
                   border: isDone
-                    ? "1px solid rgba(61,107,82,0.3)"
+                    ? "1px solid rgba(125,181,92,0.3)"
                     : isActive
-                    ? "1px solid rgba(184,137,42,0.3)"
+                    ? "1px solid rgba(224,32,64,0.3)"
                     : "1px solid rgba(255,255,255,0.06)",
                   background: isDone
-                    ? "rgba(61,107,82,0.18)"
+                    ? "rgba(125,181,92,0.18)"
                     : isActive
-                    ? "rgba(184,137,42,0.12)"
+                    ? "rgba(224,32,64,0.12)"
                     : "rgba(255,255,255,0.04)",
                   fontSize: "0.85rem",
                   color: isDone ? "rgba(255,255,255,0.9)" : isActive ? "white" : "rgba(255,255,255,0.4)",
@@ -122,7 +122,7 @@ export function BuildingScreen({ onComplete }: BuildingScreenProps) {
                 </span>
                 <span style={{ flex: 1 }}>{step.label}</span>
                 {isDone && (
-                  <span style={{ marginLeft: "auto", color: "rgba(61,107,82,0.9)", fontSize: "0.9rem" }}>✓</span>
+                  <span style={{ marginLeft: "auto", color: "rgba(125,181,92,0.9)", fontSize: "0.9rem" }}>✓</span>
                 )}
                 {isActive && (
                   <span
@@ -131,8 +131,8 @@ export function BuildingScreen({ onComplete }: BuildingScreenProps) {
                       width: 14,
                       height: 14,
                       borderRadius: "50%",
-                      border: "2px solid rgba(184,137,42,0.6)",
-                      borderTopColor: "var(--amber-light)",
+                      border: "2px solid rgba(224,32,64,0.6)",
+                      borderTopColor: "var(--crimson-light)",
                       animation: "spin 0.8s linear infinite",
                       flexShrink: 0,
                     }}

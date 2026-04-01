@@ -1,14 +1,15 @@
 export const COLORS = {
-  navy: "#1b2d4f",
-  navyMid: "#243a62",
-  navyLt: "#2f4a7a",
-  navy10: "rgba(27,45,79,0.08)",
-  navy20: "rgba(27,45,79,0.15)",
-  amber: "#b8892a",
-  amberLight: "#d4a44c",
-  amberPale: "#fdf5e6",
-  amber10: "rgba(184,137,42,0.12)",
-  sage: "#3d6b52",
+  // ── New brand palette ──────────────────────────────────────
+  pink: "#D4227E",
+  pinkMid: "#b81c6a",
+  pinkLt: "#e04d95",
+  pink10: "rgba(212,34,126,0.08)",
+  pink20: "rgba(212,34,126,0.15)",
+  crimson: "#E02040",
+  crimsonLight: "#e84d65",
+  crimsonPale: "#fdf0f2",
+  crimson10: "rgba(224,32,64,0.12)",
+  sage: "#7DB55C",
   sagePale: "#eaf2ec",
   rose: "#dc2626",
   rosePale: "#fef2f2",
@@ -20,11 +21,27 @@ export const COLORS = {
   off: "#f4f2ee",
   parch: "#edeae3",
   white: "#ffffff",
-  text: "#1b2d4f",
+  text: "#1A1A1A",
   textMuted: "#6b7280",
   textLight: "#9ca3af",
-  border: "rgba(27,45,79,0.15)",
-  shadow: "rgba(27,45,79,0.12)",
+  border: "rgba(212,34,126,0.15)",
+  shadow: "rgba(212,34,126,0.12)",
+
+  // ── Semantic aliases ───────────────────────────────────────
+  primary: "#D4227E",
+  accent: "#E02040",
+  success: "#7DB55C",
+
+  // ── Backward-compatible aliases (legacy keys) ──────────────
+  navy: "#D4227E",
+  navyMid: "#b81c6a",
+  navyLt: "#e04d95",
+  navy10: "rgba(212,34,126,0.08)",
+  navy20: "rgba(212,34,126,0.15)",
+  amber: "#E02040",
+  amberLight: "#e84d65",
+  amberPale: "#fdf0f2",
+  amber10: "rgba(224,32,64,0.12)",
 } as const;
 
 export const RADIUS = {

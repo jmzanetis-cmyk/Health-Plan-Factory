@@ -28,7 +28,7 @@ function BudgetInput({ value, onChange }: BudgetInputProps) {
   return (
     <div>
       <div className="text-center mb-6" style={{ fontFamily: "var(--app-font-mono)" }}>
-        <div style={{ fontSize: "3rem", fontWeight: 500, color: "var(--navy)", lineHeight: 1 }}>
+        <div style={{ fontSize: "3rem", fontWeight: 500, color: "var(--hpf-pink)", lineHeight: 1 }}>
           <span style={{ fontSize: "1.4rem", verticalAlign: "super" }}>$</span>
           <input
             type="number"
@@ -52,7 +52,7 @@ function BudgetInput({ value, onChange }: BudgetInputProps) {
               fontFamily: "var(--app-font-mono)",
               fontSize: "3rem",
               fontWeight: 500,
-              color: "var(--navy)",
+              color: "var(--hpf-pink)",
               textAlign: "center",
               outline: "none",
               lineHeight: 1,
@@ -84,7 +84,7 @@ function BudgetInput({ value, onChange }: BudgetInputProps) {
             borderRadius: 100,
             outline: "none",
             cursor: "pointer",
-            background: `linear-gradient(90deg, var(--navy) ${pct}%, rgba(27,45,79,0.12) ${pct}%)`,
+            background: `linear-gradient(90deg, var(--hpf-pink) ${pct}%, rgba(212,34,126,0.12) ${pct}%)`,
           }}
         />
         <div className="flex justify-between mt-1.5">
@@ -96,13 +96,13 @@ function BudgetInput({ value, onChange }: BudgetInputProps) {
       <div
         className="rounded-xl p-4 text-xs leading-relaxed"
         style={{
-          background: "rgba(184,137,42,0.07)",
-          border: "1px solid rgba(184,137,42,0.15)",
-          color: "var(--navy)",
+          background: "rgba(224,32,64,0.07)",
+          border: "1px solid rgba(224,32,64,0.15)",
+          color: "var(--hpf-pink)",
           fontFamily: "var(--app-font-sans)",
         }}
       >
-        <strong style={{ color: "var(--hpf-amber)" }}>Tip:</strong> Some services may be HSA/FSA-eligible — we'll flag
+        <strong style={{ color: "var(--hpf-crimson)" }}>Tip:</strong> Some services may be HSA/FSA-eligible — we'll flag
         these in your plan. Your budget is an estimate; actual costs depend on your local providers.
       </div>
     </div>

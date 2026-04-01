@@ -32,18 +32,18 @@ interface WeeklyData {
 
 function StatCard({ label, value, icon, loading, to }: { label: string; value: number; icon: React.ReactNode; loading: boolean; to?: string }) {
   return (
-    <div className="p-5 rounded-2xl flex flex-col gap-3" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+    <div className="p-5 rounded-2xl flex flex-col gap-3" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>{label}</span>
-        <span style={{ color: "var(--hpf-amber)" }}>{icon}</span>
+        <span style={{ color: "var(--hpf-crimson)" }}>{icon}</span>
       </div>
       {loading ? (
-        <div className="h-8 rounded animate-pulse" style={{ background: "rgba(27,45,79,0.06)" }} />
+        <div className="h-8 rounded animate-pulse" style={{ background: "rgba(212,34,126,0.06)" }} />
       ) : (
-        <span className="text-3xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>{value.toLocaleString()}</span>
+        <span className="text-3xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>{value.toLocaleString()}</span>
       )}
       {to && (
-        <Link to={to} className="text-xs no-underline font-medium" style={{ color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)" }}>
+        <Link to={to} className="text-xs no-underline font-medium" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
           View details →
         </Link>
       )}
@@ -53,12 +53,12 @@ function StatCard({ label, value, icon, loading, to }: { label: string; value: n
 
 function ReferralStatTile({ label, value, icon, sub }: { label: string; value: string | number; icon: React.ReactNode; sub?: string }) {
   return (
-    <div className="p-4 rounded-xl flex flex-col gap-2" style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.15)" }}>
+    <div className="p-4 rounded-xl flex flex-col gap-2" style={{ background: "rgba(224,32,64,0.06)", border: "1px solid rgba(224,32,64,0.15)" }}>
       <div className="flex items-center gap-2">
-        <span style={{ color: "var(--hpf-amber)" }}>{icon}</span>
+        <span style={{ color: "var(--hpf-crimson)" }}>{icon}</span>
         <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.07em" }}>{label}</span>
       </div>
-      <span className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>{value}</span>
+      <span className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>{value}</span>
       {sub && <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{sub}</span>}
     </div>
   );
@@ -83,9 +83,9 @@ export function AdminNav({ active }: { active: string }) {
           to={n.to}
           className="px-4 py-2 rounded-lg text-sm font-medium no-underline"
           style={{
-            background: active === n.to ? "var(--navy)" : "white",
-            color: active === n.to ? "white" : "var(--navy)",
-            border: "1.5px solid rgba(27,45,79,0.12)",
+            background: active === n.to ? "var(--hpf-pink)" : "white",
+            color: active === n.to ? "white" : "var(--hpf-pink)",
+            border: "1.5px solid rgba(212,34,126,0.12)",
             fontFamily: "var(--app-font-sans)",
           }}
         >
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen px-4 md:px-10 py-10" style={{ background: "var(--warm-white)" }}>
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--navy)" }}>
+          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
             Admin Dashboard
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -146,17 +146,17 @@ export default function AdminDashboard() {
         </div>
 
         {/* Referral program stats */}
-        <div className="p-6 rounded-2xl mb-8" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
+        <div className="p-6 rounded-2xl mb-8" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
           <div className="flex items-center gap-2 mb-5">
-            <Gift size={18} style={{ color: "var(--hpf-amber)" }} />
-            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+            <Gift size={18} style={{ color: "var(--hpf-crimson)" }} />
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
               Referral Program
             </h2>
           </div>
           {referralLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 rounded-xl animate-pulse" style={{ background: "rgba(27,45,79,0.04)" }} />
+                <div key={i} className="h-24 rounded-xl animate-pulse" style={{ background: "rgba(212,34,126,0.04)" }} />
               ))}
             </div>
           ) : (
@@ -190,20 +190,20 @@ export default function AdminDashboard() {
         </div>
 
         {/* Weekly signups chart */}
-        <div className="p-6 rounded-2xl" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
-          <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--navy)" }}>
+        <div className="p-6 rounded-2xl" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
+          <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
             Weekly Signups
           </h2>
           {chartLoading ? (
-            <div className="h-52 animate-pulse rounded-xl" style={{ background: "rgba(27,45,79,0.04)" }} />
+            <div className="h-52 animate-pulse rounded-xl" style={{ background: "rgba(212,34,126,0.04)" }} />
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={weeklyData} margin={{ top: 4, right: 20, left: -20, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,45,79,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,34,126,0.06)" />
                 <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }} />
                 <Tooltip contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="signups" name="Signups" fill="var(--navy)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="signups" name="Signups" fill="var(--hpf-pink)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

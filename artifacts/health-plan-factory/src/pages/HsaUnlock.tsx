@@ -6,9 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
-const navy = "#1b2d4f";
-const amber = "#b8892a";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const amber = "#E02040";
+const sage = "#7DB55C";
 
 interface EligibleItem {
   modalityId: string;
@@ -131,7 +131,7 @@ export default function HsaUnlock() {
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px 80px" }}>
       {/* Header */}
       <div style={{ marginBottom: 40 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(184,137,42,0.09)", border: "1px solid rgba(184,137,42,0.25)", borderRadius: 20, padding: "5px 14px", marginBottom: 16 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(224,32,64,0.09)", border: "1px solid rgba(224,32,64,0.25)", borderRadius: 20, padding: "5px 14px", marginBottom: 16 }}>
           <DollarSign size={13} color={amber} />
           <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: amber, textTransform: "uppercase", letterSpacing: "0.07em" }}>Unlock Your HSA</span>
         </div>
@@ -149,7 +149,7 @@ export default function HsaUnlock() {
           <div key={s} style={{ display: "flex", alignItems: "center", gap: 8, flex: i < steps.length - 1 ? "1" : "none" }}>
             <div style={{
               width: 28, height: 28, borderRadius: "50%",
-              background: i < step ? sage : i === step ? navy : "rgba(27,45,79,0.1)",
+              background: i < step ? sage : i === step ? navy : "rgba(212,34,126,0.1)",
               color: i <= step ? "white" : "var(--text-muted)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 12,
@@ -158,7 +158,7 @@ export default function HsaUnlock() {
               {i < step ? <CheckCircle size={14} /> : i + 1}
             </div>
             {i < steps.length - 1 && (
-              <div style={{ flex: 1, height: 2, background: i < step ? sage : "rgba(27,45,79,0.1)", borderRadius: 1 }} />
+              <div style={{ flex: 1, height: 2, background: i < step ? sage : "rgba(212,34,126,0.1)", borderRadius: 1 }} />
             )}
           </div>
         ))}
@@ -167,9 +167,9 @@ export default function HsaUnlock() {
       {/* Step 0 — What is an LMN */}
       {step === 0 && (
         <div>
-          <div style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20 }}>
+          <div style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20 }}>
             <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(27,45,79,0.07)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(212,34,126,0.07)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <FileText size={22} color={navy} />
               </div>
               <div>
@@ -180,7 +180,7 @@ export default function HsaUnlock() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(61,107,82,0.07)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(125,181,92,0.07)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Stethoscope size={22} color={sage} />
               </div>
               <div>
@@ -191,7 +191,7 @@ export default function HsaUnlock() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(184,137,42,0.07)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(224,32,64,0.07)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <DollarSign size={22} color={amber} />
               </div>
               <div>
@@ -202,7 +202,7 @@ export default function HsaUnlock() {
               </div>
             </div>
           </div>
-          <div style={{ background: "rgba(184,137,42,0.06)", border: "1px solid rgba(184,137,42,0.18)", borderRadius: 10, padding: "12px 16px", marginBottom: 28, display: "flex", gap: 10 }}>
+          <div style={{ background: "rgba(224,32,64,0.06)", border: "1px solid rgba(224,32,64,0.18)", borderRadius: 10, padding: "12px 16px", marginBottom: 28, display: "flex", gap: 10 }}>
             <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
               HPF is a referral platform, not a medical provider. We do not write or review LMNs. Consult your physician and HSA/FSA administrator for eligibility guidance.
             </span>
@@ -221,7 +221,7 @@ export default function HsaUnlock() {
         <div>
           {lmnData?.hasActivePlan && lmnData.eligibleItems.length > 0 ? (
             <div>
-              <div style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 16, padding: "28px", marginBottom: 20 }}>
+              <div style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", borderRadius: 16, padding: "28px", marginBottom: 20 }}>
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Your Estimated Annual Savings</div>
                 {savingsFormatted && (
                   <div style={{ fontFamily: "var(--app-font-serif)", fontSize: 48, fontWeight: 800, color: sage, lineHeight: 1, marginBottom: 6 }}>{savingsFormatted}</div>
@@ -232,7 +232,7 @@ export default function HsaUnlock() {
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 700, color: navy, marginBottom: 12 }}>LMN-eligible items in your plan:</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {lmnData.eligibleItems.map((item) => (
-                    <div key={item.modalityId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(27,45,79,0.03)", borderRadius: 8, padding: "10px 14px" }}>
+                    <div key={item.modalityId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(212,34,126,0.03)", borderRadius: 8, padding: "10px 14px" }}>
                       <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: navy }}>
                         {item.emoji} {item.name}
                       </span>
@@ -246,7 +246,7 @@ export default function HsaUnlock() {
               <div style={{ display: "flex", gap: 12 }}>
                 <button
                   onClick={() => setStep(0)}
-                  style={{ flex: "none", background: "transparent", border: "1.5px solid rgba(27,45,79,0.15)", padding: "13px 20px", borderRadius: 10, cursor: "pointer", fontFamily: "var(--app-font-sans)", fontWeight: 600, fontSize: 14, color: navy, display: "flex", alignItems: "center", gap: 6 }}
+                  style={{ flex: "none", background: "transparent", border: "1.5px solid rgba(212,34,126,0.15)", padding: "13px 20px", borderRadius: 10, cursor: "pointer", fontFamily: "var(--app-font-sans)", fontWeight: 600, fontSize: 14, color: navy, display: "flex", alignItems: "center", gap: 6 }}
                 >
                   <ArrowLeft size={14} /> Back
                 </button>
@@ -262,7 +262,7 @@ export default function HsaUnlock() {
             </div>
           ) : (
             <div>
-              <div style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 16, padding: "36px 28px", marginBottom: 20, textAlign: "center" }}>
+              <div style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", borderRadius: 16, padding: "36px 28px", marginBottom: 20, textAlign: "center" }}>
                 {!lmnData?.hasActivePlan ? (
                   <>
                     <div style={{ fontSize: 40, marginBottom: 16 }}>📋</div>
@@ -281,7 +281,7 @@ export default function HsaUnlock() {
                     <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", marginBottom: 24, lineHeight: 1.6 }}>
                       Your active plan's modalities are not currently flagged as LMN-eligible. Rebuild your plan or visit <Link to="/providers" style={{ color: navy }}>Providers</Link> to add a DPC physician who can expand your options.
                     </p>
-                    <Link to="/lmn-guide" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(27,45,79,0.07)", color: navy, padding: "12px 24px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
+                    <Link to="/lmn-guide" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(212,34,126,0.07)", color: navy, padding: "12px 24px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
                       Learn About LMNs <ArrowRight size={14} />
                     </Link>
                   </>
@@ -298,12 +298,12 @@ export default function HsaUnlock() {
       {/* Step 2 — Draft LMN request */}
       {step === 2 && (
         <div>
-          <div style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)", borderRadius: 16, padding: "28px", marginBottom: 20 }}>
+          <div style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", borderRadius: 16, padding: "28px", marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, color: navy, margin: 0 }}>Your LMN Request Draft</h2>
               <button
                 onClick={handleCopy}
-                style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(27,45,79,0.06)", border: "none", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: navy }}
+                style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(212,34,126,0.06)", border: "none", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: navy }}
               >
                 {copied ? <Check size={13} color={sage} /> : <Copy size={13} />}
                 {copied ? "Copied!" : "Copy"}
@@ -319,26 +319,26 @@ export default function HsaUnlock() {
                 width: "100%",
                 minHeight: 280,
                 borderRadius: 10,
-                border: "1.5px solid rgba(27,45,79,0.12)",
+                border: "1.5px solid rgba(212,34,126,0.12)",
                 padding: "14px 16px",
                 fontFamily: "var(--app-font-sans)",
                 fontSize: 13,
                 color: navy,
                 lineHeight: 1.7,
                 resize: "vertical",
-                background: "rgba(27,45,79,0.02)",
+                background: "rgba(212,34,126,0.02)",
                 outline: "none",
                 boxSizing: "border-box",
               }}
             />
           </div>
-          <div style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.18)", borderRadius: 10, padding: "14px 18px", marginBottom: 20, fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          <div style={{ background: "rgba(125,181,92,0.06)", border: "1px solid rgba(125,181,92,0.18)", borderRadius: 10, padding: "14px 18px", marginBottom: 20, fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
             <strong style={{ color: sage }}>Next step:</strong> Send this draft to your DPC physician. Once they deliver your LMN, click "I received my LMN" below to activate the HSA/FSA badge on your sessions.
           </div>
           <div style={{ display: "flex", gap: 12 }}>
             <button
               onClick={() => setStep(1)}
-              style={{ flex: "none", background: "transparent", border: "1.5px solid rgba(27,45,79,0.15)", padding: "13px 20px", borderRadius: 10, cursor: "pointer", fontFamily: "var(--app-font-sans)", fontWeight: 600, fontSize: 14, color: navy, display: "flex", alignItems: "center", gap: 6 }}
+              style={{ flex: "none", background: "transparent", border: "1.5px solid rgba(212,34,126,0.15)", padding: "13px 20px", borderRadius: 10, cursor: "pointer", fontFamily: "var(--app-font-sans)", fontWeight: 600, fontSize: 14, color: navy, display: "flex", alignItems: "center", gap: 6 }}
             >
               <ArrowLeft size={14} /> Back
             </button>
@@ -357,8 +357,8 @@ export default function HsaUnlock() {
       {/* Step 3 — LMN received confirmation */}
       {step === 3 && (
         <div>
-          <div style={{ background: "white", border: "1px solid rgba(61,107,82,0.15)", borderRadius: 16, padding: "40px 28px", marginBottom: 20, textAlign: "center" }}>
-            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(61,107,82,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+          <div style={{ background: "white", border: "1px solid rgba(125,181,92,0.15)", borderRadius: 16, padding: "40px 28px", marginBottom: 20, textAlign: "center" }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(125,181,92,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
               <CheckCircle size={32} color={sage} />
             </div>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 24, color: navy, margin: "0 0 10px" }}>LMN on File!</h2>
@@ -366,7 +366,7 @@ export default function HsaUnlock() {
               Your wellness sessions that include LMN-eligible services will now show an <strong style={{ color: sage }}>"LMN on file"</strong> badge in your progress log, making it easy to track which sessions qualify for HSA/FSA reimbursement.
             </p>
             {savingsFormatted && (
-              <div style={{ background: "rgba(61,107,82,0.06)", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "inline-block" }}>
+              <div style={{ background: "rgba(125,181,92,0.06)", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "inline-block" }}>
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: sage, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Potential Annual Savings</div>
                 <div style={{ fontFamily: "var(--app-font-serif)", fontSize: 36, fontWeight: 800, color: sage }}>{savingsFormatted}</div>
               </div>
@@ -375,7 +375,7 @@ export default function HsaUnlock() {
               <Link to="/progress" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: navy, color: "white", padding: "12px 20px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
                 View My Sessions <ArrowRight size={14} />
               </Link>
-              <Link to="/providers" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(27,45,79,0.06)", color: navy, padding: "12px 20px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
+              <Link to="/providers" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(212,34,126,0.06)", color: navy, padding: "12px 20px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
                 Find DPC Providers
               </Link>
             </div>

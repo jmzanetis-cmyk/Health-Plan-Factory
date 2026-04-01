@@ -35,7 +35,7 @@ export function ProtectedRoute({ role = "member", children }: ProtectedRouteProp
         <div className="flex flex-col items-center gap-4">
           <div
             className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: "var(--navy)", borderTopColor: "transparent" }}
+            style={{ borderColor: "var(--hpf-pink)", borderTopColor: "transparent" }}
           />
           <p className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             Loading...

@@ -120,37 +120,37 @@ export default function Pricing() {
         <div
           style={{
             position: "fixed", inset: 0, zIndex: 50,
-            background: "rgba(27,45,79,0.55)", backdropFilter: "blur(4px)",
+            background: "rgba(44,40,37,0.55)", backdropFilter: "blur(4px)",
             display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
           }}
           onClick={() => setCheckoutModal(null)}
         >
           <div
-            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(27,45,79,0.22)" }}
+            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(212,34,126,0.22)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--navy)", marginBottom: "1rem" }}>
+            <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--hpf-deep)", marginBottom: "1rem" }}>
               Upgrade to Plus
             </h3>
 
-            <div style={{ background: "rgba(27,45,79,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(27,45,79,0.08)" }}>
+            <div style={{ background: "rgba(212,34,126,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(212,34,126,0.08)" }}>
               <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
                 <span style={{ color: "var(--text-secondary)" }}>Monthly subscription</span>
-                <span style={{ color: "var(--navy)", fontWeight: 600 }}>
+                <span style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>
                   ${(checkoutModal.subscription_price_cents / 100).toFixed(2)}/mo
                 </span>
               </div>
               {checkoutModal.credit_applied_cents > 0 && (
                 <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
-                  <span style={{ color: "var(--hpf-amber)", fontWeight: 600 }}>🎁 Referral credit applied</span>
-                  <span style={{ color: "var(--hpf-amber)", fontWeight: 700 }}>
+                  <span style={{ color: "var(--hpf-crimson)", fontWeight: 600 }}>🎁 Referral credit applied</span>
+                  <span style={{ color: "var(--hpf-crimson)", fontWeight: 700 }}>
                     −${(checkoutModal.credit_applied_cents / 100).toFixed(2)}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(27,45,79,0.08)", fontFamily: "var(--app-font-sans)" }}>
-                <span style={{ color: "var(--navy)", fontWeight: 700 }}>Due today</span>
-                <span style={{ color: checkoutModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--navy)", fontWeight: 700 }}>
+              <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(212,34,126,0.08)", fontFamily: "var(--app-font-sans)" }}>
+                <span style={{ color: "var(--hpf-pink)", fontWeight: 700 }}>Due today</span>
+                <span style={{ color: checkoutModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--hpf-pink)", fontWeight: 700 }}>
                   {checkoutModal.amount_charged_cents === 0 ? "Free" : checkoutModal.amount_charged_formatted}
                 </span>
               </div>
@@ -165,13 +165,13 @@ export default function Pricing() {
             <div className="flex gap-2">
               <button
                 onClick={() => setCheckoutModal(null)}
-                style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--navy)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(27,45,79,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmCheckout}
-                style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-amber)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-crimson)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
                 {checkoutModal.stripe_required ? "OK" : "Proceed to payment →"}
               </button>
@@ -186,9 +186,9 @@ export default function Pricing() {
             <div className="section-tag justify-center">Pricing</div>
             <h1
               className="mb-4"
-              style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.5rem,5vw,4rem)", fontWeight: 700, color: "var(--navy)", letterSpacing: "-0.02em" }}
+              style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.5rem,5vw,4rem)", fontWeight: 700, color: "var(--hpf-deep)", letterSpacing: "-0.02em" }}
             >
-              Simple, honest pricing.
+              Simple, honest <em style={{ color: "var(--hpf-crimson)" }}>pricing.</em>
             </h1>
             <p className="text-sm font-light max-w-md mx-auto leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
               Start free. Pay only for the provider contacts you actually want. Upgrade to Plus for unlimited access.
@@ -200,21 +200,21 @@ export default function Pricing() {
               <div
                 key={tier.tier}
                 className="rounded-2xl p-8 relative"
-                style={tier.featured ? { background: "var(--navy)", boxShadow: "0 16px 48px rgba(27,45,79,0.28)" } : { background: "white", border: "1px solid rgba(27,45,79,0.08)" }}
+                style={tier.featured ? { background: "var(--hpf-deep)", boxShadow: "0 16px 48px rgba(44,40,37,0.30)" } : { background: "white", border: "1px solid rgba(44,40,37,0.08)" }}
               >
                 {tier.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest text-white whitespace-nowrap" style={{ background: "var(--hpf-amber)" }}>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest text-white whitespace-nowrap" style={{ background: "var(--hpf-crimson)" }}>
                     Most Popular
                   </div>
                 )}
                 <p className="text-xs font-bold uppercase tracking-widest mb-5" style={{ color: tier.featured ? "rgba(255,255,255,0.4)" : "var(--text-muted)" }}>{tier.tier}</p>
-                <div className="leading-none mb-1" style={{ fontFamily: "var(--app-font-serif)", fontSize: "3rem", fontWeight: 700, color: tier.featured ? "white" : "var(--navy)" }}>{tier.price}</div>
+                <div className="leading-none mb-1" style={{ fontFamily: "var(--app-font-serif)", fontSize: "3rem", fontWeight: 700, color: tier.featured ? "white" : "var(--hpf-pink)" }}>{tier.price}</div>
                 <p className="text-xs font-light mb-3" style={{ color: tier.featured ? "rgba(255,255,255,0.4)" : "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{tier.per}</p>
-                <p className="text-xs font-light leading-relaxed mb-5 pb-5" style={{ color: tier.featured ? "rgba(255,255,255,0.5)" : "var(--text-secondary)", borderBottom: tier.featured ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(27,45,79,0.08)", fontFamily: "var(--app-font-sans)" }}>{tier.desc}</p>
+                <p className="text-xs font-light leading-relaxed mb-5 pb-5" style={{ color: tier.featured ? "rgba(255,255,255,0.5)" : "var(--text-secondary)", borderBottom: tier.featured ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(212,34,126,0.08)", fontFamily: "var(--app-font-sans)" }}>{tier.desc}</p>
                 <ul className="flex flex-col mb-8">
                   {tier.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 py-2 text-xs font-light border-b" style={{ color: tier.featured ? "rgba(255,255,255,0.65)" : "var(--text-secondary)", borderColor: tier.featured ? "rgba(255,255,255,0.1)" : "rgba(27,45,79,0.08)", fontFamily: "var(--app-font-sans)" }}>
-                      <span className="text-xs font-bold flex-shrink-0 mt-0.5" style={{ color: tier.featured ? "var(--amber-light)" : "var(--sage)" }}>✓</span>
+                    <li key={f} className="flex items-start gap-2.5 py-2 text-xs font-light border-b" style={{ color: tier.featured ? "rgba(255,255,255,0.65)" : "var(--text-secondary)", borderColor: tier.featured ? "rgba(255,255,255,0.1)" : "rgba(212,34,126,0.08)", fontFamily: "var(--app-font-sans)" }}>
+                      <span className="text-xs font-bold flex-shrink-0 mt-0.5" style={{ color: tier.featured ? "var(--crimson-light)" : "var(--sage)" }}>✓</span>
                       {f}
                     </li>
                   ))}
@@ -226,18 +226,18 @@ export default function Pricing() {
                       onClick={handlePlusCheckout}
                       disabled={checkoutLoading}
                       className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white"
-                      style={{ background: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)", border: "none", cursor: checkoutLoading ? "wait" : "pointer", opacity: checkoutLoading ? 0.7 : 1 }}
+                      style={{ background: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)", border: "none", cursor: checkoutLoading ? "wait" : "pointer", opacity: checkoutLoading ? 0.7 : 1 }}
                     >
                       {checkoutLoading ? "Loading…" : tier.cta}
                     </button>
                     {user && creditsCents > 0 && (
-                      <p className="text-center mt-2 text-xs font-semibold" style={{ color: "var(--hpf-amber)" }}>
+                      <p className="text-center mt-2 text-xs font-semibold" style={{ color: "var(--hpf-crimson)" }}>
                         🎁 ${(creditsCents / 100).toFixed(2)} referral credit will be applied
                       </p>
                     )}
                   </div>
                 ) : (
-                  <Link to={tier.ctaHref} className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>
+                  <Link to={tier.ctaHref} className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                     {tier.cta}
                   </Link>
                 )}
@@ -245,8 +245,8 @@ export default function Pricing() {
             ))}
           </div>
 
-          <div className="rounded-xl p-6 text-center" style={{ background: "white", border: "1px solid rgba(27,45,79,0.08)" }}>
-            <h3 className="font-semibold mb-2 text-sm" style={{ color: "var(--navy)", fontFamily: "var(--app-font-sans)" }}>À la carte provider unlocks</h3>
+          <div className="rounded-xl p-6 text-center" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
+            <h3 className="font-semibold mb-2 text-sm" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)" }}>À la carte provider unlocks</h3>
             <div className="flex justify-center gap-8 flex-wrap">
               {[
                 { label: "Wellness provider", price: "$5.00" },
@@ -254,7 +254,7 @@ export default function Pricing() {
                 { label: "App-based program", price: "$3.00" },
               ].map((item) => (
                 <div key={item.label} className="text-center">
-                  <div className="text-xl font-semibold mb-1" style={{ fontFamily: "var(--app-font-mono)", color: "var(--navy)" }}>{item.price}</div>
+                  <div className="text-xl font-semibold mb-1" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>{item.price}</div>
                   <div className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{item.label}</div>
                 </div>
               ))}

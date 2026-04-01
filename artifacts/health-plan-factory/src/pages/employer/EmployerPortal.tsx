@@ -5,9 +5,9 @@ import { useAuth } from "@workspace/replit-auth-web";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
-const navy = "#1b2d4f";
-const amber = "#b8892a";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const amber = "#E02040";
+const sage = "#7DB55C";
 
 interface Employer {
   id: string;
@@ -20,7 +20,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
   return (
     <div style={{
       background: "white",
-      border: "1.5px solid rgba(27,45,79,0.1)",
+      border: "1.5px solid rgba(212,34,126,0.1)",
       borderRadius: 12,
       padding: "24px 28px",
       display: "flex",
@@ -31,7 +31,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
         width: 44,
         height: 44,
         borderRadius: 10,
-        background: "rgba(27,45,79,0.07)",
+        background: "rgba(212,34,126,0.07)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -94,7 +94,7 @@ function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) 
 
   const inputStyle = {
     width: "100%",
-    border: "1.5px solid rgba(27,45,79,0.18)",
+    border: "1.5px solid rgba(212,34,126,0.18)",
     borderRadius: 8,
     padding: "10px 14px",
     fontFamily: "var(--app-font-sans)",
@@ -153,7 +153,7 @@ function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) 
             </div>
           </div>
         </div>
-        <div style={{ background: "rgba(61,107,82,0.06)", border: "1px solid rgba(61,107,82,0.2)", borderRadius: 8, padding: "12px 16px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage }}>
+        <div style={{ background: "rgba(125,181,92,0.06)", border: "1px solid rgba(125,181,92,0.2)", borderRadius: 8, padding: "12px 16px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage }}>
           <strong>Platform fee:</strong> 8% per invoice. Total monthly billed = employees × stipend × 1.08. Cancel any time.
         </div>
         <button
@@ -221,7 +221,7 @@ function SuccessPanel({ employer }: { employer: Employer }) {
 
   return (
     <div style={{ textAlign: "center" }}>
-      <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(61,107,82,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+      <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(125,181,92,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
         <CheckCircle2 size={32} color={sage} />
       </div>
       <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.6rem", fontWeight: 700, color: navy, marginBottom: 8 }}>
@@ -231,8 +231,8 @@ function SuccessPanel({ employer }: { employer: Employer }) {
         Your employer account is live. Share the invite code below with your team.
       </p>
       <div style={{
-        background: "rgba(27,45,79,0.05)",
-        border: "2px dashed rgba(27,45,79,0.2)",
+        background: "rgba(212,34,126,0.05)",
+        border: "2px dashed rgba(212,34,126,0.2)",
         borderRadius: 12,
         padding: "20px 32px",
         marginBottom: 28,
@@ -254,7 +254,7 @@ function SuccessPanel({ employer }: { employer: Employer }) {
         </div>
       )}
       {checkoutError && (
-        <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "#b8892a", marginBottom: 20 }}>{checkoutError}</p>
+        <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "#E02040", marginBottom: 20 }}>{checkoutError}</p>
       )}
       {checkoutDone && (
         <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, marginBottom: 20 }}>
@@ -360,11 +360,11 @@ export default function EmployerPortal() {
       {/* Signup form */}
       <div style={{ maxWidth: 640, margin: "48px auto", padding: "0 24px" }}>
         {newEmployer ? (
-          <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 16, padding: 40 }}>
+          <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 16, padding: 40 }}>
             <SuccessPanel employer={newEmployer} />
           </div>
         ) : (
-          <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 16, padding: 40 }}>
+          <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 16, padding: 40 }}>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.5rem", fontWeight: 700, color: navy, marginBottom: 6 }}>Create an Employer Account</h2>
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", marginBottom: 28 }}>
               {user

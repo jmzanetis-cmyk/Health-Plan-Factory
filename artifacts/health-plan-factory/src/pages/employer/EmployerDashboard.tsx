@@ -8,9 +8,9 @@ import {
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
-const navy = "#1b2d4f";
-const amber = "#b8892a";
-const sage = "#3d6b52";
+const navy = "#2C2825";
+const amber = "#E02040";
+const sage = "#7DB55C";
 
 interface DashboardData {
   employer: {
@@ -55,7 +55,7 @@ export function EmployerNav({ active }: { active: string }) {
             textDecoration: "none",
             background: active === n.to ? navy : "white",
             color: active === n.to ? "white" : navy,
-            border: "1.5px solid rgba(27,45,79,0.12)",
+            border: "1.5px solid rgba(212,34,126,0.12)",
           }}
         >
           {n.label}
@@ -69,12 +69,12 @@ function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: s
   return (
     <div style={{
       background: "white",
-      border: "1.5px solid rgba(27,45,79,0.1)",
+      border: "1.5px solid rgba(212,34,126,0.1)",
       borderRadius: 12,
       padding: "22px 24px",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(27,45,79,0.07)", display: "flex", alignItems: "center", justifyContent: "center", color: navy }}>
+        <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(212,34,126,0.07)", display: "flex", alignItems: "center", justifyContent: "center", color: navy }}>
           {icon}
         </div>
         <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{label}</span>
@@ -191,7 +191,7 @@ export default function EmployerDashboard() {
                 fontSize: 12,
                 fontWeight: 600,
                 fontFamily: "var(--app-font-sans)",
-                background: data.employer.status === "active" ? "rgba(61,107,82,0.1)" : "rgba(220,53,53,0.1)",
+                background: data.employer.status === "active" ? "rgba(125,181,92,0.1)" : "rgba(220,53,53,0.1)",
                 color: data.employer.status === "active" ? sage : "#c42b2b",
               }}>
                 {data.employer.status}
@@ -202,10 +202,10 @@ export default function EmployerDashboard() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={load} style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
+            <button onClick={load} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
               <RefreshCw size={14} /> Refresh
             </button>
-            <button onClick={exportCsv} style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
+            <button onClick={exportCsv} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
               <Download size={14} /> Export CSV
             </button>
             <button
@@ -222,7 +222,7 @@ export default function EmployerDashboard() {
         {/* Invite Code Banner */}
         <div style={{
           background: "white",
-          border: "1.5px solid rgba(27,45,79,0.1)",
+          border: "1.5px solid rgba(212,34,126,0.1)",
           borderRadius: 10,
           padding: "14px 20px",
           display: "flex",
@@ -235,7 +235,7 @@ export default function EmployerDashboard() {
             <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>Employee Invite Code</span>
             <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 22, fontWeight: 800, color: navy, letterSpacing: "0.12em" }}>{data.employer.inviteCode}</div>
           </div>
-          <button onClick={copyCode} style={{ background: copied ? "rgba(61,107,82,0.1)" : "rgba(27,45,79,0.06)", border: "1px solid rgba(27,45,79,0.1)", borderRadius: 8, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: copied ? sage : navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
+          <button onClick={copyCode} style={{ background: copied ? "rgba(125,181,92,0.1)" : "rgba(212,34,126,0.06)", border: "1px solid rgba(212,34,126,0.1)", borderRadius: 8, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: copied ? sage : navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
             {copied ? <CheckCheck size={14} /> : <Copy size={14} />}
             {copied ? "Copied!" : "Copy Code"}
           </button>
@@ -249,8 +249,8 @@ export default function EmployerDashboard() {
           display: "flex",
           alignItems: "center",
           gap: 10,
-          background: "rgba(61,107,82,0.07)",
-          border: "1.5px solid rgba(61,107,82,0.18)",
+          background: "rgba(125,181,92,0.07)",
+          border: "1.5px solid rgba(125,181,92,0.18)",
           borderRadius: 10,
           padding: "10px 18px",
           marginBottom: 16,
@@ -264,8 +264,8 @@ export default function EmployerDashboard() {
         {/* Billing message */}
         {billingMsg && (
           <div style={{
-            background: "rgba(184,137,42,0.08)",
-            border: "1.5px solid rgba(184,137,42,0.25)",
+            background: "rgba(224,32,64,0.08)",
+            border: "1.5px solid rgba(224,32,64,0.25)",
             borderRadius: 10,
             padding: "12px 18px",
             marginBottom: 16,
@@ -292,16 +292,16 @@ export default function EmployerDashboard() {
         {/* Charts */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
           {/* Monthly spend chart */}
-          <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, padding: "24px 20px" }}>
+          <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: "24px 20px" }}>
             <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, marginBottom: 20 }}>Monthly Spend (6 months)</h3>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={chartData} barCategoryGap="30%">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,45,79,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,34,126,0.06)" />
                 <XAxis dataKey="name" tick={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
                 <Tooltip
                   formatter={(v: number) => [`$${v.toFixed(2)}`, "Spend"]}
-                  contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, border: "1px solid rgba(27,45,79,0.15)", borderRadius: 8 }}
+                  contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, border: "1px solid rgba(212,34,126,0.15)", borderRadius: 8 }}
                 />
                 <Bar dataKey="spend" fill={navy} radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -309,7 +309,7 @@ export default function EmployerDashboard() {
           </div>
 
           {/* Top modalities */}
-          <div style={{ background: "white", border: "1.5px solid rgba(27,45,79,0.1)", borderRadius: 12, padding: "24px 20px" }}>
+          <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: "24px 20px" }}>
             <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, marginBottom: 20 }}>Top Modalities Used</h3>
             {data.topModalities.length === 0 ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 160, color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", fontSize: 14 }}>
@@ -326,7 +326,7 @@ export default function EmployerDashboard() {
                         <span style={{ color: navy, fontWeight: 600 }}>{m.modalityId}</span>
                         <span style={{ color: "var(--text-muted)" }}>{m.sessionCount} sessions</span>
                       </div>
-                      <div style={{ height: 6, background: "rgba(27,45,79,0.08)", borderRadius: 3 }}>
+                      <div style={{ height: 6, background: "rgba(212,34,126,0.08)", borderRadius: 3 }}>
                         <div style={{ height: "100%", width: `${pct}%`, background: i === 0 ? navy : i === 1 ? sage : amber, borderRadius: 3 }} />
                       </div>
                     </div>
