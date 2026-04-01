@@ -33,6 +33,7 @@ export interface ScoredItem {
   estimatedMonthlyCost: number;
   rationale: string;
   isDeprioritized: boolean;
+  nearbyProviderCount?: number | null;
 }
 
 const SEVERITY_MULT: Record<string, number> = { mild: 1.0, moderate: 1.75, severe: 2.5 };
@@ -168,12 +169,47 @@ export interface GeneratedPlan {
   items: ScoredItem[];
 }
 
-export function runPlanEngine(modalities: Modality[], intake: IntakeInput): GeneratedPlan {
+/**
+ * Run the plan engine with optional provider availability map.
+ * Modalities that require in-person delivery and have zero nearby providers
+ * are automatically moved to Deprioritized (not removed from the plan).
+ * providerAvailability values are null when location is unknown (no zip),
+ * numeric (including 0) when location is known.
+ */
+export function runPlanEngine(
+  modalities: Modality[],
+  intake: IntakeInput,
+  providerAvailability?: Record<string, number | null>,
+): GeneratedPlan {
+  // Identify which modalities are force-deprioritized due to zero local providers.
+  const forceDeprioritized = new Set<string>();
+  if (providerAvailability) {
+    for (const m of modalities) {
+      const count = providerAvailability[m.id] ?? null;
+      // Only force-deprioritize when count is definitively 0 (not null/unknown)
+      // and the modality is not telehealth-based.
+      if (count === 0 && m.category !== "telehealth") {
+        forceDeprioritized.add(m.id);
+      }
+    }
+  }
+
   const scored = modalities
-    .map((m) => ({ modality: m, score: scoreModality(m, intake) }))
+    .map((m) => {
+      const score = scoreModality(m, intake);
+      return { modality: m, score };
+    })
+    // Hard-blocked exclusions (score === -999) are still fully removed.
     .filter((m) => m.score > -999);
 
-  scored.sort((a, b) => b.score - a.score);
+  // Sort: force-deprioritized items sort to the bottom; among force-deprioritized
+  // items sort by raw score so the best ones appear first in the deprioritized list.
+  scored.sort((a, b) => {
+    const aDeprio = forceDeprioritized.has(a.modality.id) ? 1 : 0;
+    const bDeprio = forceDeprioritized.has(b.modality.id) ? 1 : 0;
+    if (aDeprio !== bDeprio) return aDeprio - bDeprio;
+    return b.score - a.score;
+  });
 
   const items: ScoredItem[] = [];
   let runningCost = 0;
@@ -181,15 +217,20 @@ export function runPlanEngine(modalities: Modality[], intake: IntakeInput): Gene
   let deprioritizedCount = 0;
 
   for (const { modality, score } of scored) {
-    if (score <= 0) continue;
-    const { frequency, monthlyCost } = estimateFrequency(modality, intake.budget);
+    const isForceDeprio = forceDeprioritized.has(modality.id);
+    // Skip modalities that scored 0 or below (no relevance) unless they are
+    // force-deprioritized — those still need to appear with a note.
+    if (score <= 0 && !isForceDeprio) continue;
 
-    if (runningCost + monthlyCost <= intake.budget && includedCount < 6) {
-      items.push({ modality, score, frequency, estimatedMonthlyCost: monthlyCost, rationale: buildRationale(modality, intake), isDeprioritized: false });
+    const { frequency, monthlyCost } = estimateFrequency(modality, intake.budget);
+    const nearbyProviderCount = providerAvailability ? (providerAvailability[modality.id] ?? null) : null;
+
+    if (!isForceDeprio && runningCost + monthlyCost <= intake.budget && includedCount < 6) {
+      items.push({ modality, score, frequency, estimatedMonthlyCost: monthlyCost, rationale: buildRationale(modality, intake), isDeprioritized: false, nearbyProviderCount });
       runningCost += monthlyCost;
       includedCount++;
     } else if (deprioritizedCount < 4) {
-      items.push({ modality, score, frequency, estimatedMonthlyCost: monthlyCost, rationale: buildRationale(modality, intake), isDeprioritized: true });
+      items.push({ modality, score, frequency, estimatedMonthlyCost: monthlyCost, rationale: buildRationale(modality, intake), isDeprioritized: true, nearbyProviderCount });
       deprioritizedCount++;
     }
   }

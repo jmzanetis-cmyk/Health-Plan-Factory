@@ -16,4 +16,5 @@ export interface PlanItemRecord {
   rationale: string;
   isDeprioritized: boolean;
   sortOrder: number;
+  nearbyProviderCount?: number | null;
 }

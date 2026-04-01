@@ -6,6 +6,62 @@ import { intakeSchema, type IntakeData } from "@/types/onboarding";
 import { type EvidenceLevel } from "@/data/modalities";
 import { Logo } from "@/components/Logo";
 
+function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; isTelehealth?: boolean }) {
+  if (isTelehealth) {
+    return (
+      <span style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "0.25rem",
+        padding: "0.2rem 0.55rem",
+        borderRadius: 100,
+        fontSize: "0.7rem",
+        fontWeight: 600,
+        background: "rgba(125,181,92,0.08)",
+        color: "var(--sage)",
+        fontFamily: "var(--app-font-sans)",
+      }}>
+        🌐 Available via telehealth
+      </span>
+    );
+  }
+  if (count == null) return null;
+  if (count === 0) {
+    return (
+      <span style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "0.25rem",
+        padding: "0.2rem 0.55rem",
+        borderRadius: 100,
+        fontSize: "0.7rem",
+        fontWeight: 600,
+        background: "rgba(200,200,200,0.12)",
+        color: "var(--text-muted)",
+        fontFamily: "var(--app-font-sans)",
+      }}>
+        📍 No local providers found
+      </span>
+    );
+  }
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "0.25rem",
+      padding: "0.2rem 0.55rem",
+      borderRadius: 100,
+      fontSize: "0.7rem",
+      fontWeight: 600,
+      background: "rgba(125,181,92,0.08)",
+      color: "var(--sage)",
+      fontFamily: "var(--app-font-sans)",
+    }}>
+      📍 {count} provider{count !== 1 ? "s" : ""} near you
+    </span>
+  );
+}
+
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
 function EvidenceBadge({ level }: { level: EvidenceLevel }) {
@@ -55,7 +111,7 @@ interface LmnContext {
   estimatedAnnualSavingsCents: number;
 }
 
-function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanItem; rank: number; lmnContext?: LmnContext; unusedCredits?: number }) {
+function ModalityCard({ item, rank, lmnContext, unusedCredits, nearbyProviderCount }: { item: PlanItem; rank: number; lmnContext?: LmnContext; unusedCredits?: number; nearbyProviderCount?: number | null }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -108,6 +164,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.6rem" }}>
               <EvidenceBadge level={item.modality.evidenceLevel} />
               {item.modality.hsaEligible && <HsaBadge />}
+              <ProviderCountBadge count={nearbyProviderCount} isTelehealth={item.modality.category === "telehealth"} />
             </div>
 
             {/* Rationale */}
@@ -270,7 +327,8 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
   );
 }
 
-function DeprioritizedCard({ item }: { item: PlanItem }) {
+function DeprioritizedCard({ item, nearbyProviderCount }: { item: PlanItem; nearbyProviderCount?: number | null }) {
+  const noLocalProviders = nearbyProviderCount === 0 && item.modality.category !== "telehealth";
   return (
     <div style={{
       display: "flex",
@@ -288,7 +346,9 @@ function DeprioritizedCard({ item }: { item: PlanItem }) {
           {item.modality.name}
         </p>
         <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-          Over budget for this cycle · ${item.estimatedMonthlyCost}/mo est.
+          {noLocalProviders
+            ? "No in-person providers found in your area · consider telehealth options"
+            : `Over budget for this cycle · $${item.estimatedMonthlyCost}/mo est.`}
         </p>
       </div>
       <EvidenceBadge level={item.modality.evidenceLevel} />
@@ -298,11 +358,12 @@ function DeprioritizedCard({ item }: { item: PlanItem }) {
 
 export default function Plan() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [intake, setIntake] = useState<IntakeData | null>(null);
   const [lmnEligibleIds, setLmnEligibleIds] = useState<Set<string>>(new Set());
   const [unusedCreditsCents, setUnusedCreditsCents] = useState(0);
+  const [providerCounts, setProviderCounts] = useState<Record<string, number | null>>({});
 
   // Fetch unused referral credits when authenticated
   useEffect(() => {
@@ -361,12 +422,42 @@ export default function Plan() {
 
       setIntake(intakeResult.data);
       setPlan(rehydrated);
+
+      // Seed provider counts from stored plan items (available for unauthenticated users
+      // whose plan was enriched by the server speculate call during onboarding).
+      const seedCounts: Record<string, number | null> = {};
+      for (const item of [...rehydrated.included, ...rehydrated.deprioritized]) {
+        if (item.nearbyProviderCount !== undefined) {
+          seedCounts[item.modality.id] = item.nearbyProviderCount;
+        }
+      }
+      if (Object.keys(seedCounts).length > 0) {
+        setProviderCounts(seedCounts);
+      }
     } catch {
       console.warn("Failed to parse stored plan data — clearing");
       sessionStorage.removeItem("hpf_intake");
       sessionStorage.removeItem("hpf_plan");
     }
   }, []);
+
+  // Fetch provider counts from the server plan (when authenticated, match by modality ID)
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    fetch(`${BASE}/api/plans/${user.id}/latest`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data?.items) return;
+        const counts: Record<string, number | null> = {};
+        for (const item of data.items) {
+          if (item.modalityId) {
+            counts[item.modalityId] = item.nearbyProviderCount ?? null;
+          }
+        }
+        setProviderCounts(counts);
+      })
+      .catch(() => {});
+  }, [isAuthenticated, user?.id]);
 
   if (!plan || !intake) {
     return (
@@ -552,7 +643,7 @@ export default function Plan() {
                   ),
                 };
               }
-              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} unusedCredits={unusedCreditsCents} />;
+              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} unusedCredits={unusedCreditsCents} nearbyProviderCount={providerCounts[item.modality.id] ?? null} />;
             })}
           </div>
         </div>
@@ -578,7 +669,7 @@ export default function Plan() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
               {plan.deprioritized.map((item) => (
-                <DeprioritizedCard key={item.modality.id} item={item} />
+                <DeprioritizedCard key={item.modality.id} item={item} nearbyProviderCount={providerCounts[item.modality.id] ?? null} />
               ))}
             </div>
           </div>

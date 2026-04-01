@@ -8,6 +8,7 @@ export interface PlanItem {
   frequency: string;
   estimatedMonthlyCost: number;
   rationale: string;
+  nearbyProviderCount?: number | null;
 }
 
 export interface Plan {
@@ -27,6 +28,7 @@ const persistedItemSchema = z.object({
   frequency: z.string(),
   estimatedMonthlyCost: z.number(),
   rationale: z.string(),
+  nearbyProviderCount: z.number().nullable().optional(),
 });
 
 export const planSchema = z.object({
@@ -46,6 +48,7 @@ export function serializePlan(plan: Plan): PersistedPlan {
     frequency: item.frequency,
     estimatedMonthlyCost: item.estimatedMonthlyCost,
     rationale: item.rationale,
+    nearbyProviderCount: item.nearbyProviderCount ?? null,
   });
   return {
     included: plan.included.map(mapItem),
@@ -63,7 +66,14 @@ export function deserializePlan(persisted: PersistedPlan): Plan | null {
     for (const item of items) {
       const modality = MODALITIES.find((m) => m.id === item.modalityId);
       if (!modality) return null;
-      result.push({ modality, score: item.score, frequency: item.frequency, estimatedMonthlyCost: item.estimatedMonthlyCost, rationale: item.rationale });
+      result.push({
+        modality,
+        score: item.score,
+        frequency: item.frequency,
+        estimatedMonthlyCost: item.estimatedMonthlyCost,
+        rationale: item.rationale,
+        nearbyProviderCount: item.nearbyProviderCount ?? null,
+      });
     }
     return result;
   };

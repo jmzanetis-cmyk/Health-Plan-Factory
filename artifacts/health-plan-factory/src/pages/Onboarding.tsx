@@ -4,7 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
-import { generatePlan, serializePlan } from "@/lib/planEngine";
+import { generatePlan, serializePlan, type Plan, type PlanItem } from "@/lib/planEngine";
+import { MODALITIES } from "@/data/modalities";
 import { StepBudget } from "@/components/onboarding/StepBudget";
 import { StepGoals } from "@/components/onboarding/StepGoals";
 import { StepConditions } from "@/components/onboarding/StepConditions";
@@ -176,11 +177,86 @@ export default function Onboarding() {
     setStep(targetStep);
   };
 
-  const handleBuildComplete = useCallback(() => {
+  const handleBuildComplete = useCallback(async () => {
     const data = getValues();
     const plan = generatePlan(data);
+
+    // Use server-side speculate as the source of truth for provider-aware plan generation.
+    // The server engine applies proximity-based deprioritization (zero-provider modalities
+    // are moved to Deprioritized), so we use its full output to build the preview.
+    // Falls back to local generatePlan if the server is unavailable.
+    let enriched: Plan = plan;
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/+$/, "");
+      type SpeculateItem = {
+        modalityId: string;
+        score: number;
+        frequency: string;
+        estimatedMonthlyCost: number;
+        rationale: string;
+        nearbyProviderCount: number | null;
+        isDeprioritized: boolean;
+      };
+      const res = await fetch(`${base}/api/plans/speculate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          budget: data.budget,
+          goals: data.goals ?? [],
+          conditions: data.conditions ?? [],
+          preferences: data.preferences ?? [],
+          exclusions: data.exclusions ?? [],
+          telehealth: data.telehealth ?? false,
+          zipCode: data.zipCode ?? undefined,
+          radius: data.radius ?? 25,
+        }),
+      });
+      if (res.ok) {
+        const speculateResult = await res.json() as {
+          allItems: SpeculateItem[];
+          totalMonthlyCost: number;
+          budgetUtilization: number;
+        };
+        if (Array.isArray(speculateResult.allItems)) {
+          // Map server results back to the local Plan shape using local Modality objects.
+          // Items without a local Modality match are silently skipped (unknown server modalities).
+          const toLocalPlanItem = (si: SpeculateItem): PlanItem | null => {
+            const modality = MODALITIES.find((m) => m.id === si.modalityId);
+            if (!modality) return null;
+            return {
+              modality,
+              score: si.score,
+              frequency: si.frequency,
+              estimatedMonthlyCost: si.estimatedMonthlyCost,
+              rationale: si.rationale,
+              nearbyProviderCount: si.nearbyProviderCount,
+            };
+          };
+          const includedFromServer = speculateResult.allItems
+            .filter((si) => !si.isDeprioritized)
+            .map(toLocalPlanItem)
+            .filter((x): x is PlanItem => x !== null);
+          const deprioritizedFromServer = speculateResult.allItems
+            .filter((si) => si.isDeprioritized)
+            .map(toLocalPlanItem)
+            .filter((x): x is PlanItem => x !== null);
+
+          if (includedFromServer.length > 0 || deprioritizedFromServer.length > 0) {
+            enriched = {
+              included: includedFromServer,
+              deprioritized: deprioritizedFromServer,
+              totalMonthlyCost: speculateResult.totalMonthlyCost,
+              budgetUtilization: speculateResult.budgetUtilization,
+            };
+          }
+        }
+      }
+    } catch {
+      // Server unavailable — use local plan as-is
+    }
+
     sessionStorage.setItem("hpf_intake", JSON.stringify(data));
-    sessionStorage.setItem("hpf_plan", JSON.stringify(serializePlan(plan)));
+    sessionStorage.setItem("hpf_plan", JSON.stringify(serializePlan(enriched)));
     navigate("/plan");
   }, [getValues, navigate]);
 

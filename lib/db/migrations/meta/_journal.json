@@ -15,6 +15,13 @@
       "when": 1774979200000,
       "tag": "0001_messaging_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775062200000,
+      "tag": "0002_provider_aware_plan_items",
+      "breakpoints": true
     }
   ]
 }

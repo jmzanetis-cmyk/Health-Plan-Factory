@@ -40,6 +40,7 @@ type PlanItem = {
   isDeprioritized?: boolean;
   sortOrder?: number;
   score?: number;
+  nearbyProviderCount?: number | null;
 };
 
 type LatestPlan = {
@@ -106,6 +107,32 @@ function UnlockBadge({ score }: { score?: number }) {
   );
 }
 
+function ProviderCountChip({ count, isTelehealth }: { count?: number | null; isTelehealth?: boolean }) {
+  if (isTelehealth) {
+    return (
+      <View style={[styles.badge, { backgroundColor: COLORS.sagePale, borderColor: COLORS.sage + "30" }]}>
+        <Feather name="globe" size={10} color={COLORS.sage} />
+        <Text style={[styles.badgeText, { color: COLORS.sage }]}>Telehealth</Text>
+      </View>
+    );
+  }
+  if (count == null) return null;
+  if (count === 0) {
+    return (
+      <View style={[styles.badge, { backgroundColor: COLORS.off, borderColor: COLORS.border }]}>
+        <Feather name="map-pin" size={10} color={COLORS.textMuted} />
+        <Text style={[styles.badgeText, { color: COLORS.textMuted }]}>No local providers</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.badge, { backgroundColor: COLORS.sagePale, borderColor: COLORS.sage + "30" }]}>
+      <Feather name="map-pin" size={10} color={COLORS.sage} />
+      <Text style={[styles.badgeText, { color: COLORS.sage }]}>{count} near you</Text>
+    </View>
+  );
+}
+
 function PlanItemCard({
   item,
   modalityMap,
@@ -117,6 +144,10 @@ function PlanItemCard({
   const name = item.modality?.name ?? modalityMap[item.modalityId ?? ""]?.name ?? "Modality";
   const emoji = item.modality?.emoji ?? modalityMap[item.modalityId ?? ""]?.emoji ?? "🌿";
   const evidenceLevel = modalityMap[item.modalityId ?? ""]?.evidenceLevel;
+  const category = modalityMap[item.modalityId ?? ""]?.category;
+  const isTelehealth = category === "telehealth";
+
+  const noLocalProviders = item.nearbyProviderCount === 0 && !isTelehealth;
 
   return (
     <TouchableOpacity
@@ -151,6 +182,7 @@ function PlanItemCard({
       <View style={styles.badgeRow}>
         <EvidenceBadge level={evidenceLevel} />
         <UnlockBadge score={item.score} />
+        <ProviderCountChip count={item.nearbyProviderCount} isTelehealth={isTelehealth} />
       </View>
 
       {expanded && (
@@ -168,7 +200,11 @@ function PlanItemCard({
           {item.isDeprioritized && (
             <View style={styles.deprioNote}>
               <Feather name="info" size={12} color={COLORS.textMuted} />
-              <Text style={styles.deprioText}>Deprioritized based on your preferences</Text>
+              <Text style={styles.deprioText}>
+                {noLocalProviders
+                  ? "No in-person providers found in your area"
+                  : "Deprioritized based on your preferences"}
+              </Text>
             </View>
           )}
         </View>

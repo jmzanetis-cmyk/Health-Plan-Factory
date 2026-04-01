@@ -13,6 +13,7 @@ import {
   UpdatePlanResponse,
 } from "@workspace/api-zod";
 import { runPlanEngine } from "../lib/serverPlanEngine";
+import { queryProviderAvailability } from "../lib/providerAvailability";
 import { sendNotification } from "../lib/comms";
 import { planReadyEmail } from "../emails/plan-ready";
 
@@ -29,6 +30,11 @@ const SpeculateBody = z.object({
   conditions: z.array(z.string()).default([]),
   conditionWeights: z.array(ConditionWeightSchema).default([]),
   goals: z.array(z.string()).default([]),
+  zipCode: z.string().optional(),
+  radius: z.number().optional(),
+  preferences: z.array(z.string()).default([]),
+  exclusions: z.array(z.string()).default([]),
+  telehealth: z.boolean().default(false),
 });
 
 router.post("/plans/speculate", async (req, res) => {
@@ -39,33 +45,47 @@ router.post("/plans/speculate", async (req, res) => {
       return;
     }
 
-    const { budget, conditions, conditionWeights, goals } = body.data;
+    const { budget, conditions, conditionWeights, goals, zipCode, radius, preferences, exclusions, telehealth } = body.data;
 
     const allModalities = await db.select().from(modalities).where(eq(modalities.isActive, true));
+
+    const modalityIds = allModalities.map((m) => m.id);
+    const providerAvailability = await queryProviderAvailability(zipCode ?? null, radius ?? 25, modalityIds);
 
     const generated = runPlanEngine(allModalities, {
       budget,
       goals,
       conditions,
       conditionWeights,
-      preferences: [],
-      exclusions: [],
-      telehealth: false,
-      zipCode: null,
-      radius: 25,
-    });
+      preferences,
+      exclusions,
+      telehealth,
+      zipCode: zipCode ?? null,
+      radius: radius ?? 25,
+    }, providerAvailability);
 
-    const preview = generated.items.filter((item) => !item.isDeprioritized).slice(0, 5).map((item) => ({
+    const mapItem = (item: (typeof generated.items)[number]) => ({
+      modalityId: item.modality.id,
       name: item.modality.name,
       emoji: item.modality.emoji,
       estimatedMonthlyCost: item.estimatedMonthlyCost,
       frequency: item.frequency,
       rationale: item.rationale,
       hsaEligible: item.modality.hsaEligible,
-    }));
+      nearbyProviderCount: item.nearbyProviderCount ?? null,
+      isDeprioritized: item.isDeprioritized,
+      score: item.score,
+    });
 
+    const includedItems = generated.items.filter((item) => !item.isDeprioritized);
+    const deprioritizedItems = generated.items.filter((item) => item.isDeprioritized);
+
+    // `items` = top 5 included items (backward-compatible preview for PlanSpeculator)
+    // `allItems` = all items with deprioritization flag (used by onboarding preview)
     res.json({
-      items: preview,
+      items: includedItems.slice(0, 5).map(mapItem),
+      allItems: generated.items.map(mapItem),
+      deprioritized: deprioritizedItems.map(mapItem),
       totalMonthlyCost: generated.totalMonthlyCost,
       budgetUtilization: generated.budgetUtilization,
       budget,
@@ -89,7 +109,11 @@ router.post("/plans/generate", async (req, res) => {
     // Load all active modalities from DB
     const allModalities = await db.select().from(modalities).where(eq(modalities.isActive, true));
 
-    // Run the plan engine
+    // Run provider availability check
+    const modalityIds = allModalities.map((m) => m.id);
+    const providerAvailability = await queryProviderAvailability(zipCode ?? null, radius ?? 25, modalityIds);
+
+    // Run the plan engine with provider availability
     const generated = runPlanEngine(allModalities, {
       budget,
       goals: goals ?? [],
@@ -99,7 +123,7 @@ router.post("/plans/generate", async (req, res) => {
       telehealth: telehealth ?? false,
       zipCode: zipCode ?? null,
       radius: radius ?? 25,
-    });
+    }, providerAvailability);
 
     const now = new Date();
     const planId = crypto.randomUUID();
@@ -131,6 +155,7 @@ router.post("/plans/generate", async (req, res) => {
       rationale: item.rationale,
       isDeprioritized: item.isDeprioritized,
       sortOrder: idx,
+      nearbyProviderCount: item.nearbyProviderCount ?? null,
     }));
 
     const savedItems = itemValues.length > 0
@@ -215,7 +240,7 @@ router.get("/plans/:profileId/latest", async (req, res) => {
 
     const modalityIds = rawItems.map((i) => i.modalityId).filter(Boolean) as string[];
     const modalityRows = modalityIds.length > 0
-      ? await db.select({ id: modalities.id, name: modalities.name, emoji: modalities.emoji }).from(modalities).where(inArray(modalities.id, modalityIds))
+      ? await db.select({ id: modalities.id, name: modalities.name, emoji: modalities.emoji, category: modalities.category }).from(modalities).where(inArray(modalities.id, modalityIds))
       : [];
     const modalityMap = Object.fromEntries(modalityRows.map((m) => [m.id, m]));
 

@@ -281,6 +281,7 @@ export const planItems = pgTable(
     rationale: text("rationale").notNull(),
     isDeprioritized: boolean("is_deprioritized").notNull().default(false),
     sortOrder: integer("sort_order").notNull().default(0),
+    nearbyProviderCount: integer("nearby_provider_count"),
   },
   (t) => [
     index("plan_items_plan_idx").on(t.planId),

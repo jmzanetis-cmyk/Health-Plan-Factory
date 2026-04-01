@@ -21,7 +21,9 @@ interface PlanItem {
   modalityId: string;
   frequency: number;
   estimatedMonthlyCost: number;
-  modality?: { name: string; emoji: string };
+  isDeprioritized?: boolean;
+  nearbyProviderCount?: number | null;
+  modality?: { name: string; emoji: string; category?: string };
 }
 
 interface ProgressLog {
@@ -361,13 +363,24 @@ export default function Dashboard() {
               <div className="flex flex-col gap-3">
                 {planItems.map((item) => (
                   <div key={item.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl" style={{ background: "var(--warm-white)", border: "1px solid rgba(212,34,126,0.06)" }}>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{item.modality?.emoji ?? "✨"}</span>
-                      <span className="text-sm font-medium" style={{ fontFamily: "var(--app-font-sans)", color: "var(--hpf-pink)" }}>
-                        {item.modality?.name ?? "—"}
-                      </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-lg flex-shrink-0">{item.modality?.emoji ?? "✨"}</span>
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium block truncate" style={{ fontFamily: "var(--app-font-sans)", color: "var(--hpf-pink)" }}>
+                          {item.modality?.name ?? "—"}
+                        </span>
+                        {item.modality?.category === "telehealth" ? (
+                          <span className="text-xs" style={{ color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
+                            🌐 Available via telehealth
+                          </span>
+                        ) : item.nearbyProviderCount != null ? (
+                          <span className="text-xs" style={{ color: item.nearbyProviderCount === 0 ? "var(--text-muted)" : "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
+                            {item.nearbyProviderCount === 0 ? "📍 No local providers" : `📍 ${item.nearbyProviderCount} provider${item.nearbyProviderCount !== 1 ? "s" : ""} near you`}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                       <span className="text-sm font-semibold" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-crimson)" }}>
                         ${item.estimatedMonthlyCost}/mo
                       </span>

@@ -392,6 +392,7 @@ export const GetPlanResponse = zod.object({
       rationale: zod.string(),
       isDeprioritized: zod.boolean(),
       sortOrder: zod.number(),
+      nearbyProviderCount: zod.number().nullish(),
     }),
   ),
 });

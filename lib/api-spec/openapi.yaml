@@ -2318,6 +2318,10 @@ components:
           type: boolean
         sortOrder:
           type: integer
+        nearbyProviderCount:
+          type: integer
+          nullable: true
+          description: Number of providers within the member's commute radius for this modality. Null if no location data was provided. Telehealth providers are always counted.
       required:
         - id
         - planId
