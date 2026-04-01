@@ -1,5 +1,5 @@
-import { useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useRef, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
@@ -65,6 +65,42 @@ const DEFAULT_INTAKE: IntakeData = {
   telehealth: true,
 };
 
+function parseIntakeFromParams(params: URLSearchParams): Partial<IntakeData> {
+  const result: Partial<IntakeData> = {};
+
+  let budget = params.get("budget");
+  let conditions = params.get("conditions");
+  let goals = params.get("goals");
+
+  // Fall back to sessionStorage prefill (survives OAuth redirects from speculator CTA)
+  if (!budget && !conditions && !goals) {
+    try {
+      const stored = sessionStorage.getItem("hpf_speculator_prefill");
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, string>;
+        budget = parsed.budget ?? null;
+        conditions = parsed.conditions ?? null;
+        goals = parsed.goals ?? null;
+        sessionStorage.removeItem("hpf_speculator_prefill");
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (budget) {
+    const b = parseInt(budget, 10);
+    if (!isNaN(b) && b >= 50 && b <= 1000) result.budget = b;
+  }
+  if (conditions) {
+    result.conditions = conditions.split(",").filter(Boolean);
+  }
+  if (goals) {
+    result.goals = goals.split(",").filter(Boolean);
+  }
+  return result;
+}
+
 const slideVariants = {
   enter: (dir: number) => ({
     x: dir > 0 ? 48 : -48,
@@ -79,9 +115,12 @@ const slideVariants = {
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(0);
   const [building, setBuilding] = useState(false);
   const dirRef = useRef(1);
+
+  const prefill = useMemo(() => parseIntakeFromParams(searchParams), [searchParams]);
 
   const {
     control,
@@ -91,7 +130,7 @@ export default function Onboarding() {
     formState: { isSubmitting },
   } = useForm<IntakeData>({
     resolver: zodResolver(intakeSchema),
-    defaultValues: DEFAULT_INTAKE,
+    defaultValues: { ...DEFAULT_INTAKE, ...prefill },
     mode: "onChange",
   });
 

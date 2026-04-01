@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { PlanSpeculator } from "@/components/PlanSpeculator";
 
 const MODALITIES = [
   { emoji: "🧘", name: "Yoga / Mind-Body", badge: "Moderate", badgeType: "moderate" },
@@ -226,56 +227,6 @@ export default function Landing() {
             </Link>
           </div>
 
-          {/* Mobile-only plan preview card — appears between CTAs and trust badges */}
-          <div
-            className="md:hidden mb-8 w-full rounded-2xl p-5"
-            style={{
-              background: "white",
-              border: "1.5px solid rgba(212,34,126,0.1)",
-              boxShadow: "0 8px 32px rgba(212,34,126,0.1)",
-            }}
-          >
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--text-muted)" }}>
-              Your monthly plan preview
-            </p>
-            <div className="flex flex-col gap-2 mb-4">
-              {[
-                { emoji: "💆", name: "Massage Therapy", freq: "2×/month", cost: "$120", hsa: true, border: "var(--hpf-crimson)" },
-                { emoji: "🧘", name: "Yoga / Mind-Body", freq: "8×/month", cost: "$60", hsa: false, border: "var(--sage)" },
-              ].map((item) => (
-                <div
-                  key={item.name}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
-                  style={{ background: "var(--off-white)", borderLeft: `3px solid ${item.border}` }}
-                >
-                  <span className="text-base flex-shrink-0">{item.emoji}</span>
-                  <span className="text-xs font-semibold flex-1" style={{ color: "var(--hpf-pink)" }}>{item.name}</span>
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.freq}</span>
-                  <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>{item.cost}</span>
-                  {item.hsa && (
-                    <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color: "var(--sage)", background: "var(--sage-pale)" }}>HSA</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between items-center px-3 py-2.5 rounded-lg" style={{ background: "var(--hpf-pink)" }}>
-              <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Monthly total</span>
-              <span className="text-sm font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "white" }}>$225 / $260 budget</span>
-            </div>
-            <div className="mt-3">
-              <div className="flex justify-between text-xs mb-1" style={{ color: "var(--text-muted)" }}>
-                <span>Budget utilization</span>
-                <strong style={{ color: "var(--hpf-pink)" }}>87%</strong>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--off-white)" }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: "87%", background: "linear-gradient(90deg, var(--hpf-pink), var(--hpf-crimson))" }}
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="flex flex-wrap gap-5">
             {[
               { icon: "🔒", text: "Privacy-first intake" },
@@ -295,82 +246,13 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Right — factory illustration + mini plan card (desktop only; card shown inline above on mobile) */}
-        <div className="relative z-10 hidden md:flex flex-col items-center gap-5">
-          {/* Speech bubble + factory — hidden on mobile, visible on md+ */}
-          <div className="hidden md:block relative w-full max-w-md">
-            <div
-              className="absolute -top-5 right-4 z-10 animate-bobble text-xs font-semibold px-3 py-2 rounded-2xl"
-              style={{
-                background: "white",
-                border: "2px solid var(--hpf-pink)",
-                color: "var(--hpf-pink)",
-                boxShadow: "3px 3px 0 var(--hpf-pink)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              ⚙️ Building your plan now...
-            </div>
-
-            {/* Factory SVG */}
+        {/* Right — interactive plan speculator (desktop); on mobile it appears below the hero CTAs */}
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          {/* Factory illustration — small decorative position above speculator on desktop */}
+          <div className="hidden md:block w-full max-w-xs mx-auto mb-1 opacity-40" style={{ pointerEvents: "none" }}>
             <FactoryIllustration />
           </div>
-
-          {/* Mini plan card */}
-          <div
-            className="w-full max-w-md animate-float rounded-2xl p-5"
-            style={{
-              background: "white",
-              border: "1.5px solid rgba(212,34,126,0.1)",
-              boxShadow: "0 8px 32px rgba(212,34,126,0.1)",
-            }}
-          >
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--text-muted)" }}>
-              Your monthly plan preview
-            </p>
-            <div className="flex flex-col gap-2 mb-4">
-              {[
-                { emoji: "💆", name: "Massage Therapy", freq: "2×/month", cost: "$120", hsa: true, border: "var(--hpf-crimson)" },
-                { emoji: "🧘", name: "Yoga / Mind-Body", freq: "8×/month", cost: "$60", hsa: false, border: "var(--sage)" },
-                { emoji: "🥗", name: "Nutrition Coaching", freq: "1×/month", cost: "$45", hsa: false, border: "var(--sky)" },
-              ].map((item, idx) => (
-                <div
-                  key={item.name}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg${idx >= 2 ? " hidden md:flex" : ""}`}
-                  style={{
-                    background: "var(--off-white)",
-                    borderLeft: `3px solid ${item.border}`,
-                  }}
-                >
-                  <span className="text-base flex-shrink-0">{item.emoji}</span>
-                  <span className="text-xs font-semibold flex-1" style={{ color: "var(--hpf-pink)" }}>{item.name}</span>
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.freq}</span>
-                  <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>{item.cost}</span>
-                  {item.hsa && (
-                    <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color: "var(--sage)", background: "var(--sage-pale)" }}>
-                      HSA
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between items-center px-3 py-2.5 rounded-lg" style={{ background: "var(--hpf-pink)" }}>
-              <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Monthly total</span>
-              <span className="text-sm font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "white" }}>$225 / $260 budget</span>
-            </div>
-            <div className="mt-3">
-              <div className="flex justify-between text-xs mb-1" style={{ color: "var(--text-muted)" }}>
-                <span>Budget utilization</span>
-                <strong style={{ color: "var(--hpf-pink)" }}>87%</strong>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--off-white)" }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: "87%", background: "linear-gradient(90deg, var(--hpf-pink), var(--hpf-crimson))" }}
-                />
-              </div>
-            </div>
-          </div>
+          <PlanSpeculator />
         </div>
       </section>
 

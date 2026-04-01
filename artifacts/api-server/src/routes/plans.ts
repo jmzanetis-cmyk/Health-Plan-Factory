@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { plans, planItems, memberIntakes, modalities, profiles } from "@workspace/db";
 import { eq, desc, inArray } from "drizzle-orm";
@@ -16,6 +17,56 @@ import { sendNotification } from "../lib/comms";
 import { planReadyEmail } from "../emails/plan-ready";
 
 const router: IRouter = Router();
+
+const SpeculateBody = z.object({
+  budget: z.number().min(50).max(1000),
+  conditions: z.array(z.string()).default([]),
+  goals: z.array(z.string()).default([]),
+});
+
+router.post("/plans/speculate", async (req, res) => {
+  try {
+    const body = SpeculateBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: "Validation error", details: body.error.flatten() });
+      return;
+    }
+
+    const { budget, conditions, goals } = body.data;
+
+    const allModalities = await db.select().from(modalities).where(eq(modalities.isActive, true));
+
+    const generated = runPlanEngine(allModalities, {
+      budget,
+      goals,
+      conditions,
+      preferences: [],
+      exclusions: [],
+      telehealth: false,
+      zipCode: null,
+      radius: 25,
+    });
+
+    const preview = generated.items.slice(0, 5).map((item) => ({
+      name: item.modality.name,
+      emoji: item.modality.emoji,
+      estimatedMonthlyCost: item.estimatedMonthlyCost,
+      frequency: item.frequency,
+      rationale: item.rationale,
+      hsaEligible: item.modality.hsaEligible,
+    }));
+
+    res.json({
+      items: preview,
+      totalMonthlyCost: generated.totalMonthlyCost,
+      budgetUtilization: generated.budgetUtilization,
+      budget,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
 
 router.post("/plans/generate", async (req, res) => {
   try {

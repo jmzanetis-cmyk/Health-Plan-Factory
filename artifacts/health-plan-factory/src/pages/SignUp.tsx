@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@workspace/replit-auth-web";
 
@@ -20,6 +20,7 @@ const PROVIDER_FEATURES = [
 export default function SignUp() {
   const { login, isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedRole, setSelectedRole] = useState<Role>("member");
   const [employerCode, setEmployerCode] = useState("");
 
@@ -39,6 +40,17 @@ export default function SignUp() {
       // Persist invite code so it can be redeemed after OAuth completes
       if (employerCode.trim()) {
         sessionStorage.setItem("hpf_employer_code", employerCode.trim().toUpperCase());
+      }
+      // Persist speculator prefill params so they survive the OAuth redirect
+      const budget = searchParams.get("budget");
+      const conditions = searchParams.get("conditions");
+      const goals = searchParams.get("goals");
+      if (budget || conditions || goals) {
+        const prefill: Record<string, string> = {};
+        if (budget) prefill.budget = budget;
+        if (conditions) prefill.conditions = conditions;
+        if (goals) prefill.goals = goals;
+        sessionStorage.setItem("hpf_speculator_prefill", JSON.stringify(prefill));
       }
       login("/onboarding");
     }
