@@ -46,6 +46,7 @@ import SignUp from "@/pages/SignUp";
 
 import Dashboard from "@/pages/Dashboard";
 import Onboarding from "@/pages/Onboarding";
+import Survey from "@/pages/Survey";
 import Plan from "@/pages/Plan";
 import Providers from "@/pages/Providers";
 import Bookmarks from "@/pages/Bookmarks";
@@ -112,6 +113,7 @@ function AppRoutes() {
           Unauthenticated users complete onboarding → see their plan → then sign up.
           Auth gate is deferred to pay-per-reveal unlock (Stripe) and provider booking. */}
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/survey" element={<Survey />} />
       <Route path="/plan" element={<Plan />} />
       {/* Providers / Discover — both routes are public; auth gated internally for bookmarks/contact */}
       <Route path="/providers" element={<Layout><Providers /></Layout>} />

@@ -150,7 +150,7 @@ export function Navbar() {
                 Sign In
               </Link>
               <Link
-                to="/sign-up"
+                to="/survey"
                 className="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-white no-underline transition-all"
                 style={{
                   background: "var(--hpf-pink)",
@@ -158,7 +158,7 @@ export function Navbar() {
                   boxShadow: "0 2px 8px rgba(212,34,126,0.2)",
                 }}
               >
-                Build My Plan →
+                Get Started →
               </Link>
             </>
           ) : !isLoading ? (
@@ -209,13 +209,14 @@ export function Navbar() {
                   Sign In
                 </button>
                 <div className="pt-6">
-                  <button
-                    onClick={() => { setMobileOpen(false); login(); }}
-                    className="block w-full text-center px-6 py-3.5 rounded-lg text-base font-semibold text-white"
-                    style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", border: "none", cursor: "pointer" }}
+                  <Link
+                    to="/survey"
+                    onClick={() => setMobileOpen(false)}
+                    className="block w-full text-center px-6 py-3.5 rounded-lg text-base font-semibold text-white no-underline"
+                    style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
                   >
-                    Build My Plan →
-                  </button>
+                    Get Started →
+                  </Link>
                 </div>
               </>
             )}

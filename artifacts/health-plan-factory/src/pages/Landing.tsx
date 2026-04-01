@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { PlanSpeculator } from "@/components/PlanSpeculator";
+import type { SurveyData } from "@/pages/Survey";
+import { GOALS } from "@/types/onboarding";
 
 const MODALITIES = [
   { emoji: "🧘", name: "Yoga / Mind-Body", badge: "Moderate", badgeType: "moderate" },
@@ -147,9 +149,135 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+function PersonalizedBanner({ survey, onDismiss }: { survey: SurveyData; onDismiss: () => void }) {
+  const goals = survey.goals ?? [];
+  const budget = survey.budgetMidpoint;
+
+  const goalMap = Object.fromEntries(GOALS.map((g) => [g.id, g.label]));
+  const goalLabels = goals.slice(0, 3).map((id) => goalMap[id] ?? id).join(", ");
+  const goalText = goalLabels
+    ? `Based on your goals (${goalLabels}), we'll build you a personalized plan.`
+    : "We'll build you a personalized wellness plan based on your responses.";
+
+  const params = new URLSearchParams();
+  if (goals.length > 0) params.set("goals", goals.join(","));
+  if (budget) params.set("budget", String(budget));
+  const ctaHref = `/onboarding${params.toString() ? `?${params}` : ""}`;
+
+  return (
+    <div
+      style={{
+        background: "linear-gradient(135deg, rgba(212,34,126,0.08) 0%, rgba(224,32,64,0.05) 100%)",
+        borderBottom: "1px solid rgba(212,34,126,0.15)",
+        padding: "1rem 1.5rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "1rem",
+        flexWrap: "wrap",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", flex: 1 }}>
+        <span style={{ fontSize: "1.25rem" }}>✨</span>
+        <div>
+          <p
+            style={{
+              fontFamily: "var(--app-font-sans)",
+              fontSize: "0.9rem",
+              fontWeight: 600,
+              color: "var(--hpf-pink)",
+              marginBottom: "0.15rem",
+            }}
+          >
+            Welcome back! Your personalized plan is ready.
+          </p>
+          <p
+            style={{
+              fontFamily: "var(--app-font-sans)",
+              fontSize: "0.8rem",
+              color: "var(--text-secondary)",
+            }}
+          >
+            {goalText}
+          </p>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <Link
+          to={ctaHref}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "0.6rem 1.25rem",
+            borderRadius: 8,
+            background: "var(--hpf-pink)",
+            color: "white",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            fontFamily: "var(--app-font-sans)",
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+            boxShadow: "0 2px 10px rgba(212,34,126,0.25)",
+          }}
+        >
+          Build My Free Plan →
+        </Link>
+        <button
+          type="button"
+          onClick={onDismiss}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--text-muted)",
+            padding: "0.25rem",
+            display: "flex",
+            alignItems: "center",
+          }}
+          aria-label="Dismiss banner"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
+  const [survey, setSurvey] = useState<SurveyData | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const dismissed = sessionStorage.getItem("hpf_survey_banner_dismissed");
+      if (dismissed) {
+        setBannerDismissed(true);
+        return;
+      }
+      const raw = sessionStorage.getItem("hpf_survey");
+      if (raw) {
+        const parsed = JSON.parse(raw) as SurveyData;
+        if (parsed.goals?.length && parsed.budgetRange) {
+          setSurvey(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleDismissBanner = () => {
+    sessionStorage.setItem("hpf_survey_banner_dismissed", "1");
+    setBannerDismissed(true);
+  };
+
   return (
     <div style={{ background: "var(--warm-white)", overflowX: "hidden" }}>
+
+      {/* ── PERSONALIZED WELCOME BANNER ── */}
+      {survey && !bannerDismissed && (
+        <PersonalizedBanner survey={survey} onDismiss={handleDismissBanner} />
+      )}
 
       {/* ── HERO ── */}
       <section
