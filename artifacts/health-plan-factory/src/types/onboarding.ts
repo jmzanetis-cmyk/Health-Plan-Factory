@@ -47,6 +47,7 @@ export const GOALS = [
   { id: "posture", label: "Posture" },
   { id: "energy", label: "Energy" },
   { id: "fitness", label: "Fitness" },
+  { id: "weight-loss", label: "Weight Loss" },
   { id: "sleep", label: "Better Sleep" },
   { id: "nutrition", label: "Nutrition Support" },
   { id: "preventive", label: "Preventive Care" },

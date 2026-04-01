@@ -91,6 +91,26 @@ function scoreModality(modality: Modality, intake: IntakeInput): number {
 
   if (intake.telehealth && intake.preferences.includes("virtual") && ["telehealth", "meditation", "nutrition-coach"].includes(modality.id)) score += 4;
 
+  // Weight loss scenario
+  const hasWeightLoss = intake.goals.includes("weight-loss") || (intake.conditions.includes("sedentary") && intake.goals.includes("fitness"));
+  if (hasWeightLoss && ["weight-loss-coaching", "personal-training"].includes(modality.id)) score += 6;
+  if (hasWeightLoss && ["herbal-medicine", "nutrition-coach", "registered-dietitian"].includes(modality.id)) score += 3;
+
+  // Mind-body expansion
+  const wantsMindBody = intake.preferences.includes("mind-body") || intake.goals.includes("stress-reduction");
+  if (wantsMindBody && ["qigong", "tai-chi", "breathwork"].includes(modality.id)) score += 5;
+  if (hasStressOrAnxiety && ["qigong", "breathwork"].includes(modality.id)) score += 4;
+
+  // Recovery expansion
+  const hasRecovery = intake.goals.includes("recovery") || intake.conditions.includes("recovery-needs");
+  if (hasRecovery && ["cold-therapy", "infrared-sauna", "shiatsu"].includes(modality.id)) score += 5;
+
+  // Back/neck pain expansion
+  if (hasBackOrPosture && ["shiatsu", "tai-chi", "infrared-sauna"].includes(modality.id)) score += 3;
+
+  // Budget-friendly mind-body
+  if (intake.budget < 150 && ["breathwork", "qigong", "tai-chi"].includes(modality.id)) score += 3;
+
   // Hard block exclusions
   for (const excl of intake.exclusions) {
     if ((modality.exclusionIds as string[]).includes(excl)) return -999;

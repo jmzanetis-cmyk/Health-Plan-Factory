@@ -73,7 +73,7 @@ export default function Modalities() {
             <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#e84d65", textTransform: "uppercase", letterSpacing: "0.07em" }}>Evidence Library</span>
           </div>
           <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2rem,5vw,3.5rem)", fontWeight: 700, color: "white", letterSpacing: "-0.02em", margin: "0 0 16px" }}>
-            12 Evidence-Led Modalities
+            {modalities.length > 0 ? modalities.length : 20} Evidence-Led Modalities
           </h1>
           <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 17, color: "rgba(255,255,255,0.65)", maxWidth: 560, lineHeight: 1.6, margin: 0 }}>
             Every modality rated by research evidence and cross-referenced with your health conditions and budget.
