@@ -21,7 +21,7 @@ export const MODALITIES: Modality[] = [
   {
     id: "massage",
     name: "Massage Therapy",
-    emoji: "🫁",
+    emoji: "💆",
     category: "manual",
     evidenceLevel: "Strong",
     costRange: [60, 130],
@@ -85,7 +85,7 @@ export const MODALITIES: Modality[] = [
   {
     id: "acupuncture",
     name: "Acupuncture",
-    emoji: "📍",
+    emoji: "🪡",
     category: "manual",
     evidenceLevel: "Moderate",
     costRange: [70, 130],
