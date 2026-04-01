@@ -8,7 +8,7 @@ interface LogoProps {
 }
 
 export function Logo({ variant = "default", className = "" }: LogoProps) {
-  const height = variant === "auth" ? 56 : variant === "footer" ? 36 : 44;
+  const height = variant === "auth" ? 56 : variant === "footer" ? 36 : 68;
 
   return (
     <Link

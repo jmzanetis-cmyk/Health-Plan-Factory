@@ -112,7 +112,7 @@ export function Navbar() {
   return (
     <>
       <nav
-        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between h-[68px] px-6 md:px-12"
+        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between h-[84px] px-6 md:px-12"
         style={{
           background: "rgba(250,250,248,0.95)",
           backdropFilter: "blur(16px)",
@@ -180,7 +180,7 @@ export function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 flex flex-col pt-[68px]"
+          className="fixed inset-0 z-30 flex flex-col pt-[84px]"
           style={{ background: "rgba(250,250,248,0.98)", backdropFilter: "blur(16px)" }}
         >
           <div className="flex flex-col px-6 py-8 gap-2">

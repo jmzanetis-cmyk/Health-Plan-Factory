@@ -12,7 +12,7 @@ export function Layout({ children, hideFooter = false }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--warm-white)" }}>
       <Navbar />
-      <main className="flex-1 pt-[68px]">
+      <main className="flex-1 pt-[84px]">
         {children}
       </main>
       {!hideFooter && <Footer />}
