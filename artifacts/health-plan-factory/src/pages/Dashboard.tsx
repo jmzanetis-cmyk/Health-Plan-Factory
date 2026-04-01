@@ -255,10 +255,10 @@ export default function Dashboard() {
               <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--app-font-sans)" }}>
                 {referrerName
                   ? `${referrerName} invited you to HealthPlanFactory — your first modality unlock is on them`
-                  : "Welcome! You have a $2.00 credit waiting"}
+                  : "Welcome! You have a $3.00 credit waiting"}
               </p>
               <p className="text-xs mt-0.5 text-white" style={{ fontFamily: "var(--app-font-sans)", opacity: 0.8 }}>
-                Build your first wellness plan and your $2.00 unlock credit will be applied automatically at checkout.
+                Build your first wellness plan and your $3.00 unlock credit will be applied automatically at checkout.
               </p>
             </div>
             <Link

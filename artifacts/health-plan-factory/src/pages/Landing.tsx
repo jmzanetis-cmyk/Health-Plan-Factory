@@ -247,8 +247,8 @@ export default function Landing() {
 
         {/* Right — factory illustration + mini plan card */}
         <div className="relative z-10 flex flex-col items-center gap-5">
-          {/* Speech bubble */}
-          <div className="relative w-full max-w-md">
+          {/* Speech bubble + factory — hidden on mobile, visible on md+ */}
+          <div className="hidden md:block relative w-full max-w-md">
             <div
               className="absolute -top-5 right-4 z-10 animate-bobble text-xs font-semibold px-3 py-2 rounded-2xl"
               style={{
@@ -283,10 +283,10 @@ export default function Landing() {
                 { emoji: "💆", name: "Massage Therapy", freq: "2×/month", cost: "$120", hsa: true, border: "var(--hpf-amber)" },
                 { emoji: "🧘", name: "Yoga / Mind-Body", freq: "8×/month", cost: "$60", hsa: false, border: "var(--sage)" },
                 { emoji: "🥗", name: "Nutrition Coaching", freq: "1×/month", cost: "$45", hsa: false, border: "var(--sky)" },
-              ].map((item) => (
+              ].map((item, idx) => (
                 <div
                   key={item.name}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg${idx >= 2 ? " hidden md:flex" : ""}`}
                   style={{
                     background: "var(--off-white)",
                     borderLeft: `3px solid ${item.border}`,

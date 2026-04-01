@@ -324,23 +324,23 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
 
   const now = new Date();
 
-  // Award $2 (200 cents) unlock credit to the referrer
+  // Award $3 (300 cents) unlock credit to the referrer
   await db.insert(memberCredits).values({
     id: randomUUID(),
     profileId: pendingReferral.referrerId,
     source: "referral",
-    amountCents: 200,
+    amountCents: 300,
     used: false,
     referralId: pendingReferral.id,
     createdAt: now,
   });
 
-  // Award $2 welcome credit to the referred member (one free modality unlock for them)
+  // Award $3 welcome credit to the referred member (covers cheapest app-based unlock)
   await db.insert(memberCredits).values({
     id: randomUUID(),
     profileId: referredMemberId,
     source: "referral",
-    amountCents: 200,
+    amountCents: 300,
     used: false,
     referralId: pendingReferral.id,
     createdAt: now,
@@ -372,7 +372,7 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
         const { subject, html } = referralRewardEmail({
           referrerName: referrer.displayName,
           referredName: referred?.displayName ?? null,
-          creditAmountFormatted: "$2.00",
+          creditAmountFormatted: "$3.00",
           dashboardUrl,
         });
         await sendNotification({
@@ -381,7 +381,7 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
           type: "referral-reward",
           subject,
           html,
-          smsBody: `Health Plan Factory: Your referral earned you $2 in credits! Log in to use them.`,
+          smsBody: `Health Plan Factory: Your referral earned you $3 in credits! Log in to use them.`,
         });
       }
     } catch (err) {

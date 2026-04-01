@@ -680,7 +680,7 @@ export const memberCredits = pgTable(
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
     source: creditSourceEnum("source").notNull(),
-    amountCents: integer("amount_cents").notNull().default(200), // default: $2 unlock credit
+    amountCents: integer("amount_cents").notNull().default(300), // default: $3 unlock credit
     used: boolean("used").notNull().default(false),
     referralId: text("referral_id")               // FK back to referrals row (nullable for promos)
       .references(() => referrals.id, { onDelete: "set null" }),

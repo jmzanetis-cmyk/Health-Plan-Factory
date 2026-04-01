@@ -34,6 +34,7 @@ import Landing from "@/pages/Landing";
 import HowItWorks from "@/pages/HowItWorks";
 import Modalities from "@/pages/Modalities";
 import ForProviders from "@/pages/ForProviders";
+import ForEmployers from "@/pages/ForEmployers";
 import Pricing from "@/pages/Pricing";
 import FAQ from "@/pages/FAQ";
 import Legal from "@/pages/Legal";
@@ -90,6 +91,7 @@ function AppRoutes() {
       <Route path="/modalities" element={<Layout><Modalities /></Layout>} />
       <Route path="/modalities/:slug" element={<Layout><ModalityDetail /></Layout>} />
       <Route path="/for-providers" element={<Layout><ForProviders /></Layout>} />
+      <Route path="/for-employers" element={<Layout><ForEmployers /></Layout>} />
       <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
       <Route path="/faq" element={<Layout><FAQ /></Layout>} />
       <Route path="/legal" element={<Layout><Legal /></Layout>} />

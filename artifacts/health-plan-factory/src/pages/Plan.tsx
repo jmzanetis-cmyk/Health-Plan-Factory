@@ -239,7 +239,7 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits }: { item: PlanIte
               </p>
               {unusedCredits && unusedCredits > 0 ? (
                 <p style={{ fontSize: "0.72rem", color: "var(--hpf-amber)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
-                  1 referral credit applied — $2.00 discount
+                  1 referral credit applied — $3.00 discount
                 </p>
               ) : (
                 <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>

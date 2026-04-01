@@ -174,7 +174,7 @@ export default function Referral() {
           {[
             { step: "1", text: "Share your unique referral link with friends, family, or colleagues." },
             { step: "2", text: "When they sign up and build their first wellness plan, the reward triggers." },
-            { step: "3", text: "You both receive a $2.00 modality unlock credit — applied automatically at checkout." },
+            { step: "3", text: "You both receive a $3.00 modality unlock credit — enough to unlock your first app-based plan." },
           ].map((item) => (
             <div key={item.step} className="flex items-start gap-3">
               <div

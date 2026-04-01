@@ -5,6 +5,7 @@ const footerLinks = [
   { href: "/how-it-works", label: "How It Works" },
   { href: "/modalities", label: "Modalities" },
   { href: "/for-providers", label: "For Providers" },
+  { href: "/for-employers", label: "For Employers" },
   { href: "/pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
   { href: "/legal", label: "Disclaimer" },

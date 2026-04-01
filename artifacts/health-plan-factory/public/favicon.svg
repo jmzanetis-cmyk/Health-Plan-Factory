@@ -1,6 +1,13 @@
 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="2" y="2" width="19" height="19" rx="5" fill="#1b2d4f"/>
-  <rect x="27" y="2" width="19" height="19" rx="5" fill="#d4a44c"/>
-  <rect x="2" y="27" width="19" height="19" rx="5" fill="#f3eee3"/>
-  <rect x="27" y="27" width="19" height="19" rx="5" fill="#c7ccc5"/>
+  <!-- Navy rounded-square base -->
+  <rect width="48" height="48" rx="11" fill="#1b2d4f"/>
+
+  <!-- Plan lines — three white horizontal bars -->
+  <rect x="10" y="14" width="28" height="5" rx="2.5" fill="white"/>
+  <rect x="10" y="23" width="21" height="5" rx="2.5" fill="white" opacity="0.75"/>
+  <rect x="10" y="32" width="14" height="5" rx="2.5" fill="white" opacity="0.45"/>
+
+  <!-- Amber accent — leaf sprout (wellness / growth) -->
+  <circle cx="38" cy="11" r="7" fill="#b8892a"/>
+  <path d="M38 15 C38 15 36 12 36 9.5 C36 8.1 37 7 38 7 C39 7 40 8.1 40 9.5 C40 12 38 15 38 15Z" fill="rgba(255,255,255,0.35)"/>
 </svg>
