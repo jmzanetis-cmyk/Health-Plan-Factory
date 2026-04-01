@@ -143,7 +143,7 @@ export default function HowItWorks() {
             }}
           >
             From intake to{" "}
-            <em style={{ color: "var(--hpf-amber)" }}>action plan</em>
+            <em style={{ color: "var(--hpf-amber)" }}>wellness plan</em>
             <br />
             in 5 minutes.
           </h1>
@@ -248,7 +248,7 @@ export default function HowItWorks() {
                     <div
                       className="mt-5 flex flex-wrap gap-2"
                     >
-                      {["Budget", "Goals", "Conditions", "Preferences", "Location", "Review"].map((tag) => (
+                      {["Budget", "Goals", "Conditions", "Preferences", "Exclusions", "Location", "Review"].map((tag) => (
                         <span
                           key={tag}
                           className="text-xs font-medium px-2.5 py-1 rounded-full"
