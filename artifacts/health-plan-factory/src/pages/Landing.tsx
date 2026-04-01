@@ -152,7 +152,7 @@ export default function Landing() {
 
       {/* ── HERO ── */}
       <section
-        className="relative grid md:grid-cols-2 gap-12 items-start px-6 md:px-12 pt-16 pb-16"
+        className="relative grid md:grid-cols-2 gap-12 items-start px-4 md:px-12 pt-16 pb-16"
       >
         {/* Dot grid background */}
         <div
