@@ -71,6 +71,8 @@ function LogoWordmark({ color = "#1b2d4f", size = "default" }: { color?: string;
 export function Logo({ variant = "default", className = "" }: LogoProps) {
   const iconSize = variant === "auth" ? 44 : variant === "footer" ? 30 : 36;
   const gap = variant === "footer" ? "8px" : "10px";
+  // Footer renders on a dark navy background — use white wordmark for contrast
+  const wordmarkColor = variant === "footer" ? "rgba(255,255,255,0.85)" : "#1b2d4f";
 
   return (
     <Link
@@ -80,7 +82,7 @@ export function Logo({ variant = "default", className = "" }: LogoProps) {
       className={className}
     >
       <LogoMark size={iconSize} />
-      <LogoWordmark color="#1b2d4f" size={variant} />
+      <LogoWordmark color={wordmarkColor} size={variant} />
     </Link>
   );
 }
