@@ -618,10 +618,6 @@ export default function Landing() {
                 }}
               >
                 75%
-                <span
-                  className="absolute bottom-2 left-0 right-0"
-                  style={{ height: "4px", background: "var(--hpf-amber)", borderRadius: "2px" }}
-                />
               </div>
               <p className="text-xs font-semibold uppercase tracking-widest mt-3" style={{ color: "var(--text-muted)" }}>
                 of preventable health spending goes unmanaged
