@@ -226,6 +226,56 @@ export default function Landing() {
             </Link>
           </div>
 
+          {/* Mobile-only plan preview card — appears between CTAs and trust badges */}
+          <div
+            className="md:hidden mb-8 w-full rounded-2xl p-5"
+            style={{
+              background: "white",
+              border: "1.5px solid rgba(27,45,79,0.1)",
+              boxShadow: "0 8px 32px rgba(27,45,79,0.1)",
+            }}
+          >
+            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--text-muted)" }}>
+              Your monthly plan preview
+            </p>
+            <div className="flex flex-col gap-2 mb-4">
+              {[
+                { emoji: "💆", name: "Massage Therapy", freq: "2×/month", cost: "$120", hsa: true, border: "var(--hpf-amber)" },
+                { emoji: "🧘", name: "Yoga / Mind-Body", freq: "8×/month", cost: "$60", hsa: false, border: "var(--sage)" },
+              ].map((item) => (
+                <div
+                  key={item.name}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
+                  style={{ background: "var(--off-white)", borderLeft: `3px solid ${item.border}` }}
+                >
+                  <span className="text-base flex-shrink-0">{item.emoji}</span>
+                  <span className="text-xs font-semibold flex-1" style={{ color: "var(--navy)" }}>{item.name}</span>
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.freq}</span>
+                  <span className="text-xs font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "var(--navy)" }}>{item.cost}</span>
+                  {item.hsa && (
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color: "var(--sage)", background: "var(--sage-pale)" }}>HSA</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between items-center px-3 py-2.5 rounded-lg" style={{ background: "var(--navy)" }}>
+              <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Monthly total</span>
+              <span className="text-sm font-medium" style={{ fontFamily: "var(--app-font-mono)", color: "white" }}>$225 / $260 budget</span>
+            </div>
+            <div className="mt-3">
+              <div className="flex justify-between text-xs mb-1" style={{ color: "var(--text-muted)" }}>
+                <span>Budget utilization</span>
+                <strong style={{ color: "var(--navy)" }}>87%</strong>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--off-white)" }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: "87%", background: "linear-gradient(90deg, var(--navy), var(--hpf-amber))" }}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-5">
             {[
               { icon: "🔒", text: "Privacy-first intake" },
@@ -245,8 +295,8 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Right — factory illustration + mini plan card */}
-        <div className="relative z-10 flex flex-col items-center gap-5">
+        {/* Right — factory illustration + mini plan card (desktop only; card shown inline above on mobile) */}
+        <div className="relative z-10 hidden md:flex flex-col items-center gap-5">
           {/* Speech bubble + factory — hidden on mobile, visible on md+ */}
           <div className="hidden md:block relative w-full max-w-md">
             <div
