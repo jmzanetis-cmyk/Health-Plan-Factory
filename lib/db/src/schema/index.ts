@@ -250,10 +250,16 @@ export const plans = pgTable(
     totalMonthlyCost: integer("total_monthly_cost").notNull(),
     budgetUtilization: integer("budget_utilization").notNull(), // 0–100
     budget: integer("budget").notNull(),
+    shareToken: text("share_token"),          // unique token for public share link
+    shareGoal: text("share_goal"),            // anonymized primary goal for share card
+    shareModalities: jsonb("share_modalities").$type<Array<{ name: string; emoji: string }>>(), // top 3 modalities for share card
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (t) => [index("plans_profile_idx").on(t.profileId)],
+  (t) => [
+    index("plans_profile_idx").on(t.profileId),
+    uniqueIndex("plans_share_token_idx").on(t.shareToken),
+  ],
 );
 
 export const insertPlanSchema = createInsertSchema(plans).omit({

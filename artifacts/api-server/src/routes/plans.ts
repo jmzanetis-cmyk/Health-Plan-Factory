@@ -16,6 +16,9 @@ import { runPlanEngine } from "../lib/serverPlanEngine";
 import { queryProviderAvailability } from "../lib/providerAvailability";
 import { sendNotification } from "../lib/comms";
 import { planReadyEmail } from "../emails/plan-ready";
+import { randomBytes } from "crypto";
+
+const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
 const router: IRouter = Router();
 
@@ -211,6 +214,51 @@ router.post("/plans/generate", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/plans/shared/:shareToken
+ * Public route — returns anonymized plan data for share card rendering.
+ * No auth required. Never returns personal information.
+ * NOTE: registered before /:id to avoid capture by the generic route.
+ */
+router.get("/plans/shared/:shareToken", async (req, res) => {
+  const { shareToken } = req.params;
+
+  try {
+    const [plan] = await db
+      .select({
+        id: plans.id,
+        shareToken: plans.shareToken,
+        shareGoal: plans.shareGoal,
+        shareModalities: plans.shareModalities,
+        budget: plans.budget,
+        totalMonthlyCost: plans.totalMonthlyCost,
+        budgetUtilization: plans.budgetUtilization,
+        createdAt: plans.createdAt,
+      })
+      .from(plans)
+      .where(eq(plans.shareToken, shareToken))
+      .limit(1);
+
+    if (!plan) {
+      res.status(404).json({ error: "Shared plan not found" });
+      return;
+    }
+
+    res.json({
+      shareToken: plan.shareToken,
+      shareGoal: plan.shareGoal,
+      shareModalities: plan.shareModalities ?? [],
+      budget: plan.budget,
+      totalMonthlyCost: plan.totalMonthlyCost,
+      budgetUtilization: plan.budgetUtilization,
+      createdAt: plan.createdAt,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
 router.get("/plans/:profileId/latest", async (req, res) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Authentication required" });
@@ -305,6 +353,89 @@ router.patch("/plans/:id", async (req, res) => {
     }
 
     res.json(UpdatePlanResponse.parse(updated));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /api/plans/:id/share
+ * Generates (or returns existing) a share token for the plan.
+ * Embeds the member's referral code in the returned share URL.
+ * The plan must belong to the authenticated user.
+ * Body: { goal?: string } — optional primary goal label (e.g. "reduce stress")
+ */
+router.post("/plans/:id/share", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const planId = req.params.id;
+
+  try {
+    const [plan] = await db.select().from(plans).where(eq(plans.id, planId)).limit(1);
+    if (!plan) {
+      res.status(404).json({ error: "Plan not found" });
+      return;
+    }
+    if (plan.profileId && plan.profileId !== req.user!.id && req.user!.role !== "admin") {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    let shareToken = plan.shareToken;
+
+    if (!shareToken) {
+      shareToken = randomBytes(12).toString("base64url");
+
+      // Collect top-3 non-deprioritized modality names for the card
+      const items = await db
+        .select({ modalityId: planItems.modalityId, isDeprioritized: planItems.isDeprioritized, sortOrder: planItems.sortOrder })
+        .from(planItems)
+        .where(eq(planItems.planId, planId));
+
+      const activeItems = items
+        .filter((i) => !i.isDeprioritized)
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .slice(0, 3);
+
+      const modalityIds = activeItems.map((i) => i.modalityId).filter(Boolean) as string[];
+      const modalityRows = modalityIds.length > 0
+        ? await db.select({ id: modalities.id, name: modalities.name, emoji: modalities.emoji })
+            .from(modalities).where(inArray(modalities.id, modalityIds))
+        : [];
+      const modalityMap = Object.fromEntries(modalityRows.map((m) => [m.id, m]));
+      const shareModalities = activeItems.map((i) => ({
+        name: modalityMap[i.modalityId ?? ""]?.name ?? "",
+        emoji: modalityMap[i.modalityId ?? ""]?.emoji ?? "✨",
+      })).filter((m) => m.name);
+
+      // Parse optional goal from request body
+      const body = z.object({ goal: z.string().optional() }).safeParse(req.body);
+      const shareGoal = body.success && body.data.goal ? body.data.goal : null;
+
+      await db.update(plans).set({
+        shareToken,
+        shareGoal,
+        shareModalities,
+        updatedAt: new Date(),
+      }).where(eq(plans.id, planId));
+    }
+
+    // Get referral code for attribution
+    const [profile] = await db
+      .select({ referralCode: profiles.referralCode })
+      .from(profiles)
+      .where(eq(profiles.id, req.user!.id))
+      .limit(1);
+
+    const ref = profile?.referralCode ?? null;
+    const shareUrl = ref
+      ? `${BASE_URL}/plan/shared/${shareToken}?ref=${encodeURIComponent(ref)}`
+      : `${BASE_URL}/plan/shared/${shareToken}`;
+
+    res.json({ shareToken, shareUrl });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

@@ -76,6 +76,7 @@ import LmnGuide from "@/pages/LmnGuide";
 import HsaUnlock from "@/pages/HsaUnlock";
 import ModalityDetail from "@/pages/ModalityDetail";
 import Referral from "@/pages/Referral";
+import SharedPlan from "@/pages/SharedPlan";
 
 import NotFound from "@/pages/not-found";
 
@@ -115,6 +116,8 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/survey" element={<Survey />} />
       <Route path="/plan" element={<Plan />} />
+      {/* Shared plan — public, anonymized */}
+      <Route path="/plan/shared/:shareToken" element={<Layout><SharedPlan /></Layout>} />
       {/* Providers / Discover — both routes are public; auth gated internally for bookmarks/contact */}
       <Route path="/providers" element={<Layout><Providers /></Layout>} />
       <Route path="/discover" element={<Layout><Providers /></Layout>} />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useGetCurrentAuthUser, useListProgress } from "@workspace/api-client-re
 import type { ProgressLogRecord } from "@workspace/api-client-react";
 import { setupNotifications } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
+import { MilestoneShareModal, type MilestoneType } from "@/components/MilestoneShareModal";
 
 type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
 
@@ -227,14 +228,62 @@ function CheckInCard({
   );
 }
 
+const STREAK_MILESTONES: Array<{ streak: number; type: MilestoneType }> = [
+  { streak: 3, type: "streak_3" },
+  { streak: 7, type: "streak_7" },
+  { streak: 14, type: "streak_14" },
+  { streak: 30, type: "streak_30" },
+];
+
+const MILESTONE_STORAGE_KEY = "hpf_shown_milestones";
+
+function getShownMilestones(): Set<string> {
+  try {
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(MILESTONE_STORAGE_KEY) : null;
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch { return new Set(); }
+}
+
+function markMilestoneShown(key: string) {
+  try {
+    const shown = getShownMilestones();
+    shown.add(key);
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(MILESTONE_STORAGE_KEY, JSON.stringify([...shown]));
+    }
+  } catch {}
+}
+
 export default function AccountabilityScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [refreshing, setRefreshing] = useState(false);
   const [remindersOn, setRemindersOn] = useState(false);
 
+  // Milestone share modal state
+  const [activeMilestone, setActiveMilestone] = useState<MilestoneType | null>(null);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const prevStreakRef = useRef<number | null>(null);
+
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  // Fetch referral code for share card attribution
+  useEffect(() => {
+    if (!profileId) return;
+    const base = process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : "";
+    import("expo-secure-store").then(async (SecureStore) => {
+      const token = await SecureStore.getItemAsync("auth_session_token");
+      const res = await fetch(`${base}/api/referrals/mine`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.referralCode) setReferralCode(data.referralCode);
+      }
+    }).catch(() => {});
+  }, [profileId]);
 
   const { data: progressData, isLoading, refetch } = useListProgress(
     { profileId, limit: 50 },
@@ -278,6 +327,33 @@ export default function AccountabilityScreen() {
 
   const streak = calculateStreak(entries);
 
+  // Detect streak milestones and show share modal
+  useEffect(() => {
+    if (prevStreakRef.current === null) {
+      prevStreakRef.current = streak;
+      return;
+    }
+    const prev = prevStreakRef.current;
+    prevStreakRef.current = streak;
+
+    // Check if we just crossed a milestone
+    for (const { streak: target, type } of STREAK_MILESTONES) {
+      if (prev < target && streak >= target) {
+        const milestoneKey = `${profileId}_${type}`;
+        const shown = getShownMilestones();
+        if (!shown.has(milestoneKey)) {
+          markMilestoneShown(milestoneKey);
+          setActiveMilestone(type);
+          setShowMilestoneModal(true);
+          if (Platform.OS !== "web") {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        }
+        break;
+      }
+    }
+  }, [streak, profileId]);
+
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
   weekStart.setHours(0, 0, 0, 0);
@@ -304,6 +380,14 @@ export default function AccountabilityScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Accountability</Text>
       </View>
+
+      {/* Milestone share modal */}
+      <MilestoneShareModal
+        visible={showMilestoneModal}
+        milestone={activeMilestone}
+        referralCode={referralCode}
+        onClose={() => setShowMilestoneModal(false)}
+      />
 
       {isLoading ? (
         <View style={styles.loadingState}>

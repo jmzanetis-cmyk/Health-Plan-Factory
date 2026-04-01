@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { type Plan, type PlanItem, planSchema, deserializePlan } from "@/lib/planEngine";
@@ -351,7 +351,14 @@ function DeprioritizedCard({ item, nearbyProviderCount }: { item: PlanItem; near
             : `Over budget for this cycle · $${item.estimatedMonthlyCost}/mo est.`}
         </p>
       </div>
-      <EvidenceBadge level={item.modality.evidenceLevel} />
+      <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.2rem" }}>
+        <EvidenceBadge level={item.modality.evidenceLevel} />
+        {nearbyProviderCount !== undefined && nearbyProviderCount !== null && (
+          <span style={{ fontSize: "0.6rem", fontFamily: "var(--app-font-sans)", color: "var(--text-muted)" }}>
+            {nearbyProviderCount} near you
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -364,6 +371,13 @@ export default function Plan() {
   const [lmnEligibleIds, setLmnEligibleIds] = useState<Set<string>>(new Set());
   const [unusedCreditsCents, setUnusedCreditsCents] = useState(0);
   const [providerCounts, setProviderCounts] = useState<Record<string, number | null>>({});
+
+  // Share modal state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement>(null);
 
   // Fetch unused referral credits when authenticated
   useEffect(() => {
@@ -426,9 +440,9 @@ export default function Plan() {
       // Seed provider counts from stored plan items (available for unauthenticated users
       // whose plan was enriched by the server speculate call during onboarding).
       const seedCounts: Record<string, number | null> = {};
-      for (const item of [...rehydrated.included, ...rehydrated.deprioritized]) {
-        if (item.nearbyProviderCount !== undefined) {
-          seedCounts[item.modality.id] = item.nearbyProviderCount;
+      for (const item of [...(rawPlan.included || []), ...(rawPlan.deprioritized || [])]) {
+        if (item.modalityId && item.nearbyProviderCount !== undefined) {
+          seedCounts[item.modalityId] = item.nearbyProviderCount;
         }
       }
       if (Object.keys(seedCounts).length > 0) {
@@ -458,6 +472,53 @@ export default function Plan() {
       })
       .catch(() => {});
   }, [isAuthenticated, user?.id]);
+
+  // Share handler — fetches/creates a share token for authenticated users
+  async function handleSharePlan() {
+    setShowShareModal(true);
+    if (!isAuthenticated) return; // unauthenticated: modal shows card-only options
+    if (shareUrl) return; // already generated
+
+    setShareLoading(true);
+    try {
+      // Get the user's latest plan ID from API
+      const profileId = user?.id;
+      if (!profileId) { setShareLoading(false); return; }
+
+      const planRes = await fetch(`${BASE}/api/plans/${profileId}/latest`, { credentials: "include" });
+      if (!planRes.ok) { setShareLoading(false); return; }
+      const planData = await planRes.json();
+      const planId = planData?.plan?.id;
+      if (!planId) { setShareLoading(false); return; }
+
+      // Get primary goal label from intake
+      const primaryGoal = intake?.goals?.[0] ?? null;
+      const shareRes = await fetch(`${BASE}/api/plans/${planId}/share`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: primaryGoal }),
+      });
+      if (!shareRes.ok) { setShareLoading(false); return; }
+      const shareData = await shareRes.json();
+      setShareUrl(shareData.shareUrl ?? null);
+    } catch {
+      // silently degrade — share modal still shows card-only view
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // fallback: select text
+    }
+  }
 
   if (!plan || !intake) {
     return (
@@ -492,6 +553,8 @@ export default function Plan() {
     );
   }
 
+  const top3Modalities = plan.included.slice(0, 3);
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--warm-white)" }}>
       {/* Header */}
@@ -525,6 +588,26 @@ export default function Plan() {
           >
             Edit Inputs
           </button>
+          <button
+            type="button"
+            onClick={handleSharePlan}
+            style={{
+              padding: "0.5rem 0.875rem",
+              borderRadius: 8,
+              border: "1.5px solid rgba(212,34,126,0.2)",
+              background: "white",
+              color: "var(--hpf-pink)",
+              fontWeight: 600,
+              fontSize: "0.78rem",
+              cursor: "pointer",
+              fontFamily: "var(--app-font-sans)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.35rem",
+            }}
+          >
+            <span>📤</span> Share
+          </button>
           <Link
             to="/sign-up"
             style={{
@@ -542,6 +625,168 @@ export default function Plan() {
           </Link>
         </div>
       </header>
+
+      {/* Share modal */}
+      {showShareModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowShareModal(false); }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1.25rem",
+          }}
+        >
+          <div style={{
+            background: "white",
+            borderRadius: 20,
+            padding: "1.75rem",
+            width: "100%",
+            maxWidth: 460,
+            boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+              <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.3rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
+                Share My Plan
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowShareModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem", color: "var(--text-muted)" }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Share card preview */}
+            <div
+              ref={shareCardRef}
+              style={{
+                background: "linear-gradient(135deg, var(--hpf-pink) 0%, var(--hpf-crimson) 100%)",
+                borderRadius: 16,
+                padding: "1.5rem",
+                color: "white",
+                marginBottom: "1.25rem",
+              }}
+            >
+              <p style={{ fontSize: "0.6rem", fontFamily: "var(--app-font-mono)", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: "0.35rem" }}>
+                Health Plan Factory
+              </p>
+              <p style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.1rem", fontWeight: 700, lineHeight: 1.25, marginBottom: "0.5rem" }}>
+                {intake.goals?.[0]
+                  ? `My wellness plan for ${intake.goals[0].toLowerCase()}`
+                  : "My personalized wellness plan"}
+              </p>
+              <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.7)", fontFamily: "var(--app-font-sans)", marginBottom: "1rem" }}>
+                ${plan.totalMonthlyCost}/mo · {plan.included.length} evidence-based modalities
+              </p>
+              {top3Modalities.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  {top3Modalities.map((item, i) => (
+                    <div key={item.modality.id} style={{ display: "flex", alignItems: "center", gap: "0.6rem", background: "rgba(255,255,255,0.12)", borderRadius: 8, padding: "0.5rem 0.75rem" }}>
+                      <span style={{ fontSize: "1.1rem" }}>{item.modality.emoji}</span>
+                      <span style={{ fontSize: "0.85rem", fontWeight: 600, fontFamily: "var(--app-font-sans)" }}>{item.modality.name}</span>
+                      <span style={{ marginLeft: "auto", fontSize: "0.62rem", fontFamily: "var(--app-font-mono)", color: "rgba(255,255,255,0.5)" }}>#{i + 1}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Share actions */}
+            {!isAuthenticated ? (
+              <div style={{ background: "rgba(212,34,126,0.04)", border: "1.5px solid rgba(212,34,126,0.12)", borderRadius: 12, padding: "1rem", marginBottom: "1rem" }}>
+                <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", marginBottom: 4 }}>
+                  Save your plan to get a shareable link
+                </p>
+                <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.55, marginBottom: "0.75rem" }}>
+                  Create a free account to generate a public link your friends can use — with your referral code embedded.
+                </p>
+                <Link
+                  to="/sign-up"
+                  onClick={() => setShowShareModal(false)}
+                  style={{
+                    display: "inline-block",
+                    padding: "0.5rem 1rem",
+                    borderRadius: 8,
+                    background: "var(--hpf-pink)",
+                    color: "white",
+                    fontWeight: 600,
+                    fontSize: "0.78rem",
+                    textDecoration: "none",
+                    fontFamily: "var(--app-font-sans)",
+                  }}
+                >
+                  Sign Up Free →
+                </Link>
+              </div>
+            ) : shareLoading ? (
+              <div style={{ textAlign: "center", padding: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", fontSize: "0.8rem" }}>
+                Generating share link…
+              </div>
+            ) : shareUrl ? (
+              <div style={{ marginBottom: "1rem" }}>
+                <p style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Your share link
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <div style={{
+                    flex: 1,
+                    padding: "0.5rem 0.75rem",
+                    background: "rgba(212,34,126,0.04)",
+                    border: "1px solid rgba(212,34,126,0.12)",
+                    borderRadius: 8,
+                    fontSize: "0.72rem",
+                    fontFamily: "var(--app-font-mono)",
+                    color: "var(--text-secondary)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {shareUrl}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    style={{
+                      padding: "0.5rem 0.875rem",
+                      borderRadius: 8,
+                      border: "none",
+                      background: copied ? "var(--sage)" : "var(--hpf-pink)",
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: "0.78rem",
+                      cursor: "pointer",
+                      fontFamily: "var(--app-font-sans)",
+                      whiteSpace: "nowrap",
+                      transition: "background 0.2s",
+                    }}
+                  >
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ background: "rgba(212,34,126,0.04)", border: "1.5px solid rgba(212,34,126,0.12)", borderRadius: 12, padding: "0.875rem", marginBottom: "1rem" }}>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                  Could not generate share link. Please try again.
+                </p>
+              </div>
+            )}
+
+            <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
+              Shared links show your top modalities and goal — no personal details are included. Your referral code is embedded so you earn credit for sign-ups.
+            </p>
+          </div>
+        </div>
+      )}
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "2rem 1.25rem 4rem" }}>
 
@@ -747,6 +992,17 @@ export default function Plan() {
           }}>
             Find vetted providers,<br />unlock your full plan
           </h2>
+          {Object.values(providerCounts).some(c => c !== null && c > 0) && (
+            <p style={{
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.8)",
+              fontFamily: "var(--app-font-sans)",
+              marginBottom: "1rem",
+            }}>
+              ✨ {Object.values(providerCounts).reduce<number>((acc, c) => acc + (c || 0), 0)} providers found near you for this plan
+            </p>
+          )}
           {unusedCreditsCents > 0 ? (
             <div style={{
               display: "inline-flex",
