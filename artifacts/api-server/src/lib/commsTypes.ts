@@ -10,4 +10,5 @@ export type NotificationType =
   | "referral-reward"
   | "magic-link"
   | "weekly-summary"
-  | "streak-at-risk";
+  | "streak-at-risk"
+  | "demo-request";

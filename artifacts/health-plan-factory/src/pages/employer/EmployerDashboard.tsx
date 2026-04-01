@@ -127,6 +127,10 @@ export default function EmployerDashboard() {
     window.open(`${BASE}/api/employer/export-csv`, "_blank");
   };
 
+  const exportPdf = () => {
+    window.open(`${BASE}/api/employer/export-pdf`, "_blank");
+  };
+
   const setupBilling = async () => {
     setBillingLoading(true);
     setBillingMsg(null);
@@ -207,6 +211,9 @@ export default function EmployerDashboard() {
             </button>
             <button onClick={exportCsv} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
               <Download size={14} /> Export CSV
+            </button>
+            <button onClick={exportPdf} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
+              <Download size={14} /> Export Report
             </button>
             <button
               onClick={setupBilling}

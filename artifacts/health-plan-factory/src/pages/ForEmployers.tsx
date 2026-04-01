@@ -5,15 +5,17 @@ const navy = "#2C2825";
 const amber = "#E02040";
 const sage = "#7DB55C";
 
-const CONTACT_EMAIL = "employers@healthplanfactory.com";
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
 interface DemoFormState {
   name: string;
   company: string;
   email: string;
+  phone: string;
   teamSize: string;
   submitted: boolean;
   submitting: boolean;
+  error: string | null;
 }
 
 export default function ForEmployers() {
@@ -21,24 +23,44 @@ export default function ForEmployers() {
     name: "",
     company: "",
     email: "",
+    phone: "",
     teamSize: "",
     submitted: false,
     submitting: false,
+    error: null,
   });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value, error: null }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setForm((prev) => ({ ...prev, submitting: true }));
-    const subject = encodeURIComponent(`Demo request — ${form.company} (${form.teamSize} employees)`);
-    const body = encodeURIComponent(
-      `Name: ${form.name}\nCompany: ${form.company}\nEmail: ${form.email}\nTeam size: ${form.teamSize}`
-    );
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
-    setTimeout(() => setForm((prev) => ({ ...prev, submitted: true, submitting: false })), 400);
+    setForm((prev) => ({ ...prev, submitting: true, error: null }));
+    try {
+      const res = await fetch(`${BASE}/api/demo-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          company: form.company,
+          companySize: form.teamSize,
+          email: form.email,
+          phone: form.phone || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error ?? "Submission failed");
+      }
+      setForm((prev) => ({ ...prev, submitted: true, submitting: false }));
+    } catch (err) {
+      setForm((prev) => ({
+        ...prev,
+        submitting: false,
+        error: err instanceof Error ? err.message : "Something went wrong. Please try again.",
+      }));
+    }
   }
 
   const formValid = form.name.trim() && form.company.trim() && form.email.includes("@") && form.teamSize;
@@ -472,8 +494,8 @@ export default function ForEmployers() {
                 We'll be in touch shortly
               </h3>
               <p className="text-sm font-light" style={{ color: "rgba(255,255,255,0.55)", fontFamily: "var(--app-font-sans)" }}>
-                Your email client should have opened a draft. If not, email us directly at{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: amber, textDecoration: "none" }}>{CONTACT_EMAIL}</a>.
+                Check your inbox — we've sent a confirmation to <strong style={{ color: "white" }}>{form.email}</strong>.
+                Our team will follow up within 1 business day.
               </p>
             </div>
           ) : (
@@ -483,9 +505,10 @@ export default function ForEmployers() {
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
             >
               {[
-                { name: "name", label: "Your name", type: "text", placeholder: "Jane Smith" },
-                { name: "company", label: "Company", type: "text", placeholder: "Acme Corp" },
-                { name: "email", label: "Work email", type: "email", placeholder: "jane@acme.com" },
+                { name: "name", label: "Your name", type: "text", placeholder: "Jane Smith", required: true },
+                { name: "company", label: "Company", type: "text", placeholder: "Acme Corp", required: true },
+                { name: "email", label: "Work email", type: "email", placeholder: "jane@acme.com", required: true },
+                { name: "phone", label: "Phone (optional)", type: "tel", placeholder: "+1 (555) 000-0000", required: false },
               ].map((field) => (
                 <div key={field.name} className="flex flex-col gap-1.5">
                   <label
@@ -502,7 +525,7 @@ export default function ForEmployers() {
                     placeholder={field.placeholder}
                     value={(form as Record<string, string>)[field.name]}
                     onChange={handleChange}
-                    required
+                    required={field.required}
                     style={{
                       background: "rgba(255,255,255,0.07)",
                       border: "1px solid rgba(255,255,255,0.12)",
@@ -550,6 +573,12 @@ export default function ForEmployers() {
                 </select>
               </div>
 
+              {form.error && (
+                <div style={{ background: "rgba(224,32,64,0.15)", border: "1px solid rgba(224,32,64,0.3)", borderRadius: 8, padding: "10px 14px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "#ff8090" }}>
+                  {form.error}
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={!formValid || form.submitting}
@@ -563,7 +592,7 @@ export default function ForEmployers() {
                   letterSpacing: "0.01em",
                 }}
               >
-                {form.submitting ? "Opening email…" : "Request demo →"}
+                {form.submitting ? "Submitting…" : "Request demo →"}
               </button>
 
               <p className="text-center text-xs" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--app-font-sans)" }}>

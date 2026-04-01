@@ -45,6 +45,8 @@ The project is structured as a pnpm monorepo, separating deployable applications
     - **Referrals:** `/api/referrals/mine` (generates/returns referral code, history, credits), `/api/referrals/register` (registers pending referral).
     - **Credits:** `/api/credits/mine` (returns credit balance/history).
     - **Coach Enrichment:** Injects top insights into system prompts for context-aware coaching.
+    - **Demo Requests:** `POST /api/demo-request` (stores lead in DB, sends admin alert + confirmation email). `GET /api/admin/demo-requests` (admin only).
+    - **Employer PDF Export:** `GET /api/employer/export-pdf` (authenticated employer — generates a branded PDF wellness report with spend, utilization buckets, top modalities, and monthly chart).
 
 **Shared Libraries (`lib/`):**
 - **`lib/db`:** Drizzle ORM schema and PostgreSQL connection. Handles migrations and schema definitions.

@@ -16,6 +16,7 @@ import referralsRouter from "./referrals";
 import magicLinksRouter from "./magicLinks";
 import commsPrefsRouter from "./commsPrefs";
 import notificationLogRouter from "./notificationLog";
+import demoRequestsRouter from "./demoRequests";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(referralsRouter);
 router.use(magicLinksRouter);
 router.use(commsPrefsRouter);
 router.use(notificationLogRouter);
+router.use(demoRequestsRouter);
 
 export default router;

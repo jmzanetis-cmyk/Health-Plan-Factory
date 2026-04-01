@@ -589,6 +589,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "magic-link",
   "weekly-summary",
   "streak-at-risk",
+  "demo-request",
 ]);
 
 export const notificationStatusEnum = pgEnum("notification_status", [
@@ -696,6 +697,30 @@ export const insertMemberCreditSchema = createInsertSchema(memberCredits).omit({
 });
 export type InsertMemberCredit = InferInsertModel<typeof memberCredits>;
 export type MemberCredit = InferSelectModel<typeof memberCredits>;
+
+// ── demo_requests ─────────────────────────────────────────────────────────────
+// B2B sales pipeline — inbound demo requests from the employer landing page.
+
+export const demoRequests = pgTable(
+  "demo_requests",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    company: text("company").notNull(),
+    companySize: text("company_size").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    status: text("status").notNull().default("new"), // new | contacted | qualified | closed
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("demo_requests_email_idx").on(t.email)],
+);
+
+export const insertDemoRequestSchema = createInsertSchema(demoRequests).omit({
+  createdAt: true,
+});
+export type InsertDemoRequest = InferInsertModel<typeof demoRequests>;
+export type DemoRequest = InferSelectModel<typeof demoRequests>;
 
 // ── provider_unlocks ──────────────────────────────────────────────────────────
 // Persistent record of which providers a member has unlocked (paid to view).

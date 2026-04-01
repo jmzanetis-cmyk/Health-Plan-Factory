@@ -11,6 +11,7 @@ import { eq, and, count, sql, desc, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import Stripe from "stripe";
+import PDFDocument from "pdfkit";
 
 // ── Stripe client (initialised lazily — requires STRIPE_SECRET_KEY in prod) ──
 // Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET environment variables to
@@ -1057,5 +1058,262 @@ router.post(
 function fmt_cents(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
+
+// ── Employer PDF Report Export ─────────────────────────────────────────────────
+
+router.get("/employer/export-pdf", requireEmployerAuth, async (req, res) => {
+  try {
+    const [employer] = await db
+      .select()
+      .from(employers)
+      .where(eq(employers.adminProfileId, req.user!.id))
+      .limit(1);
+
+    if (!employer) {
+      res.status(404).json({ error: "No employer account found" });
+      return;
+    }
+
+    const members = await db
+      .select()
+      .from(employerMembers)
+      .where(eq(employerMembers.employerId, employer.id));
+
+    const totalEnrolled = members.length;
+    const totalBudgetCents = totalEnrolled * employer.stipendPerEmployee;
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const totalSpentCents = members.reduce(
+      (sum, m) => sum + (m.budgetMonth === currentMonth ? m.spentThisMonth : 0),
+      0,
+    );
+    const utilizationPct = totalBudgetCents > 0
+      ? Math.round((totalSpentCents / totalBudgetCents) * 100)
+      : 0;
+
+    const K_ANON_MIN = 5;
+    const cohortTooSmall = totalEnrolled < K_ANON_MIN;
+
+    const profileIds = members.map((m) => m.profileId);
+
+    let topModalities: Array<{ modalityId: string; sessionCount: number }> = [];
+    let avgWellnessScore = 0;
+    let monthlySpend: Array<{ month: string; totalCents: number }> = [];
+
+    if (profileIds.length > 0) {
+      const logs = await db
+        .select({
+          modalityId: planProgressLogs.modalityId,
+          rating: planProgressLogs.rating,
+        })
+        .from(planProgressLogs)
+        .where(inArray(planProgressLogs.profileId, profileIds));
+
+      const ratings = logs.map((l) => l.rating).filter((r): r is number => r != null);
+      if (ratings.length > 0 && !cohortTooSmall) {
+        avgWellnessScore = Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length);
+      }
+
+      if (!cohortTooSmall) {
+        const modalityCounts = new Map<string, number>();
+        for (const log of logs) {
+          if (log.modalityId) {
+            modalityCounts.set(log.modalityId, (modalityCounts.get(log.modalityId) ?? 0) + 1);
+          }
+        }
+        topModalities = [...modalityCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([modalityId, sessionCount]) => ({ modalityId, sessionCount }));
+
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+        sixMonthsAgo.setDate(1);
+        sixMonthsAgo.setHours(0, 0, 0, 0);
+
+        const spendRows = await db
+          .select({
+            month: sql<string>`to_char(${planProgressLogs.createdAt}, 'YYYY-MM')`,
+            totalCents: sql<number>`coalesce(sum(${planProgressLogs.employerCoveredCents}), 0)`,
+          })
+          .from(planProgressLogs)
+          .where(
+            and(
+              inArray(planProgressLogs.profileId, profileIds),
+              sql`${planProgressLogs.createdAt} >= ${sixMonthsAgo.toISOString()}`
+            )
+          )
+          .groupBy(sql`to_char(${planProgressLogs.createdAt}, 'YYYY-MM')`);
+
+        const spendByMonth: Record<string, number> = {};
+        for (const row of spendRows) {
+          spendByMonth[row.month] = Number(row.totalCents);
+        }
+
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date();
+          d.setMonth(d.getMonth() - i);
+          const m = d.toISOString().slice(0, 7);
+          monthlySpend.push({ month: m, totalCents: spendByMonth[m] ?? 0 });
+        }
+      }
+    }
+
+    const utilBuckets: Array<{ label: string; count: number }> = [
+      { label: "0–25%", count: 0 },
+      { label: "25–50%", count: 0 },
+      { label: "50–75%", count: 0 },
+      { label: "75–100%", count: 0 },
+      { label: "100%+", count: 0 },
+    ];
+    if (!cohortTooSmall) {
+      for (const m of members) {
+        const effectiveSpent = m.budgetMonth === currentMonth ? m.spentThisMonth : 0;
+        const pct = m.monthlyBudget > 0 ? (effectiveSpent / m.monthlyBudget) * 100 : 0;
+        if (pct < 25) utilBuckets[0].count++;
+        else if (pct < 50) utilBuckets[1].count++;
+        else if (pct < 75) utilBuckets[2].count++;
+        else if (pct < 100) utilBuckets[3].count++;
+        else utilBuckets[4].count++;
+      }
+    }
+
+    const monthlyInvoiceCents = employer.stipendPerEmployee * totalEnrolled * (1 + employer.platformFeePercent / 100);
+
+    const generatedDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+    const doc = new PDFDocument({ margin: 50, size: "LETTER" });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="wellness-report-${employer.companyName.toLowerCase().replace(/\s+/g, "-")}-${currentMonth}.pdf"`,
+    );
+    doc.pipe(res);
+
+    const NAVY = "#2C2825";
+    const RED = "#E02040";
+    const SAGE = "#7DB55C";
+    const GRAY = "#888888";
+    const LIGHT = "#f5f5f5";
+
+    doc.rect(0, 0, doc.page.width, 90).fill(NAVY);
+    doc.fillColor("white").fontSize(22).font("Helvetica-Bold").text("Health Plan Factory", 50, 28);
+    doc.fillColor("rgba(255,255,255,0.6)").fontSize(10).font("Helvetica").text("Employer Wellness Report", 50, 54);
+    doc.fillColor("rgba(255,255,255,0.4)").fontSize(9).text(`Generated: ${generatedDate}`, 50, 68);
+
+    doc.moveDown(4);
+
+    doc.fillColor(NAVY).fontSize(18).font("Helvetica-Bold").text(employer.companyName, 50, 110);
+    doc.fillColor(GRAY).fontSize(10).font("Helvetica").text(`Period: ${currentMonth}  ·  Report ID: ${randomUUID().slice(0, 8).toUpperCase()}`, 50, 132);
+
+    doc.moveTo(50, 150).lineTo(doc.page.width - 50, 150).strokeColor("#e0e0e0").stroke();
+
+    let y = 170;
+
+    const drawSection = (title: string) => {
+      doc.fillColor(RED).fontSize(11).font("Helvetica-Bold").text(title.toUpperCase(), 50, y, { characterSpacing: 0.5 });
+      y += 18;
+      doc.moveTo(50, y).lineTo(doc.page.width - 50, y).strokeColor("#eeeeee").stroke();
+      y += 12;
+    };
+
+    const drawKV = (label: string, value: string, col: 0 | 1 = 0) => {
+      const x = col === 0 ? 50 : 310;
+      doc.fillColor(GRAY).fontSize(9).font("Helvetica").text(label.toUpperCase(), x, y, { characterSpacing: 0.3 });
+      doc.fillColor(NAVY).fontSize(13).font("Helvetica-Bold").text(value, x, y + 13);
+    };
+
+    drawSection("Workforce Overview");
+    drawKV("Contracted Headcount", String(employer.numberOfEmployees), 0);
+    drawKV("Enrolled Members", String(totalEnrolled), 1);
+    y += 44;
+
+    drawKV("Stipend per Employee", fmt_cents(employer.stipendPerEmployee) + "/mo", 0);
+    drawKV("Total Budget Pool", fmt_cents(totalBudgetCents) + "/mo", 1);
+    y += 44;
+
+    drawKV("Est. Monthly Invoice", fmt_cents(monthlyInvoiceCents), 0);
+    if (!cohortTooSmall) {
+      drawKV("Total Spent This Month", fmt_cents(totalSpentCents), 1);
+    }
+    y += 52;
+
+    drawSection("Utilization Overview");
+    if (cohortTooSmall) {
+      doc.fillColor(GRAY).fontSize(10).font("Helvetica").text(
+        "Utilization data is suppressed — cohort is below the 5-member privacy floor.",
+        50, y,
+      );
+      y += 30;
+    } else {
+      doc.fillColor(NAVY).fontSize(11).font("Helvetica-Bold").text(`${utilizationPct}%`, 50, y);
+      doc.fillColor(GRAY).fontSize(9).font("Helvetica").text("overall utilization rate this month", 50, y + 16);
+
+      if (avgWellnessScore > 0) {
+        doc.fillColor(NAVY).fontSize(11).font("Helvetica-Bold").text(`${avgWellnessScore}/5`, 310, y);
+        doc.fillColor(GRAY).fontSize(9).font("Helvetica").text("avg. wellness rating (anonymized)", 310, y + 16);
+      }
+      y += 40;
+
+      doc.fillColor(GRAY).fontSize(9).font("Helvetica").text("Utilization Buckets", 50, y);
+      y += 14;
+      const barMaxW = doc.page.width - 100 - 60;
+      for (const bucket of utilBuckets) {
+        const pct = totalEnrolled > 0 ? bucket.count / totalEnrolled : 0;
+        const barW = pct * barMaxW;
+        doc.rect(50, y, barMaxW, 14).fill(LIGHT);
+        if (barW > 0) doc.rect(50, y, barW, 14).fill(SAGE);
+        doc.fillColor(NAVY).fontSize(9).font("Helvetica").text(bucket.label, 50, y + 2);
+        doc.fillColor(GRAY).fontSize(9).font("Helvetica").text(`${bucket.count} members (${Math.round(pct * 100)}%)`, 50 + barMaxW + 6, y + 2);
+        y += 20;
+      }
+      y += 8;
+    }
+
+    if (!cohortTooSmall && topModalities.length > 0) {
+      drawSection("Top Wellness Modalities");
+      const maxSessions = topModalities[0].sessionCount;
+      for (const mod of topModalities) {
+        const barW = maxSessions > 0 ? (mod.sessionCount / maxSessions) * (doc.page.width - 200) : 0;
+        doc.rect(50, y, doc.page.width - 200, 12).fill(LIGHT);
+        if (barW > 0) doc.rect(50, y, barW, 12).fill(NAVY);
+        doc.fillColor(NAVY).fontSize(9).font("Helvetica-Bold").text(mod.modalityId, 50, y + 1);
+        doc.fillColor(GRAY).fontSize(9).font("Helvetica").text(`${mod.sessionCount} sessions`, doc.page.width - 140, y + 1);
+        y += 18;
+      }
+      y += 8;
+    }
+
+    if (!cohortTooSmall && monthlySpend.length > 0) {
+      drawSection("Monthly Spend (6 Months)");
+      const maxSpend = Math.max(...monthlySpend.map((m) => m.totalCents), 1);
+      const colW = Math.floor((doc.page.width - 100) / monthlySpend.length);
+      for (let i = 0; i < monthlySpend.length; i++) {
+        const m = monthlySpend[i];
+        const [yr, mo] = m.month.split("-");
+        const label = new Date(parseInt(yr), parseInt(mo) - 1).toLocaleString("default", { month: "short" });
+        const barH = maxSpend > 0 ? Math.max(4, Math.round((m.totalCents / maxSpend) * 60)) : 4;
+        const x = 50 + i * colW + 4;
+        doc.rect(x, y + 60 - barH, colW - 8, barH).fill(NAVY);
+        doc.fillColor(GRAY).fontSize(8).font("Helvetica").text(label, x, y + 64, { width: colW - 8, align: "center" });
+        doc.fillColor(NAVY).fontSize(8).font("Helvetica-Bold").text(fmt_cents(m.totalCents), x, y + 74, { width: colW - 8, align: "center" });
+      }
+      y += 92;
+    }
+
+    y += 10;
+    doc.rect(0, doc.page.height - 50, doc.page.width, 50).fill(NAVY);
+    doc.fillColor("rgba(255,255,255,0.4)").fontSize(8).font("Helvetica").text(
+      "Aggregate data only — individual health data is never shared. Health Plan Factory · healthplanfactory.com",
+      50, doc.page.height - 32, { align: "center" },
+    );
+
+    doc.end();
+  } catch (err) {
+    console.error("[employer] PDF export error:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Failed to generate PDF report" });
+    }
+  }
+});
 
 export default router;
