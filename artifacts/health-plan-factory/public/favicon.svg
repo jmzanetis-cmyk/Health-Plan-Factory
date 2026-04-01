@@ -1,13 +1,13 @@
 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Navy rounded-square base -->
-  <rect width="48" height="48" rx="11" fill="#1b2d4f"/>
-
-  <!-- Plan lines — three white horizontal bars -->
-  <rect x="10" y="14" width="28" height="5" rx="2.5" fill="white"/>
-  <rect x="10" y="23" width="21" height="5" rx="2.5" fill="white" opacity="0.75"/>
-  <rect x="10" y="32" width="14" height="5" rx="2.5" fill="white" opacity="0.45"/>
-
-  <!-- Amber accent — leaf sprout (wellness / growth) -->
-  <circle cx="38" cy="11" r="7" fill="#b8892a"/>
-  <path d="M38 15 C38 15 36 12 36 9.5 C36 8.1 37 7 38 7 C39 7 40 8.1 40 9.5 C40 12 38 15 38 15Z" fill="rgba(255,255,255,0.35)"/>
+  <!-- 6 outer nodes -->
+  <circle cx="36"   cy="24"   r="6" fill="#1b2d4f"/>
+  <circle cx="30"   cy="13.6" r="6" fill="#1b2d4f"/>
+  <circle cx="18"   cy="13.6" r="6" fill="#1b2d4f"/>
+  <circle cx="12"   cy="24"   r="6" fill="#1b2d4f"/>
+  <circle cx="18"   cy="34.4" r="6" fill="#1b2d4f"/>
+  <circle cx="30"   cy="34.4" r="6" fill="#1b2d4f"/>
+  <!-- Central amber hub -->
+  <circle cx="24" cy="24" r="8" fill="#b8892a"/>
+  <!-- Center eye -->
+  <circle cx="24" cy="24" r="3.5" fill="#1b2d4f"/>
 </svg>
