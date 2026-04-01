@@ -7,6 +7,14 @@ const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const MIN = 50;
 const MAX = 1000;
 
+type Severity = "mild" | "moderate" | "severe";
+type Priority = "low" | "medium" | "high";
+
+interface ConditionWeight {
+  severity: Severity;
+  priority: Priority;
+}
+
 interface SpeculateResult {
   items: {
     name: string;
@@ -24,6 +32,18 @@ interface SpeculateResult {
 const SPECULATOR_CONDITIONS = CONDITIONS.filter((c) => c.id !== "none");
 const SPECULATOR_GOALS = GOALS;
 
+const SEVERITIES: { id: Severity; label: string }[] = [
+  { id: "mild", label: "Mild" },
+  { id: "moderate", label: "Moderate" },
+  { id: "severe", label: "Severe" },
+];
+
+const PRIORITIES: { id: Priority; label: string }[] = [
+  { id: "low", label: "Low" },
+  { id: "medium", label: "Medium" },
+  { id: "high", label: "High" },
+];
+
 function budgetLabel(v: number): string {
   if (v < 150) return "Starter — 1–2 modalities";
   if (v < 300) return "Moderate — 2–3 modality plan";
@@ -31,10 +51,57 @@ function budgetLabel(v: number): string {
   return "Premium — comprehensive plan";
 }
 
+function PillButton({
+  label,
+  active,
+  onClick,
+  color,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  color: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: "0.2rem 0.55rem",
+        borderRadius: 100,
+        border: active ? `1.5px solid ${color}` : "1.5px solid rgba(44,40,37,0.15)",
+        background: active ? color : "white",
+        color: active ? "white" : "var(--text-secondary)",
+        fontSize: "0.7rem",
+        fontWeight: 600,
+        cursor: "pointer",
+        transition: "all 0.12s",
+        fontFamily: "var(--app-font-sans)",
+        userSelect: "none",
+        lineHeight: 1.4,
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+const SEVERITY_COLOR: Record<Severity, string> = {
+  mild: "#7DB55C",
+  moderate: "#D4A84B",
+  severe: "#E02040",
+};
+const PRIORITY_COLOR: Record<Priority, string> = {
+  low: "var(--hpf-pink)",
+  medium: "#9B51E0",
+  high: "#E02040",
+};
+
 export function PlanSpeculator() {
   const navigate = useNavigate();
   const [budget, setBudget] = useState(250);
   const [conditions, setConditions] = useState<string[]>([]);
+  const [conditionWeights, setConditionWeights] = useState<Record<string, ConditionWeight>>({});
   const [goals, setGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SpeculateResult | null>(null);
@@ -42,26 +109,51 @@ export function PlanSpeculator() {
 
   const pct = ((budget - MIN) / (MAX - MIN)) * 100;
 
-  function toggleChip(
-    id: string,
-    selected: string[],
-    setSelected: (v: string[]) => void
-  ) {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((s) => s !== id));
+  function toggleCondition(id: string) {
+    if (conditions.includes(id)) {
+      setConditions(conditions.filter((c) => c !== id));
+      setConditionWeights((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     } else {
-      setSelected([...selected, id]);
+      setConditions([...conditions, id]);
+      setConditionWeights((prev) => ({
+        ...prev,
+        [id]: { severity: "moderate", priority: "medium" },
+      }));
     }
+  }
+
+  function toggleGoal(id: string) {
+    if (goals.includes(id)) {
+      setGoals(goals.filter((g) => g !== id));
+    } else {
+      setGoals([...goals, id]);
+    }
+  }
+
+  function setWeight<K extends keyof ConditionWeight>(id: string, key: K, val: ConditionWeight[K]) {
+    setConditionWeights((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [key]: val },
+    }));
   }
 
   async function handleGenerate() {
     setLoading(true);
     setError(null);
     try {
+      const conditionWeightsPayload = conditions.map((id) => ({
+        id,
+        severity: conditionWeights[id]?.severity ?? "moderate",
+        priority: conditionWeights[id]?.priority ?? "medium",
+      }));
       const res = await fetch(`${BASE}/api/plans/speculate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ budget, conditions, goals }),
+        body: JSON.stringify({ budget, conditions, conditionWeights: conditionWeightsPayload, goals }),
       });
       if (!res.ok) throw new Error("Failed to generate plan preview");
       const data: SpeculateResult = await res.json();
@@ -282,6 +374,7 @@ export function PlanSpeculator() {
         </p>
       </div>
 
+      {/* Budget */}
       <div className="px-5 pt-5 pb-2">
         <label
           className="block text-xs font-semibold uppercase tracking-widest mb-3"
@@ -350,6 +443,7 @@ export function PlanSpeculator() {
         </div>
       </div>
 
+      {/* Conditions */}
       <div className="px-5 pt-4 pb-2">
         <label
           className="block text-xs font-semibold uppercase tracking-widest mb-2"
@@ -369,7 +463,7 @@ export function PlanSpeculator() {
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => toggleChip(opt.id, conditions, setConditions)}
+                onClick={() => toggleCondition(opt.id)}
                 style={{
                   padding: "0.35rem 0.75rem",
                   borderRadius: 100,
@@ -393,6 +487,87 @@ export function PlanSpeculator() {
         </div>
       </div>
 
+      {/* Per-condition severity + priority */}
+      {conditions.length > 0 && (
+        <div
+          className="mx-5 mb-1 mt-3 rounded-xl overflow-hidden"
+          style={{
+            border: "1px solid rgba(44,40,37,0.08)",
+            background: "var(--off-white)",
+          }}
+        >
+          <div
+            className="px-3 py-2"
+            style={{ borderBottom: "1px solid rgba(44,40,37,0.06)" }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+              Condition details — helps us prioritize your plan
+            </p>
+          </div>
+          {conditions.map((id, i) => {
+            const label = SPECULATOR_CONDITIONS.find((c) => c.id === id)?.label ?? id;
+            const w = conditionWeights[id] ?? { severity: "moderate", priority: "medium" };
+            return (
+              <div
+                key={id}
+                className="px-3 py-3"
+                style={{
+                  borderBottom: i < conditions.length - 1 ? "1px solid rgba(44,40,37,0.06)" : "none",
+                }}
+              >
+                <p
+                  className="text-xs font-semibold mb-2"
+                  style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)" }}
+                >
+                  {label}
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="text-xs w-14 flex-shrink-0"
+                      style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}
+                    >
+                      Severity
+                    </span>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {SEVERITIES.map((s) => (
+                        <PillButton
+                          key={s.id}
+                          label={s.label}
+                          active={w.severity === s.id}
+                          onClick={() => setWeight(id, "severity", s.id)}
+                          color={SEVERITY_COLOR[s.id]}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="text-xs w-14 flex-shrink-0"
+                      style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}
+                    >
+                      Priority
+                    </span>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {PRIORITIES.map((p) => (
+                        <PillButton
+                          key={p.id}
+                          label={p.label}
+                          active={w.priority === p.id}
+                          onClick={() => setWeight(id, "priority", p.id)}
+                          color={PRIORITY_COLOR[p.id]}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Goals */}
       <div className="px-5 pt-4 pb-2">
         <label
           className="block text-xs font-semibold uppercase tracking-widest mb-2"
@@ -412,7 +587,7 @@ export function PlanSpeculator() {
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => toggleChip(opt.id, goals, setGoals)}
+                onClick={() => toggleGoal(opt.id)}
                 style={{
                   padding: "0.35rem 0.75rem",
                   borderRadius: 100,

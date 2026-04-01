@@ -5,10 +5,20 @@
 
 import type { Modality } from "@workspace/db";
 
+export type ConditionSeverity = "mild" | "moderate" | "severe";
+export type ConditionPriority = "low" | "medium" | "high";
+
+export interface ConditionWeight {
+  id: string;
+  severity: ConditionSeverity;
+  priority: ConditionPriority;
+}
+
 export interface IntakeInput {
   budget: number;
   goals: string[];
   conditions: string[];
+  conditionWeights?: ConditionWeight[];
   preferences: string[];
   exclusions: string[];
   telehealth: boolean;
@@ -25,14 +35,27 @@ export interface ScoredItem {
   isDeprioritized: boolean;
 }
 
+const SEVERITY_MULT: Record<string, number> = { mild: 1.0, moderate: 1.75, severe: 2.5 };
+const PRIORITY_MULT: Record<string, number> = { low: 1.0, medium: 1.5, high: 2.25 };
+
 function scoreModality(modality: Modality, intake: IntakeInput): number {
   let score = 0;
 
   for (const goal of intake.goals) {
     if ((modality.goals as string[]).includes(goal)) score += 3;
   }
+
+  const weightMap = Object.fromEntries(
+    (intake.conditionWeights ?? []).map((w) => [w.id, w])
+  );
   for (const cond of intake.conditions) {
-    if (cond !== "none" && (modality.conditions as string[]).includes(cond)) score += 4;
+    if (cond !== "none" && (modality.conditions as string[]).includes(cond)) {
+      const w = weightMap[cond];
+      const mult = w
+        ? (SEVERITY_MULT[w.severity] ?? 1) * (PRIORITY_MULT[w.priority] ?? 1)
+        : 1;
+      score += Math.round(4 * mult);
+    }
   }
   for (const pref of intake.preferences) {
     if ((modality.preferenceMatch as string[]).includes(pref)) score += 2;

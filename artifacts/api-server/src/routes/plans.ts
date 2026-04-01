@@ -18,9 +18,16 @@ import { planReadyEmail } from "../emails/plan-ready";
 
 const router: IRouter = Router();
 
+const ConditionWeightSchema = z.object({
+  id: z.string(),
+  severity: z.enum(["mild", "moderate", "severe"]),
+  priority: z.enum(["low", "medium", "high"]),
+});
+
 const SpeculateBody = z.object({
   budget: z.number().min(50).max(1000),
   conditions: z.array(z.string()).default([]),
+  conditionWeights: z.array(ConditionWeightSchema).default([]),
   goals: z.array(z.string()).default([]),
 });
 
@@ -32,7 +39,7 @@ router.post("/plans/speculate", async (req, res) => {
       return;
     }
 
-    const { budget, conditions, goals } = body.data;
+    const { budget, conditions, conditionWeights, goals } = body.data;
 
     const allModalities = await db.select().from(modalities).where(eq(modalities.isActive, true));
 
@@ -40,6 +47,7 @@ router.post("/plans/speculate", async (req, res) => {
       budget,
       goals,
       conditions,
+      conditionWeights,
       preferences: [],
       exclusions: [],
       telehealth: false,
