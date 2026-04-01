@@ -197,7 +197,9 @@ export default function Landing() {
             Tell us your budget, your conditions, and your goals.
             HealthPlanFactory assembles a{" "}
             <strong style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>prioritized, costed wellness plan</strong>
-            {" "}— fitted to what you can actually spend, built around your goals.
+            {" "}— then matches it to{" "}
+            <strong style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>vetted providers near you</strong>
+            {" "}so your plan is ready to book, not just to browse.
           </p>
 
           <div className="flex flex-wrap gap-3 mb-8">
@@ -229,6 +231,7 @@ export default function Landing() {
 
           <div className="flex flex-wrap gap-5">
             {[
+              { icon: "📍", text: "Matched to local providers" },
               { icon: "🔒", text: "Privacy-first intake" },
               { icon: "🧾", text: "No credit card" },
               { icon: "💳", text: "Some services may qualify for HSA/FSA" },
