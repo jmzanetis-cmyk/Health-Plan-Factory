@@ -8,6 +8,11 @@ import {
   ListAdminSettingsResponse,
   UpsertAdminSettingResponse,
 } from "@workspace/api-zod";
+import { buildDigestForMember } from "../lib/weeklyDigest";
+import { weeklyDigestEmail } from "../emails/weekly-digest";
+import { sendEmail } from "../lib/comms";
+
+const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
 const router: IRouter = Router();
 
@@ -317,6 +322,125 @@ router.get("/admin/referral-stats", async (req, res) => {
       totalCreditsCentsUsed: Number(usedCreditsCents.total),
       totalCreditsIssuedFormatted: `$${(Number(totalCreditsCents.total) / 100).toFixed(2)}`,
       totalCreditsUsedFormatted: `$${(Number(usedCreditsCents.total) / 100).toFixed(2)}`,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * GET /admin/preview-digest?memberId=<id>
+ * Returns a rendered HTML preview of the weekly digest for a member.
+ * Does NOT send any email. Admin-only.
+ */
+router.get("/admin/preview-digest", async (req, res) => {
+  const targetId: string = typeof req.query.memberId === "string" && req.query.memberId.trim()
+    ? req.query.memberId.trim()
+    : req.user!.id;
+
+  try {
+    const [profile] = await db
+      .select({ id: profiles.id, email: profiles.email, displayName: profiles.displayName })
+      .from(profiles)
+      .where(eq(profiles.id, targetId))
+      .limit(1);
+
+    if (!profile) {
+      res.status(404).json({ error: "Member not found" });
+      return;
+    }
+
+    const stats = await buildDigestForMember(profile.id);
+    if (!stats) {
+      res.status(500).json({ error: "Could not build digest for member" });
+      return;
+    }
+
+    const { subject, html } = weeklyDigestEmail({
+      displayName: profile.displayName,
+      wellnessScoreThisWeek: stats.wellnessScoreThisWeek,
+      wellnessScoreLastWeek: stats.wellnessScoreLastWeek,
+      habitsCompleted: stats.habitsCompleted,
+      habitsPlanned: stats.habitsPlanned,
+      upcomingSessions: stats.upcomingSessions,
+      aiMotivationalTip: stats.aiMotivationalTip,
+      topGoal: stats.topGoal,
+      dashboardUrl: `${BASE_URL}/dashboard`,
+    });
+
+    res.json({
+      subject,
+      html,
+      memberId: profile.id,
+      memberEmail: profile.email,
+      stats: {
+        wellnessScoreThisWeek: stats.wellnessScoreThisWeek,
+        wellnessScoreLastWeek: stats.wellnessScoreLastWeek,
+        habitsCompleted: stats.habitsCompleted,
+        habitsPlanned: stats.habitsPlanned,
+        upcomingSessionCount: stats.upcomingSessions.length,
+        topGoal: stats.topGoal,
+      },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /admin/send-test-digest
+ * Triggers a test weekly digest email for a specific member (or the requesting admin).
+ * Body: { memberId?: string } — omit to send to the requesting admin's own email.
+ */
+router.post("/admin/send-test-digest", async (req, res) => {
+  const targetId: string = (req.body as { memberId?: string }).memberId ?? req.user!.id;
+
+  try {
+    const [profile] = await db
+      .select({ id: profiles.id, email: profiles.email, displayName: profiles.displayName })
+      .from(profiles)
+      .where(eq(profiles.id, targetId))
+      .limit(1);
+
+    if (!profile) {
+      res.status(404).json({ error: "Member not found" });
+      return;
+    }
+
+    const stats = await buildDigestForMember(profile.id);
+    if (!stats) {
+      res.status(500).json({ error: "Could not build digest for member" });
+      return;
+    }
+
+    const { subject, html } = weeklyDigestEmail({
+      displayName: profile.displayName,
+      wellnessScoreThisWeek: stats.wellnessScoreThisWeek,
+      wellnessScoreLastWeek: stats.wellnessScoreLastWeek,
+      habitsCompleted: stats.habitsCompleted,
+      habitsPlanned: stats.habitsPlanned,
+      upcomingSessions: stats.upcomingSessions,
+      aiMotivationalTip: stats.aiMotivationalTip,
+      topGoal: stats.topGoal,
+      dashboardUrl: `${BASE_URL}/dashboard`,
+    });
+
+    await sendEmail(profile.id, profile.email, `[TEST] ${subject}`, html, "weekly-summary");
+
+    res.json({
+      ok: true,
+      sentTo: profile.email,
+      subject: `[TEST] ${subject}`,
+      stats: {
+        wellnessScoreThisWeek: stats.wellnessScoreThisWeek,
+        wellnessScoreLastWeek: stats.wellnessScoreLastWeek,
+        habitsCompleted: stats.habitsCompleted,
+        habitsPlanned: stats.habitsPlanned,
+        upcomingSessionCount: stats.upcomingSessions.length,
+        topGoal: stats.topGoal,
+      },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";

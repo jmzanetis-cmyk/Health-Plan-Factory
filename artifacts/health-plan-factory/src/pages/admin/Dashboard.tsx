@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Stethoscope, FileText, Clock, TrendingUp, Loader2, Gift, Percent, CreditCard } from "lucide-react";
+import { Users, Stethoscope, FileText, Clock, TrendingUp, Loader2, Gift, Percent, CreditCard, Mail, CheckCircle2, AlertCircle } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -93,6 +93,237 @@ export function AdminNav({ active }: { active: string }) {
         </Link>
       ))}
     </nav>
+  );
+}
+
+interface DigestPreview {
+  subject: string;
+  html: string;
+  memberEmail: string;
+  stats: {
+    wellnessScoreThisWeek: number | null;
+    wellnessScoreLastWeek: number | null;
+    habitsCompleted: number;
+    habitsPlanned: number;
+    upcomingSessionCount: number;
+    topGoal: string | null;
+  };
+}
+
+function TestDigestSection() {
+  const [memberId, setMemberId] = useState("");
+  const [sending, setSending] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [preview, setPreview] = useState<DigestPreview | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [sendResult, setSendResult] = useState<{ ok: boolean; sentTo?: string; error?: string } | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const loadPreview = async () => {
+    setPreviewing(true);
+    setPreviewError(null);
+    setSendResult(null);
+    try {
+      const qs = memberId.trim() ? `?memberId=${encodeURIComponent(memberId.trim())}` : "";
+      const res = await fetch(`${BASE}/api/admin/preview-digest${qs}`, { credentials: "include" });
+      const data = await res.json();
+      if (res.ok) {
+        setPreview(data);
+        setShowPreview(true);
+      } else {
+        setPreviewError(data.error ?? "Failed to generate preview");
+      }
+    } catch {
+      setPreviewError("Network error — please try again");
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
+  const sendTest = async () => {
+    setSending(true);
+    setSendResult(null);
+    try {
+      const res = await fetch(`${BASE}/api/admin/send-test-digest`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(memberId.trim() ? { memberId: memberId.trim() } : {}),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSendResult({ ok: true, sentTo: data.sentTo });
+      } else {
+        setSendResult({ ok: false, error: data.error ?? "Failed to send test digest" });
+      }
+    } catch {
+      setSendResult({ ok: false, error: "Network error — please try again" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="p-6 rounded-2xl mb-8" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Mail size={18} style={{ color: "var(--hpf-crimson)" }} />
+          <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
+            Weekly Digest — Preview &amp; Test
+          </h2>
+        </div>
+        <p className="text-sm mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+          Preview the digest for any member before sending. Leave the Member ID blank to use your own account.
+        </p>
+        <div className="flex gap-3 flex-wrap items-center mb-3">
+          <input
+            type="text"
+            placeholder="Member ID (optional — leave blank for self)"
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            style={{
+              flex: 1,
+              minWidth: 240,
+              border: "1.5px solid rgba(212,34,126,0.18)",
+              borderRadius: 8,
+              padding: "9px 14px",
+              fontFamily: "var(--app-font-sans)",
+              fontSize: 13,
+              color: "var(--text-primary)",
+              outline: "none",
+              background: "white",
+            }}
+          />
+          <button
+            onClick={loadPreview}
+            disabled={previewing}
+            style={{
+              background: "white",
+              color: "var(--hpf-pink)",
+              border: "1.5px solid var(--hpf-pink)",
+              borderRadius: 8,
+              padding: "9px 20px",
+              fontFamily: "var(--app-font-sans)",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: previewing ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+              opacity: previewing ? 0.6 : 1,
+            }}
+          >
+            {previewing && <Loader2 size={14} className="animate-spin" />}
+            Preview Digest
+          </button>
+          <button
+            onClick={sendTest}
+            disabled={sending}
+            style={{
+              background: sending ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)",
+              color: "white",
+              border: "none",
+              borderRadius: 8,
+              padding: "9px 20px",
+              fontFamily: "var(--app-font-sans)",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: sending ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {sending && <Loader2 size={14} className="animate-spin" />}
+            Send Test Email
+          </button>
+        </div>
+        {previewError && (
+          <div className="flex items-center gap-2 text-sm mt-1" style={{ color: "#dc2626", fontFamily: "var(--app-font-sans)" }}>
+            <AlertCircle size={15} /> {previewError}
+          </div>
+        )}
+        {sendResult?.ok && (
+          <div className="flex items-center gap-2 text-sm mt-1" style={{ color: "#16a34a", fontFamily: "var(--app-font-sans)" }}>
+            <CheckCircle2 size={15} /> Test digest sent to <strong>{sendResult.sentTo}</strong>
+          </div>
+        )}
+        {sendResult?.ok === false && (
+          <div className="flex items-center gap-2 text-sm mt-1" style={{ color: "#dc2626", fontFamily: "var(--app-font-sans)" }}>
+            <AlertCircle size={15} /> {sendResult.error}
+          </div>
+        )}
+      </div>
+
+      {/* Preview modal */}
+      {showPreview && preview && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            padding: "40px 16px",
+            overflowY: "auto",
+          }}
+          onClick={() => setShowPreview(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: 16,
+              width: "100%",
+              maxWidth: 700,
+              overflow: "hidden",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(212,34,126,0.1)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+              <div>
+                <div style={{ fontFamily: "var(--app-font-serif)", fontWeight: 700, fontSize: 16, color: "var(--hpf-pink)", marginBottom: 4 }}>
+                  Email Preview — {preview.memberEmail}
+                </div>
+                <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)" }}>
+                  Subject: <strong>{preview.subject}</strong>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-3">
+                  {[
+                    { label: "Score", value: preview.stats.wellnessScoreThisWeek != null ? `${preview.stats.wellnessScoreThisWeek}/10` : "—" },
+                    { label: "Habits", value: `${preview.stats.habitsCompleted}/${preview.stats.habitsPlanned}` },
+                    { label: "Upcoming", value: `${preview.stats.upcomingSessionCount} sessions` },
+                    ...(preview.stats.topGoal ? [{ label: "Goal", value: preview.stats.topGoal }] : []),
+                  ].map((s) => (
+                    <span key={s.label} style={{ background: "rgba(212,34,126,0.06)", borderRadius: 6, padding: "3px 10px", fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>
+                      <strong style={{ color: "var(--hpf-pink)" }}>{s.label}:</strong> {s.value}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPreview(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 20, lineHeight: 1, padding: 4, flexShrink: 0 }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ background: "#f8f6f1", padding: 24, overflowY: "auto", maxHeight: "calc(90vh - 160px)" }}>
+              <iframe
+                srcDoc={preview.html}
+                style={{ width: "100%", height: 680, border: "none", borderRadius: 8, background: "white" }}
+                title="Digest Preview"
+                sandbox="allow-same-origin"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -188,6 +419,9 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+
+        {/* Test Weekly Digest */}
+        <TestDigestSection />
 
         {/* Weekly signups chart */}
         <div className="p-6 rounded-2xl" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>

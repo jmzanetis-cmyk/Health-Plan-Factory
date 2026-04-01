@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Building2, Loader2, CheckCircle2, AlertCircle, Bell, Phone, Mail } from "lucide-react";
+import { Building2, Loader2, CheckCircle2, AlertCircle, Bell, Phone, Mail, CalendarDays } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -25,7 +25,19 @@ interface EmployerBudget {
 interface CommsPrefs {
   email: boolean;
   sms: boolean;
+  weeklyDigest?: boolean;
+  digestDay?: number;
 }
+
+const DAY_OPTIONS = [
+  { value: 0, label: "Sunday" },
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+  { value: 6, label: "Saturday" },
+];
 
 function fmt(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -181,7 +193,7 @@ function EmployerStipendSection() {
 }
 
 function NotificationPrefsSection() {
-  const [prefs, setPrefs] = useState<CommsPrefs>({ email: true, sms: false });
+  const [prefs, setPrefs] = useState<CommsPrefs>({ email: true, sms: false, weeklyDigest: true, digestDay: 1 });
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -192,7 +204,12 @@ function NotificationPrefsSection() {
     fetch(`${BASE}/api/profile/comms-prefs`, { credentials: "include" })
       .then((r) => r.json())
       .then((d) => {
-        if (d.prefs) setPrefs(d.prefs);
+        if (d.prefs) setPrefs({
+          email: d.prefs.email ?? true,
+          sms: d.prefs.sms ?? false,
+          weeklyDigest: d.prefs.weeklyDigest !== false,
+          digestDay: d.prefs.digestDay ?? 1,
+        });
         if (d.phone) setPhone(d.phone);
         setLoading(false);
       })
@@ -208,7 +225,13 @@ function NotificationPrefsSection() {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...prefs, phone: phone || null }),
+        body: JSON.stringify({
+          email: prefs.email,
+          sms: prefs.sms,
+          weeklyDigest: prefs.weeklyDigest ?? true,
+          digestDay: prefs.digestDay ?? 1,
+          phone: phone || null,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -304,6 +327,56 @@ function NotificationPrefsSection() {
               </p>
             </div>
           )}
+
+          <div style={{ borderTop: "1px solid rgba(212,34,126,0.08)", paddingTop: 16 }}>
+            <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
+              Weekly Wellness Digest
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", padding: "12px 16px", borderRadius: 8, border: "1.5px solid rgba(212,34,126,0.1)", background: "rgba(212,34,126,0.02)", marginBottom: 12 }}>
+              <input
+                type="checkbox"
+                checked={prefs.weeklyDigest !== false}
+                onChange={(e) => setPrefs((p) => ({ ...p, weeklyDigest: e.target.checked }))}
+                style={{ width: 16, height: 16, cursor: "pointer" }}
+              />
+              <CalendarDays size={15} color={navy} />
+              <div>
+                <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, color: navy }}>Weekly digest email</div>
+                <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>
+                  Wellness score trend, completed habits, upcoming sessions, and an AI motivational tip
+                </div>
+              </div>
+            </label>
+
+            {prefs.weeklyDigest !== false && (
+              <div>
+                <label style={{ display: "block", fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                  Send on
+                </label>
+                <select
+                  value={prefs.digestDay ?? 1}
+                  onChange={(e) => setPrefs((p) => ({ ...p, digestDay: Number(e.target.value) }))}
+                  style={{
+                    border: "1.5px solid rgba(212,34,126,0.18)",
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                    fontFamily: "var(--app-font-sans)",
+                    fontSize: 14,
+                    color: navy,
+                    outline: "none",
+                    background: "white",
+                    cursor: "pointer",
+                    minWidth: 160,
+                  }}
+                >
+                  {DAY_OPTIONS.map((d) => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
 
           {error && (
             <div style={{ background: "rgba(220,53,53,0.08)", border: "1px solid rgba(220,53,53,0.2)", borderRadius: 8, padding: "10px 14px", color: "#c42b2b", fontFamily: "var(--app-font-sans)", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>

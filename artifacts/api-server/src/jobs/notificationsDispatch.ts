@@ -17,6 +17,8 @@ import { queueNotification, processQueuedNotifications } from "../lib/comms";
 import { sessionReminderEmail } from "../emails/session-reminder";
 import { accountabilityNudgeEmail } from "../emails/accountability-nudge";
 import { paymentDueEmail } from "../emails/payment-due";
+import { weeklyDigestEmail } from "../emails/weekly-digest";
+import { buildDigestForMember } from "../lib/weeklyDigest";
 import { logger } from "../lib/logger";
 
 const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
@@ -204,14 +206,12 @@ async function dispatchAccountabilityNudges(): Promise<{ sent: number; skipped: 
   return { sent, skipped };
 }
 
-async function dispatchWeeklySummaries(): Promise<{ sent: number; skipped: number }> {
+async function dispatchWeeklyDigests(): Promise<{ sent: number; skipped: number }> {
   const today = new Date();
-  if (today.getUTCDay() !== 1) return { sent: 0, skipped: 0 }; // only on Mondays
+  const utcDay = today.getUTCDay(); // 0=Sun, 1=Mon, ...
 
   let sent = 0;
   let skipped = 0;
-
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   const allMembers = await db
     .select({
@@ -224,6 +224,20 @@ async function dispatchWeeklySummaries(): Promise<{ sent: number; skipped: numbe
     .where(eq(profiles.role, "member"));
 
   for (const profile of allMembers) {
+    const prefs = profile.communicationPrefs as {
+      email?: boolean;
+      sms?: boolean;
+      weeklyDigest?: boolean;
+      digestDay?: number; // 0=Sun … 6=Sat
+    } | null;
+
+    // Default: weekly digest on, Monday delivery
+    const digestEnabled = prefs?.weeklyDigest !== false;
+    const digestDay = prefs?.digestDay ?? 1; // default Monday
+
+    if (!digestEnabled) { skipped++; continue; }
+    if (utcDay !== digestDay) { skipped++; continue; }
+
     const alreadySent = await wasRecentlySent(
       profile.id,
       "weekly-summary",
@@ -231,48 +245,36 @@ async function dispatchWeeklySummaries(): Promise<{ sent: number; skipped: numbe
     );
     if (alreadySent) { skipped++; continue; }
 
-    const recentLogs = await db
-      .select({ createdAt: planProgressLogs.createdAt })
-      .from(planProgressLogs)
-      .where(
-        and(
-          eq(planProgressLogs.profileId, profile.id),
-          gte(planProgressLogs.createdAt, sevenDaysAgo),
-        ),
-      );
+    try {
+      const stats = await buildDigestForMember(profile.id);
+      if (!stats) { skipped++; continue; }
 
-    const weeklySessionCount = recentLogs.length;
+      const { subject, html } = weeklyDigestEmail({
+        displayName: profile.displayName,
+        wellnessScoreThisWeek: stats.wellnessScoreThisWeek,
+        wellnessScoreLastWeek: stats.wellnessScoreLastWeek,
+        habitsCompleted: stats.habitsCompleted,
+        habitsPlanned: stats.habitsPlanned,
+        upcomingSessions: stats.upcomingSessions,
+        aiMotivationalTip: stats.aiMotivationalTip,
+        topGoal: stats.topGoal,
+        dashboardUrl: DASHBOARD_URL,
+      });
 
-    const lastLog = await db
-      .select({ createdAt: planProgressLogs.createdAt })
-      .from(planProgressLogs)
-      .where(eq(planProgressLogs.profileId, profile.id))
-      .orderBy(sql`${planProgressLogs.createdAt} DESC`)
-      .limit(1);
-
-    const daysSinceLast = lastLog[0]
-      ? Math.floor((Date.now() - new Date(lastLog[0].createdAt).getTime()) / (1000 * 60 * 60 * 24))
-      : null;
-
-    const { subject, html } = accountabilityNudgeEmail({
-      displayName: profile.displayName,
-      weeklySessionCount,
-      currentStreak: 0,
-      daysSinceLastSession: daysSinceLast,
-      dashboardUrl: PROGRESS_URL,
-      type: "weekly-summary",
-    });
-
-    await queueNotification({
-      profileId: profile.id,
-      email: profile.email,
-      type: "weekly-summary",
-      subject,
-      html,
-      smsBody: `Health Plan Factory: Weekly check-in — you logged ${weeklySessionCount} session(s) this week. Keep up the great work!`,
-      scheduledFor: new Date(),
-    });
-    sent++;
+      await queueNotification({
+        profileId: profile.id,
+        email: profile.email,
+        type: "weekly-summary",
+        subject,
+        html,
+        smsBody: `Health Plan Factory: Your weekly wellness digest is ready. You logged ${stats.habitsCompleted} session(s) this week. Check your email for the full summary!`,
+        scheduledFor: new Date(),
+      });
+      sent++;
+    } catch (err) {
+      logger.error({ err, profileId: profile.id }, "Failed to build/send weekly digest");
+      skipped++;
+    }
   }
 
   return { sent, skipped };
@@ -333,15 +335,15 @@ async function runDailyBatchJob(): Promise<void> {
   logger.info("Daily batch notification job started");
 
   try {
-    const [reminders, nudges, weeklySummaries, paymentDue] = await Promise.all([
+    const [reminders, nudges, weeklyDigests, paymentDue] = await Promise.all([
       dispatchSessionReminders(),
       dispatchAccountabilityNudges(),
-      dispatchWeeklySummaries(),
+      dispatchWeeklyDigests(),
       dispatchPaymentDueReminders(),
     ]);
 
     logger.info(
-      { reminders, nudges, weeklySummaries, paymentDue },
+      { reminders, nudges, weeklyDigests, paymentDue },
       "Daily batch notification job complete",
     );
   } catch (err) {

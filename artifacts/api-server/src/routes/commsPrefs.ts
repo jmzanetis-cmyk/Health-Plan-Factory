@@ -1,8 +1,8 @@
 /**
  * Communication preferences API
  *
- * GET  /profile/comms-prefs  — returns current email/SMS preferences
- * PATCH /profile/comms-prefs — updates preferences and optional phone
+ * GET  /profile/comms-prefs  — returns current email/SMS preferences + digest settings
+ * PATCH /profile/comms-prefs — updates preferences, phone, and weekly digest settings
  */
 import { Router, Request, Response } from "express";
 import { db } from "@workspace/db";
@@ -24,6 +24,8 @@ const PatchCommsPrefsBody = z.object({
   email: z.boolean().optional(),
   sms: z.boolean().optional(),
   phone: z.string().optional().nullable(),
+  weeklyDigest: z.boolean().optional(),
+  digestDay: z.number().int().min(0).max(6).optional(),
 });
 
 router.get("/profile/comms-prefs", async (req: Request, res: Response) => {
@@ -62,10 +64,18 @@ router.patch("/profile/comms-prefs", async (req: Request, res: Response) => {
       .where(eq(profiles.id, profileId))
       .limit(1);
 
-    const currentPrefs = current?.communicationPrefs ?? { email: true, sms: false };
+    const currentPrefs = (current?.communicationPrefs ?? { email: true, sms: false }) as {
+      email: boolean;
+      sms: boolean;
+      weeklyDigest?: boolean;
+      digestDay?: number;
+    };
+
     const newPrefs = {
       email: body.data.email ?? currentPrefs.email,
       sms: body.data.sms ?? currentPrefs.sms,
+      weeklyDigest: body.data.weeklyDigest ?? currentPrefs.weeklyDigest ?? true,
+      digestDay: body.data.digestDay ?? currentPrefs.digestDay ?? 1,
     };
 
     const [updated] = await db
