@@ -55,7 +55,7 @@ router.post("/plans/speculate", async (req, res) => {
       radius: 25,
     });
 
-    const preview = generated.items.slice(0, 5).map((item) => ({
+    const preview = generated.items.filter((item) => !item.isDeprioritized).slice(0, 5).map((item) => ({
       name: item.modality.name,
       emoji: item.modality.emoji,
       estimatedMonthlyCost: item.estimatedMonthlyCost,
