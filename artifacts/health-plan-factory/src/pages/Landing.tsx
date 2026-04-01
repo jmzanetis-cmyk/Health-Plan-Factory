@@ -252,7 +252,7 @@ export default function Landing() {
         {/* Right — interactive plan speculator (desktop); on mobile it appears below the hero CTAs */}
         <div className="relative z-10 flex flex-col items-center gap-4">
           {/* Factory illustration — animated inline SVG */}
-          <div className="hidden md:block w-full max-w-md mx-auto mb-1" style={{ pointerEvents: "none" }}>
+          <div className="hidden md:block w-full max-w-sm mx-auto mb-1" style={{ pointerEvents: "none" }}>
             <svg
               viewBox="0 0 480 320"
               xmlns="http://www.w3.org/2000/svg"
@@ -272,6 +272,9 @@ export default function Landing() {
                   @keyframes fctGear{to{transform:rotate(360deg)}}
                   .fct-wb{animation:fctBlink 4s ease-in-out infinite}
                   @keyframes fctBlink{0%,90%,100%{opacity:1}95%{opacity:.3}}
+                  .fct-belt{animation:fctBelt 1.5s linear infinite}
+                  @keyframes fctBelt{from{stroke-dashoffset:0}to{stroke-dashoffset:-20}}
+                  @keyframes fctWave{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-22deg)}}
                 `}</style>
                 <clipPath id="fctClip"><rect x="0" y="0" width="480" height="200"/></clipPath>
               </defs>
@@ -366,13 +369,14 @@ export default function Landing() {
 
               {/* Conveyor belt */}
               <rect x="60" y="248" width="120" height="12" fill="#d4227e" rx="3"/>
-              <line x1="70" y1="250" x2="70" y2="258" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/>
-              <line x1="85" y1="250" x2="85" y2="258" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/>
-              <line x1="100" y1="250" x2="100" y2="258" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/>
-              <line x1="115" y1="250" x2="115" y2="258" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/>
-              <line x1="130" y1="250" x2="130" y2="258" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/>
-              <line x1="145" y1="250" x2="145" y2="258" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/>
-              <line x1="160" y1="250" x2="160" y2="258" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/>
+              {/* Animated belt surface */}
+              <line
+                className="fct-belt"
+                x1="65" y1="254" x2="175" y2="254"
+                stroke="rgba(255,255,255,.18)"
+                strokeWidth="8"
+                strokeDasharray="10,10"
+              />
               <circle cx="65" cy="254" r="6" fill="#a80d42" stroke="#e02040" strokeWidth="2"/>
               <circle cx="175" cy="254" r="6" fill="#a80d42" stroke="#e02040" strokeWidth="2"/>
 
@@ -395,8 +399,11 @@ export default function Landing() {
               <circle cx="313" cy="242" r="1.2" fill="#1a1a2e"/>
               <path d="M307 246 Q310 249 313 246" fill="none" stroke="#1a1a2e" strokeWidth="1"/>
               <rect x="304" y="251" width="12" height="14" fill="#d4227e" rx="2"/>
-              <line x1="316" y1="254" x2="326" y2="248" stroke="#fdf5e6" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="328" cy="247" r="3" fill="#fdf5e6" stroke="#1a1a2e" strokeWidth="1"/>
+              {/* Waving arm — animated rotation around shoulder pivot */}
+              <g style={{ animation: "fctWave 1.5s ease-in-out infinite", transformOrigin: "316px 254px" }}>
+                <line x1="316" y1="254" x2="326" y2="248" stroke="#fdf5e6" strokeWidth="2.5" strokeLinecap="round"/>
+                <circle cx="328" cy="247" r="3" fill="#fdf5e6" stroke="#1a1a2e" strokeWidth="1"/>
+              </g>
               <line x1="304" y1="255" x2="296" y2="259" stroke="#fdf5e6" strokeWidth="2.5" strokeLinecap="round"/>
               <line x1="307" y1="265" x2="305" y2="275" stroke="#1a1a2e" strokeWidth="2.5" strokeLinecap="round"/>
               <line x1="313" y1="265" x2="315" y2="275" stroke="#1a1a2e" strokeWidth="2.5" strokeLinecap="round"/>
