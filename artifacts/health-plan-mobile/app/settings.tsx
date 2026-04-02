@@ -325,12 +325,13 @@ export default function SettingsScreen() {
     staleTime: 120_000,
   });
 
-  const isPlus = subscriptionData?.isPlus ?? false;
-  const membershipLabel = isPlus
-    ? "Plus"
-    : subscriptionData?.subscriptionStatus === "employer"
-      ? "Employer"
-      : "Explorer";
+  const subscriptionStatus = subscriptionData?.subscriptionStatus ?? "free";
+  const membershipLabel =
+    subscriptionStatus === "plus"
+      ? "Plus"
+      : subscriptionStatus === "employer"
+        ? "Employer"
+        : "Explorer";
 
   function handleSignOut() {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [

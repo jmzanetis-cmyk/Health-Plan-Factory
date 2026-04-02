@@ -285,7 +285,9 @@ export default function PlanScreen() {
     staleTime: 120_000,
   });
 
-  const isPlus = subscriptionData?.isPlus ?? false;
+  const hasProviderAccess =
+    (subscriptionData?.isPlus ?? false) ||
+    subscriptionData?.subscriptionStatus === "employer";
 
   const { data: modalities } = useListModalities(undefined, {
     query: { staleTime: 300_000 },
@@ -321,7 +323,7 @@ export default function PlanScreen() {
     0
   ) ?? 0;
 
-  const upgradeCard = !isPlus ? (
+  const upgradeCard = !hasProviderAccess ? (
     <TouchableOpacity
       style={styles.upgradeCard}
       onPress={onUpgrade}
@@ -371,7 +373,7 @@ export default function PlanScreen() {
         <FlatList
           data={priorityItems}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PlanItemCard item={item} modalityMap={modalityMap} isPlus={isPlus} />}
+          renderItem={({ item }) => <PlanItemCard item={item} modalityMap={modalityMap} isPlus={hasProviderAccess} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -404,7 +406,7 @@ export default function PlanScreen() {
                 <View style={styles.deprioSection}>
                   <Text style={styles.deprioSectionTitle}>Also Considered</Text>
                   {deprioItems.map((item) => (
-                    <PlanItemCard key={item.id} item={item} modalityMap={modalityMap} isPlus={isPlus} />
+                    <PlanItemCard key={item.id} item={item} modalityMap={modalityMap} isPlus={hasProviderAccess} />
                   ))}
                 </View>
               )}
