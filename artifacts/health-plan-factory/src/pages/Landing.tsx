@@ -362,7 +362,7 @@ export default function Landing() {
         {/* Right — interactive plan speculator (desktop); on mobile it appears below the hero CTAs */}
         <div className="relative z-10 flex flex-col items-center gap-4">
           {/* Factory illustration — animated inline SVG */}
-          <div className="hidden md:block w-full max-w-sm mx-auto mb-1" style={{ pointerEvents: "none" }}>
+          <div className="block w-full max-w-xs md:max-w-sm mx-auto mb-1" style={{ pointerEvents: "none" }}>
             <svg
               viewBox="0 0 480 320"
               xmlns="http://www.w3.org/2000/svg"
