@@ -533,7 +533,7 @@ export default function Providers() {
             </p>
             <div className="mb-3">
               <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-                Your contact email <span style={{ color: "var(--hpf-crimson)" }}>*</span>
+                Your contact email <span style={{ fontWeight: 400, fontSize: "0.75rem", color: "var(--text-muted)" }}>(optional — defaults to your account email)</span>
               </label>
               <input
                 type="email"
