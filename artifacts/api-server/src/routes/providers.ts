@@ -889,4 +889,60 @@ router.post("/providers/listing-checkout", async (req, res) => {
   }
 });
 
+// GET /providers/counts — returns provider count per modality for a zip code
+// Used by plan reveal page to show "X providers near you" trust badges
+router.get("/providers/counts", async (req, res) => {
+  try {
+    const { zipCode, radius = "25" } = req.query as { zipCode?: string; radius?: string };
+
+    let allProviders = await db
+      .select()
+      .from(providers)
+      .where(eq(providers.status, "approved"));
+
+    let filtered = allProviders;
+
+    if (zipCode) {
+      const userCoords = ZIP_COORDS[zipCode];
+      if (userCoords) {
+        filtered = allProviders.filter((p) => {
+          if (p.offersTelehealth) return true;
+          if (!p.lat || !p.lng) return false;
+          const dist = haversineDistanceMiles(
+            userCoords.lat,
+            userCoords.lng,
+            parseFloat(p.lat),
+            parseFloat(p.lng),
+          );
+          return dist <= Number(radius);
+        });
+      } else {
+        filtered = allProviders.filter((p) => p.offersTelehealth || !p.zipCode || p.zipCode === zipCode);
+      }
+    }
+
+    // Count providers per modality
+    const providerIds = filtered.map((p) => p.id);
+    if (providerIds.length === 0) {
+      res.json({ counts: {}, totalNearby: 0, zip: zipCode ?? null, isNational: !zipCode });
+      return;
+    }
+
+    const links = await db
+      .select({ modalityId: providerModalities.modalityId })
+      .from(providerModalities)
+      .where(inArray(providerModalities.providerId, providerIds));
+
+    const counts: Record<string, number> = {};
+    for (const link of links) {
+      counts[link.modalityId] = (counts[link.modalityId] ?? 0) + 1;
+    }
+
+    res.json({ counts, totalNearby: filtered.length, zip: zipCode ?? null, isNational: !zipCode });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
 export default router;

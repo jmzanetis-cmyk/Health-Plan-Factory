@@ -826,3 +826,27 @@ export const insertProviderSubscriptionSchema = createInsertSchema(providerSubsc
 });
 export type InsertProviderSubscription = InferInsertModel<typeof providerSubscriptions>;
 export type ProviderSubscription = InferSelectModel<typeof providerSubscriptions>;
+
+// ── testimonials ──────────────────────────────────────────────────────────────
+// Member success stories shown on the landing page and How It Works page.
+// Admin can add/edit/hide testimonials from the admin dashboard.
+
+export const testimonials = pgTable("testimonials", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  location: text("location"),
+  goal: text("goal"),
+  quote: text("quote").notNull(),
+  stars: integer("stars").notNull().default(5),
+  isVisible: boolean("is_visible").notNull().default(true),
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertTestimonial = InferInsertModel<typeof testimonials>;
+export type Testimonial = InferSelectModel<typeof testimonials>;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
 
 const STAGES = [
   {
@@ -376,6 +377,9 @@ export default function HowItWorks() {
           ))}
         </div>
       </section>
+
+      {/* ── TESTIMONIALS ── */}
+      <TestimonialsSection sectionTag="What members say" />
 
       {/* ── SAVINGS CALCULATOR CTA ── */}
       <section

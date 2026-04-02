@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { PlanSpeculator } from "@/components/PlanSpeculator";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
 import type { SurveyData } from "@/pages/Survey";
 import { GOALS } from "@/types/onboarding";
 
@@ -101,26 +102,6 @@ const PRICING_TIERS = [
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    stars: "★★★★★",
-    quote: "I finally have a plan I can actually afford. The AI figured out that massage + online yoga fits my $120/month budget better than a gym membership I'd never use.",
-    name: "Sarah M.",
-    desc: "Busy mom, Denver CO",
-  },
-  {
-    stars: "★★★★★",
-    quote: "The HSA unlock feature alone paid for itself. I had no idea my massage therapist qualified. That's $600 in tax-free spending I was missing.",
-    name: "James T.",
-    desc: "Software engineer, Austin TX",
-  },
-  {
-    stars: "★★★★★",
-    quote: "As a DPC physician, this is the referral platform I've been waiting for. My patients come in already knowing what they want to try and how it fits their budget.",
-    name: "Dr. Priya R., MD",
-    desc: "Direct Primary Care, Seattle WA",
-  },
-];
 
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
@@ -1049,50 +1030,7 @@ export default function Landing() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section
-        className="px-6 md:px-12 py-16"
-        style={{ background: "var(--warm-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="text-xl mb-2" style={{ color: "var(--hpf-crimson)", letterSpacing: "2px" }}>
-              ★★★★★
-            </div>
-            <p className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-              From early members
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {TESTIMONIALS.map((t) => (
-              <div
-                key={t.name}
-                className="rounded-2xl p-6 transition-all hover:-translate-y-0.5"
-                style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}
-              >
-                <div className="text-sm mb-3" style={{ color: "var(--hpf-crimson)" }}>{t.stars}</div>
-                <blockquote
-                  className="text-base font-normal italic leading-relaxed mb-5"
-                  style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}
-                >
-                  "{t.quote}"
-                </blockquote>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-                    style={{ background: "var(--parchment)", border: "1.5px solid rgba(212,34,126,0.1)", color: "var(--hpf-pink)" }}
-                  >
-                    {t.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold" style={{ color: "var(--hpf-pink)" }}>{t.name}</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t.desc}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSection sectionTag="From early members" />
 
       {/* ── SAVINGS CALCULATOR CTA ── */}
       <section

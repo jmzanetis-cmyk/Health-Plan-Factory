@@ -34,6 +34,7 @@ The project is structured as a pnpm monorepo, separating deployable applications
     - **Plan Results Page:** Displays ranked modality cards, budget allocation, and deprioritized options.
     - **Longitudinal Outcome Insights Engine:** Tracks `wellnessScore`, `journalCount`, `sessionCount` per user. Provides correlation insights based on journal logs and modality sessions, and attention items for neglected modalities. This data is displayed on the Dashboard and a dedicated Progress page with sparkline charts.
     - **Member Referral Program:** Enables users to refer others and earn credits. Referral codes are captured from URLs, and a dedicated referral page shows history and credit balance.
+    - **Social Proof & Trust Signals:** Testimonials section on Landing and How It Works pages, fetched live from the database. Provider count badge ("X providers near you") on Plan page modality cards based on user zip code. Admin can manage testimonials from `/admin/testimonials`.
 
 **Backend (`artifacts/api-server`):**
 - **Framework:** Express 5

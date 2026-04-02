@@ -447,6 +447,23 @@ export default function Plan() {
       }
       if (Object.keys(seedCounts).length > 0) {
         setProviderCounts(seedCounts);
+      } else {
+        // Fallback: fetch provider counts via API if plan items weren't pre-enriched
+        const zip = intakeResult.data.zipCode;
+        const params = new URLSearchParams({ radius: "25" });
+        if (zip) params.set("zipCode", zip);
+        fetch(`${BASE}/api/providers/counts?${params}`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((data) => {
+            if (data?.counts) {
+              const fallbackCounts: Record<string, number | null> = {};
+              for (const [k, v] of Object.entries(data.counts)) {
+                fallbackCounts[k] = v as number;
+              }
+              setProviderCounts(fallbackCounts);
+            }
+          })
+          .catch(() => {});
       }
     } catch {
       console.warn("Failed to parse stored plan data — clearing");

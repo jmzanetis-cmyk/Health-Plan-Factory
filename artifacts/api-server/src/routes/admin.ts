@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
+import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { profiles, providers, plans, adminSettings, modalities, referrals, memberCredits } from "@workspace/db";
+import { profiles, providers, plans, adminSettings, modalities, referrals, memberCredits, testimonials } from "@workspace/db";
 import { eq, gte, count, desc, asc, sql } from "drizzle-orm";
 import {
   UpsertAdminSettingBody,
@@ -457,6 +458,23 @@ router.get("/admin/preview-digest", async (req, res) => {
   }
 });
 
+// ── Testimonials ──────────────────────────────────────────────────────────────
+
+// Public endpoint — returns visible testimonials for landing & How It Works pages
+router.get("/testimonials", async (req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.isVisible, true))
+      .orderBy(asc(testimonials.displayOrder), asc(testimonials.createdAt));
+    res.json({ testimonials: rows });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
 /**
  * POST /admin/send-test-digest
  * Triggers a test weekly digest email for a specific member (or the requesting admin).
@@ -510,6 +528,107 @@ router.post("/admin/send-test-digest", async (req, res) => {
         topGoal: stats.topGoal,
       },
     });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// Admin: list all testimonials (including hidden)
+router.get("/admin/testimonials", async (req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(testimonials)
+      .orderBy(asc(testimonials.displayOrder), asc(testimonials.createdAt));
+    res.json({ testimonials: rows });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// Admin: create testimonial
+router.post("/admin/testimonials", async (req, res) => {
+  try {
+    const { name, location, goal, quote, stars, isVisible, displayOrder } = req.body as {
+      name: string;
+      location?: string;
+      goal?: string;
+      quote: string;
+      stars?: number;
+      isVisible?: boolean;
+      displayOrder?: number;
+    };
+    if (!name || !quote) {
+      res.status(400).json({ error: "name and quote are required" });
+      return;
+    }
+    const [row] = await db
+      .insert(testimonials)
+      .values({
+        id: randomUUID(),
+        name,
+        location: location ?? null,
+        goal: goal ?? null,
+        quote,
+        stars: stars ?? 5,
+        isVisible: isVisible ?? true,
+        displayOrder: displayOrder ?? 0,
+      })
+      .returning();
+    res.json({ testimonial: row });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// Admin: update testimonial
+router.patch("/admin/testimonials/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, location, goal, quote, stars, isVisible, displayOrder } = req.body as {
+      name?: string;
+      location?: string;
+      goal?: string;
+      quote?: string;
+      stars?: number;
+      isVisible?: boolean;
+      displayOrder?: number;
+    };
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (name !== undefined) updates.name = name;
+    if (location !== undefined) updates.location = location;
+    if (goal !== undefined) updates.goal = goal;
+    if (quote !== undefined) updates.quote = quote;
+    if (stars !== undefined) updates.stars = stars;
+    if (isVisible !== undefined) updates.isVisible = isVisible;
+    if (displayOrder !== undefined) updates.displayOrder = displayOrder;
+
+    const [row] = await db
+      .update(testimonials)
+      .set(updates)
+      .where(eq(testimonials.id, id))
+      .returning();
+
+    if (!row) {
+      res.status(404).json({ error: "Testimonial not found" });
+      return;
+    }
+    res.json({ testimonial: row });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// Admin: delete testimonial
+router.delete("/admin/testimonials/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.delete(testimonials).where(eq(testimonials.id, id));
+    res.json({ success: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
