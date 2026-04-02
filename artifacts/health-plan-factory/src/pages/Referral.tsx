@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Copy, Check, Gift, Users, Star, ArrowRight, Send, Trophy, Loader2 } from "lucide-react";
+import { Copy, Check, Gift, Users, Star, ArrowRight, Send, Trophy, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
 const amber = "#E02040";
 const sage = "#7DB55C";
+const pink = "#D4227E";
 
 const cardStyle: React.CSSProperties = {
   background: "white",
@@ -34,6 +35,23 @@ interface ReferralRow {
   referredMemberEmail: string | null;
 }
 
+interface MilestoneInfo {
+  id: string;
+  label: string;
+  emoji: string;
+  threshold: number;
+  bonusCents: number;
+  earned: boolean;
+  rewardedAt: string | null;
+}
+
+interface NextMilestoneInfo {
+  id: string;
+  label: string;
+  threshold: number;
+  emoji: string;
+}
+
 interface ReferralData {
   referralCode: string;
   referralHistory: ReferralRow[];
@@ -43,6 +61,9 @@ interface ReferralData {
     unusedCreditsFormatted: string;
     credits: CreditRow[];
   };
+  milestones: MilestoneInfo[];
+  rewardedCount: number;
+  nextMilestone: NextMilestoneInfo | null;
 }
 
 function StatusPill({ status }: { status: "pending" | "rewarded" }) {
@@ -61,28 +82,14 @@ function StatusPill({ status }: { status: "pending" | "rewarded" }) {
   );
 }
 
-// ── Milestone definitions ────────────────────────────────────────────────────
-const MILESTONES = [
-  { id: "first", label: "First Invite", description: "Send your first referral link", icon: "🌱", threshold: 1, type: "sent" },
-  { id: "rewarded1", label: "First Win", description: "Earn your first referral reward", icon: "🌿", threshold: 1, type: "rewarded" },
-  { id: "rewarded3", label: "Super Referrer", description: "3 rewarded referrals", icon: "🌳", threshold: 3, type: "rewarded" },
-  { id: "rewarded5", label: "Champion", description: "5 rewarded referrals", icon: "🏆", threshold: 5, type: "rewarded" },
-  { id: "rewarded10", label: "Elite Advocate", description: "10 rewarded referrals", icon: "💎", threshold: 10, type: "rewarded" },
-];
-
 function MilestoneBadge({
   milestone,
-  earned,
   rewardedCount,
-  sentCount,
 }: {
-  milestone: typeof MILESTONES[0];
-  earned: boolean;
+  milestone: MilestoneInfo;
   rewardedCount: number;
-  sentCount: number;
 }) {
-  const relevant = milestone.type === "rewarded" ? rewardedCount : sentCount;
-  const progress = Math.min(relevant / milestone.threshold, 1);
+  const progress = Math.min(rewardedCount / milestone.threshold, 1);
   return (
     <div
       style={{
@@ -92,29 +99,34 @@ function MilestoneBadge({
         gap: 8,
         padding: "14px 10px",
         borderRadius: 14,
-        background: earned ? "rgba(125,181,92,0.06)" : "rgba(212,34,126,0.03)",
-        border: `1.5px solid ${earned ? "rgba(125,181,92,0.25)" : "rgba(212,34,126,0.08)"}`,
+        background: milestone.earned ? "rgba(125,181,92,0.06)" : "rgba(212,34,126,0.03)",
+        border: `1.5px solid ${milestone.earned ? "rgba(125,181,92,0.25)" : "rgba(212,34,126,0.08)"}`,
         minWidth: 100,
         flex: 1,
-        opacity: earned ? 1 : 0.7,
+        opacity: milestone.earned ? 1 : 0.7,
         position: "relative",
       }}
     >
-      {earned && (
+      {milestone.earned && (
         <div style={{ position: "absolute", top: 8, right: 8, width: 16, height: 16, borderRadius: 8, background: sage, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Check size={10} color="white" strokeWidth={3} />
         </div>
       )}
-      <span style={{ fontSize: 28 }}>{milestone.icon}</span>
+      <span style={{ fontSize: 28 }}>{milestone.emoji}</span>
       <div style={{ textAlign: "center" }}>
-        <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 700, color: earned ? sage : navy, margin: 0 }}>
+        <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 700, color: milestone.earned ? sage : navy, margin: 0 }}>
           {milestone.label}
         </p>
         <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 10, color: "var(--text-muted)", margin: "2px 0 0" }}>
-          {milestone.description}
+          {milestone.threshold} rewarded
         </p>
+        {milestone.bonusCents > 0 && (
+          <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 10, color: pink, margin: "2px 0 0", fontWeight: 600 }}>
+            +${(milestone.bonusCents / 100).toFixed(2)} bonus
+          </p>
+        )}
       </div>
-      {!earned && (
+      {!milestone.earned && (
         <div style={{ width: "100%", height: 4, borderRadius: 2, background: "rgba(212,34,126,0.1)", overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${progress * 100}%`, background: "rgba(212,34,126,0.35)", borderRadius: 2, transition: "width 0.5s" }} />
         </div>
@@ -126,11 +138,16 @@ function MilestoneBadge({
 export default function Referral() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteNote, setInviteNote] = useState("");
   const [inviteSending, setInviteSending] = useState(false);
+
+  // Celebration banner — shown when ?milestone=<id> is in the URL
+  const celebrationMilestoneId = searchParams.get("milestone");
 
   useEffect(() => {
     if (!user) return;
@@ -166,6 +183,12 @@ export default function Referral() {
     : null;
 
   const unusedCents = data?.creditSummary.unusedCreditsCents ?? 0;
+  const rewardedCount = data?.rewardedCount ?? 0;
+  const milestones = data?.milestones ?? [];
+  const nextMilestone = data?.nextMilestone ?? null;
+  const celebrationMilestone = celebrationMilestoneId
+    ? milestones.find((m) => m.id === celebrationMilestoneId)
+    : null;
 
   async function copyLink() {
     if (!referralLink) return;
@@ -189,11 +212,15 @@ export default function Referral() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteeEmail: trimmed }),
+        body: JSON.stringify({
+          inviteeEmail: trimmed,
+          ...(inviteNote.trim() ? { personalNote: inviteNote.trim() } : {}),
+        }),
       });
       if (res.ok) {
         toast({ title: "Invite sent!", description: `Your referral invite was sent to ${trimmed}.` });
         setInviteEmail("");
+        setInviteNote("");
       } else {
         const err = await res.json().catch(() => ({}));
         toast({ title: "Failed to send", description: err?.error ?? "Please try again.", variant: "destructive" });
@@ -236,6 +263,28 @@ export default function Referral() {
           Share HealthPlanFactory with friends and earn a free modality unlock credit for every person who joins and builds their first plan. They get a free unlock credit too.
         </p>
       </div>
+
+      {/* ── Celebration Banner ─────────────────────────────────────────────── */}
+      {celebrationMilestone && (
+        <div
+          className="p-5 rounded-2xl flex items-center gap-5"
+          style={{ background: "linear-gradient(135deg, #D4227E 0%, #b81c6a 100%)" }}
+        >
+          <span className="text-4xl flex-shrink-0">{celebrationMilestone.emoji}</span>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-white" style={{ fontFamily: "var(--app-font-sans)", marginBottom: 2 }}>
+              {celebrationMilestone.label} milestone unlocked! 🎉
+            </p>
+            <p className="text-xs text-white" style={{ fontFamily: "var(--app-font-sans)", opacity: 0.85 }}>
+              You've reached {celebrationMilestone.threshold} rewarded referral{celebrationMilestone.threshold !== 1 ? "s" : ""}.
+              {celebrationMilestone.bonusCents > 0
+                ? ` A $${(celebrationMilestone.bonusCents / 100).toFixed(2)} bonus credit has been added to your account.`
+                : " Keep referring to unlock the next tier with a bonus credit."}
+            </p>
+          </div>
+          <Sparkles size={20} color="rgba(255,255,255,0.7)" className="flex-shrink-0" />
+        </div>
+      )}
 
       {/* ── Credit Balance ─────────────────────────────────────────────────── */}
       {unusedCents > 0 && (
@@ -372,50 +421,108 @@ export default function Referral() {
             </h2>
           </div>
           <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-            Enter a friend's email address and we'll send them a personalized invitation with your referral link.
+            Enter a friend's email address and we'll send them a personalized invitation with your referral link. Up to 10 invites per day.
           </p>
-          <form onSubmit={sendDirectInvite} style={{ display: "flex", gap: 8 }}>
-            <input
-              type="email"
-              required
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="friend@example.com"
+          <form onSubmit={sendDirectInvite} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                type="email"
+                required
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="friend@example.com"
+                style={{
+                  flex: 1,
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "1.5px solid rgba(212,34,126,0.2)",
+                  fontFamily: "var(--app-font-sans)",
+                  fontSize: 14,
+                  color: navy,
+                  background: "white",
+                  outline: "none",
+                }}
+              />
+              <button
+                type="submit"
+                disabled={inviteSending || !inviteEmail.trim()}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "10px 18px",
+                  borderRadius: 10,
+                  border: "none",
+                  background: inviteSending || !inviteEmail.trim() ? "rgba(212,34,126,0.25)" : "#D4227E",
+                  color: "white",
+                  fontFamily: "var(--app-font-sans)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: inviteSending || !inviteEmail.trim() ? "not-allowed" : "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                {inviteSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                {inviteSending ? "Sending…" : "Send"}
+              </button>
+            </div>
+            <textarea
+              value={inviteNote}
+              onChange={(e) => setInviteNote(e.target.value)}
+              placeholder="Add a personal note (optional, max 300 chars)…"
+              maxLength={300}
+              rows={2}
               style={{
-                flex: 1,
                 padding: "10px 14px",
                 borderRadius: 10,
-                border: "1.5px solid rgba(212,34,126,0.2)",
+                border: "1.5px solid rgba(212,34,126,0.12)",
                 fontFamily: "var(--app-font-sans)",
-                fontSize: 14,
+                fontSize: 13,
                 color: navy,
                 background: "white",
                 outline: "none",
+                resize: "vertical",
               }}
             />
-            <button
-              type="submit"
-              disabled={inviteSending || !inviteEmail.trim()}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "10px 18px",
-                borderRadius: 10,
-                border: "none",
-                background: inviteSending || !inviteEmail.trim() ? "rgba(212,34,126,0.25)" : "#D4227E",
-                color: "white",
-                fontFamily: "var(--app-font-sans)",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: inviteSending || !inviteEmail.trim() ? "not-allowed" : "pointer",
-                flexShrink: 0,
-              }}
-            >
-              {inviteSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-              {inviteSending ? "Sending…" : "Send"}
-            </button>
           </form>
+        </div>
+      )}
+
+      {/* ── Milestone Progress ─────────────────────────────────────────────── */}
+      {milestones.length > 0 && nextMilestone && (
+        <div className="p-6 flex flex-col gap-4" style={cardStyle}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy size={16} style={{ color: navy }} />
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: navy }}>
+                Next milestone
+              </h2>
+            </div>
+            <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+              {rewardedCount} / {nextMilestone.threshold} rewarded
+            </span>
+          </div>
+          <div>
+            <div className="flex items-center justify-between text-xs mb-2" style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-muted)" }}>
+              <span className="font-semibold" style={{ color: navy }}>
+                {nextMilestone.emoji} {nextMilestone.label}
+              </span>
+              <span>
+                {nextMilestone.threshold - rewardedCount} more to go
+              </span>
+            </div>
+            <div style={{ height: 8, borderRadius: 4, background: "rgba(212,34,126,0.08)", overflow: "hidden" }}>
+              <div
+                style={{
+                  height: "100%",
+                  width: `${Math.min((rewardedCount / nextMilestone.threshold) * 100, 100)}%`,
+                  background: "linear-gradient(90deg, #D4227E, #e84393)",
+                  borderRadius: 4,
+                  transition: "width 0.6s ease",
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -424,29 +531,34 @@ export default function Referral() {
         <div className="flex items-center gap-2">
           <Trophy size={16} style={{ color: navy }} />
           <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: navy }}>
-            Milestones
+            Milestone badges
           </h2>
         </div>
         <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-          Earn badges as you grow your referral network. Rewards unlock automatically.
+          Earn badges as you grow your referral network. Bonus credits unlock at Advocate (5), Champion (10), and Ambassador (25) tiers.
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {MILESTONES.map((m) => {
-            const sentCount = data?.referralHistory.length ?? 0;
-            const rewardedCount = rewarded.length;
-            const relevant = m.type === "rewarded" ? rewardedCount : sentCount;
-            const earned = relevant >= m.threshold;
-            return (
+        {milestones.length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {milestones.map((m) => (
               <MilestoneBadge
                 key={m.id}
                 milestone={m}
-                earned={earned}
                 rewardedCount={rewardedCount}
-                sentCount={sentCount}
               />
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {[
+              { id: "pioneer", label: "Pioneer", emoji: "🌱", threshold: 1, bonusCents: 0, earned: false, rewardedAt: null },
+              { id: "advocate", label: "Advocate", emoji: "🌿", threshold: 5, bonusCents: 200, earned: false, rewardedAt: null },
+              { id: "champion", label: "Champion", emoji: "🏆", threshold: 10, bonusCents: 700, earned: false, rewardedAt: null },
+              { id: "ambassador", label: "Ambassador", emoji: "💎", threshold: 25, bonusCents: 1700, earned: false, rewardedAt: null },
+            ].map((m) => (
+              <MilestoneBadge key={m.id} milestone={m} rewardedCount={0} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Referral History ───────────────────────────────────────────────── */}
@@ -538,7 +650,8 @@ export default function Referral() {
         className="flex items-center gap-2 text-sm font-medium no-underline"
         style={{ color: amber, fontFamily: "var(--app-font-sans)" }}
       >
-        ← Back to Dashboard
+        <ArrowRight size={14} style={{ transform: "rotate(180deg)" }} />
+        Back to Dashboard
       </Link>
     </div>
   );

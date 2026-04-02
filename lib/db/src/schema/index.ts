@@ -679,8 +679,10 @@ export type MagicLink = InferSelectModel<typeof magicLinks>;
 // subscription upgrade. source tracks how the credit was earned.
 
 export const creditSourceEnum = pgEnum("credit_source", [
-  "referral",   // earned by successfully referring a new member
-  "promo",      // awarded by admin as a promotional credit
+  "referral",     // earned by successfully referring a new member
+  "promo",        // awarded by admin as a promotional credit
+  "milestone",    // bonus credit for crossing a referral milestone tier
+  "invite-sent",  // zero-amount audit row used for invite rate-limiting
 ]);
 
 export const memberCredits = pgTable(
@@ -940,3 +942,27 @@ export const coachMemories = pgTable(
 );
 
 export type CoachMemory = InferSelectModel<typeof coachMemories>;
+
+// ── referral_milestones ────────────────────────────────────────────────────────
+// Tracks which milestone tiers a member has earned in the referral program.
+// Milestones: pioneer (1), advocate (5), champion (10), ambassador (25)
+
+export const referralMilestones = pgTable(
+  "referral_milestones",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    milestone: text("milestone").notNull(), // "pioneer" | "advocate" | "champion" | "ambassador"
+    rewardedAt: timestamp("rewarded_at").notNull().defaultNow(),
+    bonusCreditCents: integer("bonus_credit_cents").notNull().default(0),
+  },
+  (t) => [
+    index("referral_milestones_profile_idx").on(t.profileId),
+    uniqueIndex("referral_milestones_profile_milestone_idx").on(t.profileId, t.milestone),
+  ],
+);
+
+export type ReferralMilestone = InferSelectModel<typeof referralMilestones>;
+export type InsertReferralMilestone = InferInsertModel<typeof referralMilestones>;

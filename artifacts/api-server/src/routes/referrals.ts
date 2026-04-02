@@ -4,6 +4,8 @@
  * GET  /api/referrals/mine  — returns the member's referral code, history, and credit summary
  * POST /api/referrals/register — register a pending referral (called after signup with a ?ref= code)
  * GET  /api/credits/mine    — returns unused credit balance
+ * POST /api/referrals/send-invite — send a direct email invite with rate limiting (10/day)
+ * GET  /api/referrals/new-credit-since/:timestamp — poll for new referral credits
  */
 import { Router, Request, Response } from "express";
 import { db } from "@workspace/db";
@@ -13,13 +15,15 @@ import {
   memberCredits,
   plans,
   memberIntakes,
+  referralMilestones,
 } from "@workspace/db";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { eq, and, desc, count, sql, gte } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { sendEmail, sendNotification } from "../lib/comms";
 import { referralRewardEmail } from "../emails/referral-reward";
 import { referralInviteEmail } from "../emails/referral-invite";
+import { referralMilestoneEmail } from "../emails/referral-milestone";
 
 const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
@@ -69,9 +73,118 @@ async function ensureReferralCode(profileId: string): Promise<string> {
   throw new Error("Failed to generate a unique referral code after 5 attempts");
 }
 
+// ── Milestone definitions ───────────────────────────────────────────────────
+// Each milestone: id, label, threshold (rewarded referrals), emoji, bonus cents
+const MILESTONE_TIERS = [
+  { id: "pioneer",    label: "Pioneer",    threshold: 1,  emoji: "🌱", bonusCents: 0   },
+  { id: "advocate",   label: "Advocate",   threshold: 5,  emoji: "🌿", bonusCents: 200 }, // $2 bonus
+  { id: "champion",   label: "Champion",   threshold: 10, emoji: "🏆", bonusCents: 700 }, // $7 bonus
+  { id: "ambassador", label: "Ambassador", threshold: 25, emoji: "💎", bonusCents: 1700 }, // $17 bonus
+] as const;
+
+type MilestoneId = typeof MILESTONE_TIERS[number]["id"];
+
+/**
+ * Check if the referrer just crossed a milestone threshold and award the bonus.
+ * Called after each successful referral reward.
+ * Returns the milestone ID if one was just awarded, or null.
+ */
+async function maybeAwardMilestone(referrerId: string): Promise<MilestoneId | null> {
+  // Count total rewarded referrals for this member
+  const [{ totalRewarded }] = await db
+    .select({ totalRewarded: count(referrals.id) })
+    .from(referrals)
+    .where(and(eq(referrals.referrerId, referrerId), eq(referrals.status, "rewarded")));
+
+  const rewardedCount = Number(totalRewarded ?? 0);
+
+  // Find all milestones the user has already earned
+  const earned = await db
+    .select({ milestone: referralMilestones.milestone })
+    .from(referralMilestones)
+    .where(eq(referralMilestones.profileId, referrerId));
+
+  const earnedSet = new Set(earned.map((e) => e.milestone));
+
+  // Determine the highest newly-crossed milestone (process from highest to lowest)
+  let newMilestone: typeof MILESTONE_TIERS[number] | null = null;
+  for (const tier of [...MILESTONE_TIERS].reverse()) {
+    if (rewardedCount >= tier.threshold && !earnedSet.has(tier.id)) {
+      newMilestone = tier;
+      break;
+    }
+  }
+
+  if (!newMilestone) return null;
+
+  // Insert the milestone record (unique constraint prevents duplicates)
+  try {
+    await db.insert(referralMilestones).values({
+      id: randomUUID(),
+      profileId: referrerId,
+      milestone: newMilestone.id,
+      rewardedAt: new Date(),
+      bonusCreditCents: newMilestone.bonusCents,
+    }).onConflictDoNothing();
+  } catch {
+    return null;
+  }
+
+  // Award bonus credit if threshold grants a bonus
+  if (newMilestone.bonusCents > 0) {
+    await db.insert(memberCredits).values({
+      id: randomUUID(),
+      profileId: referrerId,
+      source: "milestone",
+      amountCents: newMilestone.bonusCents,
+      used: false,
+      createdAt: new Date(),
+    });
+  }
+
+  // Fire-and-forget: send milestone congratulations email
+  ;(async () => {
+    try {
+      const [referrer] = await db
+        .select({ email: profiles.email, displayName: profiles.displayName })
+        .from(profiles)
+        .where(eq(profiles.id, referrerId))
+        .limit(1);
+
+      if (referrer?.email && newMilestone) {
+        const dashboardUrl = `${BASE_URL}/referral`;
+        const bonusFormatted = newMilestone.bonusCents > 0
+          ? `$${(newMilestone.bonusCents / 100).toFixed(2)}`
+          : "$3.00"; // base reward already credited
+
+        const { subject, html } = referralMilestoneEmail({
+          referrerName: referrer.displayName,
+          milestoneName: newMilestone.label,
+          milestoneEmoji: newMilestone.emoji,
+          bonusCredit: bonusFormatted,
+          totalRewardedCount: rewardedCount,
+          dashboardUrl,
+        });
+
+        await sendEmail(
+          referrerId,
+          referrer.email,
+          subject,
+          html,
+          "referral-milestone",
+        );
+      }
+    } catch (err) {
+      console.error("[comms] milestone email error:", err);
+    }
+  })();
+
+  return newMilestone.id as MilestoneId;
+}
+
 /**
  * GET /api/referrals/mine
- * Returns: referralCode, referralLink, referralHistory[], creditSummary
+ * Returns: referralCode, referralLink, referralHistory[], creditSummary, milestones
  */
 router.get("/referrals/mine", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
@@ -124,6 +237,29 @@ router.get("/referrals/mine", async (req: Request, res: Response) => {
       .filter((c) => !c.used)
       .reduce((sum, c) => sum + c.amountCents, 0);
 
+    // Milestone summary
+    const earnedMilestones = await db
+      .select({ milestone: referralMilestones.milestone, rewardedAt: referralMilestones.rewardedAt })
+      .from(referralMilestones)
+      .where(eq(referralMilestones.profileId, profileId))
+      .orderBy(referralMilestones.rewardedAt);
+
+    const earnedSet = new Set(earnedMilestones.map((m) => m.milestone));
+    const rewardedCount = history.filter((r) => r.status === "rewarded").length;
+
+    const milestonesWithStatus = MILESTONE_TIERS.map((tier) => ({
+      id: tier.id,
+      label: tier.label,
+      emoji: tier.emoji,
+      threshold: tier.threshold,
+      bonusCents: tier.bonusCents,
+      earned: earnedSet.has(tier.id),
+      rewardedAt: earnedMilestones.find((m) => m.milestone === tier.id)?.rewardedAt ?? null,
+    }));
+
+    // Next milestone to unlock
+    const nextMilestone = MILESTONE_TIERS.find((t) => !earnedSet.has(t.id) && rewardedCount < t.threshold) ?? null;
+
     res.json({
       referralCode,
       referralHistory: enriched,
@@ -133,6 +269,11 @@ router.get("/referrals/mine", async (req: Request, res: Response) => {
         unusedCreditsFormatted: `$${(unusedCreditsCents / 100).toFixed(2)}`,
         credits,
       },
+      milestones: milestonesWithStatus,
+      rewardedCount,
+      nextMilestone: nextMilestone
+        ? { id: nextMilestone.id, label: nextMilestone.label, threshold: nextMilestone.threshold, emoji: nextMilestone.emoji }
+        : null,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
@@ -196,8 +337,6 @@ router.post("/referrals/register", async (req: Request, res: Response) => {
     }
 
     // Create the pending referral and increment referrer's referralCount atomically.
-    // onConflictDoNothing ensures the DB unique constraint on referred_member_id acts
-    // as the final safety net against concurrent/duplicate registration attempts.
     const [referral] = await db.transaction(async (tx) => {
       const [created] = await tx
         .insert(referrals)
@@ -293,31 +432,28 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
   if (!intake) return; // intake not yet completed — reward deferred
 
   // Check if the referred member already had a plan before this one
-  // (reward only triggers on their FIRST plan)
   const [{ planCount }] = await db
     .select({ planCount: count(plans.id) })
     .from(plans)
     .where(eq(plans.profileId, referredMemberId));
 
   // Reward only when the member's FIRST plan has been generated (planCount === 1)
-  if ((planCount ?? 0) < 1) return; // no plan generated yet — wait for first plan
-  if ((planCount ?? 0) > 1) return; // member had a prior plan — already rewarded or ineligible
+  if ((planCount ?? 0) < 1) return;
+  if ((planCount ?? 0) > 1) return;
 
   // ── Single-winner guard: atomically transition pending → rewarded ──
-  // Only the first concurrent caller wins; subsequent calls get an empty array.
   const [claimed] = await db
     .update(referrals)
     .set({ status: "rewarded", rewardedAt: new Date() })
     .where(
       and(
         eq(referrals.id, pendingReferral.id),
-        eq(referrals.status, "pending"), // idempotency: only transition once
+        eq(referrals.status, "pending"),
       )
     )
     .returning({ id: referrals.id });
 
   if (!claimed) {
-    // Another concurrent call already claimed this referral — no-op
     console.info(`[referral] Skipping duplicate reward for referred member ${referredMemberId}`);
     return;
   }
@@ -335,7 +471,7 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
     createdAt: now,
   });
 
-  // Award $3 welcome credit to the referred member (covers cheapest app-based unlock)
+  // Award $3 welcome credit to the referred member
   await db.insert(memberCredits).values({
     id: randomUUID(),
     profileId: referredMemberId,
@@ -349,6 +485,11 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
   console.info(
     `[referral] Rewarded referrer ${pendingReferral.referrerId} for referred member ${referredMemberId}`
   );
+
+  // Check for milestone unlock (fire-and-forget — non-blocking to main reward flow)
+  maybeAwardMilestone(pendingReferral.referrerId).catch((err) => {
+    console.error("[referral] milestone check error:", err);
+  });
 
   // Send a referral reward notification to the referrer (fire-and-forget)
   ;(async () => {
@@ -381,7 +522,7 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
           type: "referral-reward",
           subject,
           html,
-          smsBody: `Health Plan Factory: Your referral earned you $3 in credits! Log in to use them.`,
+          smsBody: `Health Plan Factory: Your referral just earned you $3 in credits! Log in to use them.`,
         });
       }
     } catch (err) {
@@ -393,19 +534,44 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
 /**
  * POST /api/referrals/send-invite
  * Sends a referral invite email to a specified email address with a pre-filled signup link.
+ * Rate limited to 10 invites per day per user.
  * Body: { inviteeEmail: string }
  */
 router.post("/referrals/send-invite", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   const profileId = req.user!.id;
 
-  const body = z.object({ inviteeEmail: z.string().email() }).safeParse(req.body);
+  const body = z.object({
+    inviteeEmail: z.string().email(),
+    personalNote: z.string().max(300).optional(),
+  }).safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: "Validation error", details: body.error.flatten() });
     return;
   }
 
   try {
+    // ── Rate limiting: max 10 invites per day per user ──────────────────
+    // We count invite emails sent in the last 24 hours using memberCredits
+    // source="invite-sent" rows (a lightweight audit trail already in the DB).
+    // This avoids adding a separate table just for rate limiting.
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [{ inviteCount }] = await db
+      .select({ inviteCount: count() })
+      .from(memberCredits)
+      .where(
+        and(
+          eq(memberCredits.profileId, profileId),
+          eq(memberCredits.source, "invite-sent"),
+          gte(memberCredits.createdAt, dayAgo),
+        )
+      );
+
+    if (Number(inviteCount ?? 0) >= 10) {
+      res.status(429).json({ error: "Daily invite limit reached (10 per day). Please try again tomorrow." });
+      return;
+    }
+
     const referralCode = await ensureReferralCode(profileId);
 
     const [profile] = await db
@@ -419,15 +585,27 @@ router.post("/referrals/send-invite", async (req: Request, res: Response) => {
       referrerName: profile?.displayName ?? null,
       referralCode,
       signupUrl,
+      personalNote: body.data.personalNote ?? null,
     });
 
-    sendEmail(
+    await sendEmail(
       profileId,
       body.data.inviteeEmail,
       subject,
       html,
       "referral-invite",
-    ).catch((err) => console.error("[comms] referral invite email error:", err));
+    );
+
+    // Record the invite attempt as a zero-amount "invite-sent" credit row
+    // (serves as the rate-limit audit trail without adding a new table)
+    await db.insert(memberCredits).values({
+      id: randomUUID(),
+      profileId,
+      source: "invite-sent",
+      amountCents: 0,
+      used: true,
+      createdAt: new Date(),
+    }).catch(() => {}); // non-fatal
 
     res.json({ message: "Invite sent", referralCode, signupUrl });
   } catch (err) {

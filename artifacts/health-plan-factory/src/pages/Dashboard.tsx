@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { LayoutDashboard, MapPin, TrendingUp, BookmarkIcon, Plus, ArrowRight, Loader2, DollarSign, Sparkles, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, MapPin, TrendingUp, Plus, ArrowRight, Loader2, DollarSign, Sparkles, AlertTriangle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 
@@ -96,6 +96,7 @@ export default function Dashboard() {
   const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
   const [referralWelcome, setReferralWelcome] = useState(false);
   const [referrerName, setReferrerName] = useState<string | null>(null);
+  const [earnedMilestones, setEarnedMilestones] = useState<Array<{ id: string; label: string; emoji: string }>>([]);
 
   // Auto-register referral code stored when the user landed on the marketing site
   useEffect(() => {
@@ -198,6 +199,17 @@ export default function Dashboard() {
     fetch(`${BASE}/api/insights/mine`, { credentials: "include" })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d) setInsightsData(d); })
+      .catch(() => {});
+
+    // Fetch earned referral milestones (non-blocking — shown as badges)
+    fetch(`${BASE}/api/referrals/mine`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d?.milestones) {
+          const earned = d.milestones.filter((m: { earned: boolean; id: string; label: string; emoji: string }) => m.earned);
+          setEarnedMilestones(earned);
+        }
+      })
       .catch(() => {});
   }, [user]);
 
@@ -494,6 +506,28 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+
+        {/* ── Referral Milestone Badges ─────────────────────────────────────── */}
+        {earnedMilestones.length > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em", flexShrink: 0 }}>
+              Referral badges
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {earnedMilestones.map((m) => (
+                <Link
+                  key={m.id}
+                  to="/referral"
+                  className="no-underline inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-opacity hover:opacity-80"
+                  style={{ background: "rgba(212,34,126,0.08)", color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(212,34,126,0.12)" }}
+                >
+                  <span>{m.emoji}</span>
+                  {m.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Longitudinal Insights Sections ───────────────────────────────── */}
         {/* Only shown after 14+ journal entries */}
