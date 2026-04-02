@@ -543,7 +543,7 @@ export default function Landing() {
       {/* ── TRUST BAR ── */}
       <div
         className="flex items-center justify-center flex-wrap gap-10 px-6 py-3.5"
-        style={{ background: "var(--hpf-pink)" }}
+        style={{ background: "var(--hpf-pink)", borderTop: "3px solid rgba(44,40,37,0.25)", borderBottom: "3px solid rgba(44,40,37,0.18)" }}
       >
         {[
           { icon: "✓", text: "Evidence-led modality library" },
@@ -618,7 +618,7 @@ export default function Landing() {
                   <div className="text-2xl mb-3">{step.icon}</div>
                   <h3
                     className="mb-2 text-base font-bold"
-                    style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}
+                    style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}
                   >
                     {step.title}
                   </h3>
@@ -638,14 +638,16 @@ export default function Landing() {
         className="relative px-6 md:px-12 py-20 overflow-hidden"
         style={{ background: "var(--hpf-pink)" }}
       >
-        {/* Grid background */}
+        {/* Grid background — factory-floor blueprint overlay */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+            backgroundImage: "linear-gradient(rgba(44,40,37,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(44,40,37,0.10) 1px, transparent 1px)",
             backgroundSize: "40px 40px",
           }}
         />
+        {/* Dark header accent stripe */}
+        <div className="absolute top-0 left-0 right-0 h-1 pointer-events-none" style={{ background: "rgba(44,40,37,0.35)" }} />
         <div
           className="absolute right-12 top-12 text-8xl opacity-5 animate-spin-slow pointer-events-none"
           aria-hidden="true"
@@ -772,7 +774,7 @@ export default function Landing() {
                   "An AI-powered wellness accountability coach",
                   "A modality research library based on evidence",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm leading-snug" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+                  <li key={item} className="flex items-start gap-2.5 text-sm leading-snug" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
                     <span className="font-bold mt-0.5 flex-shrink-0" style={{ color: "var(--sage)" }}>✓</span>
                     {item}
                   </li>
@@ -797,7 +799,7 @@ export default function Landing() {
                   "A prescription management or clinical platform",
                   "Regulated by HIPAA as a covered entity",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm leading-snug" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+                  <li key={item} className="flex items-start gap-2.5 text-sm leading-snug" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
                     <span className="font-bold mt-0.5 flex-shrink-0" style={{ color: "#b91c1c" }}>✗</span>
                     {item}
                   </li>
@@ -827,7 +829,7 @@ export default function Landing() {
                   fontFamily: "var(--app-font-serif)",
                   fontSize: "clamp(5rem, 12vw, 9rem)",
                   fontWeight: 700,
-                  color: "var(--hpf-pink)",
+                  color: "var(--hpf-deep)",
                   letterSpacing: "-0.03em",
                   position: "relative",
                   display: "inline-block",
@@ -845,7 +847,7 @@ export default function Landing() {
                   fontFamily: "var(--app-font-serif)",
                   fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
                   fontWeight: 700,
-                  color: "var(--hpf-pink)",
+                  color: "var(--hpf-deep)",
                   lineHeight: 1.2,
                   marginBottom: "1rem",
                 }}
