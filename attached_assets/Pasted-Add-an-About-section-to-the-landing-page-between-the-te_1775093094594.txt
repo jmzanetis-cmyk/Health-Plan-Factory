@@ -1,0 +1,89 @@
+Add an "About" section to the landing page between the testimonials 
+section and the providers section. It should look like a personal 
+letter — handwritten feel, warm and honest, not corporate.
+
+SECTION LAYOUT:
+Off-white (#f4f2ee) background. 5rem padding. Max-width 720px centered.
+No two-column grid — this is a single centered editorial column.
+
+SECTION LABEL (amber, Outfit 600, 0.7rem, uppercase, letter-spacing 0.1em):
+  "Why I built this"
+
+HEADING (Cormorant Garamond 700 italic, clamp(2rem,4vw,3rem), navy):
+  "A letter from the founder."
+
+LETTER BODY:
+Render as styled paragraphs. Outfit 300, 1rem, #4a5e7a, line-height 1.9.
+Indent the first line of each paragraph 2rem.
+Add a thin amber left border (2px solid #b8892a, 0 opacity) that becomes
+visible on the pull-quote paragraph only (see below).
+
+Paragraph 1:
+"A few years ago, I woke up one morning and couldn't move my left leg.
+Not slowly — just couldn't. Sciatica had arrived overnight and decided
+to stay for what felt like forever. What followed was one of the most
+frustrating experiences of my life — not because of the pain, but
+because of how completely on my own I felt trying to fix it."
+
+Paragraph 2:
+"I tried everything. Massage therapy first — it helped, for a day or two.
+Then acupuncture, which I was skeptical about and which surprised me.
+Then steroid injections, which my doctor recommended and which gave me
+three weeks of relief before the pain came roaring back. Decompression
+therapy at a chiropractor's office, twice a week for a month. Regular
+chiropractic adjustments. Ice. Heat. Stretching routines I found on
+YouTube at 2am. Supplements I read about in forums. I spent thousands
+of dollars and months of my life trying things one at a time, hoping
+something would stick."
+
+PULL QUOTE PARAGRAPH (styled differently):
+Amber left border 3px solid. Amber-pale (#fdf5e6) background. 
+1.25rem padding left. Cormorant Garamond 600 italic. 1.1rem. Navy color.
+No text indent.
+"It eventually went away. But I always wondered — what if I had a
+more calculated approach from the start? What if someone had looked
+at my specific situation, my budget, my goals, and told me: start here,
+in this order, at this frequency? Would I have gotten there faster?
+With less money spent? With less time lost?"
+
+Paragraph 3:
+"That question is why HealthPlanFactory exists. I built it because I
+was that person — throwing money and time at a problem with no roadmap,
+no system, and no one to tell me whether what I was doing made any
+sense together. Not as a replacement for doctors. My physicians were
+essential. But as a way to organize the space between appointments —
+the wellness decisions that are mine to make, fitted to what I can
+actually afford."
+
+Paragraph 4:
+"I want every person dealing with chronic pain, or anxiety, or low
+energy, or any of the hundred things that fall outside what insurance
+covers — to have a starting point that makes sense. A plan built around
+them. Evidence-ranked. Budget-fitted. And if possible, booked and
+tracked in the same place they found it."
+
+Paragraph 5:
+"HealthPlanFactory is that plan. I hope it helps you the way I wish
+something had helped me."
+
+SIGNATURE BLOCK:
+Margin top 2rem.
+Name in Cormorant Garamond 700 italic, 1.3rem, navy:
+  "Jordan Zanetis"
+Title in Outfit 400, 0.82rem, text-muted (#8496b0):
+  "Founder, HealthPlanFactory · Zanetis Holdings LLC"
+Location in Outfit 300, 0.78rem, text-muted:
+  "Somerset, NJ"
+
+Small amber horizontal rule (width 48px, height 2px, background amber,
+border-radius 1px) between letter body and signature.
+
+OPTIONAL FOUNDER PHOTO PLACEHOLDER:
+If a photo is available at /assets/founder.jpg — show a circular
+avatar 72px above the signature block, left-aligned with the text.
+If not found — show initials "JZ" in a 72px circle,
+navy background, cream white Cormorant 700 text, 12px radius.
+
+MOBILE:
+Reduce padding to 3rem 1.5rem below 480px.
+Pull quote: reduce left padding to 1rem.
