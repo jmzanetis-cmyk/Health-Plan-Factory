@@ -357,6 +357,32 @@ export default function Landing() {
               </div>
             ))}
           </div>
+
+          {/* HSA/FSA Calculator teaser — above the fold */}
+          <Link
+            to="/savings-calculator"
+            className="inline-flex items-center gap-3 mt-6 px-4 py-3 rounded-xl no-underline group w-fit"
+            style={{
+              background: "rgba(212,34,126,0.06)",
+              border: "1px solid rgba(212,34,126,0.15)",
+            }}
+          >
+            <span className="text-lg">💰</span>
+            <div>
+              <p
+                className="text-xs font-semibold leading-tight"
+                style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
+              >
+                68% of HSA/FSA holders leave money on the table.
+              </p>
+              <p
+                className="text-xs font-medium"
+                style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
+              >
+                Calculate my tax savings →
+              </p>
+            </div>
+          </Link>
         </div>
 
         {/* Right — interactive plan speculator (desktop); on mobile it appears below the hero CTAs */}
