@@ -276,7 +276,7 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
         {([
-          { key: "headcount" as const, label: "Enrolled Employees", prefix: "", suffix: "%", min: 1, hint: "" },
+          { key: "headcount" as const, label: "Enrolled Employees", prefix: "", suffix: "", min: 1, hint: "" },
           { key: "avgSalary" as const, label: "Avg Annual Salary", prefix: "$", suffix: "", min: 0, hint: "" },
           { key: "sickDaysReduced" as const, label: "Sick Days Reduced / Year", prefix: "", suffix: " days", min: 0, hint: "RAND 2013: ~2 days avg" },
           { key: "productivityPct" as const, label: "Productivity Gain %", prefix: "", suffix: "%", min: 0, hint: "HBR 2010: ~2.5% avg" },
