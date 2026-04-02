@@ -866,7 +866,14 @@ router.post("/providers/:id/book", async (req, res) => {
 
   const cleanMessage = message.trim().slice(0, 2000);
   const cleanNote = typeof note === "string" ? note.trim().slice(0, 500) : null;
-  const cleanContactEmail = typeof contactEmail === "string" ? contactEmail.trim().slice(0, 254) : null;
+  const rawContactEmail = typeof contactEmail === "string" ? contactEmail.trim().slice(0, 254) : null;
+  // Validate contact email format if provided
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (rawContactEmail && !emailRegex.test(rawContactEmail)) {
+    res.status(400).json({ error: "contactEmail is not a valid email address" });
+    return;
+  }
+  const cleanContactEmail = rawContactEmail;
   const cleanRequestedModality = typeof requestedModality === "string" ? requestedModality.trim().slice(0, 120) : null;
 
   try {
@@ -941,7 +948,8 @@ router.post("/providers/:id/book", async (req, res) => {
       status: "pending",
     });
 
-    // Send email to provider
+    // Send email to provider — required for a complete booking request
+    let providerNotified = false;
     if (providerEmail) {
       const { subject, html } = bookingRequestProviderEmail({
         providerName: provider.name,
@@ -955,6 +963,10 @@ router.post("/providers/:id/book", async (req, res) => {
         appUrl,
       });
       await sendEmail(memberId, providerEmail, subject, html, "booking-request");
+      providerNotified = true;
+    } else {
+      // Log the missing provider email so admin can follow up manually
+      req.log?.warn({ requestId, providerId, providerName: provider.name }, "Booking request stored but provider has no email — manual follow-up required");
     }
 
     // Send confirmation to member
@@ -966,7 +978,7 @@ router.post("/providers/:id/book", async (req, res) => {
     });
     await sendEmail(memberId, memberProfile.email, confSubject, confHtml, "booking-request");
 
-    res.status(201).json({ success: true, requestId });
+    res.status(201).json({ success: true, requestId, providerNotified });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

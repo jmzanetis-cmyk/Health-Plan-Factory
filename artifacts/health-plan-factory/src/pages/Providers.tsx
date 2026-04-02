@@ -293,7 +293,11 @@ export default function Providers() {
         const err = await res.json();
         throw new Error(err.error ?? "Failed to send request");
       }
-      toast({ title: "Booking request sent!", description: `We've notified ${bookingModal.providerName}. Check your email for a confirmation.` });
+      const result: { providerNotified?: boolean } = await res.json();
+      const description = result.providerNotified
+        ? `Your message has been sent to ${bookingModal.providerName}. Check your inbox for a confirmation.`
+        : `Your request has been received. Our team will follow up to connect you with ${bookingModal.providerName}.`;
+      toast({ title: "Request submitted!", description });
       setBookingModal(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not send booking request";
