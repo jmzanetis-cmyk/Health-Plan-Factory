@@ -171,30 +171,9 @@ export default function About() {
         className="px-6 md:px-12 py-20"
         style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.07)", borderBottom: "1px solid rgba(212,34,126,0.07)" }}
       >
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-14 items-center">
-          {/* Photo */}
-          <div className="flex justify-center md:justify-start">
-            <div
-              style={{
-                width: 260,
-                height: 260,
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: "3px solid rgba(212,34,126,0.15)",
-                boxShadow: "0 8px 40px rgba(212,34,126,0.12)",
-                flexShrink: 0,
-              }}
-            >
-              <img
-                src="/founder.jpg"
-                alt="Founder of Health Plan Factory"
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
-              />
-            </div>
-          </div>
-
+        <div className="max-w-4xl mx-auto">
           {/* Bio */}
-          <div>
+          <div className="max-w-2xl">
             <div className="section-tag">Founder</div>
             <h2
               className="mb-4 leading-tight"
