@@ -192,7 +192,12 @@ export async function sendEmail(
   type: NotificationType = "magic-link",
 ): Promise<void> {
   if (!resendClient) {
-    console.warn("[comms] Resend not configured — RESEND_API_KEY missing");
+    console.error("[comms] sendEmail: RESEND_API_KEY not configured — logging failure");
+    await logNotification(profileId, "email", type, "failed", {
+      to,
+      subject,
+      error: "RESEND_API_KEY not configured",
+    });
     return;
   }
   try {
