@@ -8,6 +8,7 @@ const footerLinks = [
   { href: "/for-providers", label: "For Providers" },
   { href: "/for-employers", label: "For Employers" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/blog", label: "Blog" },
   { href: "/faq", label: "FAQ" },
   { href: "/legal", label: "Disclaimer" },
   { href: "/privacy", label: "Privacy" },

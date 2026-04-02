@@ -88,6 +88,9 @@ import SavingsCalculator from "@/pages/SavingsCalculator";
 import ListYourPractice from "@/pages/ListYourPractice";
 import ProviderSearch from "@/pages/ProviderSearch";
 
+import Blog from "@/pages/Blog";
+import BlogPost from "@/pages/BlogPost";
+
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -111,6 +114,8 @@ function AppRoutes() {
       <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
       <Route path="/terms" element={<Layout><Terms /></Layout>} />
       <Route path="/contact" element={<Layout><Contact /></Layout>} />
+      <Route path="/blog" element={<Layout><Blog /></Layout>} />
+      <Route path="/blog/:slug" element={<Layout><BlogPost /></Layout>} />
 
       {/* Auth */}
       <Route path="/sign-in" element={<Layout hideFooter><SignIn /></Layout>} />
