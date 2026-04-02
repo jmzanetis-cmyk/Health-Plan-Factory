@@ -7,7 +7,7 @@
  * Usage:  node scripts/generate-pdf.js
  */
 
-import { readFileSync, createWriteStream, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, createWriteStream } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import PDFDocument from "pdfkit";
@@ -16,8 +16,9 @@ import { marked } from "marked";
 const __dir = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dir, "..");
 
-const mdPath  = resolve(ROOT, "docs/business-plan.md");
-const outPath = resolve(ROOT, "docs/business-plan.pdf");
+const mdPath   = resolve(ROOT, "docs/business-plan.md");
+const outPath  = resolve(ROOT, "docs/business-plan.pdf");
+const logoPath = resolve(ROOT, "artifacts/health-plan-factory/public/logo.png");
 
 // ── Brand tokens ─────────────────────────────────────────────────────────────
 const PINK    = "#D4227E";
@@ -78,33 +79,38 @@ doc.rect(0, 0, PAGE_W, PAGE_H).fill(NAVY);
 // Pink accent bar at top
 doc.rect(0, 0, PAGE_W, 5).fill(PINK);
 
+// Logo — centered, below the top bar
+const logoDisplayW = 130;
+const logoX = (PAGE_W - logoDisplayW) / 2;
+doc.image(logoPath, logoX, 60, { width: logoDisplayW });
+
 // Pink pill label
 const pillText = "HEALTH PLAN FACTORY";
 const pillW    = 210;
 const pillH    = 26;
 const pillX    = (PAGE_W - pillW) / 2;
-const pillY    = 190;
+const pillY    = 210;
 doc.roundedRect(pillX, pillY, pillW, pillH, 13).fill(PINK);
 doc.font(F.sansBold).fontSize(9).fillColor(WHITE)
    .text(pillText, pillX, pillY + 8, { width: pillW, align: "center" });
 
 // Main title
 doc.font(F.body).fontSize(48).fillColor(WHITE)
-   .text("Business", 0, 240, { width: PAGE_W, align: "center" });
+   .text("Business", 0, 258, { width: PAGE_W, align: "center" });
 doc.font(F.bodyBold).fontSize(48).fillColor(PINK)
-   .text("Plan", 0, 296, { width: PAGE_W, align: "center" });
+   .text("Plan", 0, 314, { width: PAGE_W, align: "center" });
 
 // Subtitle
 doc.font(F.sans).fontSize(12).fillColor("#8fa3b8")
-   .text("Confidential · Draft Document", 0, 368, { width: PAGE_W, align: "center" });
+   .text("Confidential · Draft Document", 0, 386, { width: PAGE_W, align: "center" });
 
 // Pink divider
 const divW = 60;
-doc.moveTo((PAGE_W - divW) / 2, 400).lineTo((PAGE_W + divW) / 2, 400)
+doc.moveTo((PAGE_W - divW) / 2, 418).lineTo((PAGE_W + divW) / 2, 418)
    .strokeColor(PINK).lineWidth(2.5).stroke();
 
 // Meta block
-const metaY = 425;
+const metaY = 443;
 doc.font(F.sansBold).fontSize(9).fillColor("#8fa3b8")
    .text("PREPARED", MARGIN, metaY, { width: CONTENT_W, align: "center" });
 doc.font(F.sans).fontSize(10).fillColor("#5a7a9a")
