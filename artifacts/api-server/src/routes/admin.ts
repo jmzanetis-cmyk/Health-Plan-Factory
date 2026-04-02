@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import { profiles, providers, plans, planItems, adminSettings, modalities, referrals, memberCredits, testimonials, notificationLog } from "@workspace/db";
-import { eq, gte, lte, count, desc, asc, sql, and, notExists } from "drizzle-orm";
+import { eq, gte, lte, count, desc, asc, sql, and, notExists, inArray } from "drizzle-orm";
 import {
   UpsertAdminSettingBody,
   GetAdminStatsResponse,
@@ -845,7 +845,7 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
       ? await db
           .select({ id: profiles.id, subscriptionStatus: profiles.subscriptionStatus })
           .from(profiles)
-          .where(sql`${profiles.id} = ANY(${candidateIds})`)
+          .where(inArray(profiles.id, candidateIds))
       : [];
 
     const profileMap = new Map(allProfiles.map((p) => [p.id, p]));

@@ -479,7 +479,7 @@ function ReEngagementSection() {
               <CheckCircle2 size={14} /> Bulk run complete — Day {bulkResult.day}
             </div>
             <div style={{ color: "var(--text-secondary)" }}>
-              {bulkResult.dispatched} sent · {bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
+              {bulkResult.dispatched} attempted · {bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
             </div>
           </div>
         )}
