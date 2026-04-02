@@ -915,6 +915,8 @@ router.get("/admin/booking-requests", async (req, res) => {
         memberId: bookingRequests.memberId,
         providerId: bookingRequests.providerId,
         memberEmail: bookingRequests.memberEmail,
+        contactEmail: bookingRequests.contactEmail,
+        requestedModality: bookingRequests.requestedModality,
         message: bookingRequests.message,
         note: bookingRequests.note,
         status: bookingRequests.status,

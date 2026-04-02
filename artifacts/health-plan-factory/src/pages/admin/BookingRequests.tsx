@@ -12,6 +12,8 @@ interface BookingRequest {
   memberId: string;
   providerId: string;
   memberEmail: string;
+  contactEmail: string | null;
+  requestedModality: string | null;
   message: string;
   note: string | null;
   status: string;
@@ -182,9 +184,12 @@ export default function BookingRequests() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontFamily: "var(--app-font-sans)", fontWeight: 600, fontSize: "0.88rem", color: "var(--hpf-pink)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {r.memberName ?? "Unknown member"} → {r.providerName}
+                      {r.requestedModality && (
+                        <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: "0.4rem", fontSize: "0.8rem" }}>({r.requestedModality})</span>
+                      )}
                     </p>
                     <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.74rem", color: "var(--text-muted)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {r.memberEmail} · {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                      {r.contactEmail ?? r.memberEmail} · {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
                     </p>
                   </div>
 
@@ -223,7 +228,7 @@ export default function BookingRequests() {
                       {/* Action row */}
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
                         <a
-                          href={`mailto:${r.memberEmail}`}
+                          href={`mailto:${r.contactEmail ?? r.memberEmail}`}
                           style={{
                             display: "inline-flex", alignItems: "center", gap: "0.3rem",
                             padding: "0.4rem 0.85rem", borderRadius: 8,
@@ -232,6 +237,7 @@ export default function BookingRequests() {
                             fontFamily: "var(--app-font-sans)", textDecoration: "none",
                             border: "1.5px solid rgba(212,34,126,0.12)",
                           }}
+                          title={r.contactEmail ? `Contact email: ${r.contactEmail}` : `Member email: ${r.memberEmail}`}
                         >
                           <Mail size={12} /> Email member
                         </a>

@@ -14,7 +14,9 @@ interface BookingRequestProviderProps {
   providerName: string;
   memberName: string | null;
   memberEmail: string;
+  contactEmail: string | null;
   goal: string | null;
+  requestedModality: string | null;
   message: string;
   note: string | null;
   appUrl: string;
@@ -25,9 +27,12 @@ export function bookingRequestProviderEmail(props: BookingRequestProviderProps):
   const memberFirst = props.memberName
     ? props.memberName.split(" ")[0].replace(/[\r\n\t\x00-\x1F]/g, "").trim()
     : "";
+  const displayName = props.memberName ?? "A Health Plan Factory member";
+  const replyEmail = props.contactEmail || props.memberEmail;
+  const goalLine = props.requestedModality ?? props.goal;
 
   return {
-    subject: `New booking request from ${memberFirst || "a member"} — Health Plan Factory`,
+    subject: `A new client wants to book with you — ${displayName}${goalLine ? `, ${goalLine}` : ""}`,
     html: `<!DOCTYPE html>
 <html>
 <head>
@@ -58,24 +63,24 @@ export function bookingRequestProviderEmail(props: BookingRequestProviderProps):
               Hi ${escHtml(providerFirst || props.providerName)},
             </p>
             <p style="margin:0 0 24px;font-size:15px;color:${DEEP};font-family:Arial,sans-serif;line-height:1.6;">
-              A Health Plan Factory member has sent you a booking request. Here are their details:
+              A new client wants to book with you through Health Plan Factory. Here are their details:
             </p>
 
             <!-- Member info card -->
             <table cellpadding="0" cellspacing="0" width="100%" style="background:#fdf5f9;border:1.5px solid rgba(212,34,126,0.15);border-radius:12px;overflow:hidden;margin-bottom:24px;">
               <tr>
                 <td style="padding:20px 24px;">
-                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">From</p>
+                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">Client name</p>
                   <p style="margin:0 0 14px;font-size:18px;font-weight:700;color:${NAVY};font-family:Georgia,serif;">
-                    ${escHtml(props.memberName ?? "A Health Plan Factory member")}
+                    ${escHtml(displayName)}
                   </p>
-                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">Email</p>
+                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">Contact email</p>
                   <p style="margin:0 0 14px;font-size:14px;color:${DEEP};font-family:Arial,sans-serif;">
-                    <a href="mailto:${escHtml(props.memberEmail)}" style="color:${PINK};text-decoration:none;">${escHtml(props.memberEmail)}</a>
+                    <a href="mailto:${escHtml(replyEmail)}" style="color:${PINK};text-decoration:none;">${escHtml(replyEmail)}</a>
                   </p>
-                  ${props.goal ? `
-                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">Wellness goal</p>
-                  <p style="margin:0;font-size:14px;color:${DEEP};font-family:Arial,sans-serif;">${escHtml(props.goal)}</p>
+                  ${goalLine ? `
+                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">${props.requestedModality ? "Requested modality" : "Wellness goal"}</p>
+                  <p style="margin:0;font-size:14px;color:${DEEP};font-family:Arial,sans-serif;">${escHtml(goalLine)}</p>
                   ` : ""}
                 </td>
               </tr>
@@ -104,11 +109,11 @@ export function bookingRequestProviderEmail(props: BookingRequestProviderProps):
         <tr>
           <td style="padding:0 36px 28px;">
             <p style="margin:0 0 16px;font-size:14px;color:#6b7280;font-family:Arial,sans-serif;line-height:1.6;">
-              Reply directly to <strong>${escHtml(props.memberEmail)}</strong> to schedule a session.
+              Reply directly to <strong>${escHtml(replyEmail)}</strong> to schedule a session.
               This request was submitted through Health Plan Factory — you're under no obligation to accept.
             </p>
-            <a href="mailto:${escHtml(props.memberEmail)}" style="display:inline-block;background:${PINK};color:white;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;font-family:Arial,sans-serif;">
-              Reply to ${escHtml(memberFirst || "this member")} →
+            <a href="mailto:${escHtml(replyEmail)}" style="display:inline-block;background:${PINK};color:white;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;font-family:Arial,sans-serif;">
+              Reply to ${escHtml(memberFirst || displayName)} →
             </a>
           </td>
         </tr>

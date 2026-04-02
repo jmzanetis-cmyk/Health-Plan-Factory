@@ -987,6 +987,8 @@ export const bookingRequests = pgTable(
       .notNull()
       .references(() => providers.id, { onDelete: "cascade" }),
     memberEmail: text("member_email").notNull(),
+    contactEmail: text("contact_email"),
+    requestedModality: text("requested_modality"),
     message: text("message").notNull(),
     note: text("note"),
     status: text("status").notNull().default("pending"), // pending | contacted | declined

@@ -29,6 +29,7 @@ interface Provider {
   status: string;
   credentials: string[];
   contactGated?: boolean;
+  modalities?: { id: string; name: string }[];
 }
 
 interface Favorite {
@@ -130,9 +131,10 @@ export default function Providers() {
   const [expandedReviewsId, setExpandedReviewsId] = useState<string | null>(null);
 
   // Booking request state
-  const [bookingModal, setBookingModal] = useState<{ providerId: string; providerName: string } | null>(null);
+  const [bookingModal, setBookingModal] = useState<{ providerId: string; providerName: string; providerModality?: string } | null>(null);
   const [bookingMessage, setBookingMessage] = useState("");
   const [bookingNote, setBookingNote] = useState("");
+  const [bookingContactEmail, setBookingContactEmail] = useState("");
   const [submittingBooking, setSubmittingBooking] = useState(false);
 
   // Filters — initialise selectedModality from ?modality= query param
@@ -236,10 +238,18 @@ export default function Providers() {
     }
   };
 
-  const openBookingModal = (p: { id: string; name: string }) => {
-    setBookingMessage("");
+  const openBookingModal = (p: { id: string; name: string }, modalityLabel?: string) => {
+    // Pre-fill a personalised message based on available context
+    const providerFirstName = p.name.split(" ")[0];
+    let preFill = `Hi ${providerFirstName},\n\nI found your listing on Health Plan Factory and would love to schedule a session with you.`;
+    if (modalityLabel) {
+      preFill += ` I'm specifically interested in ${modalityLabel}.`;
+    }
+    preFill += "\n\nPlease let me know your availability and next steps. Thank you!";
+    setBookingMessage(preFill);
     setBookingNote("");
-    setBookingModal({ providerId: p.id, providerName: p.name });
+    setBookingContactEmail(user?.email ?? "");
+    setBookingModal({ providerId: p.id, providerName: p.name, providerModality: modalityLabel });
   };
 
   const submitBooking = async () => {
@@ -253,7 +263,12 @@ export default function Providers() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ message: bookingMessage.trim(), note: bookingNote.trim() || undefined }),
+        body: JSON.stringify({
+          message: bookingMessage.trim(),
+          note: bookingNote.trim() || undefined,
+          contactEmail: bookingContactEmail.trim() || undefined,
+          requestedModality: bookingModal.providerModality || undefined,
+        }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -490,9 +505,26 @@ export default function Providers() {
                 <X size={16} />
               </button>
             </div>
-            <p className="text-xs mb-5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Your message will be emailed to <strong>{bookingModal.providerName}</strong>. They'll reply directly to your email.
+            <p className="text-xs mb-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+              Your message will be emailed to <strong>{bookingModal.providerName}</strong>.
+              {bookingModal.providerModality && (
+                <span> Requesting: <strong>{bookingModal.providerModality}</strong>.</span>
+              )}
+              {" "}They'll reply directly to your email.
             </p>
+            <div className="mb-3">
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+                Your contact email <span style={{ color: "var(--hpf-crimson)" }}>*</span>
+              </label>
+              <input
+                type="email"
+                value={bookingContactEmail}
+                onChange={(e) => setBookingContactEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full px-3 py-2.5 text-sm outline-none"
+                style={{ background: "var(--warm-white)", border: "1.5px solid rgba(212,34,126,0.12)", borderRadius: 8, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
+              />
+            </div>
             <div className="mb-4">
               <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
                 Message <span style={{ color: "var(--hpf-crimson)" }}>*</span>
@@ -500,7 +532,6 @@ export default function Providers() {
               <textarea
                 value={bookingMessage}
                 onChange={(e) => setBookingMessage(e.target.value)}
-                placeholder={`Hi, I'm interested in booking a session with you. I found your listing on Health Plan Factory and would love to learn more about your services…`}
                 rows={4}
                 maxLength={2000}
                 className="w-full px-3 py-2.5 text-sm resize-none outline-none"
@@ -1006,7 +1037,14 @@ export default function Providers() {
                           </a>
                         )}
                         <button
-                          onClick={() => openBookingModal(p)}
+                          onClick={() => {
+                            // Use the active filter modality label if available, otherwise the provider's first modality
+                            const filterModality = selectedModality
+                              ? modalities.find((m) => m.id === selectedModality)?.name
+                              : undefined;
+                            const providerModalityLabel = filterModality ?? p.modalities?.[0]?.name;
+                            openBookingModal(p, providerModalityLabel);
+                          }}
                           className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
                           style={{ background: "var(--hpf-pink)", color: "white", fontFamily: "var(--app-font-sans)", border: "none", cursor: "pointer" }}
                         >

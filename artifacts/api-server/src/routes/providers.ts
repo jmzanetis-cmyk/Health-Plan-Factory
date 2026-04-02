@@ -835,7 +835,12 @@ router.post("/providers/:id/book", async (req, res) => {
   }
 
   const { id: providerId } = req.params;
-  const { message, note } = req.body as { message?: string; note?: string };
+  const { message, note, contactEmail, requestedModality } = req.body as {
+    message?: string;
+    note?: string;
+    contactEmail?: string;
+    requestedModality?: string;
+  };
 
   if (!message || typeof message !== "string" || message.trim().length < 10) {
     res.status(400).json({ error: "message must be at least 10 characters" });
@@ -844,6 +849,8 @@ router.post("/providers/:id/book", async (req, res) => {
 
   const cleanMessage = message.trim().slice(0, 2000);
   const cleanNote = typeof note === "string" ? note.trim().slice(0, 500) : null;
+  const cleanContactEmail = typeof contactEmail === "string" ? contactEmail.trim().slice(0, 254) : null;
+  const cleanRequestedModality = typeof requestedModality === "string" ? requestedModality.trim().slice(0, 120) : null;
 
   try {
     const [provider] = await db
@@ -911,6 +918,8 @@ router.post("/providers/:id/book", async (req, res) => {
       memberId,
       providerId,
       memberEmail: memberProfile.email,
+      contactEmail: cleanContactEmail ?? undefined,
+      requestedModality: cleanRequestedModality ?? undefined,
       message: cleanMessage,
       note: cleanNote ?? undefined,
       status: "pending",
@@ -922,7 +931,9 @@ router.post("/providers/:id/book", async (req, res) => {
         providerName: provider.name,
         memberName: memberProfile.displayName,
         memberEmail: memberProfile.email,
+        contactEmail: cleanContactEmail,
         goal: memberGoal,
+        requestedModality: cleanRequestedModality,
         message: cleanMessage,
         note: cleanNote,
         appUrl,

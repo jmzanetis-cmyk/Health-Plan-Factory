@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS "booking_requests" (
   "member_id" text NOT NULL REFERENCES "profiles"("id") ON DELETE CASCADE,
   "provider_id" text NOT NULL REFERENCES "providers"("id") ON DELETE CASCADE,
   "member_email" text NOT NULL,
+  "contact_email" text,
+  "requested_modality" text,
   "message" text NOT NULL,
   "note" text,
   "status" text NOT NULL DEFAULT 'pending',
