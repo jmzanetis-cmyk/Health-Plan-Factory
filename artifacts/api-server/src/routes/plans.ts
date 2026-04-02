@@ -460,6 +460,7 @@ const PlanItemPdfSchema = z.object({
 });
 
 const PlanPdfBody = z.object({
+  planId: z.string().optional(), // if provided + authenticated, server loads plan from DB
   plan: z.object({
     included: z.array(PlanItemPdfSchema),
     totalMonthlyCost: z.number(),
@@ -489,7 +490,8 @@ function evidenceColor(level: string): string {
 /**
  * POST /api/plans/pdf
  * Accepts plan + intake data in the request body and returns a branded PDF.
- * Works for both anonymous (body-only) and authenticated (body) users.
+ * When authenticated and planId is provided, loads authoritative plan data from DB.
+ * Falls back to client-provided payload for anonymous users or missing planId.
  */
 router.post("/plans/pdf", async (req, res) => {
   const parsed = PlanPdfBody.safeParse(req.body);
@@ -498,7 +500,81 @@ router.post("/plans/pdf", async (req, res) => {
     return;
   }
 
-  const { plan, intake } = parsed.data;
+  let { plan, intake } = parsed.data;
+  const { planId } = parsed.data;
+
+  // Server-side authoritative load when authenticated user provides a planId
+  if (planId && req.isAuthenticated()) {
+    const caller = req.user!;
+    const [dbPlan] = await db.select().from(plans).where(eq(plans.id, planId)).limit(1);
+    if (!dbPlan) {
+      res.status(404).json({ error: "Plan not found" });
+      return;
+    }
+    // Enforce ownership (admins may bypass)
+    if (dbPlan.profileId && dbPlan.profileId !== caller.id && caller.role !== "admin") {
+      res.status(403).json({ error: "Not authorised" });
+      return;
+    }
+
+    // Load included plan items joined with modality data
+    const dbItems = await db
+      .select({
+        modalityId: planItems.modalityId,
+        frequency: planItems.frequency,
+        estimatedMonthlyCost: planItems.estimatedMonthlyCost,
+        rationale: planItems.rationale,
+        nearbyProviderCount: planItems.nearbyProviderCount,
+        sortOrder: planItems.sortOrder,
+        name: modalities.name,
+        emoji: modalities.emoji,
+        description: modalities.description,
+        evidenceLevel: modalities.evidenceLevel,
+        hsaEligible: modalities.hsaEligible,
+        category: modalities.category,
+      })
+      .from(planItems)
+      .innerJoin(modalities, eq(planItems.modalityId, modalities.id))
+      .where(eq(planItems.planId, planId))
+      .orderBy(planItems.sortOrder);
+
+    // Load intake for goals/zip
+    let dbIntake: { budget: number; goals: string[]; zipCode: string } | null = null;
+    if (dbPlan.intakeId) {
+      const [raw] = await db
+        .select({ budget: memberIntakes.budget, goals: memberIntakes.goals, zipCode: memberIntakes.zipCode })
+        .from(memberIntakes)
+        .where(eq(memberIntakes.id, dbPlan.intakeId))
+        .limit(1);
+      if (raw) {
+        dbIntake = {
+          budget: raw.budget,
+          goals: Array.isArray(raw.goals) ? (raw.goals as string[]) : [],
+          zipCode: raw.zipCode ?? "",
+        };
+      }
+    }
+
+    // Override with server data
+    plan = {
+      included: dbItems.map((it) => ({
+        modalityId: it.modalityId,
+        name: it.name,
+        emoji: it.emoji,
+        description: it.description ?? "",
+        evidenceLevel: it.evidenceLevel,
+        hsaEligible: it.hsaEligible,
+        category: it.category,
+        frequency: it.frequency,
+        estimatedMonthlyCost: it.estimatedMonthlyCost,
+        rationale: it.rationale,
+        nearbyProviderCount: it.nearbyProviderCount ?? null,
+      })),
+      totalMonthlyCost: dbPlan.totalMonthlyCost,
+      budgetUtilization: dbPlan.budgetUtilization,
+    };
+    if (dbIntake) intake = dbIntake;
+  }
   const primaryGoal = intake.goals?.[0] ?? "Optimal Wellness";
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const fileName = `health-plan-${new Date().toISOString().slice(0, 10)}.pdf`;

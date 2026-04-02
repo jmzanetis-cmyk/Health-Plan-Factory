@@ -587,7 +587,23 @@ export default function Plan() {
     if (!plan || !intake || pdfLoading) return;
     setPdfLoading(true);
     try {
+      // For authenticated users, try to fetch the saved plan ID so the server
+      // can load authoritative data from the DB instead of trusting client payload
+      let savedPlanId: string | undefined;
+      if (isAuthenticated && user?.id) {
+        try {
+          const planRes = await fetch(`${BASE}/api/plans/${user.id}/latest`, { credentials: "include" });
+          if (planRes.ok) {
+            const planData = await planRes.json();
+            savedPlanId = planData?.plan?.id as string | undefined;
+          }
+        } catch {
+          // fallback to client payload
+        }
+      }
+
       const body = {
+        ...(savedPlanId ? { planId: savedPlanId } : {}),
         plan: {
           included: plan.included.map((item) => ({
             modalityId: item.modality.id,
@@ -727,7 +743,7 @@ export default function Plan() {
               opacity: pdfLoading ? 0.65 : 1,
             }}
           >
-            <span>{pdfLoading ? "⏳" : "⬇️"}</span> {pdfLoading ? "Generating…" : "PDF"}
+            <span>{pdfLoading ? "⏳" : "⬇️"}</span> {pdfLoading ? "Generating…" : "Download PDF"}
           </button>
           <button
             type="button"
