@@ -715,7 +715,7 @@ async function sendReEngagementEmail(
   const { plan, items } = await getTopPlanItems(memberId);
   if (!plan) return "no-plan";
 
-  const planUrl = `${appUrl}/dashboard/plan`;
+  const planUrl = `${appUrl}/plan`;
   const upgradeUrl = `${appUrl}/pricing?utm_source=email&utm_campaign=re-engagement-day${day}`;
   const unsubscribeUrl = `${appUrl}/profile`;
 
