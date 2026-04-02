@@ -190,7 +190,7 @@ export function FounderLetterSection() {
 
 function FounderAvatar() {
   const [imgFailed, setImgFailed] = useState(false);
-  const src = `${BASE}assets/IMG_0300_1775134477020.jpeg`;
+  const src = `${BASE}founder.jpg`;
 
   return (
     <div style={{ position: "relative", width: 72, height: 72, flexShrink: 0 }}>
