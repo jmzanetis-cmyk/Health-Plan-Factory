@@ -20,8 +20,13 @@ import demoRequestsRouter from "./demoRequests";
 import healthSyncRouter from "./healthSync";
 import storageRouter from "./storage";
 import reviewsRouter from "./reviews";
+import testFixturesRouter from "./test-fixtures";
 
 const router: IRouter = Router();
+
+if (process.env.NODE_ENV === "test") {
+  router.use(testFixturesRouter);
+}
 
 router.use(healthRouter);
 router.use(authRouter);

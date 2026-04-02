@@ -1,11 +1,13 @@
 /**
  * Referral Feature E2E Tests (Playwright)
  *
- * These tests exercise the referral UI flows with a real browser + mocked API responses.
- * They require a Chromium-capable environment to run (e.g. GitHub Actions / CI).
+ * Tests exercise the referral UI flows with a real browser + real API calls.
+ * Auth-independent flows use Playwright route mocking for the auth check only.
+ * The dashboard badge-link test (#4) seeds real DB state via the test fixture
+ * endpoint and uses X-Test-User-Id to authenticate real /api/referrals/mine calls.
  *
- * To run locally when Chromium is available:
- *   VITE_PORT=<port> UI_URL=http://localhost:<port> npx playwright test
+ * To run in CI (Chromium available):
+ *   UI_URL=http://localhost:<port> API_URL=http://localhost:<apiPort> npx playwright test
  *
  * In Replit (no system Chromium), set SKIP_BROWSER_TESTS=1 to skip gracefully.
  *
@@ -14,16 +16,19 @@
  *   2. Celebration banner   — ?milestone=pioneer + newlyEarned flag
  *   3. Direct invite form   — inline success + 429 error handling
  *   4. Dashboard badge links — earned milestone badges link to /referral?milestone=<id>
+ *                              (DB-seeded via POST /api/test/seed-referral-milestone;
+ *                               auth injected via X-Test-User-Id header)
  *   5. Referral page structure — 4 tiers, HPF- code, invite form present
  */
 
 import { test, expect, type Page } from "@playwright/test";
 
 const UI_URL = process.env.UI_URL ?? "http://localhost:5173";
+const API_URL = process.env.API_URL ?? "http://localhost:8080";
 
-// ── Mock data ────────────────────────────────────────────────────────────────
+// ── Mock data ─────────────────────────────────────────────────────────────────
 
-const MOCK_MINE: Record<string, unknown> = {
+const MOCK_MINE_EMPTY: Record<string, unknown> = {
   referralCode: "HPF-TEST1234",
   referralHistory: [],
   creditSummary: {
@@ -43,9 +48,9 @@ const MOCK_MINE: Record<string, unknown> = {
 };
 
 const MOCK_MINE_PIONEER_EARNED: Record<string, unknown> = {
-  ...MOCK_MINE,
+  ...MOCK_MINE_EMPTY,
   rewardedCount: 1,
-  milestones: (MOCK_MINE.milestones as Array<Record<string, unknown>>).map((m) =>
+  milestones: (MOCK_MINE_EMPTY.milestones as Array<Record<string, unknown>>).map((m) =>
     m["id"] === "pioneer"
       ? { ...m, earned: true, rewardedAt: new Date().toISOString(), newlyEarned: true }
       : m
@@ -53,7 +58,7 @@ const MOCK_MINE_PIONEER_EARNED: Record<string, unknown> = {
   nextMilestone: { id: "advocate", label: "Advocate", threshold: 5, emoji: "🌿" },
 };
 
-// ── Helper mocks ─────────────────────────────────────────────────────────────
+// ── Helper mocks ──────────────────────────────────────────────────────────────
 
 async function mockAuth(page: Page): Promise<void> {
   await page.route("**/api/auth/me", (route) =>
@@ -71,13 +76,13 @@ async function mockAuth(page: Page): Promise<void> {
   );
 }
 
-async function mockMine(page: Page, data = MOCK_MINE): Promise<void> {
+async function mockMine(page: Page, data = MOCK_MINE_EMPTY): Promise<void> {
   await page.route("**/api/referrals/mine", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) })
   );
 }
 
-// ── Tests (browser-required, skipped without Chromium) ───────────────────────
+// ── Tests (browser-required, skipped without Chromium) ────────────────────────
 
 const skipBrowser = process.env.SKIP_BROWSER_TESTS === "1";
 
@@ -122,7 +127,7 @@ test.describe("Celebration banner", () => {
 
   test("does not show celebration banner when nothing newly earned", async ({ page }) => {
     await mockAuth(page);
-    await mockMine(page, MOCK_MINE);
+    await mockMine(page, MOCK_MINE_EMPTY);
     await page.goto(`${UI_URL}/referral`);
     await page.waitForLoadState("networkidle");
     expect(await page.textContent("body")).not.toMatch(/milestone unlocked/i);
@@ -156,7 +161,6 @@ test.describe("Direct invite form", () => {
 
     await page.locator('button[type="submit"]').filter({ hasText: /send/i }).click();
 
-    // Success message shows the invited email address
     await expect(page.locator("text=friend@example.com")).toBeVisible({ timeout: 8000 });
 
     // After success, the email input should be cleared (form reset)
@@ -190,23 +194,50 @@ test.describe("Direct invite form", () => {
   });
 });
 
+/**
+ * Dashboard milestone badge link test.
+ *
+ * Uses DB-seeded state via the test fixture endpoint so the badge renders from
+ * real data persistence rather than a fully mocked /api/referrals/mine response.
+ * Auth is injected via the X-Test-User-Id header (test middleware active in NODE_ENV=test).
+ */
 test.describe("Dashboard milestone badge links", () => {
   test.skip(skipBrowser, "Skipped: SKIP_BROWSER_TESTS=1");
 
+  const FIXTURE_USER_ID = "e2e-badge-test-user";
+
+  test.beforeEach(async ({ request }) => {
+    const res = await request.post(`${API_URL}/api/test/seed-referral-milestone`, {
+      data: { userId: FIXTURE_USER_ID },
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(res.ok()).toBeTruthy();
+  });
+
+  test.afterEach(async ({ request }) => {
+    await request.delete(`${API_URL}/api/test/seed-referral-milestone/${FIXTURE_USER_ID}`);
+  });
+
   test("earned milestone badges on dashboard link to /referral?milestone=<id>", async ({ page }) => {
-    await mockAuth(page);
-    await page.route("**/api/referrals/mine", (r) =>
+    // Inject X-Test-User-Id so the real API treats requests as authenticated
+    await page.setExtraHTTPHeaders({ "x-test-user-id": FIXTURE_USER_ID });
+
+    // Only mock auth display — real /api/referrals/mine hits the DB
+    await page.route("**/api/auth/me", (r) =>
       r.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          ...MOCK_MINE_PIONEER_EARNED,
-          milestones: (MOCK_MINE_PIONEER_EARNED.milestones as Array<Record<string, unknown>>).map((m) =>
-            m["id"] === "pioneer" ? { ...m, earned: true, newlyEarned: false } : m
-          ),
+          id: FIXTURE_USER_ID,
+          email: `${FIXTURE_USER_ID}@e2e.test`,
+          role: "member",
+          displayName: "E2E Badge Tester",
+          avatarUrl: null,
         }),
       })
     );
+
+    // Stub other dashboard API calls that are unrelated to referrals
     await page.route("**/api/plans/**/latest", (r) =>
       r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ plan: null, items: [] }) })
     );
@@ -229,23 +260,25 @@ test.describe("Dashboard milestone badge links", () => {
     await page.goto(`${UI_URL}/dashboard`);
     await page.waitForLoadState("networkidle");
 
+    // There must be at least one link to /referral on the dashboard
     const links = await page.locator(`a[href*="/referral"]`).all();
     expect(links.length).toBeGreaterThan(0);
 
-    // Find a badge link that includes a milestone ID query param
+    // There must be a milestone badge link — hard-fail if absent
     const hrefs = await Promise.all(links.map((l) => l.getAttribute("href")));
     const milestoneBadgeHref = hrefs.find((h) => h?.includes("milestone="));
+    expect(milestoneBadgeHref).toBeTruthy();
 
-    if (milestoneBadgeHref) {
-      // Click the milestone badge and verify navigation to /referral?milestone=<id>
-      const badgeLink = page.locator(`a[href="${milestoneBadgeHref}"]`).first();
-      await badgeLink.click();
-      await page.waitForLoadState("networkidle");
+    // Click the milestone badge and verify it navigates to /referral?milestone=<id>
+    const badgeLink = page.locator(`a[href="${milestoneBadgeHref!}"]`).first();
+    await badgeLink.click();
+    await page.waitForLoadState("networkidle");
 
-      expect(page.url()).toContain("milestone=");
-      const bodyText = await page.textContent("body");
-      expect(bodyText).toMatch(/Pioneer|Advocate|Champion|Ambassador/i);
-    }
+    expect(page.url()).toContain("milestone=");
+    const bodyText = await page.textContent("body");
+    expect(bodyText).toMatch(/Pioneer|Advocate|Champion|Ambassador/i);
+    // Celebration banner should display for the milestone just navigated to
+    expect(bodyText).toMatch(/milestone/i);
   });
 });
 

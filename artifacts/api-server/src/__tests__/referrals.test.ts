@@ -25,8 +25,8 @@ import {
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import referralsRouter, { maybeAwardMilestone } from "../routes/referrals";
-import { escapeHtml as escapeHtmlInvite } from "../emails/referral-invite";
-import { escapeHtml as escapeHtmlMilestone } from "../emails/referral-milestone";
+import { escapeHtml as escapeHtmlInvite, referralInviteEmail } from "../emails/referral-invite";
+import { escapeHtml as escapeHtmlMilestone, referralMilestoneEmail } from "../emails/referral-milestone";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -123,6 +123,191 @@ describe("escapeHtml (referral-milestone)", () => {
     expect(escapeHtmlMilestone(`<img onerror="alert(1)">`)).toBe(
       `&lt;img onerror=&quot;alert(1)&quot;&gt;`
     );
+  });
+});
+
+// ── 1b. referralInviteEmail — real production output ────────────────────────
+
+describe("referralInviteEmail (production template)", () => {
+  it("subject includes referrer name", () => {
+    const { subject } = referralInviteEmail({
+      referrerName: "Alice",
+      referralCode: "HPF-ABCD1234",
+      signupUrl: "https://healthplanfactory.com/signup?ref=HPF-ABCD1234",
+    });
+    expect(subject).toBe("Alice invited you to Health Plan Factory");
+  });
+
+  it("subject uses 'A friend' when referrerName is null", () => {
+    const { subject } = referralInviteEmail({
+      referrerName: null,
+      referralCode: "HPF-ABCD1234",
+      signupUrl: "https://healthplanfactory.com/signup?ref=HPF-ABCD1234",
+    });
+    expect(subject).toBe("A friend invited you to Health Plan Factory");
+  });
+
+  it("subject escapes XSS in referrerName", () => {
+    const { subject } = referralInviteEmail({
+      referrerName: "<script>alert('xss')</script>",
+      referralCode: "HPF-ABCD1234",
+      signupUrl: "https://healthplanfactory.com/signup?ref=HPF-ABCD1234",
+    });
+    expect(subject).not.toContain("<script>");
+    expect(subject).toContain("&lt;script&gt;");
+  });
+
+  it("HTML body contains the referral code", () => {
+    const { html } = referralInviteEmail({
+      referrerName: "Bob",
+      referralCode: "HPF-ABCD1234",
+      signupUrl: "https://healthplanfactory.com/signup?ref=HPF-ABCD1234",
+    });
+    expect(html).toContain("HPF-ABCD1234");
+  });
+
+  it("HTML body contains the signup URL", () => {
+    const signupUrl = "https://healthplanfactory.com/signup?ref=HPF-ABCD1234";
+    const { html } = referralInviteEmail({
+      referrerName: "Carol",
+      referralCode: "HPF-ABCD1234",
+      signupUrl,
+    });
+    expect(html).toContain(signupUrl);
+  });
+
+  it("HTML body includes personalNote when provided", () => {
+    const { html } = referralInviteEmail({
+      referrerName: "Dave",
+      referralCode: "HPF-ABCD1234",
+      signupUrl: "https://healthplanfactory.com/signup",
+      personalNote: "Hey, join me!",
+    });
+    expect(html).toContain("Hey, join me!");
+  });
+
+  it("HTML body escapes XSS in personalNote", () => {
+    const { html } = referralInviteEmail({
+      referrerName: "Eve",
+      referralCode: "HPF-ABCD1234",
+      signupUrl: "https://healthplanfactory.com/signup",
+      personalNote: '<img onerror="alert(1)">',
+    });
+    expect(html).not.toContain('<img onerror="alert(1)">');
+    expect(html).toContain("&lt;img");
+  });
+
+  it("HTML body omits personal note block when personalNote is absent", () => {
+    const { html } = referralInviteEmail({
+      referrerName: "Frank",
+      referralCode: "HPF-ABCD1234",
+      signupUrl: "https://healthplanfactory.com/signup",
+    });
+    // The note wrapper div with background:#fdf4f9 should not appear
+    expect(html).not.toContain("fdf4f9");
+  });
+});
+
+// ── 1c. referralMilestoneEmail — real production output ─────────────────────
+
+describe("referralMilestoneEmail (production template)", () => {
+  it("subject includes milestone name, emoji, and bonus credit", () => {
+    const { subject } = referralMilestoneEmail({
+      referrerName: "Alice",
+      milestoneName: "Pioneer",
+      milestoneEmoji: "🌱",
+      bonusCredit: "$3.00",
+      totalRewardedCount: 1,
+      dashboardUrl: "https://healthplanfactory.com/dashboard",
+    });
+    expect(subject).toBe("🌱 You've reached Pioneer — $3.00 bonus credit!");
+  });
+
+  it("subject is correct for Ambassador tier", () => {
+    const { subject } = referralMilestoneEmail({
+      referrerName: "Bob",
+      milestoneName: "Ambassador",
+      milestoneEmoji: "💎",
+      bonusCredit: "$20.00",
+      totalRewardedCount: 25,
+      dashboardUrl: "https://healthplanfactory.com/dashboard",
+    });
+    expect(subject).toBe("💎 You've reached Ambassador — $20.00 bonus credit!");
+  });
+
+  it("HTML body contains the bonus credit amount", () => {
+    const { html } = referralMilestoneEmail({
+      referrerName: "Carol",
+      milestoneName: "Advocate",
+      milestoneEmoji: "🌿",
+      bonusCredit: "$5.00",
+      totalRewardedCount: 5,
+      dashboardUrl: "https://healthplanfactory.com/dashboard",
+    });
+    expect(html).toContain("$5.00");
+  });
+
+  it("HTML body contains the dashboard URL", () => {
+    const dashboardUrl = "https://healthplanfactory.com/dashboard";
+    const { html } = referralMilestoneEmail({
+      referrerName: "Dave",
+      milestoneName: "Champion",
+      milestoneEmoji: "🏆",
+      bonusCredit: "$10.00",
+      totalRewardedCount: 10,
+      dashboardUrl,
+    });
+    expect(html).toContain(dashboardUrl);
+  });
+
+  it("HTML body escapes XSS in referrerName", () => {
+    const { html } = referralMilestoneEmail({
+      referrerName: '<script>alert("xss")</script>',
+      milestoneName: "Pioneer",
+      milestoneEmoji: "🌱",
+      bonusCredit: "$3.00",
+      totalRewardedCount: 1,
+      dashboardUrl: "https://healthplanfactory.com/dashboard",
+    });
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("HTML body uses 'there' when referrerName is null", () => {
+    const { html } = referralMilestoneEmail({
+      referrerName: null,
+      milestoneName: "Pioneer",
+      milestoneEmoji: "🌱",
+      bonusCredit: "$3.00",
+      totalRewardedCount: 1,
+      dashboardUrl: "https://healthplanfactory.com/dashboard",
+    });
+    expect(html).toContain("Hi there,");
+  });
+
+  it("HTML body uses plural 'referrals' when totalRewardedCount > 1", () => {
+    const { html } = referralMilestoneEmail({
+      referrerName: "Eve",
+      milestoneName: "Advocate",
+      milestoneEmoji: "🌿",
+      bonusCredit: "$5.00",
+      totalRewardedCount: 5,
+      dashboardUrl: "https://healthplanfactory.com/dashboard",
+    });
+    expect(html).toContain("5 rewarded referrals");
+  });
+
+  it("HTML body uses singular 'referral' when totalRewardedCount is 1", () => {
+    const { html } = referralMilestoneEmail({
+      referrerName: "Frank",
+      milestoneName: "Pioneer",
+      milestoneEmoji: "🌱",
+      bonusCredit: "$3.00",
+      totalRewardedCount: 1,
+      dashboardUrl: "https://healthplanfactory.com/dashboard",
+    });
+    expect(html).toContain("1 rewarded referral");
+    expect(html).not.toContain("1 rewarded referrals");
   });
 });
 

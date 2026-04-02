@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import { authMiddleware } from "./middlewares/authMiddleware";
+import { testAuthMiddleware } from "./middlewares/testAuthMiddleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -43,6 +44,9 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+if (process.env.NODE_ENV === "test") {
+  app.use(testAuthMiddleware);
+}
 app.use(authMiddleware);
 
 app.use("/api", router);
