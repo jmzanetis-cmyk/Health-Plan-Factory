@@ -212,13 +212,19 @@ export default function About() {
               className="text-sm font-light leading-relaxed mb-4"
               style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
             >
-              I spent years navigating a fragmented wellness landscape — expensive apps with generic advice, providers I couldn't afford, and HSA/FSA dollars I didn't know I could use. The gap between "wanting to be healthier" and "knowing how to get there on a real budget" was enormous.
+              A few years ago I woke up and couldn't move my left leg. Sciatica — overnight, no warning. What followed was months of trying everything one at a time: chiropractors, massage therapy, steroid injections, inversion therapy, decompression therapy, acupuncture. Each one helped a little, or not at all, or for a week before the pain came back.
+            </p>
+            <p
+              className="text-sm font-light leading-relaxed mb-4"
+              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
+            >
+              I spent thousands of dollars with no roadmap — just a pile of appointments and a lot of hope. It eventually resolved. But I always wondered: what if I'd had a more calculated approach from the start? What if someone had looked at my specific situation and said — start here, in this order, at this frequency?
             </p>
             <p
               className="text-sm font-light leading-relaxed mb-6"
               style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
             >
-              HealthPlanFactory is what I wish had existed. A platform that treats your wellness like a financial planner would — with real numbers, real trade-offs, and real local providers ready to book.
+              That question is why HealthPlanFactory exists. A plan built around you — evidence-ranked, budget-fitted, and connected to real providers you can actually book.
             </p>
             <div
               className="flex items-center gap-3 pt-4"
@@ -263,11 +269,11 @@ export default function About() {
             <div key={stat.label}>
               <div
                 className="text-4xl font-bold mb-2"
-                style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-crimson)", letterSpacing: "-0.02em" }}
+                style={{ fontFamily: "var(--app-font-serif)", color: "white", letterSpacing: "-0.02em" }}
               >
                 {stat.num}
               </div>
-              <p className="text-xs font-light leading-relaxed" style={{ color: "rgba(255,255,255,0.55)", fontFamily: "var(--app-font-sans)" }}>
+              <p className="text-xs font-light leading-relaxed" style={{ color: "rgba(255,255,255,0.75)", fontFamily: "var(--app-font-sans)" }}>
                 {stat.label}
               </p>
             </div>
