@@ -1,8 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { NPI_CATEGORIES, type NpiCategory } from "@/data/npiCategories";
 import { fetchNPIProviders, type NPIProvider } from "@/lib/npiClient";
+import { ProviderMap } from "@/components/ProviderMap";
+
+type GeoPoint = { lat: number; lng: number };
+type ViewMode = "list" | "map";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -350,6 +354,22 @@ export default function ProviderSearch() {
   const [insightLoading, setInsightLoading] = useState<string | null>(null);
   const [saveToast, setSaveToast] = useState("");
 
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const stored = localStorage.getItem("providerViewMode");
+      return stored === "map" ? "map" : "list";
+    } catch {
+      return "list";
+    }
+  });
+  const geocacheRef = useRef<Record<string, GeoPoint | null>>({});
+  const [geocoded, setGeoced] = useState<Record<string, GeoPoint | null>>({});
+
+  function setView(mode: ViewMode) {
+    setViewMode(mode);
+    try { localStorage.setItem("providerViewMode", mode); } catch { /* ignore */ }
+  }
+
   const category = selectedModality ? NPI_CATEGORIES[selectedModality] : null;
   const npiEntries = Object.entries(NPI_CATEGORIES);
 
@@ -391,6 +411,54 @@ export default function ProviderSearch() {
       runSearch(initModality, "", "");
     }
   }, []);
+
+  useEffect(() => {
+    if (providers.length === 0) return;
+    let cancelled = false;
+
+    async function batchGeocode() {
+      const uniqueKeys = [
+        ...new Set(
+          providers
+            .filter((p) => p.city && p.state)
+            .map((p) => `${p.city.toLowerCase()},${p.state.toLowerCase()}`),
+        ),
+      ].filter((key) => !(key in geocacheRef.current));
+
+      for (const key of uniqueKeys) {
+        if (cancelled) break;
+        const commaIdx = key.indexOf(",");
+        const cityPart = key.slice(0, commaIdx).trim();
+        const statePart = key.slice(commaIdx + 1).trim();
+        if (!cityPart || !statePart) {
+          geocacheRef.current[key] = null;
+          continue;
+        }
+        try {
+          const url = new URL("https://nominatim.openstreetmap.org/search");
+          url.searchParams.set("city", cityPart);
+          url.searchParams.set("state", statePart);
+          url.searchParams.set("country", "US");
+          url.searchParams.set("format", "json");
+          url.searchParams.set("limit", "1");
+          const res = await fetch(url.toString(), {
+            headers: { "Accept-Language": "en-US" },
+          });
+          const data = await res.json() as Array<{ lat: string; lon: string }>;
+          geocacheRef.current[key] = data.length > 0
+            ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+            : null;
+        } catch {
+          geocacheRef.current[key] = null;
+        }
+        if (!cancelled) setGeoced({ ...geocacheRef.current });
+        await new Promise<void>((resolve) => setTimeout(resolve, 1100));
+      }
+    }
+
+    batchGeocode();
+    return () => { cancelled = true; };
+  }, [providers]);
 
   function handleSearch() {
     if (!selectedModality) {
@@ -717,31 +785,75 @@ export default function ProviderSearch() {
 
             {!loading && !errorMsg && providers.length > 0 && (
               <>
-                <p style={{
-                  fontSize: "0.75rem",
-                  color: "var(--text-muted)",
-                  fontFamily: "var(--app-font-sans)",
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                   marginBottom: "0.875rem",
+                  gap: "0.75rem",
+                  flexWrap: "wrap",
                 }}>
-                  Showing <strong style={{ color: "var(--hpf-deep)" }}>{providers.length}</strong> licensed {category?.label.toLowerCase()}
-                  {locationLabel(lastLocation.state, lastLocation.city) !== "nationwide"
-                    ? <> in <strong style={{ color: "var(--hpf-deep)" }}>{locationLabel(lastLocation.state, lastLocation.city)}</strong></>
-                    : <> <strong style={{ color: "var(--hpf-deep)" }}>nationwide</strong></>
-                  }
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
-                  {providers.map((p) => (
-                    <ProviderCard
-                      key={p.npi}
-                      provider={p}
-                      modalityId={selectedModality}
-                      onSave={handleSave}
-                      onInsight={handleInsight}
-                      insightText={insights[p.npi]}
-                      insightLoading={insightLoading === p.npi}
-                    />
-                  ))}
+                  <p style={{
+                    fontSize: "0.75rem",
+                    color: "var(--text-muted)",
+                    fontFamily: "var(--app-font-sans)",
+                    margin: 0,
+                  }}>
+                    Showing <strong style={{ color: "var(--hpf-deep)" }}>{providers.length}</strong> licensed {category?.label.toLowerCase()}
+                    {locationLabel(lastLocation.state, lastLocation.city) !== "nationwide"
+                      ? <> in <strong style={{ color: "var(--hpf-deep)" }}>{locationLabel(lastLocation.state, lastLocation.city)}</strong></>
+                      : <> <strong style={{ color: "var(--hpf-deep)" }}>nationwide</strong></>
+                    }
+                  </p>
+
+                  <div style={{
+                    display: "flex",
+                    borderRadius: 8,
+                    border: "1.5px solid rgba(212,34,126,0.2)",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                  }}>
+                    {(["list", "map"] as ViewMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setView(mode)}
+                        style={{
+                          padding: "0.35rem 0.85rem",
+                          border: "none",
+                          background: viewMode === mode ? "var(--hpf-pink)" : "white",
+                          color: viewMode === mode ? "white" : "var(--text-muted)",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontFamily: "var(--app-font-sans)",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {mode === "list" ? "☰ List" : "🗺 Map"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {viewMode === "map" ? (
+                  <ProviderMap providers={providers} geocoded={geocoded} />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                    {providers.map((p) => (
+                      <ProviderCard
+                        key={p.npi}
+                        provider={p}
+                        modalityId={selectedModality}
+                        onSave={handleSave}
+                        onInsight={handleInsight}
+                        insightText={insights[p.npi]}
+                        insightLoading={insightLoading === p.npi}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 <p style={{
                   marginTop: "1.25rem",
                   fontSize: "0.65rem",
