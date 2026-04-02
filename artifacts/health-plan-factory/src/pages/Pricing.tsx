@@ -51,7 +51,6 @@ const TIERS = [
 
 interface CheckoutResult {
   checkout_url?: string;
-  stripe_required?: boolean;
   subscription_price_cents: number;
   credit_applied_cents: number;
   amount_charged_cents: number;
@@ -103,10 +102,10 @@ export default function Pricing() {
     if (!checkoutModal) return;
     if (checkoutModal.checkout_url) {
       window.location.href = checkoutModal.checkout_url;
-    } else if (checkoutModal.stripe_required) {
+    } else {
       toast({
-        title: "Stripe not yet configured",
-        description: "This is a demo environment. Set STRIPE_SECRET_KEY to enable live checkout.",
+        title: "Checkout unavailable",
+        description: "Unable to start checkout. Please try again or contact support.",
         variant: "destructive",
       });
       setCheckoutModal(null);
@@ -157,9 +156,7 @@ export default function Pricing() {
             </div>
 
             <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
-              {checkoutModal.stripe_required
-                ? "Stripe is not yet configured in this environment. Set STRIPE_SECRET_KEY to enable live checkout."
-                : "14-day free trial included. Cancel anytime. Referral credit is applied to your first invoice."}
+              14-day free trial included. Cancel anytime. Referral credit is applied to your first invoice.
             </p>
 
             <div className="flex gap-2">
@@ -173,7 +170,7 @@ export default function Pricing() {
                 onClick={handleConfirmCheckout}
                 style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-crimson)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
-                {checkoutModal.stripe_required ? "OK" : "Proceed to payment →"}
+                Proceed to payment →
               </button>
             </div>
           </div>

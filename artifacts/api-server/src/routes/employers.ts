@@ -888,8 +888,8 @@ router.delete("/admin/employers/:id", requireAdminAuth, async (req, res) => {
 });
 
 // ── Stripe Billing ─────────────────────────────────────────────────────────────
-// Production: set STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET env vars.
-// Demo mode: returns invoice summary with stripe_mode: "demo" when key is absent.
+// Requires STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET (both configured in production).
+// Falls back to an invoice preview when STRIPE_SECRET_KEY is absent (unreachable in production).
 
 router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req, res) => {
   try {

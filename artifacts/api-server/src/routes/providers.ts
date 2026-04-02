@@ -483,7 +483,8 @@ router.post("/providers/unlock", async (req, res) => {
     const netCents = creditResult?.netCents ?? priceCents;
 
     if (!stripe) {
-      // Stripe not configured — inform client; do NOT grant access.
+      // STRIPE_SECRET_KEY not configured — block access; do NOT grant unlock.
+      // This path is unreachable in production where STRIPE_SECRET_KEY is set.
       res.status(402).json({
         unlocked: false,
         stripe_required: true,
@@ -491,7 +492,7 @@ router.post("/providers/unlock", async (req, res) => {
         amount_charged_cents: netCents,
         amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
         providerId,
-        message: "Payment required. Configure STRIPE_SECRET_KEY to enable provider unlocks.",
+        message: "Payment required. STRIPE_SECRET_KEY must be configured to enable provider unlocks.",
       });
       return;
     }
@@ -747,13 +748,15 @@ router.post("/subscriptions/checkout", async (req, res) => {
     const netCents = Math.max(0, SUBSCRIPTION_PRICE_CENTS - creditAppliedCents);
 
     if (!stripe) {
+      // STRIPE_SECRET_KEY not configured — block subscription checkout.
+      // This path is unreachable in production where STRIPE_SECRET_KEY is set.
       res.status(402).json({
         stripe_required: true,
         subscription_price_cents: SUBSCRIPTION_PRICE_CENTS,
         credit_applied_cents: creditAppliedCents,
         amount_charged_cents: netCents,
         amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
-        message: "Configure STRIPE_SECRET_KEY to enable subscription checkout.",
+        message: "STRIPE_SECRET_KEY must be configured to enable subscription checkout.",
       });
       return;
     }
@@ -820,7 +823,7 @@ router.post("/subscriptions/checkout", async (req, res) => {
  * POST /api/providers/listing-checkout
  * Creates a Stripe Checkout Session for a provider's monthly listing subscription.
  * The provider record must already exist (created in step 3 of the signup wizard).
- * Returns { checkout_url } when Stripe is configured, or stripe_mode: "demo" otherwise.
+ * Returns { checkout_url } on success. Returns 402 + stripe_required if STRIPE_SECRET_KEY is absent (unreachable in production).
  */
 router.post("/providers/listing-checkout", async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -851,23 +854,11 @@ router.post("/providers/listing-checkout", async (req, res) => {
     const LISTING_PRICE_CENTS = 2900; // $29/mo
 
     if (!stripe) {
-      // Demo mode — record a demo subscription and return
-      await db.insert(providerSubscriptions).values({
-        id: randomUUID(),
-        providerId: provider.id,
-        profileId,
-        amountCents: LISTING_PRICE_CENTS,
-        status: "active",
-        stripeSessionId: null,
-        stripeSubscriptionId: null,
-        stripeCustomerId: null,
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      }).onConflictDoNothing();
-
-      res.json({
-        stripe_required: false,
-        stripe_mode: "demo",
-        message: "Stripe not configured — listing subscription recorded in demo mode.",
+      // STRIPE_SECRET_KEY not configured — block listing checkout.
+      // This path is unreachable in production where STRIPE_SECRET_KEY is set.
+      res.status(402).json({
+        stripe_required: true,
+        message: "STRIPE_SECRET_KEY must be configured to enable listing subscriptions.",
       });
       return;
     }
