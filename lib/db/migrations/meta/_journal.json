@@ -36,6 +36,13 @@
       "when": 1775300000000,
       "tag": "0004_provider_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1743598800000,
+      "tag": "0005_referral_milestones",
+      "breakpoints": true
     }
   ]
 }

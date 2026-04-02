@@ -117,21 +117,23 @@ async function maybeAwardMilestone(referrerId: string): Promise<MilestoneId | nu
 
   if (!newMilestone) return null;
 
-  // Insert the milestone record (unique constraint prevents duplicates)
+  // Insert the milestone record atomically; only proceed to credit award if the row was actually inserted
+  // (onConflictDoNothing + returning ensures idempotency under concurrent calls)
+  let inserted: { id: string }[];
   try {
-    await db.insert(referralMilestones).values({
+    inserted = await db.insert(referralMilestones).values({
       id: randomUUID(),
       profileId: referrerId,
       milestone: newMilestone.id,
       rewardedAt: new Date(),
       bonusCreditCents: newMilestone.bonusCents,
-    }).onConflictDoNothing();
+    }).onConflictDoNothing().returning({ id: referralMilestones.id });
   } catch {
     return null;
   }
 
-  // Award bonus credit if threshold grants a bonus
-  if (newMilestone.bonusCents > 0) {
+  // Only award bonus credit if our insert actually landed (not a no-op from conflict)
+  if (inserted.length > 0 && newMilestone.bonusCents > 0) {
     await db.insert(memberCredits).values({
       id: randomUUID(),
       profileId: referrerId,
@@ -141,6 +143,9 @@ async function maybeAwardMilestone(referrerId: string): Promise<MilestoneId | nu
       createdAt: new Date(),
     });
   }
+
+  // If a concurrent insert won the race, return null to suppress duplicate notifications
+  if (inserted.length === 0) return null;
 
   // Fire-and-forget: send milestone congratulations email
   ;(async () => {
