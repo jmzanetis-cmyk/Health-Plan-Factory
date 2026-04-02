@@ -16,6 +16,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
@@ -27,6 +28,24 @@ function getMobileApiBase(): string {
     return `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
   }
   return "";
+}
+
+async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptionStatus: string }> {
+  const base = getMobileApiBase();
+  try {
+    let token: string | null = null;
+    if (Platform.OS !== "web") {
+      token = await SecureStore.getItemAsync("auth_session_token");
+    }
+    if (!token) return { isPlus: false, subscriptionStatus: "free" };
+    const res = await fetch(`${base}/api/members/subscription`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return { isPlus: false, subscriptionStatus: "free" };
+    return res.json();
+  } catch {
+    return { isPlus: false, subscriptionStatus: "free" };
+  }
 }
 
 type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
@@ -300,6 +319,19 @@ export default function SettingsScreen() {
   const { data: authData } = useGetCurrentAuthUser();
   const user = authData?.user;
 
+  const { data: subscriptionData } = useQuery({
+    queryKey: ["subscription-status"],
+    queryFn: fetchSubscriptionStatus,
+    staleTime: 120_000,
+  });
+
+  const isPlus = subscriptionData?.isPlus ?? false;
+  const membershipLabel = isPlus
+    ? "Plus"
+    : subscriptionData?.subscriptionStatus === "employer"
+      ? "Employer"
+      : "Explorer";
+
   function handleSignOut() {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
@@ -325,7 +357,7 @@ export default function SettingsScreen() {
       id: "plan",
       icon: "star",
       label: "Membership",
-      value: "Free Trial",
+      value: membershipLabel,
     },
   ];
 

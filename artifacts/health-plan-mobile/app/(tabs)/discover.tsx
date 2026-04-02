@@ -13,10 +13,217 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
+import * as SecureStore from "expo-secure-store";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
-import { useListProviders, useListModalities } from "@workspace/api-client-react";
-import type { ProviderRecord, ModalityRecord } from "@workspace/api-client-react";
+import { useListModalities } from "@workspace/api-client-react";
+import type { ModalityRecord } from "@workspace/api-client-react";
 import { EmergencyTextInput } from "@/components/EmergencyTextInput";
+
+function getApiBaseUrl(): string {
+  if (process.env.EXPO_PUBLIC_DOMAIN) {
+    return `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
+  }
+  return "";
+}
+
+async function getToken() {
+  if (Platform.OS === "web") return null;
+  return SecureStore.getItemAsync("auth_session_token");
+}
+
+type ProviderRecord = {
+  id: string;
+  name: string;
+  city?: string | null;
+  state?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  offersTelehealth?: boolean;
+  acceptsInsurance?: boolean;
+  costPerSession?: number | null;
+  status?: string;
+};
+
+type ProvidersResponse = {
+  locked: boolean;
+  count: number;
+  providers: ProviderRecord[];
+};
+
+async function fetchProviders(params: {
+  search?: string;
+  modalityId?: string;
+  limit?: number;
+  page?: number;
+}): Promise<ProvidersResponse> {
+  const token = await getToken();
+  const base = getApiBaseUrl();
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.modalityId) query.set("modalityId", params.modalityId);
+  if (params.limit) query.set("limit", String(params.limit));
+  if (params.page) query.set("page", String(params.page));
+
+  const res = await fetch(`${base}/api/providers?${query}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Failed to load providers");
+  const data = await res.json();
+  if (Array.isArray(data)) {
+    return { locked: false, count: data.length, providers: data };
+  }
+  return data as ProvidersResponse;
+}
+
+async function handlePlusUpgrade() {
+  const token = await getToken();
+  const base = getApiBaseUrl();
+  try {
+    const res = await fetch(`${base}/api/subscriptions/checkout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) {
+      Alert.alert("Upgrade", "Could not start checkout. Please try again.");
+      return;
+    }
+    const { checkout_url } = await res.json();
+    if (checkout_url) {
+      await Linking.openURL(checkout_url);
+    } else {
+      Alert.alert("Upgrade", "No checkout URL returned. Please try the web app.");
+    }
+  } catch {
+    Alert.alert("Upgrade", "Could not connect. Please check your connection.");
+  }
+}
+
+function LockedProvidersPlaceholder({ count }: { count: number }) {
+  const [loading, setLoading] = useState(false);
+
+  async function onUpgrade() {
+    setLoading(true);
+    await handlePlusUpgrade();
+    setLoading(false);
+  }
+
+  return (
+    <View style={lockedStyles.container}>
+      <View style={lockedStyles.iconWrap}>
+        <Feather name="lock" size={32} color={COLORS.pink} />
+      </View>
+      <Text style={lockedStyles.title}>
+        {count > 0 ? `${count} matched provider${count !== 1 ? "s" : ""}` : "Providers available"}
+      </Text>
+      <Text style={lockedStyles.subtitle}>
+        Upgrade to Plus to view contact info and connect with vetted wellness providers near you.
+      </Text>
+      <TouchableOpacity
+        style={lockedStyles.upgradeBtn}
+        onPress={onUpgrade}
+        activeOpacity={0.85}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color={COLORS.white} />
+        ) : (
+          <>
+            <Feather name="star" size={15} color={COLORS.white} />
+            <Text style={lockedStyles.upgradeBtnText}>Upgrade to Plus — $9.99/mo</Text>
+          </>
+        )}
+      </TouchableOpacity>
+      {Array.from({ length: Math.min(count, 3) }).map((_, i) => (
+        <View key={i} style={lockedStyles.blurCard}>
+          <View style={lockedStyles.blurAvatar} />
+          <View style={lockedStyles.blurLines}>
+            <View style={[lockedStyles.blurLine, { width: "60%" }]} />
+            <View style={[lockedStyles.blurLine, { width: "40%", opacity: 0.5 }]} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const lockedStyles = StyleSheet.create({
+  container: {
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xl,
+    alignItems: "center",
+    gap: SPACING.md,
+  },
+  iconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.pink10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: SPACING.sm,
+  },
+  title: {
+    fontFamily: FONTS.heading,
+    fontSize: 20,
+    color: COLORS.navy,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontFamily: FONTS.body,
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: SPACING.md,
+  },
+  upgradeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+    backgroundColor: COLORS.pink ?? COLORS.amber,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  upgradeBtnText: {
+    fontFamily: FONTS.bodySemiBold ?? FONTS.body,
+    fontSize: 15,
+    color: COLORS.white,
+    fontWeight: "600" as const,
+  },
+  blurCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    width: "100%",
+    opacity: 0.4,
+  },
+  blurAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: COLORS.navy20 ?? COLORS.border,
+  },
+  blurLines: { flex: 1, gap: SPACING.sm },
+  blurLine: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.border,
+  },
+});
 
 function ProviderCard({ provider }: { provider: ProviderRecord }) {
   function handleContact() {
@@ -27,7 +234,7 @@ function ProviderCard({ provider }: { provider: ProviderRecord }) {
       options.push({ title: "Call", fn: () => Linking.openURL(`tel:${provider.phone}`) });
 
     if (!options.length) {
-      Alert.alert("Contact", "No contact info available. Unlock on the web app.");
+      Alert.alert("Contact", "No contact info available.");
       return;
     }
     if (options.length === 1) {
@@ -115,15 +322,18 @@ export default function DiscoverScreen() {
   const modalityFilters: string[] = ["All", ...(modalities ?? []).slice(0, 5).map((m) => m.name)];
   const selectedModalityId = getModalityId(modalities ?? [], selectedFilter);
 
-  const { data: providers, isLoading, refetch } = useListProviders(
-    {
-      limit: 20,
-      page,
-      search: search.length >= 2 ? search : undefined,
-      modalityId: selectedModalityId,
-    },
-    { query: { enabled: true } }
-  );
+  const queryParams = {
+    search: search.length >= 2 ? search : undefined,
+    modalityId: selectedModalityId,
+    limit: 20,
+    page,
+  };
+
+  const { data: providersData, isLoading, refetch } = useQuery({
+    queryKey: ["providers", queryParams],
+    queryFn: () => fetchProviders(queryParams),
+    staleTime: 60_000,
+  });
 
   async function onRefresh() {
     setRefreshing(true);
@@ -131,7 +341,9 @@ export default function DiscoverScreen() {
     setRefreshing(false);
   }
 
-  const providerList: ProviderRecord[] = (providers ?? []).filter(
+  const isLocked = providersData?.locked === true;
+  const lockedCount = providersData?.count ?? 0;
+  const providerList = (providersData?.providers ?? []).filter(
     (p) => p.status === "active" || p.status === "approved"
   );
 
@@ -184,6 +396,21 @@ export default function DiscoverScreen() {
           <ActivityIndicator color={COLORS.amber} />
           <Text style={styles.loadingText}>Loading providers…</Text>
         </View>
+      ) : isLocked ? (
+        <FlatList
+          data={[]}
+          renderItem={() => null}
+          keyExtractor={() => ""}
+          contentContainerStyle={{ flex: 1 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.amber}
+            />
+          }
+          ListEmptyComponent={<LockedProvidersPlaceholder count={lockedCount} />}
+        />
       ) : (
         <FlatList
           data={providerList}

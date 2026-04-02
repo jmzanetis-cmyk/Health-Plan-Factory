@@ -8,6 +8,8 @@ import {
   Platform,
   ActivityIndicator,
   RefreshControl,
+  Linking,
+  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,7 +27,50 @@ function getApiBaseUrl(): string {
 }
 
 async function getToken() {
+  if (Platform.OS === "web") return null;
   return SecureStore.getItemAsync("auth_session_token");
+}
+
+async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptionStatus: string }> {
+  const token = await getToken();
+  const base = getApiBaseUrl();
+  if (!token) return { isPlus: false, subscriptionStatus: "free" };
+  try {
+    const res = await fetch(`${base}/api/members/subscription`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return { isPlus: false, subscriptionStatus: "free" };
+    return res.json();
+  } catch {
+    return { isPlus: false, subscriptionStatus: "free" };
+  }
+}
+
+async function handlePlusUpgrade() {
+  const token = await getToken();
+  const base = getApiBaseUrl();
+  try {
+    const res = await fetch(`${base}/api/subscriptions/checkout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) {
+      Alert.alert("Upgrade", "Could not start checkout. Please try again.");
+      return;
+    }
+    const { checkout_url } = await res.json();
+    if (checkout_url) {
+      await Linking.openURL(checkout_url);
+    } else {
+      Alert.alert("Upgrade", "No checkout URL returned. Please try the web app.");
+    }
+  } catch {
+    Alert.alert("Upgrade", "Could not connect. Please check your connection.");
+  }
 }
 
 type ModalityInfo = { id: string; name: string; emoji: string } | null;
@@ -89,20 +134,19 @@ function EvidenceBadge({ level }: { level?: string | null }) {
   );
 }
 
-function UnlockBadge({ score }: { score?: number }) {
-  const unlocked = (score ?? 0) >= 60;
-  if (unlocked) {
+function SubscriptionBadge({ isPlus }: { isPlus: boolean }) {
+  if (isPlus) {
     return (
       <View style={[styles.badge, { backgroundColor: COLORS.sagePale, borderColor: COLORS.sage + "30" }]}>
-        <Feather name="unlock" size={10} color={COLORS.sage} />
-        <Text style={[styles.badgeText, { color: COLORS.sage }]}>Unlocked</Text>
+        <Feather name="star" size={10} color={COLORS.sage} />
+        <Text style={[styles.badgeText, { color: COLORS.sage }]}>Plus</Text>
       </View>
     );
   }
   return (
     <View style={[styles.badge, { backgroundColor: COLORS.amberPale, borderColor: COLORS.amber + "30" }]}>
       <Feather name="lock" size={10} color={COLORS.amber} />
-      <Text style={[styles.badgeText, { color: COLORS.amber }]}>Reveal on Web</Text>
+      <Text style={[styles.badgeText, { color: COLORS.amber }]}>Explorer</Text>
     </View>
   );
 }
@@ -136,9 +180,11 @@ function ProviderCountChip({ count, isTelehealth }: { count?: number | null; isT
 function PlanItemCard({
   item,
   modalityMap,
+  isPlus,
 }: {
   item: PlanItem;
   modalityMap: Record<string, ModalityRecord>;
+  isPlus: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const name = item.modality?.name ?? modalityMap[item.modalityId ?? ""]?.name ?? "Modality";
@@ -181,8 +227,8 @@ function PlanItemCard({
 
       <View style={styles.badgeRow}>
         <EvidenceBadge level={evidenceLevel} />
-        <UnlockBadge score={item.score} />
-        <ProviderCountChip count={item.nearbyProviderCount} isTelehealth={isTelehealth} />
+        <SubscriptionBadge isPlus={isPlus} />
+        {isPlus && <ProviderCountChip count={item.nearbyProviderCount} isTelehealth={isTelehealth} />}
       </View>
 
       {expanded && (
@@ -217,6 +263,7 @@ export default function PlanScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [refreshing, setRefreshing] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
@@ -232,6 +279,14 @@ export default function PlanScreen() {
     staleTime: 60_000,
   });
 
+  const { data: subscriptionData } = useQuery({
+    queryKey: ["subscription-status"],
+    queryFn: fetchSubscriptionStatus,
+    staleTime: 120_000,
+  });
+
+  const isPlus = subscriptionData?.isPlus ?? false;
+
   const { data: modalities } = useListModalities(undefined, {
     query: { staleTime: 300_000 },
   });
@@ -244,6 +299,12 @@ export default function PlanScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
+  }
+
+  async function onUpgrade() {
+    setUpgradeLoading(true);
+    await handlePlusUpgrade();
+    setUpgradeLoading(false);
   }
 
   const sortedItems = [...(planData?.items ?? [])].sort(
@@ -259,6 +320,28 @@ export default function PlanScreen() {
     (acc, i) => acc + (i.estimatedMonthlyCost ?? 0),
     0
   ) ?? 0;
+
+  const upgradeCard = !isPlus ? (
+    <TouchableOpacity
+      style={styles.upgradeCard}
+      onPress={onUpgrade}
+      activeOpacity={0.85}
+      disabled={upgradeLoading}
+    >
+      <View style={styles.upgradeCardLeft}>
+        <Feather name="star" size={18} color={COLORS.pink} />
+        <View>
+          <Text style={styles.upgradeCardTitle}>Unlock providers with Plus</Text>
+          <Text style={styles.upgradeCardSub}>See matched provider contacts — $9.99/mo</Text>
+        </View>
+      </View>
+      {upgradeLoading ? (
+        <ActivityIndicator size="small" color={COLORS.pink} />
+      ) : (
+        <Feather name="chevron-right" size={16} color={COLORS.pink} />
+      )}
+    </TouchableOpacity>
+  ) : null;
 
   return (
     <View style={[styles.screen, { paddingTop: topPad }]}>
@@ -288,29 +371,32 @@ export default function PlanScreen() {
         <FlatList
           data={priorityItems}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PlanItemCard item={item} modalityMap={modalityMap} />}
+          renderItem={({ item }) => <PlanItemCard item={item} modalityMap={modalityMap} isPlus={isPlus} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
           }
           ListHeaderComponent={
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{priorityItems.length}</Text>
-                <Text style={styles.summaryLabel}>Modalities</Text>
+            <>
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>{priorityItems.length}</Text>
+                  <Text style={styles.summaryLabel}>Modalities</Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>${planData.plan.budget}</Text>
+                  <Text style={styles.summaryLabel}>Budget/mo</Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>${totalCost}</Text>
+                  <Text style={styles.summaryLabel}>Est. Cost</Text>
+                </View>
               </View>
-              <View style={styles.summaryDivider} />
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>${planData.plan.budget}</Text>
-                <Text style={styles.summaryLabel}>Budget/mo</Text>
-              </View>
-              <View style={styles.summaryDivider} />
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>${totalCost}</Text>
-                <Text style={styles.summaryLabel}>Est. Cost</Text>
-              </View>
-            </View>
+              {upgradeCard}
+            </>
           }
           ListFooterComponent={
             <>
@@ -318,7 +404,7 @@ export default function PlanScreen() {
                 <View style={styles.deprioSection}>
                   <Text style={styles.deprioSectionTitle}>Also Considered</Text>
                   {deprioItems.map((item) => (
-                    <PlanItemCard key={item.id} item={item} modalityMap={modalityMap} />
+                    <PlanItemCard key={item.id} item={item} modalityMap={modalityMap} isPlus={isPlus} />
                   ))}
                 </View>
               )}
@@ -469,6 +555,34 @@ const styles = StyleSheet.create({
     color: COLORS.amber,
     flex: 1,
     lineHeight: 17,
+  },
+  upgradeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: COLORS.pink10,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.pink20,
+    marginBottom: SPACING.sm,
+  },
+  upgradeCardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    flex: 1,
+  },
+  upgradeCardTitle: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 14,
+    color: COLORS.navy,
+  },
+  upgradeCardSub: {
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
   },
   deprioNote: { flexDirection: "row", alignItems: "center", gap: 6 },
   deprioText: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted },
