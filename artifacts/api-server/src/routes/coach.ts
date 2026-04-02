@@ -154,10 +154,8 @@ router.post("/coach", async (req: Request, res: Response) => {
       }
     }
 
-    res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
-    res.end();
-
-    // Persist the full exchange to coach_sessions (non-blocking)
+    // Persist session BEFORE sending done so we can include sessionId in the done frame
+    let resolvedSessionId: number | null = sessionId ?? null;
     if (accumulated) {
       const profileId = req.user!.id;
       // Ensure every message has a stable id before persisting
@@ -172,29 +170,28 @@ router.post("/coach", async (req: Request, res: Response) => {
         { id: `${ts}-assistant`, role: "assistant" as const, content: accumulated },
       ];
 
-      (async () => {
-        try {
-          if (sessionId) {
-            // Update existing session by ID (must belong to this profile)
-            await db
-              .update(coachSessions)
-              .set({ messages: updatedMessages, updatedAt: new Date() })
-              .where(and(eq(coachSessions.id, sessionId), eq(coachSessions.profileId, profileId)));
-          } else {
-            // Create new session row
-            const [newSession] = await db
-              .insert(coachSessions)
-              .values({ profileId, messages: updatedMessages, updatedAt: new Date() })
-              .returning({ id: coachSessions.id });
-            // Emit the new session id in the SSE done event (already sent above — stored for client reference)
-            // The client polls GET /api/coach/session or uses the returned sessionId from the done event
-            // We cannot write to a closed response, so we record it; clients should read it from the GET endpoint
-          }
-        } catch {
-          // Non-fatal persistence failure
+      try {
+        if (resolvedSessionId) {
+          // Update existing session — must belong to this profile
+          await db
+            .update(coachSessions)
+            .set({ messages: updatedMessages, updatedAt: new Date() })
+            .where(and(eq(coachSessions.id, resolvedSessionId), eq(coachSessions.profileId, profileId)));
+        } else {
+          // Create a new session row and capture the ID
+          const [newSession] = await db
+            .insert(coachSessions)
+            .values({ profileId, messages: updatedMessages, updatedAt: new Date() })
+            .returning({ id: coachSessions.id });
+          resolvedSessionId = newSession?.id ?? null;
         }
-      })();
+      } catch {
+        // Non-fatal — session persistence failure
+      }
     }
+
+    res.write(`data: ${JSON.stringify({ type: "done", sessionId: resolvedSessionId })}\n\n`);
+    res.end();
   } catch (err) {
     req.log?.error({ err }, "Coach streaming error");
     if (!res.headersSent) {

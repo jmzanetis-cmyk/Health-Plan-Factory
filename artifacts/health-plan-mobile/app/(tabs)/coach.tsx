@@ -365,6 +365,7 @@ export default function CoachScreen() {
         let accumulated = "";
         let lineBuffer = "";
         let streamDone = false;
+        let serverSessionId: number | null = null;
 
         while (!streamDone) {
           const { done, value } = await reader.read();
@@ -391,7 +392,11 @@ export default function CoachScreen() {
                       : m
                   )
                 );
-              } else if (parsed.type === "done" || parsed.type === "error") {
+              } else if (parsed.type === "done") {
+                if (parsed.sessionId) serverSessionId = parsed.sessionId;
+                streamDone = true;
+                break;
+              } else if (parsed.type === "error") {
                 streamDone = true;
                 break;
               }
@@ -408,9 +413,16 @@ export default function CoachScreen() {
               const parsed = JSON.parse(json);
               if (parsed.type === "text" && typeof parsed.text === "string") {
                 accumulated += parsed.text;
+              } else if (parsed.type === "done" && parsed.sessionId) {
+                serverSessionId = parsed.sessionId;
               }
             } catch {}
           }
+        }
+
+        // Store the server-issued session id for subsequent turns
+        if (serverSessionId) {
+          setCurrentSessionId(serverSessionId);
         }
 
         const finalMessages = messagesRef.current.map((m) =>
@@ -440,7 +452,7 @@ export default function CoachScreen() {
         setIsSending(false);
       }
     },
-    [isSending, getToken, scheduleMemorySave]
+    [isSending, getToken, scheduleMemorySave, currentSessionId]
   );
 
   const hasHistory = messages.length > 1;
