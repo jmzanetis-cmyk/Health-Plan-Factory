@@ -330,7 +330,7 @@ function TestDigestSection() {
 }
 
 type BulkResult = { attempted: number; failed: number; skipped: number; errors: number; total: number; day: number } | null;
-type SingleResult = { result: "sent" | "skipped" | "no-plan" | "no-email"; memberId: string; day: number } | null;
+type SingleResult = { result: "sent" | "failed" | "skipped" | "no-plan" | "no-email"; memberId: string; day: number } | null;
 
 function ReEngagementSection() {
   const [memberId, setMemberId] = useState("");
@@ -388,6 +388,7 @@ function ReEngagementSection() {
 
   const singleResultLabel: Record<string, string> = {
     sent: "Email sent successfully.",
+    failed: "Provider delivery failed — check notification log.",
     skipped: "Skipped — already sent or opted out.",
     "no-plan": "Skipped — member has no plan.",
     "no-email": "Skipped — no email address on file.",

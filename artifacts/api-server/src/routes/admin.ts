@@ -695,7 +695,7 @@ async function sendReEngagementEmail(
 
   // Fetch profile
   const [profile] = await db
-    .select({ id: profiles.id, email: profiles.email, displayName: profiles.displayName, communicationPrefs: profiles.communicationPrefs })
+    .select({ id: profiles.id, email: profiles.email, displayName: profiles.displayName })
     .from(profiles)
     .where(eq(profiles.id, memberId))
     .limit(1);
