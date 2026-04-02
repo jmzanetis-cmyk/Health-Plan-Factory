@@ -601,6 +601,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "review-nudge",
   "re-engagement-day3",
   "re-engagement-day7",
+  "booking-request",
 ]);
 
 export const notificationStatusEnum = pgEnum("notification_status", [
@@ -969,3 +970,37 @@ export const referralMilestones = pgTable(
 
 export type ReferralMilestone = InferSelectModel<typeof referralMilestones>;
 export type InsertReferralMilestone = InferInsertModel<typeof referralMilestones>;
+
+// ── booking_requests ──────────────────────────────────────────────────────────
+// In-app booking requests sent from Plus members to providers.
+// The provider receives a branded email; the member gets a confirmation email.
+// Status: "pending" | "contacted" | "declined"
+
+export const bookingRequests = pgTable(
+  "booking_requests",
+  {
+    id: text("id").primaryKey(),
+    memberId: text("member_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    providerId: text("provider_id")
+      .notNull()
+      .references(() => providers.id, { onDelete: "cascade" }),
+    memberEmail: text("member_email").notNull(),
+    message: text("message").notNull(),
+    note: text("note"),
+    status: text("status").notNull().default("pending"), // pending | contacted | declined
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("booking_requests_member_idx").on(t.memberId),
+    index("booking_requests_provider_idx").on(t.providerId),
+    index("booking_requests_created_at_idx").on(t.createdAt),
+  ],
+);
+
+export const insertBookingRequestSchema = createInsertSchema(bookingRequests).omit({
+  createdAt: true,
+});
+export type InsertBookingRequest = InferInsertModel<typeof bookingRequests>;
+export type BookingRequest = InferSelectModel<typeof bookingRequests>;

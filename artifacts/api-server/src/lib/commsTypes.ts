@@ -15,4 +15,5 @@ export type NotificationType =
   | "demo-request"
   | "review-nudge"
   | "re-engagement-day3"
-  | "re-engagement-day7";
+  | "re-engagement-day7"
+  | "booking-request";

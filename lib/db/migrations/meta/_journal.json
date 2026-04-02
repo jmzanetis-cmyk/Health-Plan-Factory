@@ -57,6 +57,13 @@
       "when": 1775772000000,
       "tag": "0007_re_engagement_types",
       "breakpoints": false
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1775858400000,
+      "tag": "0008_booking_requests",
+      "breakpoints": false
     }
   ]
 }

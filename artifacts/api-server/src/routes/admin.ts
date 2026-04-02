@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { profiles, providers, plans, planItems, adminSettings, modalities, referrals, memberCredits, testimonials, notificationLog } from "@workspace/db";
+import { profiles, providers, plans, planItems, adminSettings, modalities, referrals, memberCredits, testimonials, notificationLog, bookingRequests } from "@workspace/db";
 import { eq, gte, lte, count, desc, asc, sql, and, notExists, inArray } from "drizzle-orm";
 import {
   UpsertAdminSettingBody,
@@ -888,6 +888,80 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
     }
 
     res.json({ sent, failed, skipped, errors, total: nonPlusIds.length, day });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * GET /api/admin/booking-requests
+ * Returns all booking requests with provider name, member name, and member email.
+ * Supports ?status=pending|contacted|declined filter.
+ * Admin only.
+ */
+router.get("/admin/booking-requests", async (req, res) => {
+  if (!req.isAuthenticated() || req.user!.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+
+  const { status } = req.query as { status?: string };
+
+  try {
+    const rows = await db
+      .select({
+        id: bookingRequests.id,
+        memberId: bookingRequests.memberId,
+        providerId: bookingRequests.providerId,
+        memberEmail: bookingRequests.memberEmail,
+        message: bookingRequests.message,
+        note: bookingRequests.note,
+        status: bookingRequests.status,
+        createdAt: bookingRequests.createdAt,
+        memberName: profiles.displayName,
+        providerName: providers.name,
+      })
+      .from(bookingRequests)
+      .innerJoin(profiles, eq(bookingRequests.memberId, profiles.id))
+      .innerJoin(providers, eq(bookingRequests.providerId, providers.id))
+      .where(status ? eq(bookingRequests.status, status) : undefined)
+      .orderBy(desc(bookingRequests.createdAt));
+
+    res.json({ bookingRequests: rows });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * PATCH /api/admin/booking-requests/:id
+ * Update the status of a booking request.
+ * Body: { status: "pending" | "contacted" | "declined" }
+ * Admin only.
+ */
+router.patch("/admin/booking-requests/:id", async (req, res) => {
+  if (!req.isAuthenticated() || req.user!.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+
+  const { id } = req.params;
+  const { status: newStatus } = req.body as { status?: string };
+
+  if (!newStatus || !["pending", "contacted", "declined"].includes(newStatus)) {
+    res.status(400).json({ error: "status must be pending | contacted | declined" });
+    return;
+  }
+
+  try {
+    await db
+      .update(bookingRequests)
+      .set({ status: newStatus })
+      .where(eq(bookingRequests.id, id));
+
+    res.json({ success: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

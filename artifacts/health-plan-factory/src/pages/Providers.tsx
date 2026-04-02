@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe, CheckCircle2, Star, Lock, Sparkles } from "lucide-react";
+import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe, CheckCircle2, Star, Lock, Sparkles, CalendarPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -129,6 +129,12 @@ export default function Providers() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [expandedReviewsId, setExpandedReviewsId] = useState<string | null>(null);
 
+  // Booking request state
+  const [bookingModal, setBookingModal] = useState<{ providerId: string; providerName: string } | null>(null);
+  const [bookingMessage, setBookingMessage] = useState("");
+  const [bookingNote, setBookingNote] = useState("");
+  const [submittingBooking, setSubmittingBooking] = useState(false);
+
   // Filters — initialise selectedModality from ?modality= query param
   const [selectedModality, setSelectedModality] = useState(searchParams.get("modality") ?? "");
   const [zipCode, setZipCode] = useState("");
@@ -227,6 +233,39 @@ export default function Providers() {
       toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const openBookingModal = (p: { id: string; name: string }) => {
+    setBookingMessage("");
+    setBookingNote("");
+    setBookingModal({ providerId: p.id, providerName: p.name });
+  };
+
+  const submitBooking = async () => {
+    if (!bookingModal || bookingMessage.trim().length < 10) {
+      toast({ title: "Message too short", description: "Please write at least 10 characters.", variant: "destructive" });
+      return;
+    }
+    setSubmittingBooking(true);
+    try {
+      const res = await fetch(`${BASE}/api/providers/${bookingModal.providerId}/book`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ message: bookingMessage.trim(), note: bookingNote.trim() || undefined }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? "Failed to send request");
+      }
+      toast({ title: "Booking request sent!", description: `We've notified ${bookingModal.providerName}. Check your email for a confirmation.` });
+      setBookingModal(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not send booking request";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setSubmittingBooking(false);
     }
   };
 
@@ -419,6 +458,86 @@ export default function Providers() {
               >
                 {submittingReview && <Loader2 size={14} className="animate-spin" />}
                 {reviewModal.existingRating ? "Update review" : "Submit review"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Booking Request Modal ── */}
+      {bookingModal && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+          }}
+          onClick={() => setBookingModal(null)}
+        >
+          <div
+            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 460, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <CalendarPlus size={20} style={{ color: "var(--hpf-pink)" }} />
+              <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--hpf-pink)", margin: 0 }}>
+                Request Booking
+              </h3>
+              <button
+                onClick={() => setBookingModal(null)}
+                style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 2 }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-xs mb-5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+              Your message will be emailed to <strong>{bookingModal.providerName}</strong>. They'll reply directly to your email.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+                Message <span style={{ color: "var(--hpf-crimson)" }}>*</span>
+              </label>
+              <textarea
+                value={bookingMessage}
+                onChange={(e) => setBookingMessage(e.target.value)}
+                placeholder={`Hi, I'm interested in booking a session with you. I found your listing on Health Plan Factory and would love to learn more about your services…`}
+                rows={4}
+                maxLength={2000}
+                className="w-full px-3 py-2.5 text-sm resize-none outline-none"
+                style={{ background: "var(--warm-white)", border: "1.5px solid rgba(212,34,126,0.12)", borderRadius: 8, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
+              />
+              <p className="text-xs mt-1 text-right" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                {bookingMessage.length}/2000
+              </p>
+            </div>
+            <div className="mb-5">
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+                Additional note (optional)
+              </label>
+              <textarea
+                value={bookingNote}
+                onChange={(e) => setBookingNote(e.target.value)}
+                placeholder="Availability, insurance questions, specific concerns…"
+                rows={2}
+                maxLength={500}
+                className="w-full px-3 py-2.5 text-sm resize-none outline-none"
+                style={{ background: "var(--warm-white)", border: "1.5px solid rgba(212,34,126,0.12)", borderRadius: 8, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBookingModal(null)}
+                style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitBooking}
+                disabled={submittingBooking || bookingMessage.trim().length < 10}
+                style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: bookingMessage.trim().length < 10 ? "rgba(212,34,126,0.1)" : "var(--hpf-pink)", color: bookingMessage.trim().length < 10 ? "var(--text-muted)" : "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: bookingMessage.trim().length < 10 || submittingBooking ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)", opacity: submittingBooking ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
+              >
+                {submittingBooking && <Loader2 size={14} className="animate-spin" />}
+                Send booking request →
               </button>
             </div>
           </div>
@@ -886,22 +1005,13 @@ export default function Providers() {
                             <Globe size={11} /> Website
                           </a>
                         )}
-                        {(p.phone || p.website) && (
-                          <a
-                            href={p.phone ? `tel:${p.phone}` : p.website ?? "#"}
-                            target={p.phone ? undefined : "_blank"}
-                            rel="noopener noreferrer"
-                            className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
-                            style={{ background: "var(--sage)", color: "white", fontFamily: "var(--app-font-sans)" }}
-                          >
-                            <CheckCircle2 size={11} /> Request Info
-                          </a>
-                        )}
-                        {!p.phone && !p.website && (
-                          <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                            Contact info not provided
-                          </span>
-                        )}
+                        <button
+                          onClick={() => openBookingModal(p)}
+                          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                          style={{ background: "var(--hpf-pink)", color: "white", fontFamily: "var(--app-font-sans)", border: "none", cursor: "pointer" }}
+                        >
+                          <CalendarPlus size={11} /> Request Booking
+                        </button>
                       </>
                     ) : (
                       <>

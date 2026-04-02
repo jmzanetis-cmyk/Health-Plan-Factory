@@ -73,6 +73,7 @@ const navLinks = [
   { to: "/admin/testimonials", label: "Testimonials" },
   { to: "/admin/employers", label: "Employers" },
   { to: "/admin/messages", label: "Messages" },
+  { to: "/admin/booking-requests", label: "Bookings" },
   { to: "/admin/settings", label: "Settings" },
 ];
 

@@ -3,8 +3,11 @@ import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions, bookingRequests, plans, planItems } from "@workspace/db";
+import { eq, and, inArray, desc as descOrd } from "drizzle-orm";
+import { sendEmail } from "../lib/comms";
+import { bookingRequestProviderEmail } from "../emails/booking-request-provider";
+import { bookingRequestMemberEmail } from "../emails/booking-request-member";
 import {
   ListProvidersQueryParams,
   ListProvidersResponse,
@@ -804,6 +807,142 @@ router.get("/npi", async (req, res) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Upstream error";
     res.status(502).json({ error: msg });
+  }
+});
+
+/**
+ * POST /api/providers/:id/book
+ * Send a booking request to a provider. Auth + Plus/employer required.
+ * Body: { message: string; note?: string }
+ * - Inserts into booking_requests
+ * - Emails the provider (via their profile email)
+ * - Sends a confirmation email to the member
+ */
+router.post("/providers/:id/book", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const memberId = req.user!.id;
+  const isPlus =
+    req.user!.subscriptionStatus === "plus" ||
+    req.user!.subscriptionStatus === "employer";
+
+  if (!isPlus) {
+    res.status(403).json({ error: "Plus subscription required to send booking requests" });
+    return;
+  }
+
+  const { id: providerId } = req.params;
+  const { message, note } = req.body as { message?: string; note?: string };
+
+  if (!message || typeof message !== "string" || message.trim().length < 10) {
+    res.status(400).json({ error: "message must be at least 10 characters" });
+    return;
+  }
+
+  const cleanMessage = message.trim().slice(0, 2000);
+  const cleanNote = typeof note === "string" ? note.trim().slice(0, 500) : null;
+
+  try {
+    const [provider] = await db
+      .select({ id: providers.id, name: providers.name, profileId: providers.profileId })
+      .from(providers)
+      .where(and(eq(providers.id, providerId), eq(providers.status, "approved")))
+      .limit(1);
+
+    if (!provider) {
+      res.status(404).json({ error: "Provider not found" });
+      return;
+    }
+
+    const [memberProfile] = await db
+      .select({ email: profiles.email, displayName: profiles.displayName })
+      .from(profiles)
+      .where(eq(profiles.id, memberId))
+      .limit(1);
+
+    if (!memberProfile?.email) {
+      res.status(400).json({ error: "Member email not found" });
+      return;
+    }
+
+    const appUrl = process.env.APP_URL ?? `${req.protocol}://${req.get("host")}`;
+
+    // Get provider's email via their linked profile
+    let providerEmail: string | null = null;
+    if (provider.profileId) {
+      const [providerProfile] = await db
+        .select({ email: profiles.email })
+        .from(profiles)
+        .where(eq(profiles.id, provider.profileId))
+        .limit(1);
+      providerEmail = providerProfile?.email ?? null;
+    }
+
+    // Get member's primary goal from their latest plan
+    let memberGoal: string | null = null;
+    try {
+      const [latestPlan] = await db
+        .select({ id: plans.id })
+        .from(plans)
+        .where(eq(plans.profileId, memberId))
+        .orderBy(descOrd(plans.createdAt))
+        .limit(1);
+      if (latestPlan) {
+        const [topItem] = await db
+          .select({ modalityName: modalitiesTable.name })
+          .from(planItems)
+          .innerJoin(modalitiesTable, eq(planItems.modalityId, modalitiesTable.id))
+          .where(eq(planItems.planId, latestPlan.id))
+          .orderBy(planItems.sortOrder)
+          .limit(1);
+        if (topItem) memberGoal = topItem.modalityName;
+      }
+    } catch {
+      // non-fatal — proceed without goal
+    }
+
+    // Insert booking request record
+    const requestId = randomUUID();
+    await db.insert(bookingRequests).values({
+      id: requestId,
+      memberId,
+      providerId,
+      memberEmail: memberProfile.email,
+      message: cleanMessage,
+      note: cleanNote ?? undefined,
+      status: "pending",
+    });
+
+    // Send email to provider
+    if (providerEmail) {
+      const { subject, html } = bookingRequestProviderEmail({
+        providerName: provider.name,
+        memberName: memberProfile.displayName,
+        memberEmail: memberProfile.email,
+        goal: memberGoal,
+        message: cleanMessage,
+        note: cleanNote,
+        appUrl,
+      });
+      await sendEmail(memberId, providerEmail, subject, html, "booking-request");
+    }
+
+    // Send confirmation to member
+    const { subject: confSubject, html: confHtml } = bookingRequestMemberEmail({
+      memberName: memberProfile.displayName,
+      providerName: provider.name,
+      message: cleanMessage,
+      appUrl,
+    });
+    await sendEmail(memberId, memberProfile.email, confSubject, confHtml, "booking-request");
+
+    res.status(201).json({ success: true, requestId });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
   }
 });
 

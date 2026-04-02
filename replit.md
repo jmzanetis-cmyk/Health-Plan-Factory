@@ -48,6 +48,7 @@ The project is structured as a pnpm monorepo, separating deployable applications
     - **Coach Enrichment:** Injects top insights into system prompts for context-aware coaching.
     - **Demo Requests:** `POST /api/demo-request` (stores lead in DB, sends admin alert + confirmation email). `GET /api/admin/demo-requests` (admin only).
     - **Employer PDF Export:** `GET /api/employer/export-pdf` (authenticated employer — generates a branded PDF wellness report with spend, utilization buckets, top modalities, and monthly chart).
+    - **Booking Requests:** `POST /api/providers/:id/book` (Plus members only — inserts into `booking_requests`, emails provider via their profile email, sends confirmation to member). `GET /api/admin/booking-requests` (admin — returns all requests with member/provider names; supports `?status=` filter). `PATCH /api/admin/booking-requests/:id` (admin — updates status to `pending|contacted|declined`).
     - **Employer Wellness Trend:** `GET /api/employer/wellness-trend` (month-over-month avg wellness scores from planProgressLogs; K-anonymity floor = 5 members).
     - **Employer Benchmarks:** `GET /api/employer/benchmarks` (employer vs. platform-wide anonymized averages for wellness score and stipend utilization; K-anonymity).
     - **Coach Memory:** `GET /api/coach/memory` + `POST /api/coach/memory` (persistent long-term memory per user; Claude auto-summarizes sessions into facts; injected into system prompt).
