@@ -296,7 +296,11 @@ router.get("/lmn/pdf", async (req, res) => {
 
     const memberName = profile?.displayName ?? "Member";
     const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-    const safeName = (profile?.displayName ?? "member").toLowerCase().replace(/\s+/g, "-");
+    const safeName = (profile?.displayName ?? "member")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 40) || "member";
     const fileName = `lmn-draft-${safeName}-${new Date().toISOString().slice(0, 10)}.pdf`;
 
     // ── PDF constants ────────────────────────────────────────────────────────
