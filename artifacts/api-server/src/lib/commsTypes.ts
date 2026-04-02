@@ -13,4 +13,6 @@ export type NotificationType =
   | "weekly-summary"
   | "streak-at-risk"
   | "demo-request"
-  | "review-nudge";
+  | "review-nudge"
+  | "re-engagement-day3"
+  | "re-engagement-day7";

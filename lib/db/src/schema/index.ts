@@ -599,6 +599,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "streak-at-risk",
   "demo-request",
   "review-nudge",
+  "re-engagement-day3",
+  "re-engagement-day7",
 ]);
 
 export const notificationStatusEnum = pgEnum("notification_status", [

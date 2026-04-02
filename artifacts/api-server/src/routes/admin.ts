@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { profiles, providers, plans, adminSettings, modalities, referrals, memberCredits, testimonials } from "@workspace/db";
-import { eq, gte, count, desc, asc, sql } from "drizzle-orm";
+import { profiles, providers, plans, planItems, adminSettings, modalities, referrals, memberCredits, testimonials, notificationLog } from "@workspace/db";
+import { eq, gte, lte, count, desc, asc, sql, and, notExists } from "drizzle-orm";
 import {
   UpsertAdminSettingBody,
   GetAdminStatsResponse,
@@ -11,9 +11,11 @@ import {
 } from "@workspace/api-zod";
 import { buildDigestForMember } from "../lib/weeklyDigest";
 import { weeklyDigestEmail } from "../emails/weekly-digest";
-import { sendEmail } from "../lib/comms";
+import { sendEmail, getCommsPrefs } from "../lib/comms";
 import { providerApprovedEmail } from "../emails/provider-approved";
 import { providerRejectedEmail } from "../emails/provider-rejected";
+import { planSummaryEmail } from "../emails/plan-summary";
+import { planNudgeEmail } from "../emails/plan-nudge";
 
 const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
@@ -629,6 +631,223 @@ router.delete("/admin/testimonials/:id", async (req, res) => {
     const { id } = req.params;
     await db.delete(testimonials).where(eq(testimonials.id, id));
     res.json({ success: true });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// ── Re-engagement helpers ────────────────────────────────────────────────────
+
+/**
+ * Fetch the top plan items for a member's latest plan.
+ * Returns up to 3 items sorted by score descending.
+ */
+async function getTopPlanItems(profileId: string) {
+  const [latestPlan] = await db
+    .select({ id: plans.id, budget: plans.budget, totalMonthlyCost: plans.totalMonthlyCost })
+    .from(plans)
+    .where(eq(plans.profileId, profileId))
+    .orderBy(desc(plans.createdAt))
+    .limit(1);
+
+  if (!latestPlan) return { plan: null, items: [] };
+
+  const items = await db
+    .select({
+      emoji: modalities.emoji,
+      name: modalities.name,
+      estimatedMonthlyCost: planItems.estimatedMonthlyCost,
+      frequency: planItems.frequency,
+      nearbyProviderCount: planItems.nearbyProviderCount,
+    })
+    .from(planItems)
+    .innerJoin(modalities, eq(planItems.modalityId, modalities.id))
+    .where(eq(planItems.planId, latestPlan.id))
+    .orderBy(desc(planItems.score))
+    .limit(3);
+
+  const totalNearby = items.reduce((s, i) => s + (i.nearbyProviderCount ?? 0), 0);
+
+  return { plan: { ...latestPlan, nearbyProviderCount: totalNearby }, items };
+}
+
+/**
+ * Core re-engagement send logic for a single member.
+ * Returns 'sent' | 'skipped' | 'no-plan' | 'no-email'.
+ */
+async function sendReEngagementEmail(
+  memberId: string,
+  day: 3 | 7,
+): Promise<"sent" | "skipped" | "no-plan" | "no-email"> {
+  const notifType = day === 3 ? ("re-engagement-day3" as const) : ("re-engagement-day7" as const);
+  const appUrl = process.env.APP_URL ?? BASE_URL;
+
+  // Fetch profile
+  const [profile] = await db
+    .select({ id: profiles.id, email: profiles.email, displayName: profiles.displayName, communicationPrefs: profiles.communicationPrefs })
+    .from(profiles)
+    .where(eq(profiles.id, memberId))
+    .limit(1);
+
+  if (!profile?.email) return "no-email";
+
+  // Respect email opt-out
+  const prefs = await getCommsPrefs(memberId);
+  if (!prefs.email) return "skipped";
+
+  // Deduplication: don't re-send if we already sent this type for this member
+  const [existingLog] = await db
+    .select({ id: notificationLog.id })
+    .from(notificationLog)
+    .where(
+      and(
+        eq(notificationLog.profileId, memberId),
+        eq(notificationLog.type, notifType),
+        eq(notificationLog.status, "sent"),
+      ),
+    )
+    .limit(1);
+
+  if (existingLog) return "skipped";
+
+  // Fetch plan items
+  const { plan, items } = await getTopPlanItems(memberId);
+  if (!plan) return "no-plan";
+
+  const planUrl = `${appUrl}/dashboard/plan`;
+  const upgradeUrl = `${appUrl}/pricing?utm_source=email&utm_campaign=re-engagement-day${day}`;
+  const unsubscribeUrl = `${appUrl}/profile`;
+
+  let subject: string;
+  let html: string;
+
+  if (day === 3) {
+    ({ subject, html } = planSummaryEmail({
+      displayName: profile.displayName,
+      topModalities: items,
+      monthlyBudget: plan.budget,
+      planUrl,
+      upgradeUrl,
+      unsubscribeUrl,
+    }));
+  } else {
+    ({ subject, html } = planNudgeEmail({
+      displayName: profile.displayName,
+      topModalities: items,
+      monthlyBudget: plan.budget,
+      nearbyProviderCount: plan.nearbyProviderCount,
+      planUrl,
+      upgradeUrl,
+      unsubscribeUrl,
+    }));
+  }
+
+  await sendEmail(profile.id, profile.email, subject, html, notifType);
+  return "sent";
+}
+
+/**
+ * POST /api/admin/re-engagement/send
+ * Send a re-engagement email to a specific member.
+ * Body: { memberId: string; day: 3 | 7 }
+ */
+router.post("/admin/re-engagement/send", async (req, res) => {
+  try {
+    const { memberId, day } = req.body as { memberId?: string; day?: number };
+    if (!memberId) {
+      res.status(400).json({ error: "memberId is required" });
+      return;
+    }
+    if (day !== 3 && day !== 7) {
+      res.status(400).json({ error: "day must be 3 or 7" });
+      return;
+    }
+
+    const result = await sendReEngagementEmail(memberId, day);
+    res.json({ result, memberId, day });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /api/admin/re-engagement/bulk
+ * Bulk-trigger re-engagement emails for all eligible members.
+ * Eligibility: has plan, no active Plus subscription, created plan >= N days ago,
+ * no prior re-engagement email of that type (day).
+ * Body: { day: 3 | 7 }
+ * Returns: { dispatched, skipped, errors, total }
+ */
+router.post("/admin/re-engagement/bulk", async (req, res) => {
+  try {
+    const { day } = req.body as { day?: number };
+    if (day !== 3 && day !== 7) {
+      res.status(400).json({ error: "day must be 3 or 7" });
+      return;
+    }
+
+    const notifType = day === 3 ? ("re-engagement-day3" as const) : ("re-engagement-day7" as const);
+    const cutoff = new Date(Date.now() - day * 24 * 60 * 60 * 1000);
+
+    // Find all members who:
+    // 1. Have a plan created >= `day` days ago
+    // 2. Have no active Plus subscription
+    // 3. Have not already received this re-engagement type
+    const eligiblePlans = await db
+      .select({ profileId: plans.profileId })
+      .from(plans)
+      .where(
+        and(
+          lte(plans.createdAt, cutoff),
+          notExists(
+            db
+              .select({ id: notificationLog.id })
+              .from(notificationLog)
+              .where(
+                and(
+                  eq(notificationLog.profileId, sql`${plans.profileId}`),
+                  eq(notificationLog.type, notifType),
+                  eq(notificationLog.status, "sent"),
+                ),
+              ),
+          ),
+        ),
+      );
+
+    // Deduplicate profileIds
+    const uniqueProfileIds = [...new Set(eligiblePlans.map((p) => p.profileId).filter(Boolean) as string[])];
+
+    // Fetch all profiles in batch to filter out Plus/Employer subscribers
+    const allProfiles = uniqueProfileIds.length > 0
+      ? await db
+          .select({ id: profiles.id, subscriptionStatus: profiles.subscriptionStatus })
+          .from(profiles)
+      : [];
+
+    const profileMap = new Map(allProfiles.map((p) => [p.id, p]));
+    const nonPlusIds = uniqueProfileIds.filter((id) => {
+      const p = profileMap.get(id);
+      return p && p.subscriptionStatus !== "plus" && p.subscriptionStatus !== "employer";
+    });
+
+    let dispatched = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    for (const memberId of nonPlusIds) {
+      try {
+        const result = await sendReEngagementEmail(memberId, day);
+        if (result === "sent") dispatched++;
+        else skipped++;
+      } catch (e) {
+        console.error(`[re-engagement] Failed for member ${memberId}:`, e);
+        errors++;
+      }
+    }
+
+    res.json({ dispatched, skipped, errors, total: nonPlusIds.length, day });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

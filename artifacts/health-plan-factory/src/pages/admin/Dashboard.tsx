@@ -329,6 +329,170 @@ function TestDigestSection() {
   );
 }
 
+type BulkResult = { dispatched: number; skipped: number; errors: number; total: number; day: number } | null;
+type SingleResult = { result: "sent" | "skipped" | "no-plan" | "no-email"; memberId: string; day: number } | null;
+
+function ReEngagementSection() {
+  const [memberId, setMemberId] = useState("");
+  const [singleDay, setSingleDay] = useState<3 | 7>(3);
+  const [bulkDay, setBulkDay] = useState<3 | 7>(3);
+  const [sendingSingle, setSendingSingle] = useState(false);
+  const [runningBulk, setRunningBulk] = useState(false);
+  const [singleResult, setSingleResult] = useState<SingleResult>(null);
+  const [bulkResult, setBulkResult] = useState<BulkResult>(null);
+  const [singleError, setSingleError] = useState<string | null>(null);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+
+  const sendSingle = async () => {
+    if (!memberId.trim()) return;
+    setSendingSingle(true);
+    setSingleResult(null);
+    setSingleError(null);
+    try {
+      const res = await fetch(`${BASE}/api/admin/re-engagement/send`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: memberId.trim(), day: singleDay }),
+      });
+      const data = await res.json();
+      if (res.ok) setSingleResult(data);
+      else setSingleError(data.error ?? "Failed to send");
+    } catch {
+      setSingleError("Network error — please try again");
+    } finally {
+      setSendingSingle(false);
+    }
+  };
+
+  const runBulk = async () => {
+    if (!window.confirm(`Send day-${bulkDay} re-engagement emails to ALL eligible non-Plus members. Continue?`)) return;
+    setRunningBulk(true);
+    setBulkResult(null);
+    setBulkError(null);
+    try {
+      const res = await fetch(`${BASE}/api/admin/re-engagement/bulk`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ day: bulkDay }),
+      });
+      const data = await res.json();
+      if (res.ok) setBulkResult(data);
+      else setBulkError(data.error ?? "Bulk send failed");
+    } catch {
+      setBulkError("Network error — please try again");
+    } finally {
+      setRunningBulk(false);
+    }
+  };
+
+  const singleResultLabel: Record<string, string> = {
+    sent: "Email sent successfully.",
+    skipped: "Skipped — already sent or opted out.",
+    "no-plan": "Skipped — member has no plan.",
+    "no-email": "Skipped — no email address on file.",
+  };
+
+  return (
+    <div className="p-6 rounded-2xl mb-8" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
+      <div className="flex items-center gap-2 mb-4">
+        <Mail size={18} style={{ color: "var(--hpf-crimson)" }} />
+        <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
+          Re-engagement Drip Emails
+        </h2>
+      </div>
+      <p className="text-sm mb-5" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+        Send plan-summary (Day 3) or provider-nudge (Day 7) emails to members who haven't converted to Plus.
+        One-time send per member per type — duplicates are automatically skipped.
+      </p>
+
+      {/* Single member send */}
+      <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
+        <p className="text-xs font-semibold mb-3" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Test — Single Member
+        </p>
+        <div className="flex gap-3 flex-wrap items-center">
+          <input
+            type="text"
+            placeholder="Member ID (required)"
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            style={{ flex: 1, minWidth: 220, border: "1.5px solid rgba(212,34,126,0.18)", borderRadius: 8, padding: "9px 14px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-primary)", outline: "none" }}
+          />
+          <select
+            value={singleDay}
+            onChange={(e) => setSingleDay(Number(e.target.value) as 3 | 7)}
+            style={{ border: "1.5px solid rgba(212,34,126,0.18)", borderRadius: 8, padding: "9px 12px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-primary)", background: "white", cursor: "pointer" }}
+          >
+            <option value={3}>Day 3 — Plan Summary</option>
+            <option value={7}>Day 7 — Provider Nudge</option>
+          </select>
+          <button
+            onClick={sendSingle}
+            disabled={sendingSingle || !memberId.trim()}
+            style={{ background: "var(--hpf-pink)", color: "white", border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: sendingSingle || !memberId.trim() ? "not-allowed" : "pointer", opacity: sendingSingle || !memberId.trim() ? 0.6 : 1, display: "flex", alignItems: "center", gap: 6 }}
+          >
+            {sendingSingle ? <Loader2 size={14} className="animate-spin" /> : null}
+            Send Test
+          </button>
+        </div>
+        {singleResult && (
+          <div className="flex items-center gap-2 mt-3" style={{ color: singleResult.result === "sent" ? "#16a34a" : "var(--text-secondary)", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>
+            {singleResult.result === "sent" ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+            {singleResultLabel[singleResult.result] ?? singleResult.result}
+          </div>
+        )}
+        {singleError && (
+          <div className="flex items-center gap-2 mt-3" style={{ color: "#dc2626", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>
+            <AlertCircle size={14} /> {singleError}
+          </div>
+        )}
+      </div>
+
+      {/* Bulk send */}
+      <div className="p-4 rounded-xl" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
+        <p className="text-xs font-semibold mb-3" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Bulk Send — All Eligible Non-Plus Members
+        </p>
+        <div className="flex gap-3 flex-wrap items-center">
+          <select
+            value={bulkDay}
+            onChange={(e) => setBulkDay(Number(e.target.value) as 3 | 7)}
+            style={{ border: "1.5px solid rgba(212,34,126,0.18)", borderRadius: 8, padding: "9px 12px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-primary)", background: "white", cursor: "pointer" }}
+          >
+            <option value={3}>Day 3 — Plan Summary (plan created ≥ 3 days ago)</option>
+            <option value={7}>Day 7 — Provider Nudge (plan created ≥ 7 days ago)</option>
+          </select>
+          <button
+            onClick={runBulk}
+            disabled={runningBulk}
+            style={{ background: "#1a2a3a", color: "white", border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: runningBulk ? "not-allowed" : "pointer", opacity: runningBulk ? 0.6 : 1, display: "flex", alignItems: "center", gap: 6 }}
+          >
+            {runningBulk ? <Loader2 size={14} className="animate-spin" /> : null}
+            Run Bulk Drip
+          </button>
+        </div>
+        {bulkResult && (
+          <div className="mt-3 p-3 rounded-lg" style={{ background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-primary)" }}>
+            <div className="flex items-center gap-2 mb-1" style={{ color: "#16a34a", fontWeight: 600 }}>
+              <CheckCircle2 size={14} /> Bulk run complete — Day {bulkResult.day}
+            </div>
+            <div style={{ color: "var(--text-secondary)" }}>
+              {bulkResult.dispatched} sent · {bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
+            </div>
+          </div>
+        )}
+        {bulkError && (
+          <div className="flex items-center gap-2 mt-3" style={{ color: "#dc2626", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>
+            <AlertCircle size={14} /> {bulkError}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
@@ -424,6 +588,9 @@ export default function AdminDashboard() {
 
         {/* Test Weekly Digest */}
         <TestDigestSection />
+
+        {/* Re-engagement Drip Emails */}
+        <ReEngagementSection />
 
         {/* Weekly signups chart */}
         <div className="p-6 rounded-2xl" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
