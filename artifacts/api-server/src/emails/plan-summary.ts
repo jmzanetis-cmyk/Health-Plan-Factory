@@ -37,8 +37,12 @@ export function planSummaryEmail(props: PlanSummaryEmailProps): { subject: strin
     )
     .join("");
 
+  const firstName = props.displayName
+    ? props.displayName.split(" ")[0].replace(/[\r\n\t\x00-\x1F]/g, "").trim()
+    : "";
+
   return {
-    subject: `${props.displayName ? props.displayName.split(" ")[0] + ", your" : "Your"} wellness plan is ready — here's what's inside`,
+    subject: `${firstName ? firstName + ", your" : "Your"} wellness plan is ready — here's what's inside`,
     html: `<!DOCTYPE html>
 <html>
 <head>

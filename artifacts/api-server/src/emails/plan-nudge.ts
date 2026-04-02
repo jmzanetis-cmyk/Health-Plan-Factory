@@ -29,8 +29,12 @@ export function planNudgeEmail(props: PlanNudgeEmailProps): { subject: string; h
     .map((m) => `<span style="display:inline-block;background:rgba(212,34,126,0.08);border:1px solid rgba(212,34,126,0.15);border-radius:999px;padding:5px 14px;font-family:Arial,sans-serif;font-size:13px;color:#2C2825;margin:4px;">${escHtml(m.emoji)} ${escHtml(m.name)}</span>`)
     .join("");
 
+  const firstName = props.displayName
+    ? props.displayName.split(" ")[0].replace(/[\r\n\t\x00-\x1F]/g, "").trim()
+    : "";
+
   return {
-    subject: `${providerLine} waiting for you, ${props.displayName ? props.displayName.split(" ")[0] : "there"}`,
+    subject: `${providerLine} waiting for you, ${firstName || "there"}`,
     html: `<!DOCTYPE html>
 <html>
 <head>
