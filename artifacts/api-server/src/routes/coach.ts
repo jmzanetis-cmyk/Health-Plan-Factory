@@ -172,11 +172,21 @@ router.post("/coach", async (req: Request, res: Response) => {
 
       try {
         if (resolvedSessionId) {
-          // Update existing session — must belong to this profile
-          await db
+          // Try to update existing session — must belong to this profile
+          const updated = await db
             .update(coachSessions)
             .set({ messages: updatedMessages, updatedAt: new Date() })
-            .where(and(eq(coachSessions.id, resolvedSessionId), eq(coachSessions.profileId, profileId)));
+            .where(and(eq(coachSessions.id, resolvedSessionId), eq(coachSessions.profileId, profileId)))
+            .returning({ id: coachSessions.id });
+
+          if (!updated.length) {
+            // Session was stale/invalid (cross-device drift) — insert a new one
+            const [newSession] = await db
+              .insert(coachSessions)
+              .values({ profileId, messages: updatedMessages, updatedAt: new Date() })
+              .returning({ id: coachSessions.id });
+            resolvedSessionId = newSession?.id ?? null;
+          }
         } else {
           // Create a new session row and capture the ID
           const [newSession] = await db
