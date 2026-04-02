@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronDown, ChevronUp, Mail, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Mail, Loader2, AlertCircle } from "lucide-react";
 import { AdminNav } from "./Dashboard";
+
+const DEMO_LEAD_REFRESH_EVENT = "demo-leads-status-changed";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -47,9 +49,11 @@ function StatusSelect({ lead, onUpdate, filter }: {
   filter: string;
 }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = async (newStatus: DemoStatus) => {
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`${BASE}/api/admin/demo-requests/${lead.id}`, {
         method: "PATCH",
@@ -61,7 +65,12 @@ function StatusSelect({ lead, onUpdate, filter }: {
         const updated: DemoLead = await res.json();
         const removedFromFilter = Boolean(filter && filter !== newStatus);
         onUpdate(updated, removedFromFilter);
+        window.dispatchEvent(new CustomEvent(DEMO_LEAD_REFRESH_EVENT));
+      } else {
+        setError("Failed to update status");
       }
+    } catch {
+      setError("Network error");
     } finally {
       setBusy(false);
     }
@@ -70,36 +79,43 @@ function StatusSelect({ lead, onUpdate, filter }: {
   const colors = STATUS_COLORS[lead.status as DemoStatus] ?? STATUS_COLORS.closed;
 
   return (
-    <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-      <select
-        value={lead.status}
-        onChange={(e) => handleChange(e.target.value as DemoStatus)}
-        disabled={busy}
-        style={{
-          appearance: "none",
-          padding: "4px 28px 4px 10px",
-          borderRadius: 20,
-          border: `1.5px solid ${colors.border}`,
-          background: colors.bg,
-          color: colors.text,
-          fontFamily: "var(--app-font-sans)",
-          fontSize: "0.72rem",
-          fontWeight: 700,
-          cursor: busy ? "not-allowed" : "pointer",
-          outline: "none",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          opacity: busy ? 0.6 : 1,
-        }}
-      >
-        {(["new", "contacted", "qualified", "closed"] as DemoStatus[]).map((s) => (
-          <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-        ))}
-      </select>
-      {busy ? (
-        <Loader2 size={10} className="animate-spin" style={{ position: "absolute", right: 8, color: colors.text, pointerEvents: "none" }} />
-      ) : (
-        <ChevronDown size={10} style={{ position: "absolute", right: 8, color: colors.text, pointerEvents: "none" }} />
+    <div>
+      <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+        <select
+          value={lead.status}
+          onChange={(e) => handleChange(e.target.value as DemoStatus)}
+          disabled={busy}
+          style={{
+            appearance: "none",
+            padding: "4px 28px 4px 10px",
+            borderRadius: 20,
+            border: `1.5px solid ${colors.border}`,
+            background: colors.bg,
+            color: colors.text,
+            fontFamily: "var(--app-font-sans)",
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            cursor: busy ? "not-allowed" : "pointer",
+            outline: "none",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            opacity: busy ? 0.6 : 1,
+          }}
+        >
+          {(["new", "contacted", "qualified", "closed"] as DemoStatus[]).map((s) => (
+            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+          ))}
+        </select>
+        {busy ? (
+          <Loader2 size={10} className="animate-spin" style={{ position: "absolute", right: 8, color: colors.text, pointerEvents: "none" }} />
+        ) : (
+          <ChevronDown size={10} style={{ position: "absolute", right: 8, color: colors.text, pointerEvents: "none" }} />
+        )}
+      </div>
+      {error && (
+        <p style={{ margin: "3px 0 0", display: "flex", alignItems: "center", gap: 3, fontSize: "0.68rem", color: "#dc2626", fontFamily: "var(--app-font-sans)" }}>
+          <AlertCircle size={10} /> {error}
+        </p>
       )}
     </div>
   );
@@ -109,9 +125,11 @@ function NotesCell({ lead, onUpdate }: { lead: DemoLead; onUpdate: (updated: Dem
   const [editing, setEditing] = useState(false);
   const [notes, setNotes] = useState(lead.notes ?? "");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const save = async () => {
     setSaving(true);
+    setSaveError(null);
     try {
       const res = await fetch(`${BASE}/api/admin/demo-requests/${lead.id}`, {
         method: "PATCH",
@@ -123,7 +141,11 @@ function NotesCell({ lead, onUpdate }: { lead: DemoLead; onUpdate: (updated: Dem
         const updated: DemoLead = await res.json();
         onUpdate(updated);
         setEditing(false);
+      } else {
+        setSaveError("Failed to save");
       }
+    } catch {
+      setSaveError("Network error");
     } finally {
       setSaving(false);
     }
@@ -177,7 +199,7 @@ function NotesCell({ lead, onUpdate }: { lead: DemoLead; onUpdate: (updated: Dem
           boxSizing: "border-box",
         }}
       />
-      <div style={{ display: "flex", gap: 4 }}>
+      <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
         <button
           onClick={save}
           disabled={saving}
@@ -186,11 +208,16 @@ function NotesCell({ lead, onUpdate }: { lead: DemoLead; onUpdate: (updated: Dem
           {saving ? "…" : "Save"}
         </button>
         <button
-          onClick={() => { setEditing(false); setNotes(lead.notes ?? ""); }}
+          onClick={() => { setEditing(false); setNotes(lead.notes ?? ""); setSaveError(null); }}
           style={{ padding: "3px 10px", borderRadius: 5, background: "white", color: "var(--text-muted)", border: "1px solid rgba(0,0,0,0.1)", fontFamily: "var(--app-font-sans)", fontSize: "0.72rem", cursor: "pointer" }}
         >
           Cancel
         </button>
+        {saveError && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: "0.68rem", color: "#dc2626", fontFamily: "var(--app-font-sans)" }}>
+            <AlertCircle size={10} /> {saveError}
+          </span>
+        )}
       </div>
     </div>
   );

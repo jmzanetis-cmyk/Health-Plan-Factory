@@ -78,14 +78,22 @@ const navLinks = [
   { to: "/admin/settings", label: "Settings" },
 ];
 
+const DEMO_LEAD_REFRESH_EVENT = "demo-leads-status-changed";
+
 export function AdminNav({ active }: { active: string }) {
   const [demoNewCount, setDemoNewCount] = useState<number>(0);
 
-  useEffect(() => {
+  const refreshDemoCount = () => {
     fetch(`${BASE}/api/admin/demo-requests?status=new`, { credentials: "include" })
       .then((r) => r.ok ? r.json() : [])
       .then((data: unknown[]) => { if (Array.isArray(data)) setDemoNewCount(data.length); })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    refreshDemoCount();
+    window.addEventListener(DEMO_LEAD_REFRESH_EVENT, refreshDemoCount);
+    return () => window.removeEventListener(DEMO_LEAD_REFRESH_EVENT, refreshDemoCount);
   }, []);
 
   return (
