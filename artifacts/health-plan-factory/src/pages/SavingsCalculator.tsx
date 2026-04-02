@@ -146,6 +146,53 @@ function EligibilityBadge({ eligible }: { eligible: boolean | "partial" }) {
   );
 }
 
+function ShareButton({
+  annualBudget,
+  taxBracket,
+  estimatedSavings,
+}: {
+  annualBudget: number;
+  taxBracket: number;
+  estimatedSavings: number;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const text = `I could save ${formatCurrency(estimatedSavings)}/year by using HSA/FSA for my $${annualBudget} wellness budget (${taxBracket}% bracket). Check your savings: ${url}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "My HSA/FSA Savings Estimate", text, url });
+        return;
+      } catch {
+        // fall through to clipboard
+      }
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className="inline-flex items-center px-7 py-4 rounded-lg text-sm font-medium transition-all"
+      style={{
+        border: "1.5px solid rgba(212,34,126,0.2)",
+        color: "var(--hpf-pink)",
+        fontFamily: "var(--app-font-sans)",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    >
+      {copied ? "Link copied!" : "Share my savings estimate"}
+    </button>
+  );
+}
+
 const BUDGET_MIN = 600;
 const BUDGET_MAX = 8400;
 const VALID_BRACKETS = new Set(TAX_BRACKETS.map((b) => b.value));
@@ -553,7 +600,7 @@ export default function SavingsCalculator() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* ── POST-CALCULATION CTA ── */}
       <section
         className="px-6 md:px-12 py-20 text-center"
         style={{ background: "var(--warm-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
@@ -570,17 +617,18 @@ export default function SavingsCalculator() {
               color: "var(--hpf-pink)",
             }}
           >
-            Ready to build your personalized plan?
+            Ready to put those savings to work?
           </h2>
           <p
             className="text-sm font-light leading-relaxed mb-8 mx-auto"
-            style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", maxWidth: 420 }}
+            style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", maxWidth: 460 }}
           >
-            Your full wellness plan — with HSA/FSA flags on every modality — is completely free to generate.
+            Build a personalized wellness plan with HSA/FSA flags on every modality — completely free.
+            We'll match it to vetted providers near you so your savings are ready to spend.
           </p>
-          <div className="flex flex-wrap gap-3 justify-center">
+          <div className="flex flex-wrap gap-3 justify-center mb-5">
             <Link
-              to="/sign-up"
+              to="/survey"
               className="inline-flex items-center px-8 py-4 rounded-lg text-sm font-semibold text-white no-underline"
               style={{
                 background: "var(--hpf-pink)",
@@ -589,21 +637,11 @@ export default function SavingsCalculator() {
                 letterSpacing: "0.01em",
               }}
             >
-              Build my plan free →
+              Build my free plan →
             </Link>
-            <Link
-              to="/lmn-guide"
-              className="inline-flex items-center px-7 py-4 rounded-lg text-sm font-medium no-underline"
-              style={{
-                border: "1.5px solid rgba(212,34,126,0.2)",
-                color: "var(--hpf-pink)",
-                fontFamily: "var(--app-font-sans)",
-              }}
-            >
-              Learn about LMNs
-            </Link>
+            <ShareButton annualBudget={annualBudget} taxBracket={taxBracket} estimatedSavings={estimatedSavings} />
           </div>
-          <p className="mt-4 text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+          <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             Free to start · No credit card required
           </p>
         </div>
