@@ -89,7 +89,7 @@ type MilestoneId = typeof MILESTONE_TIERS[number]["id"];
  * Called after each successful referral reward.
  * Returns the milestone ID if one was just awarded, or null.
  */
-async function maybeAwardMilestone(referrerId: string): Promise<MilestoneId | null> {
+export async function maybeAwardMilestone(referrerId: string): Promise<MilestoneId | null> {
   // Count total rewarded referrals for this member
   const [{ totalRewarded }] = await db
     .select({ totalRewarded: count(referrals.id) })
@@ -546,24 +546,6 @@ async function handleSendInvite(req: Request, res: Response, body: { email: stri
   const profileId = req.user!.id;
 
   try {
-    // ── Rate limiting: max 10 invites per day per user ──────────────────
-    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const [{ inviteCount }] = await db
-      .select({ inviteCount: count() })
-      .from(memberCredits)
-      .where(
-        and(
-          eq(memberCredits.profileId, profileId),
-          eq(memberCredits.source, "invite-sent"),
-          gte(memberCredits.createdAt, dayAgo),
-        )
-      );
-
-    if (Number(inviteCount ?? 0) >= 10) {
-      res.status(429).json({ error: "Daily invite limit reached (10 per day). Please try again tomorrow." });
-      return;
-    }
-
     const referralCode = await ensureReferralCode(profileId);
 
     const [profile] = await db
@@ -571,6 +553,54 @@ async function handleSendInvite(req: Request, res: Response, body: { email: stri
       .from(profiles)
       .where(eq(profiles.id, profileId))
       .limit(1);
+
+    // ── Rate limiting: atomically claim a slot (max 10 invites per day) ──
+    // We use an advisory lock keyed on the profile's hash to serialise concurrent
+    // invite requests for the same user, then count + insert in the same
+    // transaction so concurrent calls cannot both sneak under the limit.
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const auditRowId = randomUUID();
+    let slotClaimed = false;
+
+    await db.transaction(async (tx) => {
+      // Acquire a session-level advisory lock scoped to this profile.
+      // We derive a 64-bit integer from the first 8 hex chars of the profile id
+      // (or use a hash of the string for non-UUID ids).
+      const lockKey = Buffer.from(profileId).readBigUInt64BE(0) & BigInt("0x7FFFFFFFFFFFFFFF");
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
+
+      const [{ inviteCount }] = await tx
+        .select({ inviteCount: count() })
+        .from(memberCredits)
+        .where(
+          and(
+            eq(memberCredits.profileId, profileId),
+            eq(memberCredits.source, "invite-sent"),
+            gte(memberCredits.createdAt, dayAgo),
+          )
+        );
+
+      if (Number(inviteCount ?? 0) >= 10) {
+        return; // slotClaimed stays false
+      }
+
+      // Atomically record the audit row inside the transaction
+      await tx.insert(memberCredits).values({
+        id: auditRowId,
+        profileId,
+        source: "invite-sent",
+        amountCents: 0,
+        used: true,
+        createdAt: new Date(),
+      });
+
+      slotClaimed = true;
+    });
+
+    if (!slotClaimed) {
+      res.status(429).json({ error: "Daily invite limit reached (10 per day). Please try again tomorrow." });
+      return;
+    }
 
     const signupUrl = `${BASE_URL}/signup?ref=${encodeURIComponent(referralCode)}`;
     const { subject, html } = referralInviteEmail({
@@ -587,17 +617,6 @@ async function handleSendInvite(req: Request, res: Response, body: { email: stri
       html,
       "referral-invite",
     );
-
-    // Record the invite attempt as a zero-amount "invite-sent" credit row (rate-limit audit trail).
-    // This must succeed to ensure rate limiting is enforced — do NOT swallow errors here.
-    await db.insert(memberCredits).values({
-      id: randomUUID(),
-      profileId,
-      source: "invite-sent",
-      amountCents: 0,
-      used: true,
-      createdAt: new Date(),
-    });
 
     res.json({ message: "Invite sent", referralCode, signupUrl });
   } catch (err) {

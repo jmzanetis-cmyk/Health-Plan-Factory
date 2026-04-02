@@ -1,0 +1,678 @@
+/**
+ * Referral Feature Test Suite
+ *
+ * Tests:
+ *  1. Email HTML escaping (unit)
+ *  2. POST /api/referrals/invite — auth enforcement, validation, success, rate-limit
+ *  3. Rate-limit pressure test (15 concurrent → exactly 10 success + 5 429)
+ *  4. GET /api/referrals/mine — shape, milestones, newlyEarned
+ *  5. Milestone logic — all 4 tiers, idempotency under concurrency
+ *  6. POST /api/referrals/track — concurrency idempotency (reward exactly once)
+ */
+
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import request from "supertest";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
+import { randomUUID } from "crypto";
+import { db } from "@workspace/db";
+import {
+  profiles,
+  referrals,
+  memberCredits,
+  memberIntakes,
+  plans,
+  referralMilestones,
+} from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+import referralsRouter, { maybeAwardMilestone } from "../routes/referrals";
+import { escapeHtml as escapeHtmlInvite } from "../emails/referral-invite";
+import { escapeHtml as escapeHtmlMilestone } from "../emails/referral-milestone";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function buildTestApp(userId: string | null): Express {
+  const app = express();
+  app.use(express.json());
+
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    req.isAuthenticated = function (this: Request) {
+      return this.user != null;
+    } as Request["isAuthenticated"];
+
+    if (userId) {
+      (req as Request & { user: Express.User }).user = {
+        id: userId,
+        email: `${userId}@test.example.com`,
+        role: "member",
+        displayName: `User ${userId.slice(0, 6)}`,
+        avatarUrl: null,
+      };
+    }
+    next();
+  });
+
+  app.use("/api", referralsRouter);
+  return app;
+}
+
+async function createTestProfile(id: string): Promise<void> {
+  await db.insert(profiles).values({
+    id,
+    email: `${id}@test.example.com`,
+    displayName: `Test User ${id.slice(0, 8)}`,
+    role: "member",
+  }).onConflictDoNothing();
+}
+
+async function cleanupProfile(id: string): Promise<void> {
+  await db.delete(referralMilestones).where(eq(referralMilestones.profileId, id));
+  await db.delete(memberCredits).where(eq(memberCredits.profileId, id));
+  await db.delete(referrals).where(eq(referrals.referrerId, id));
+  await db.delete(referrals).where(eq(referrals.referredMemberId, id));
+  await db.delete(memberIntakes).where(eq(memberIntakes.profileId, id));
+  await db.delete(plans).where(eq(plans.profileId, id));
+  await db.delete(profiles).where(eq(profiles.id, id));
+}
+
+// ── 1. HTML Escaping Unit Tests ───────────────────────────────────────────────
+
+describe("escapeHtml (referral-invite)", () => {
+  it("escapes ampersand", () => {
+    expect(escapeHtmlInvite("a & b")).toBe("a &amp; b");
+  });
+
+  it("escapes < and > tags (XSS script injection)", () => {
+    expect(escapeHtmlInvite("<script>alert(1)</script>")).toBe(
+      "&lt;script&gt;alert(1)&lt;/script&gt;"
+    );
+  });
+
+  it("escapes double quotes", () => {
+    expect(escapeHtmlInvite('say "hello"')).toBe("say &quot;hello&quot;");
+  });
+
+  it("escapes single quotes", () => {
+    expect(escapeHtmlInvite("it's")).toBe("it&#39;s");
+  });
+
+  it("escapes all special chars in one string", () => {
+    expect(escapeHtmlInvite(`<img src="x" onerror='alert(1)' & />`)).toBe(
+      "&lt;img src=&quot;x&quot; onerror=&#39;alert(1)&#39; &amp; /&gt;"
+    );
+  });
+
+  it("leaves safe strings unchanged", () => {
+    expect(escapeHtmlInvite("Hello World 123")).toBe("Hello World 123");
+  });
+});
+
+describe("escapeHtml (referral-milestone)", () => {
+  it("escapes <script> tags", () => {
+    expect(escapeHtmlMilestone("<script>alert('xss')</script>")).toBe(
+      "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"
+    );
+  });
+
+  it("escapes both quote styles", () => {
+    expect(escapeHtmlMilestone(`"double" & 'single'`)).toBe(
+      "&quot;double&quot; &amp; &#39;single&#39;"
+    );
+  });
+
+  it("escapes img onerror XSS vector", () => {
+    expect(escapeHtmlMilestone(`<img onerror="alert(1)">`)).toBe(
+      `&lt;img onerror=&quot;alert(1)&quot;&gt;`
+    );
+  });
+});
+
+// ── 2. POST /api/referrals/invite — auth & validation ────────────────────────
+
+describe("POST /api/referrals/invite", () => {
+  const profileId = `test-invite-basic-${randomUUID().slice(0, 8)}`;
+
+  beforeAll(async () => {
+    await createTestProfile(profileId);
+  });
+
+  afterAll(async () => {
+    await cleanupProfile(profileId);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    const app = buildTestApp(null);
+    const res = await request(app)
+      .post("/api/referrals/invite")
+      .send({ email: "test@example.com" });
+    expect(res.status).toBe(401);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 for missing email", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app)
+      .post("/api/referrals/invite")
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 for invalid email format", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app)
+      .post("/api/referrals/invite")
+      .send({ email: "not-an-email" });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 for note exceeding 300 characters", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app)
+      .post("/api/referrals/invite")
+      .send({ email: "valid@example.com", note: "x".repeat(301) });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("succeeds and writes an audit row (invite-sent credit) on valid input", async () => {
+    const app = buildTestApp(profileId);
+
+    const before = await db
+      .select()
+      .from(memberCredits)
+      .where(
+        and(
+          eq(memberCredits.profileId, profileId),
+          eq(memberCredits.source, "invite-sent")
+        )
+      );
+
+    const res = await request(app)
+      .post("/api/referrals/invite")
+      .send({ email: "friend@example.com", note: "Hey join me!" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("message", "Invite sent");
+    expect(res.body).toHaveProperty("referralCode");
+    expect(res.body).toHaveProperty("signupUrl");
+
+    const after = await db
+      .select()
+      .from(memberCredits)
+      .where(
+        and(
+          eq(memberCredits.profileId, profileId),
+          eq(memberCredits.source, "invite-sent")
+        )
+      );
+
+    expect(after.length).toBe(before.length + 1);
+    const newest = after[after.length - 1];
+    expect(newest.amountCents).toBe(0);
+    expect(newest.used).toBe(true);
+  });
+});
+
+// ── 3. Rate-limit pressure test: 15 concurrent → 10 success + 5 429 ──────────
+
+describe("POST /api/referrals/invite — rate-limit pressure (15 concurrent)", () => {
+  const profileId = `test-invite-rl-${randomUUID().slice(0, 8)}`;
+
+  beforeAll(async () => {
+    await createTestProfile(profileId);
+  });
+
+  afterAll(async () => {
+    await cleanupProfile(profileId);
+  });
+
+  it("allows exactly 10 invites and blocks the remaining 5 with 429", async () => {
+    const app = buildTestApp(profileId);
+
+    const results = await Promise.all(
+      Array.from({ length: 15 }, (_, i) =>
+        request(app)
+          .post("/api/referrals/invite")
+          .send({ email: `pressure${i}@example.com` })
+          .then((r) => r.status)
+      )
+    );
+
+    const successes = results.filter((s) => s === 200);
+    const tooMany = results.filter((s) => s === 429);
+
+    expect(successes.length).toBe(10);
+    expect(tooMany.length).toBe(5);
+  }, 40000);
+});
+
+// ── 4. GET /api/referrals/mine ────────────────────────────────────────────────
+
+describe("GET /api/referrals/mine", () => {
+  const profileId = `test-mine-${randomUUID().slice(0, 8)}`;
+
+  beforeAll(async () => {
+    await createTestProfile(profileId);
+  });
+
+  afterAll(async () => {
+    await cleanupProfile(profileId);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    const app = buildTestApp(null);
+    const res = await request(app).get("/api/referrals/mine");
+    expect(res.status).toBe(401);
+  });
+
+  it("returns the expected response shape", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app).get("/api/referrals/mine");
+
+    expect(res.status).toBe(200);
+
+    const body = res.body as {
+      referralCode: string;
+      referralHistory: unknown[];
+      creditSummary: {
+        totalCredits: number;
+        unusedCreditsCents: number;
+        unusedCreditsFormatted: string;
+        credits: unknown[];
+      };
+      milestones: Array<{
+        id: string;
+        label: string;
+        emoji: string;
+        threshold: number;
+        bonusCents: number;
+        earned: boolean;
+        rewardedAt: null | string;
+        newlyEarned: boolean;
+      }>;
+      rewardedCount: number;
+      nextMilestone: null | { id: string; label: string; threshold: number; emoji: string };
+    };
+
+    expect(typeof body.referralCode).toBe("string");
+    expect(body.referralCode).toMatch(/^HPF-/);
+    expect(Array.isArray(body.referralHistory)).toBe(true);
+    expect(typeof body.creditSummary).toBe("object");
+    expect(typeof body.creditSummary.unusedCreditsCents).toBe("number");
+    expect(typeof body.creditSummary.unusedCreditsFormatted).toBe("string");
+    expect(Array.isArray(body.milestones)).toBe(true);
+    expect(body.milestones).toHaveLength(4);
+    expect(typeof body.rewardedCount).toBe("number");
+
+    for (const m of body.milestones) {
+      expect(m).toHaveProperty("id");
+      expect(m).toHaveProperty("label");
+      expect(m).toHaveProperty("emoji");
+      expect(m).toHaveProperty("threshold");
+      expect(m).toHaveProperty("bonusCents");
+      expect(m).toHaveProperty("earned");
+      expect(m).toHaveProperty("newlyEarned");
+      expect(typeof m.earned).toBe("boolean");
+      expect(typeof m.newlyEarned).toBe("boolean");
+    }
+  });
+
+  it("returns milestone IDs matching the 4 expected tiers", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app).get("/api/referrals/mine");
+    const ids = (res.body.milestones as Array<{ id: string }>).map((m) => m.id);
+    expect(ids).toContain("pioneer");
+    expect(ids).toContain("advocate");
+    expect(ids).toContain("champion");
+    expect(ids).toContain("ambassador");
+  });
+
+  it("returns nextMilestone as pioneer (first unearned tier) for a fresh user", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app).get("/api/referrals/mine");
+    const body = res.body as { nextMilestone: { id: string } | null };
+    expect(body.nextMilestone).not.toBeNull();
+    expect(body.nextMilestone!.id).toBe("pioneer");
+  });
+
+  it("marks newlyEarned=false for all milestones for a fresh user", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app).get("/api/referrals/mine");
+    const milestones = res.body.milestones as Array<{ newlyEarned: boolean }>;
+    expect(milestones.every((m) => m.newlyEarned === false)).toBe(true);
+  });
+
+  it("marks milestone newlyEarned=true when earned within last hour", async () => {
+    const app = buildTestApp(profileId);
+
+    const referredId = `test-mine-ref-${randomUUID().slice(0, 6)}`;
+    await db.insert(profiles).values({
+      id: referredId,
+      email: `${referredId}@test.example.com`,
+      displayName: "Referred",
+      role: "member",
+    }).onConflictDoNothing();
+
+    await db.insert(referrals).values({
+      id: randomUUID(),
+      referrerId: profileId,
+      referredMemberId: referredId,
+      code: `HPF-NEWMINE`,
+      status: "rewarded",
+      createdAt: new Date(),
+      rewardedAt: new Date(),
+    }).onConflictDoNothing();
+
+    await db.insert(referralMilestones).values({
+      id: randomUUID(),
+      profileId,
+      milestone: "pioneer",
+      rewardedAt: new Date(),
+      bonusCreditCents: 300,
+    }).onConflictDoNothing();
+
+    try {
+      const res = await request(app).get("/api/referrals/mine");
+      expect(res.status).toBe(200);
+      const pioneerMilestone = (res.body.milestones as Array<{ id: string; newlyEarned: boolean }>)
+        .find((m) => m.id === "pioneer");
+      expect(pioneerMilestone).toBeDefined();
+      expect(pioneerMilestone!.newlyEarned).toBe(true);
+    } finally {
+      await db.delete(referralMilestones).where(eq(referralMilestones.profileId, profileId));
+      await db.delete(referrals).where(eq(referrals.referrerId, profileId));
+      await db.delete(profiles).where(eq(profiles.id, referredId));
+    }
+  });
+});
+
+// ── 5a. Milestone Logic: all 4 tiers award correctly ─────────────────────────
+
+describe("Milestone logic: 4 tiers awarded correctly", () => {
+  async function injectRewardedReferrals(referrerId: string, count: number): Promise<string[]> {
+    const referredIds: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const referredId = `test-ref-${randomUUID().slice(0, 8)}`;
+      referredIds.push(referredId);
+      await db.insert(profiles).values({
+        id: referredId,
+        email: `${referredId}@test.example.com`,
+        displayName: `Referred ${i}`,
+        role: "member",
+      }).onConflictDoNothing();
+
+      await db.insert(referrals).values({
+        id: randomUUID(),
+        referrerId,
+        referredMemberId: referredId,
+        code: `HPF-FAKE${i.toString().padStart(4, "0")}-${referrerId.slice(-4)}`,
+        status: "rewarded",
+        createdAt: new Date(),
+        rewardedAt: new Date(),
+      }).onConflictDoNothing();
+    }
+    return referredIds;
+  }
+
+  const TIERS = [
+    { id: "pioneer",    threshold: 1,  bonusCents: 300  },
+    { id: "advocate",   threshold: 5,  bonusCents: 500  },
+    { id: "champion",   threshold: 10, bonusCents: 1000 },
+    { id: "ambassador", threshold: 25, bonusCents: 2000 },
+  ] as const;
+
+  for (const tier of TIERS) {
+    it(`awards "${tier.id}" milestone and ${tier.bonusCents}¢ bonus after ${tier.threshold} rewarded referral(s)`, async () => {
+      const tid = `test-ms-${tier.id}-${randomUUID().slice(0, 6)}`;
+
+      await createTestProfile(tid);
+
+      let referredIds: string[] = [];
+      try {
+        referredIds = await injectRewardedReferrals(tid, tier.threshold);
+
+        const result = await maybeAwardMilestone(tid);
+        expect(result).toBe(tier.id);
+
+        const milestoneRows = await db
+          .select()
+          .from(referralMilestones)
+          .where(eq(referralMilestones.profileId, tid));
+        expect(milestoneRows.some((r) => r.milestone === tier.id)).toBe(true);
+
+        const creditRows = await db
+          .select()
+          .from(memberCredits)
+          .where(
+            and(
+              eq(memberCredits.profileId, tid),
+              eq(memberCredits.source, "milestone")
+            )
+          );
+        const totalBonus = creditRows.reduce((s, c) => s + c.amountCents, 0);
+        expect(totalBonus).toBe(tier.bonusCents);
+      } finally {
+        await db.delete(referralMilestones).where(eq(referralMilestones.profileId, tid));
+        await db.delete(memberCredits).where(eq(memberCredits.profileId, tid));
+        await db.delete(referrals).where(eq(referrals.referrerId, tid));
+        for (const rid of referredIds) {
+          await db.delete(profiles).where(eq(profiles.id, rid));
+        }
+        await db.delete(profiles).where(eq(profiles.id, tid));
+      }
+    });
+  }
+
+  it("returns null when milestone already earned (no double-award)", async () => {
+    const tid = `test-ms-idem-${randomUUID().slice(0, 8)}`;
+    await createTestProfile(tid);
+
+    const referredId = `test-ms-idem-r-${randomUUID().slice(0, 6)}`;
+    await db.insert(profiles).values({
+      id: referredId,
+      email: `${referredId}@test.example.com`,
+      displayName: "Referred",
+      role: "member",
+    }).onConflictDoNothing();
+
+    await db.insert(referrals).values({
+      id: randomUUID(),
+      referrerId: tid,
+      referredMemberId: referredId,
+      code: "HPF-DOUBLECHK",
+      status: "rewarded",
+      createdAt: new Date(),
+      rewardedAt: new Date(),
+    }).onConflictDoNothing();
+
+    await db.insert(referralMilestones).values({
+      id: randomUUID(),
+      profileId: tid,
+      milestone: "pioneer",
+      rewardedAt: new Date(),
+      bonusCreditCents: 300,
+    }).onConflictDoNothing();
+
+    try {
+      const result = await maybeAwardMilestone(tid);
+      expect(result).toBeNull();
+    } finally {
+      await db.delete(referralMilestones).where(eq(referralMilestones.profileId, tid));
+      await db.delete(memberCredits).where(eq(memberCredits.profileId, tid));
+      await db.delete(referrals).where(eq(referrals.referrerId, tid));
+      await db.delete(profiles).where(eq(profiles.id, referredId));
+      await db.delete(profiles).where(eq(profiles.id, tid));
+    }
+  });
+});
+
+// ── 5b. Milestone idempotency: 5 concurrent calls award exactly once ──────────
+
+describe("Milestone idempotency: concurrent maybeAwardMilestone calls", () => {
+  it("awards exactly one milestone and one bonus credit under 5 concurrent calls", async () => {
+    const pid = `test-ms-conc-${randomUUID().slice(0, 8)}`;
+    const referredId = `test-ms-conc-r-${randomUUID().slice(0, 6)}`;
+
+    await createTestProfile(pid);
+    await db.insert(profiles).values({
+      id: referredId,
+      email: `${referredId}@test.example.com`,
+      displayName: "Referred",
+      role: "member",
+    }).onConflictDoNothing();
+
+    await db.insert(referrals).values({
+      id: randomUUID(),
+      referrerId: pid,
+      referredMemberId: referredId,
+      code: `HPF-CONCTEST`,
+      status: "rewarded",
+      createdAt: new Date(),
+      rewardedAt: new Date(),
+    }).onConflictDoNothing();
+
+    try {
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () => maybeAwardMilestone(pid))
+      );
+
+      const awarded = results.filter((r) => r === "pioneer");
+      expect(awarded.length).toBe(1);
+
+      const nulls = results.filter((r) => r === null);
+      expect(nulls.length).toBe(4);
+
+      const milestoneRows = await db
+        .select()
+        .from(referralMilestones)
+        .where(
+          and(
+            eq(referralMilestones.profileId, pid),
+            eq(referralMilestones.milestone, "pioneer")
+          )
+        );
+      expect(milestoneRows.length).toBe(1);
+
+      const creditRows = await db
+        .select()
+        .from(memberCredits)
+        .where(
+          and(
+            eq(memberCredits.profileId, pid),
+            eq(memberCredits.source, "milestone")
+          )
+        );
+      expect(creditRows.length).toBe(1);
+      expect(creditRows[0].amountCents).toBe(300);
+    } finally {
+      await db.delete(referralMilestones).where(eq(referralMilestones.profileId, pid));
+      await db.delete(memberCredits).where(eq(memberCredits.profileId, pid));
+      await db.delete(referrals).where(eq(referrals.referrerId, pid));
+      await db.delete(profiles).where(eq(profiles.id, referredId));
+      await db.delete(profiles).where(eq(profiles.id, pid));
+    }
+  });
+});
+
+// ── 6. POST /api/referrals/track — concurrency idempotency ───────────────────
+
+describe("POST /api/referrals/track — concurrency idempotency (reward exactly once)", () => {
+  it("grants exactly one referral reward under 5 concurrent /track calls", async () => {
+    const referrerId = `test-track-r-${randomUUID().slice(0, 6)}`;
+    const referredId = `test-track-d-${randomUUID().slice(0, 6)}`;
+
+    await createTestProfile(referrerId);
+    await createTestProfile(referredId);
+
+    const refCode = `HPF-TRK${randomUUID().slice(0, 6).toUpperCase()}`;
+
+    await db.update(profiles)
+      .set({ referralCode: refCode })
+      .where(eq(profiles.id, referrerId));
+
+    await db.insert(referrals).values({
+      id: randomUUID(),
+      referrerId,
+      referredMemberId: referredId,
+      code: refCode,
+      status: "pending",
+      createdAt: new Date(),
+    }).onConflictDoNothing();
+
+    await db.insert(memberIntakes).values({
+      id: randomUUID(),
+      profileId: referredId,
+      budget: 200,
+      goals: [],
+      conditions: [],
+      preferences: [],
+      exclusions: [],
+      radius: 25,
+      telehealth: false,
+    }).onConflictDoNothing();
+
+    await db.insert(plans).values({
+      id: randomUUID(),
+      profileId: referredId,
+      totalMonthlyCost: 100,
+      budgetUtilization: 50,
+      budget: 200,
+      status: "generated",
+    }).onConflictDoNothing();
+
+    const app = buildTestApp(referredId);
+
+    try {
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () =>
+          request(app)
+            .post("/api/referrals/track")
+            .send({})
+            .then((r) => r.status)
+        )
+      );
+
+      expect(results.every((s) => s === 200)).toBe(true);
+
+      const referrerCredits = await db
+        .select()
+        .from(memberCredits)
+        .where(
+          and(
+            eq(memberCredits.profileId, referrerId),
+            eq(memberCredits.source, "referral")
+          )
+        );
+      expect(referrerCredits.length).toBe(1);
+      expect(referrerCredits[0].amountCents).toBe(300);
+
+      const referredCredits = await db
+        .select()
+        .from(memberCredits)
+        .where(
+          and(
+            eq(memberCredits.profileId, referredId),
+            eq(memberCredits.source, "referral")
+          )
+        );
+      expect(referredCredits.length).toBe(1);
+      expect(referredCredits[0].amountCents).toBe(300);
+
+      const referralRows = await db
+        .select({ status: referrals.status })
+        .from(referrals)
+        .where(eq(referrals.referrerId, referrerId));
+      expect(referralRows.every((r) => r.status === "rewarded")).toBe(true);
+    } finally {
+      await db.delete(referralMilestones).where(eq(referralMilestones.profileId, referrerId));
+      await db.delete(memberCredits).where(eq(memberCredits.profileId, referrerId));
+      await db.delete(memberCredits).where(eq(memberCredits.profileId, referredId));
+      await db.delete(referrals).where(eq(referrals.referrerId, referrerId));
+      await db.delete(plans).where(eq(plans.profileId, referredId));
+      await db.delete(memberIntakes).where(eq(memberIntakes.profileId, referredId));
+      await db.delete(profiles).where(eq(profiles.id, referrerId));
+      await db.delete(profiles).where(eq(profiles.id, referredId));
+    }
+  }, 40000);
+});
