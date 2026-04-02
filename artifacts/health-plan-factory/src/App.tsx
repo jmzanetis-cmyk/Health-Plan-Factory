@@ -31,6 +31,7 @@ function AppContent() {
 }
 
 import Landing from "@/pages/Landing";
+import About from "@/pages/About";
 import HowItWorks from "@/pages/HowItWorks";
 import Modalities from "@/pages/Modalities";
 import ForProviders from "@/pages/ForProviders";
@@ -97,6 +98,7 @@ function AppRoutes() {
     <Routes>
       {/* Public / marketing */}
       <Route path="/" element={<Layout><Landing /></Layout>} />
+      <Route path="/about" element={<Layout><About /></Layout>} />
       <Route path="/how-it-works" element={<Layout><HowItWorks /></Layout>} />
       <Route path="/modalities" element={<Layout><Modalities /></Layout>} />
       <Route path="/modalities/:slug" element={<Layout><ModalityDetail /></Layout>} />

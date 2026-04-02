@@ -7,10 +7,12 @@ import { useAuth } from "@workspace/replit-auth-web";
 const navLinks = [
   { href: "/how-it-works", label: "How It Works" },
   { href: "/modalities", label: "Modalities" },
+  { href: "/providers", label: "Find Providers" },
   { href: "/savings-calculator", label: "HSA/FSA Calculator" },
   { href: "/list-your-practice", label: "List Your Practice" },
   { href: "/for-employers", label: "For Employers" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/about", label: "About" },
 ];
 
 function UserMenu({ onClose }: { onClose?: () => void }) {

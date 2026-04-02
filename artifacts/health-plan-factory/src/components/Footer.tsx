@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Logo } from "./Logo";
 
 const footerLinks = [
+  { href: "/about", label: "About" },
   { href: "/how-it-works", label: "How It Works" },
   { href: "/modalities", label: "Modalities" },
   { href: "/for-providers", label: "For Providers" },
