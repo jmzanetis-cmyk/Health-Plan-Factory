@@ -675,6 +675,16 @@ async function getTopPlanItems(profileId: string) {
 /**
  * Core re-engagement send logic for a single member.
  * Returns 'sent' | 'skipped' | 'no-plan' | 'no-email'.
+ *
+ * NOTE: 'sent' reflects a successful Resend API call attempt. `sendEmail()` is
+ * fire-and-forget (void) and handles provider errors internally by logging a
+ * 'failed' row in notification_log. To check actual delivery status post-send,
+ * query notification_log for the member's most recent re-engagement-dayN row.
+ *
+ * NOTE: This helper does NOT check Plus/Employer subscription status.
+ * The admin single-send endpoint intentionally uses it as an override to allow
+ * admins to test any member. The bulk endpoint applies the subscription filter
+ * before calling this function.
  */
 async function sendReEngagementEmail(
   memberId: string,
