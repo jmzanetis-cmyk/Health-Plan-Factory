@@ -377,6 +377,64 @@ export default function HowItWorks() {
         </div>
       </section>
 
+      {/* ── SAVINGS CALCULATOR CTA ── */}
+      <section
+        className="px-6 md:px-12 py-14"
+        style={{ background: "var(--warm-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <div
+            className="rounded-2xl px-8 py-10 flex flex-col md:flex-row items-center gap-8"
+            style={{
+              background: "var(--hpf-pink)",
+              boxShadow: "0 8px 30px rgba(212,34,126,0.2)",
+            }}
+          >
+            <div className="flex-1">
+              <p
+                className="text-xs font-semibold uppercase tracking-widest mb-3"
+                style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--app-font-sans)" }}
+              >
+                HSA/FSA Savings Calculator
+              </p>
+              <h3
+                className="mb-2 leading-tight"
+                style={{
+                  fontFamily: "var(--app-font-serif)",
+                  fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
+                  fontWeight: 700,
+                  color: "white",
+                  letterSpacing: "-0.015em",
+                }}
+              >
+                Know your tax savings before you build your plan.
+              </h3>
+              <p
+                className="text-sm font-light"
+                style={{ color: "rgba(255,255,255,0.6)", fontFamily: "var(--app-font-sans)" }}
+              >
+                Enter your budget and tax bracket — see exactly how much you could save using HSA/FSA dollars on your wellness plan.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <Link
+                to="/savings-calculator"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg text-sm font-semibold no-underline"
+                style={{
+                  background: "white",
+                  color: "var(--hpf-pink)",
+                  fontFamily: "var(--app-font-sans)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Calculate Your Savings →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FAQ ── */}
       <section className="px-6 md:px-12 py-20" style={{ background: "var(--warm-white)" }}>
         <div className="max-w-3xl mx-auto">

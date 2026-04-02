@@ -1094,6 +1094,59 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── SAVINGS CALCULATOR CTA ── */}
+      <section
+        className="px-6 md:px-12 py-16"
+        style={{ background: "var(--hpf-pink)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
+      >
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-8">
+          <div className="flex-1">
+            <div
+              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest mb-3"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+            >
+              <span className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
+              HSA/FSA Savings Calculator
+            </div>
+            <h2
+              className="mb-3 leading-tight"
+              style={{
+                fontFamily: "var(--app-font-serif)",
+                fontSize: "clamp(1.8rem, 3vw, 2.5rem)",
+                fontWeight: 700,
+                color: "white",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              See how much you could save with tax-free wellness dollars.
+            </h2>
+            <p
+              className="text-sm font-light leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.65)", fontFamily: "var(--app-font-sans)", maxWidth: 420 }}
+            >
+              68% of HSA/FSA holders leave money on the table. Our free calculator shows your estimated
+              tax savings based on your budget and bracket — in under 30 seconds.
+            </p>
+          </div>
+          <div className="flex-shrink-0">
+            <Link
+              to="/savings-calculator"
+              className="inline-flex items-center gap-2 px-7 py-4 rounded-lg text-sm font-semibold no-underline"
+              style={{
+                background: "white",
+                color: "var(--hpf-pink)",
+                fontFamily: "var(--app-font-sans)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                letterSpacing: "0.01em",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Calculate Your Savings →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── FAQ ── */}
       <section
         id="faq"

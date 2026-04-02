@@ -77,6 +77,7 @@ import HsaUnlock from "@/pages/HsaUnlock";
 import ModalityDetail from "@/pages/ModalityDetail";
 import Referral from "@/pages/Referral";
 import SharedPlan from "@/pages/SharedPlan";
+import SavingsCalculator from "@/pages/SavingsCalculator";
 
 import NotFound from "@/pages/not-found";
 
@@ -107,6 +108,7 @@ function AppRoutes() {
 
       {/* Public LMN/HSA guide */}
       <Route path="/lmn-guide" element={<Layout><LmnGuide /></Layout>} />
+      <Route path="/savings-calculator" element={<Layout><SavingsCalculator /></Layout>} />
 
       {/* Member app */}
       <Route path="/dashboard" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
