@@ -10,8 +10,15 @@ const TIERS = [
     tier: "Explorer",
     price: "Free",
     per: "forever",
-    desc: "Build your plan, browse providers, and see what's possible.",
-    features: ["Full AI plan generation", "Modality library access", "Provider browse (blurred)", "1 free unlock included"],
+    desc: "Build your plan free. Get your personalized wellness roadmap with estimated costs.",
+    features: [
+      "Full AI plan generation",
+      "Personalized modality recommendations",
+      "Estimated monthly cost breakdown",
+      "Modality evidence library access",
+      "Provider directory browsing",
+      "Save & share your plan",
+    ],
     cta: "Get started free",
     ctaHref: "/sign-up",
     featured: false,
@@ -20,28 +27,33 @@ const TIERS = [
   {
     tier: "Plus",
     price: "$9.99",
-    per: "per month · $79.99/year (2 months free)",
-    desc: "The full factory experience — unlimited reveals, coaching, and tracking.",
+    per: "per month",
+    desc: "Connect with real providers. Turn your plan into action with matched local providers.",
     features: [
       "Everything in Explorer",
-      "Unlimited provider reveals",
+      "Real matched local providers for every modality",
+      "Full contact info — phone, website, booking",
       "AI accountability coach",
       "Routine & journal builder",
       "HSA/FSA spending log",
       "Progress tracking & insights",
-      "14-day free trial included",
     ],
-    cta: "Start 14-day free trial",
+    cta: "Start Plus",
     ctaHref: "/sign-up?plan=plus",
     featured: true,
     isPlus: true,
   },
   {
     tier: "Provider",
-    price: "Free",
-    per: "to list",
+    price: "$29",
+    per: "per month",
     desc: "Get discovered by members whose plans match your specialty.",
-    features: ["Listing in provider directory", "Lead alerts for your modalities", "Booking calendar integration", "0% commission for first 90 days · 2% after"],
+    features: [
+      "Listing in provider directory",
+      "Lead alerts for your modalities",
+      "Booking calendar integration",
+      "0% commission for first 90 days · 2% after",
+    ],
     cta: "Apply as a provider",
     ctaHref: "/provider/signup",
     featured: false,
@@ -156,7 +168,7 @@ export default function Pricing() {
             </div>
 
             <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
-              14-day free trial included. Cancel anytime. Referral credit is applied to your first invoice.
+              Cancel anytime. Referral credit is applied as a discount on your first month.
             </p>
 
             <div className="flex gap-2">
@@ -185,10 +197,11 @@ export default function Pricing() {
               className="mb-4"
               style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.5rem,5vw,4rem)", fontWeight: 700, color: "var(--hpf-deep)", letterSpacing: "-0.02em" }}
             >
-              Simple, honest <em style={{ color: "var(--hpf-crimson)" }}>pricing.</em>
+              Build your plan free.{" "}
+              <em style={{ color: "var(--hpf-crimson)" }}>Connect with providers with Plus.</em>
             </h1>
             <p className="text-sm font-light max-w-md mx-auto leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Start free. Pay only for the provider contacts you actually want. Upgrade to Plus for unlimited access.
+              Explorer members get a full personalized plan with cost estimates — free. Plus members get real, matched local providers for every modality in their plan.
             </p>
           </div>
 
@@ -229,7 +242,7 @@ export default function Pricing() {
                     </button>
                     {user && creditsCents > 0 && (
                       <p className="text-center mt-2 text-xs font-semibold" style={{ color: "var(--hpf-crimson)" }}>
-                        🎁 ${(creditsCents / 100).toFixed(2)} referral credit will be applied
+                        🎁 ${(creditsCents / 100).toFixed(2)} referral credit will be applied to your first month
                       </p>
                     )}
                   </div>
@@ -242,21 +255,25 @@ export default function Pricing() {
             ))}
           </div>
 
-          <div className="rounded-xl p-6 text-center" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
-            <h3 className="font-semibold mb-2 text-sm" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)" }}>À la carte provider unlocks</h3>
-            <div className="flex justify-center gap-8 flex-wrap">
-              {[
-                { label: "Wellness provider", price: "$5.00" },
-                { label: "Physician / DPC", price: "$8.00" },
-                { label: "App-based program", price: "$3.00" },
-              ].map((item) => (
-                <div key={item.label} className="text-center">
-                  <div className="text-xl font-semibold mb-1" style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>{item.price}</div>
-                  <div className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{item.label}</div>
-                </div>
-              ))}
+          {/* Comparison callout */}
+          <div className="rounded-xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
+            <h3 className="font-semibold mb-4 text-sm text-center" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)" }}>
+              Explorer vs. Plus — what's different?
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div style={{ padding: "1rem", borderRadius: 10, background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Explorer (Free)</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
+                  Full AI plan generation with personalized modality recommendations and estimated monthly costs. The plan is real and valuable — you see exactly which modalities fit your goals and budget. Provider cards are shown but contact details are not revealed.
+                </p>
+              </div>
+              <div style={{ padding: "1rem", borderRadius: 10, background: "rgba(212,34,126,0.04)", border: "1.5px solid rgba(212,34,126,0.18)" }}>
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Plus ($9.99/mo)</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
+                  Your plan is fully assembled with real, matched local providers for every modality. See phone numbers, websites, and book sessions directly — no per-provider fees, ever. Referral credits apply as a discount on your first month.
+                </p>
+              </div>
             </div>
-            <p className="text-xs mt-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Plus members pay $0 per reveal · Credits earned via referrals never expire</p>
           </div>
         </div>
       </div>

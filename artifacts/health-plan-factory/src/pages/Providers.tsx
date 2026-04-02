@@ -1,19 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe, Unlock, CheckCircle2, Star } from "lucide-react";
+import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe, CheckCircle2, Star, Lock, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface UnlockResult {
-  providerId: string;
-  unlocked: boolean;
-  used_credit: boolean;
-  credit_applied_cents: number;
-  amount_charged_cents: number;
-  amount_charged_formatted: string;
-  message: string;
-  checkout_url?: string;
-}
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -39,6 +28,7 @@ interface Provider {
   avatarUrl: string | null;
   status: string;
   credentials: string[];
+  contactGated?: boolean;
 }
 
 interface Favorite {
@@ -109,8 +99,14 @@ function SkeletonCard() {
   );
 }
 
+interface CheckoutResult {
+  checkout_url?: string;
+  error?: string;
+}
+
 export default function Providers() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -119,11 +115,11 @@ export default function Providers() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  // Credit & unlock state
-  const [userCreditsCents, setUserCreditsCents] = useState(0);
-  const [unlockingId, setUnlockingId] = useState<string | null>(null);
-  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
-  const [unlockModal, setUnlockModal] = useState<UnlockResult | null>(null);
+  // Subscription / gating state
+  const [isPlus, setIsPlus] = useState(false);
+  const [lockedCount, setLockedCount] = useState<number | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutModal, setCheckoutModal] = useState<CheckoutResult | null>(null);
 
   // Reviews state
   const [reviewsMap, setReviewsMap] = useState<Record<string, ProviderReviewData>>({});
@@ -134,7 +130,6 @@ export default function Providers() {
   const [expandedReviewsId, setExpandedReviewsId] = useState<string | null>(null);
 
   // Filters — initialise selectedModality from ?modality= query param
-  // (supports deep-link from /modalities/:slug evidence library pages)
   const [selectedModality, setSelectedModality] = useState(searchParams.get("modality") ?? "");
   const [zipCode, setZipCode] = useState("");
   const [telehealth, setTelehealth] = useState(false);
@@ -155,82 +150,8 @@ export default function Providers() {
         .then((data: Favorite[]) => {
           if (Array.isArray(data)) setFavorites(new Set(data.map((f) => f.providerId)));
         });
-
-      // Fetch credit balance to show credit badge and discount in checkout modal
-      fetch(`${BASE}/api/credits/mine`, { credentials: "include" })
-        .then((r) => r.json())
-        .then((data: { unusedCreditsCents: number }) => {
-          if (typeof data?.unusedCreditsCents === "number") setUserCreditsCents(data.unusedCreditsCents);
-        })
-        .catch(() => {});
-
-      // Restore persisted unlocks from the server (survives page refresh)
-      fetch(`${BASE}/api/providers/unlocked`, { credentials: "include" })
-        .then((r) => r.json())
-        .then((data: { unlockedProviderIds: string[] }) => {
-          if (Array.isArray(data?.unlockedProviderIds)) {
-            setUnlockedIds(new Set(data.unlockedProviderIds));
-          }
-        })
-        .catch(() => {});
     }
   }, [user]);
-
-  // Handle return from Stripe Checkout — confirm payment and record unlock
-  useEffect(() => {
-    const sessionId = searchParams.get("unlock_session");
-    if (!sessionId || !user) return;
-    fetch(`${BASE}/api/providers/unlock-status?session_id=${encodeURIComponent(sessionId)}`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((data: { unlocked: boolean; providerId?: string; credit_applied_cents?: number; amount_charged_cents?: number }) => {
-        if (data.unlocked && data.providerId) {
-          setUnlockedIds((prev) => new Set([...prev, data.providerId!]));
-          toast({ title: "Provider unlocked!", description: "Payment confirmed. You can now view full contact details." });
-        }
-      })
-      .catch(() => {});
-  }, [searchParams, user]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleUnlock = async (providerId: string) => {
-    if (!user) {
-      toast({ title: "Sign in required", description: "Sign in to unlock provider details.", variant: "destructive" });
-      return;
-    }
-    setUnlockingId(providerId);
-    try {
-      const res = await fetch(`${BASE}/api/providers/unlock`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ providerId }),
-      });
-      const data: UnlockResult = await res.json();
-
-      if (!res.ok && !data.checkout_url) {
-        toast({ title: "Unlock failed", description: (data as { error?: string }).error ?? "Something went wrong.", variant: "destructive" });
-        return;
-      }
-
-      // Phase A: unlock granted immediately (credit covered the full price)
-      if (data.unlocked) {
-        setUnlockedIds((prev) => new Set([...prev, providerId]));
-        setUnlockModal(data);
-        if (data.used_credit) {
-          setUserCreditsCents((prev) => Math.max(0, prev - data.credit_applied_cents));
-        }
-        return;
-      }
-
-      // Phase B or Stripe-not-configured: show checkout modal with credit
-      // breakdown BEFORE redirecting/confirming — so the user sees the discount
-      // applied to the price before leaving the page.
-      setUnlockModal(data);
-    } catch {
-      toast({ title: "Unlock failed", description: "Network error. Please try again.", variant: "destructive" });
-    } finally {
-      setUnlockingId(null);
-    }
-  };
 
   useEffect(() => {
     setLoading(true);
@@ -242,13 +163,22 @@ export default function Providers() {
 
     fetch(`${BASE}/api/providers?${params}`, { credentials: "include" })
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setProviders(data);
-        else if (Array.isArray(data?.providers)) setProviders(data.providers);
+      .then((data: { locked?: boolean; count?: number; providers?: Provider[] }) => {
+        if (data?.locked === true) {
+          // Explorer member — no real provider records returned
+          setIsPlus(false);
+          setLockedCount(data.count ?? 0);
+          setProviders([]);
+        } else {
+          // Plus/employer member — real provider records
+          setIsPlus(true);
+          setLockedCount(null);
+          setProviders(Array.isArray(data?.providers) ? data.providers : []);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [selectedModality, zipCode, telehealth]);
+  }, [selectedModality, zipCode, telehealth, user]);
 
   const fetchReviews = (providerId: string) => {
     if (!user || reviewsMap[providerId]) return;
@@ -286,7 +216,6 @@ export default function Providers() {
         throw new Error(err.error ?? "Failed to submit review");
       }
       toast({ title: "Review submitted!", description: "Thank you for sharing your experience." });
-      // Refresh reviews for this provider
       setReviewsMap((prev) => {
         const { [reviewModal.providerId]: _, ...rest } = prev;
         return rest;
@@ -301,7 +230,6 @@ export default function Providers() {
     }
   };
 
-  // Open review modal if ?reviewProvider=<id> is set (from email nudge link)
   useEffect(() => {
     const reviewProviderId = searchParams.get("reviewProvider");
     if (!reviewProviderId || !user) return;
@@ -344,6 +272,37 @@ export default function Providers() {
     }
   };
 
+  const handlePlusCheckout = async () => {
+    if (!user) {
+      navigate("/sign-up?plan=plus");
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/subscriptions/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const data: CheckoutResult = await res.json();
+      setCheckoutModal(data);
+    } catch {
+      toast({ title: "Checkout error", description: "Network error. Please try again.", variant: "destructive" });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleConfirmCheckout = () => {
+    if (!checkoutModal) return;
+    if (checkoutModal.checkout_url) {
+      window.location.href = checkoutModal.checkout_url;
+    } else {
+      toast({ title: "Checkout unavailable", description: "Unable to start checkout. Please try again or contact support.", variant: "destructive" });
+      setCheckoutModal(null);
+    }
+  };
+
   const clearFilters = () => {
     setSelectedModality("");
     setZipCode("");
@@ -363,87 +322,46 @@ export default function Providers() {
   return (
     <div className="min-h-screen px-4 md:px-10 py-10" style={{ background: "var(--warm-white)" }}>
 
-      {/* ── Unlock Checkout Modal ── */}
-      {unlockModal && (
+      {/* ── Plus Checkout Confirmation Modal ── */}
+      {checkoutModal && (
         <div
           style={{
             position: "fixed", inset: 0, zIndex: 50,
-            background: "rgba(212,34,126,0.55)", backdropFilter: "blur(4px)",
+            background: "rgba(44,40,37,0.55)", backdropFilter: "blur(4px)",
             display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
           }}
-          onClick={() => setUnlockModal(null)}
+          onClick={() => setCheckoutModal(null)}
         >
           <div
-            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 380, width: "100%", boxShadow: "0 20px 60px rgba(212,34,126,0.22)" }}
+            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 400, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-2 mb-4">
-              {unlockModal.unlocked
-                ? <CheckCircle2 size={20} style={{ color: "var(--sage)" }} />
-                : <Unlock size={20} style={{ color: "var(--hpf-crimson)" }} />}
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={20} style={{ color: "var(--hpf-pink)" }} />
               <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--hpf-pink)", margin: 0 }}>
-                {unlockModal.unlocked ? "Provider Unlocked" : "Complete Payment to Unlock"}
+                Upgrade to Plus
               </h3>
             </div>
-
-            {/* Price breakdown — shown for both immediate unlock and Stripe redirect cases */}
-            <div style={{ background: "rgba(212,34,126,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(212,34,126,0.08)" }}>
-              <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
-                <span style={{ color: "var(--text-secondary)" }}>Unlock fee</span>
-                <span style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>
-                  ${((unlockModal.amount_charged_cents + unlockModal.credit_applied_cents) / 100).toFixed(2)}
-                </span>
-              </div>
-              {unlockModal.credit_applied_cents > 0 && (
-                <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
-                  <span style={{ color: "var(--hpf-crimson)", fontWeight: 600 }}>🎁 Referral credit applied</span>
-                  <span style={{ color: "var(--hpf-crimson)", fontWeight: 700 }}>
-                    −${(unlockModal.credit_applied_cents / 100).toFixed(2)}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(212,34,126,0.08)", fontFamily: "var(--app-font-sans)" }}>
-                <span style={{ color: "var(--hpf-pink)", fontWeight: 700 }}>
-                  {unlockModal.unlocked ? "Total charged" : "Due now"}
-                </span>
-                <span style={{ color: unlockModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--hpf-pink)", fontWeight: 700 }}>
-                  {unlockModal.amount_charged_cents === 0 ? "Free" : unlockModal.amount_charged_formatted}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
-              {unlockModal.unlocked
-                ? "Your referral credit covered this unlock. You can now view full contact details."
-                : "Your referral credit discount is applied. Complete payment via Stripe to reveal full contact details."}
+            <p className="text-sm mb-2" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
+              <strong>$9.99/mo</strong> — See real matched local providers for every modality in your plan. Phone, website, and booking info included.
             </p>
-
-            {unlockModal.unlocked ? (
+            <p className="text-xs mb-5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+              Cancel anytime. Referral credits apply as a first-month discount.
+            </p>
+            <div className="flex gap-3">
               <button
-                onClick={() => setUnlockModal(null)}
-                style={{ width: "100%", padding: "0.75rem", borderRadius: 10, background: "var(--hpf-pink)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                onClick={() => setCheckoutModal(null)}
+                style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
-                View Provider
+                Cancel
               </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setUnlockModal(null)}
-                  style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (unlockModal.checkout_url) window.location.href = unlockModal.checkout_url;
-                    else setUnlockModal(null);
-                  }}
-                  style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-crimson)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
-                >
-                  Proceed to payment →
-                </button>
-              </div>
-            )}
+              <button
+                onClick={handleConfirmCheckout}
+                style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-pink)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                Continue to checkout →
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -517,11 +435,6 @@ export default function Providers() {
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
               Browse verified wellness providers matched to your plan
             </p>
-            {user && userCreditsCents > 0 && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", marginTop: "0.5rem", background: "rgba(224,32,64,0.1)", border: "1px solid rgba(224,32,64,0.3)", borderRadius: 8, padding: "0.25rem 0.625rem", fontSize: "0.72rem", fontWeight: 600, color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
-                🎁 {(userCreditsCents / 100).toFixed(2)} referral credit available
-              </span>
-            )}
           </div>
           <button
             onClick={() => setShowFilters((v) => !v)}
@@ -538,6 +451,96 @@ export default function Providers() {
             Filters {hasFilters ? "●" : ""}
           </button>
         </div>
+
+        {/* Plus upgrade banner — shown only for Explorer (non-Plus, logged-in) members */}
+        {user && !isPlus && (
+          <div style={{
+            background: "linear-gradient(135deg, rgba(212,34,126,0.06) 0%, rgba(224,32,64,0.08) 100%)",
+            border: "1.5px solid rgba(212,34,126,0.2)",
+            borderRadius: 14,
+            padding: "1rem 1.25rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}>
+            <Lock size={18} style={{ color: "var(--hpf-pink)", flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.85rem", fontWeight: 700, color: "var(--hpf-pink)", marginBottom: 2 }}>
+                {lockedCount != null && lockedCount > 0
+                  ? `${lockedCount} matched provider${lockedCount !== 1 ? "s" : ""} available — upgrade to Plus to see them`
+                  : "Upgrade to Plus to see matched providers"}
+              </p>
+              <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                Plus members see real local providers with phone, website, and booking info — $9.99/mo, cancel anytime.
+              </p>
+            </div>
+            <button
+              onClick={handlePlusCheckout}
+              disabled={checkoutLoading}
+              style={{
+                padding: "0.5rem 1.1rem",
+                borderRadius: 8,
+                background: "var(--hpf-pink)",
+                color: "white",
+                fontWeight: 700,
+                fontSize: "0.8rem",
+                border: "none",
+                cursor: checkoutLoading ? "wait" : "pointer",
+                fontFamily: "var(--app-font-sans)",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+              }}
+            >
+              {checkoutLoading && <Loader2 size={13} className="animate-spin" />}
+              Upgrade to Plus →
+            </button>
+          </div>
+        )}
+
+        {/* Guest upgrade banner */}
+        {!user && (
+          <div style={{
+            background: "linear-gradient(135deg, rgba(212,34,126,0.06) 0%, rgba(224,32,64,0.08) 100%)",
+            border: "1.5px solid rgba(212,34,126,0.2)",
+            borderRadius: 14,
+            padding: "1rem 1.25rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}>
+            <Lock size={18} style={{ color: "var(--hpf-pink)", flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.85rem", fontWeight: 700, color: "var(--hpf-pink)", marginBottom: 2 }}>
+                Sign up to connect with providers
+              </p>
+              <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                Create a free account, then upgrade to Plus ($9.99/mo) to see contact info for all matched providers.
+              </p>
+            </div>
+            <Link
+              to="/sign-up"
+              style={{
+                padding: "0.5rem 1.1rem",
+                borderRadius: 8,
+                background: "var(--hpf-pink)",
+                color: "white",
+                fontWeight: 700,
+                fontSize: "0.8rem",
+                textDecoration: "none",
+                fontFamily: "var(--app-font-sans)",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              Get started free →
+            </Link>
+          </div>
+        )}
 
         {/* Filters panel */}
         {showFilters && (
@@ -590,9 +593,14 @@ export default function Providers() {
         )}
 
         {/* Results count */}
-        {!loading && (
+        {!loading && isPlus && (
           <p className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             {providers.length} provider{providers.length !== 1 ? "s" : ""} found
+          </p>
+        )}
+        {!loading && !isPlus && lockedCount !== null && (
+          <p className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+            {lockedCount} provider{lockedCount !== 1 ? "s" : ""} matched — contact info visible to Plus members
           </p>
         )}
 
@@ -629,7 +637,70 @@ export default function Providers() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {loading ? (
             [1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} />)
-          ) : providers.length === 0 ? (
+          ) : !isPlus && lockedCount !== null ? (
+            // Explorer member: show locked placeholder tiles
+            lockedCount === 0 ? (
+              <div className="col-span-full py-16 text-center">
+                <p className="text-base mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-serif)" }}>No providers match your filters</p>
+                <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                  Try adjusting your filters or clearing your search.
+                </p>
+              </div>
+            ) : (
+              Array.from({ length: Math.min(lockedCount, 9) }).map((_, i) => (
+                <div
+                  key={i}
+                  className="p-5 flex flex-col gap-3 rounded-2xl"
+                  style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)", position: "relative", overflow: "hidden" }}
+                >
+                  {/* Blurred/locked content */}
+                  <div style={{ filter: "blur(5px)", pointerEvents: "none", userSelect: "none" }}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-11 h-11 rounded-full flex-shrink-0" style={{ background: "rgba(212,34,126,0.12)" }} />
+                      <div className="flex flex-col gap-1.5">
+                        <div style={{ height: 12, width: 120, background: "rgba(212,34,126,0.12)", borderRadius: 6 }} />
+                        <div style={{ height: 10, width: 80, background: "rgba(212,34,126,0.08)", borderRadius: 6 }} />
+                      </div>
+                    </div>
+                    <div style={{ height: 10, width: "90%", background: "rgba(212,34,126,0.06)", borderRadius: 6, marginBottom: 6 }} />
+                    <div style={{ height: 10, width: "75%", background: "rgba(212,34,126,0.06)", borderRadius: 6 }} />
+                  </div>
+                  {/* Overlay CTA */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem",
+                    background: "rgba(255,255,255,0.82)", backdropFilter: "blur(1px)",
+                  }}>
+                    <Lock size={18} style={{ color: "var(--hpf-pink)" }} />
+                    <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.78rem", fontWeight: 700, color: "var(--hpf-pink)", textAlign: "center", lineHeight: 1.4, maxWidth: 180 }}>
+                      Provider details visible with Plus
+                    </p>
+                    <button
+                      onClick={handlePlusCheckout}
+                      disabled={checkoutLoading}
+                      style={{
+                        padding: "0.45rem 1rem",
+                        borderRadius: 8,
+                        background: "var(--hpf-pink)",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: "0.75rem",
+                        border: "none",
+                        cursor: checkoutLoading ? "wait" : "pointer",
+                        fontFamily: "var(--app-font-sans)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                      }}
+                    >
+                      {checkoutLoading ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                      Upgrade to Plus
+                    </button>
+                  </div>
+                </div>
+              ))
+            )
+          ) : isPlus && providers.length === 0 ? (
             <div className="col-span-full py-16 text-center">
               <p className="text-base mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-serif)" }}>No providers found</p>
               <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
@@ -760,7 +831,7 @@ export default function Providers() {
                           <Star size={12} /> See reviews
                         </button>
                       )}
-                      {unlockedIds.has(p.id) && (
+                      {isPlus && (
                         <button
                           onClick={() => openReviewModal(p)}
                           className="ml-auto text-xs font-semibold"
@@ -801,9 +872,9 @@ export default function Providers() {
                     </div>
                   )}
 
-                  {/* Contact row — gated behind unlock */}
+                  {/* Contact row — gated behind Plus subscription */}
                   <div className="flex flex-wrap gap-3 pt-1 border-t items-center" style={{ borderColor: "rgba(212,34,126,0.06)" }}>
-                    {unlockedIds.has(p.id) ? (
+                    {isPlus ? (
                       <>
                         {p.phone && (
                           <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
@@ -826,33 +897,28 @@ export default function Providers() {
                             <CheckCircle2 size={11} /> Request Info
                           </a>
                         )}
+                        {!p.phone && !p.website && (
+                          <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                            Contact info not provided
+                          </span>
+                        )}
                       </>
                     ) : (
                       <>
-                        <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                          🔒 Contact details locked
+                        <span className="text-xs flex items-center gap-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                          <Lock size={10} /> Contact info with Plus
                         </span>
-                        {userCreditsCents > 0 && (
-                          <span className="text-xs" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
-                            🎁 Credit available
-                          </span>
-                        )}
-                        <button
-                          onClick={() => handleUnlock(p.id)}
-                          disabled={unlockingId === p.id}
-                          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        <Link
+                          to="/pricing"
+                          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
                           style={{
-                            background: userCreditsCents > 0 ? "var(--hpf-crimson)" : "var(--hpf-pink)",
+                            background: "var(--hpf-pink)",
                             color: "white",
-                            border: "none",
-                            cursor: unlockingId === p.id ? "wait" : "pointer",
                             fontFamily: "var(--app-font-sans)",
-                            opacity: unlockingId === p.id ? 0.7 : 1,
                           }}
                         >
-                          {unlockingId === p.id ? <Loader2 size={11} className="animate-spin" /> : <Unlock size={11} />}
-                          {userCreditsCents > 0 ? "Unlock Free" : "Unlock"}
-                        </button>
+                          Upgrade to Plus
+                        </Link>
                       </>
                     )}
                   </div>

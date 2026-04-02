@@ -118,8 +118,51 @@ router.get("/providers", async (req, res) => {
       }
     }
 
-    const enriched = rows.map((p) => ({ ...p, credentials: credMap[p.id] ?? [] }));
-    res.json(enriched);
+    // Gate real provider records behind Plus or employer subscription
+    const isPlus = req.isAuthenticated() && (
+      req.user!.subscriptionStatus === "plus" ||
+      req.user!.subscriptionStatus === "employer"
+    );
+
+    if (!isPlus) {
+      // Explorer (free) members: return count only, no real provider records
+      res.json({ locked: true, count: rows.length, providers: [] });
+      return;
+    }
+
+    const enriched = rows.map((p) => ({
+      ...p,
+      credentials: credMap[p.id] ?? [],
+      contactGated: false,
+    }));
+    res.json({ locked: false, count: enriched.length, providers: enriched });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * GET /api/members/subscription
+ * Returns the current member's subscription status.
+ * Used by the frontend to gate UI behind Plus / employer status.
+ */
+router.get("/members/subscription", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.json({ subscriptionStatus: "free", isPlus: false });
+    return;
+  }
+  try {
+    const [profile] = await db
+      .select({ subscriptionStatus: profiles.subscriptionStatus })
+      .from(profiles)
+      .where(eq(profiles.id, req.user!.id))
+      .limit(1);
+    const status = profile?.subscriptionStatus ?? "free";
+    res.json({
+      subscriptionStatus: status,
+      isPlus: status === "plus" || status === "employer",
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
@@ -358,257 +401,42 @@ router.get("/admin/providers/:id", async (req, res) => {
 
 /**
  * GET /api/providers/unlocked
- * Returns the set of provider IDs this member has already unlocked.
- * Used on page load to restore persisted unlock state.
+ * DEPRECATED — per-provider unlocks are no longer used.
+ * Provider access is now gated by subscription_status (plus or employer).
+ * Returns an empty list for backward compatibility.
  */
 router.get("/providers/unlocked", async (req, res) => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Authentication required" });
     return;
   }
-  try {
-    const rows = await db
-      .select({ providerId: providerUnlocks.providerId })
-      .from(providerUnlocks)
-      .where(eq(providerUnlocks.memberId, req.user!.id));
-    res.json({ unlockedProviderIds: rows.map((r) => r.providerId) });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    res.status(500).json({ error: message });
-  }
+  res.json({ unlockedProviderIds: [] });
 });
 
 /**
  * POST /api/providers/unlock
- * Two-phase unlock:
- *   Phase A (full credit): credit covers the full price → apply credit atomically +
- *     record unlock in provider_unlocks → respond { unlocked: true }.
- *   Phase B (payment needed): credit is partial or absent → create Stripe Checkout
- *     Session (if Stripe is configured) for the net amount → respond
- *     { unlocked: false, checkout_url }.  Credit is NOT consumed until payment
- *     is confirmed via the webhook or the unlock-status endpoint.
- *
- * Body: { providerId: string }
+ * DEPRECATED — per-provider unlocks have been removed.
+ * Provider contact info is now gated by subscription_status (plus or employer).
+ * Returns 410 Gone so clients know to redirect to the Plus checkout.
  */
 router.post("/providers/unlock", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Authentication required" });
-    return;
-  }
-  const profileId = req.user!.id;
-  const { providerId } = req.body as { providerId?: string };
-
-  if (!providerId) {
-    res.status(400).json({ error: "providerId is required" });
-    return;
-  }
-
-  try {
-    // Already unlocked? Return immediately without consuming another credit.
-    const [existing] = await db
-      .select({ id: providerUnlocks.id })
-      .from(providerUnlocks)
-      .where(and(eq(providerUnlocks.memberId, profileId), eq(providerUnlocks.providerId, providerId)));
-    if (existing) {
-      res.json({ unlocked: true, already_unlocked: true, used_credit: false, credit_applied_cents: 0, amount_charged_cents: 0 });
-      return;
-    }
-
-    // --- Server-side price determination ---
-    const [providerModality] = await db
-      .select({ category: modalitiesTable.category, name: providers.name })
-      .from(providerModalities)
-      .innerJoin(modalitiesTable, eq(providerModalities.modalityId, modalitiesTable.id))
-      .innerJoin(providers, eq(providerModalities.providerId, providers.id))
-      .where(eq(providerModalities.providerId, providerId))
-      .limit(1);
-
-    const category = providerModality?.category ?? "wellness";
-    const providerName = providerModality?.name ?? "Provider";
-    const priceCents = category === "telehealth" ? 300   // $3.00 — app-based/telehealth
-      : category === "medical" ? 800                    // $8.00 — physician / DPC
-      : 500;                                            // $5.00 — wellness / fitness / default
-
-    // --- Phase A: try to cover the full price with a referral credit ---
-    const creditResult = await db.transaction(async (tx) => {
-      const [credit] = await tx
-        .select()
-        .from(memberCredits)
-        .where(and(eq(memberCredits.profileId, profileId), eq(memberCredits.used, false)))
-        .orderBy(memberCredits.createdAt)
-        .limit(1);
-
-      if (!credit) return null;
-
-      // Only fully-covering credits unlock immediately — partial credit still
-      // requires Stripe to collect the remainder.
-      if (credit.amountCents < priceCents) return { credit, netCents: priceCents - credit.amountCents };
-
-      // Credit covers the full price — consume it and record the unlock atomically.
-      const [consumed] = await tx
-        .update(memberCredits)
-        .set({ used: true, usedAt: new Date() })
-        .where(and(eq(memberCredits.id, credit.id), eq(memberCredits.used, false)))
-        .returning();
-
-      if (!consumed) return null; // lost race — no credit applied
-
-      await tx.insert(providerUnlocks).values({
-        id: randomUUID(),
-        memberId: profileId,
-        providerId,
-        creditId: consumed.id,
-        amountCharged: 0,
-      }).onConflictDoNothing();
-
-      return { credit: consumed, netCents: 0 };
-    });
-
-    // Credit fully covered the price → unlock immediately
-    if (creditResult && creditResult.netCents === 0) {
-      res.json({
-        unlocked: true,
-        used_credit: true,
-        credit_applied_cents: creditResult.credit.amountCents,
-        amount_charged_cents: 0,
-        amount_charged_formatted: "$0.00",
-        providerId,
-        message: `Referral credit applied — unlock is free!`,
-      });
-      return;
-    }
-
-    // --- Phase B: payment required for the net amount ---
-    const creditAppliedCents = creditResult?.credit.amountCents ?? 0;
-    const netCents = creditResult?.netCents ?? priceCents;
-
-    if (!stripe) {
-      // STRIPE_SECRET_KEY not configured — block access; do NOT grant unlock.
-      // This path is unreachable in production where STRIPE_SECRET_KEY is set.
-      res.status(402).json({
-        unlocked: false,
-        stripe_required: true,
-        credit_applied_cents: creditAppliedCents,
-        amount_charged_cents: netCents,
-        amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
-        providerId,
-        message: "Payment required. STRIPE_SECRET_KEY must be configured to enable provider unlocks.",
-      });
-      return;
-    }
-
-    // Build redirect origin from the request host
-    const origin = `${req.protocol}://${req.get("host")}`;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            unit_amount: netCents,
-            product_data: { name: `Provider Unlock — ${providerName}` },
-          },
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        type: "provider_unlock",
-        provider_id: providerId,
-        member_id: profileId,
-        credit_id: creditResult?.credit.id ?? "",
-        credit_applied_cents: String(creditAppliedCents),
-      },
-      success_url: `${origin}/providers?unlock_session={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/providers`,
-    });
-
-    res.json({
-      unlocked: false,
-      checkout_url: session.url,
-      session_id: session.id,
-      used_credit: false,
-      credit_applied_cents: creditAppliedCents,
-      amount_charged_cents: netCents,
-      amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
-      providerId,
-      message: "Complete payment to unlock provider contact details.",
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    res.status(500).json({ error: message });
-  }
+  res.status(410).json({
+    error: "Per-provider unlocks are no longer available. Upgrade to Plus to access all provider contact details.",
+    upgrade_required: true,
+  });
 });
 
 /**
  * GET /api/providers/unlock-status
- * Called when the member returns from the Stripe Checkout hosted page.
- * Verifies the Stripe session, records the unlock, and (idempotently) marks
- * the credit as used.  Returns { unlocked: boolean }.
- *
- * Query: ?session_id=cs_xxx
+ * DEPRECATED — per-provider unlock status is no longer relevant.
+ * Provider access is now determined by subscription_status.
+ * Returns 410 Gone.
  */
 router.get("/providers/unlock-status", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Authentication required" });
-    return;
-  }
-  const profileId = req.user!.id;
-  const sessionId = typeof req.query.session_id === "string" ? req.query.session_id : null;
-
-  if (!sessionId) {
-    res.status(400).json({ error: "session_id query param is required" });
-    return;
-  }
-  if (!stripe) {
-    res.status(503).json({ error: "Stripe is not configured" });
-    return;
-  }
-
-  try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-    if (session.payment_status !== "paid") {
-      res.json({ unlocked: false, payment_status: session.payment_status });
-      return;
-    }
-
-    const { provider_id, credit_id, credit_applied_cents } = session.metadata ?? {};
-
-    if (!provider_id || session.metadata?.member_id !== profileId) {
-      res.status(403).json({ error: "Session does not belong to this member" });
-      return;
-    }
-
-    // Idempotently record the unlock
-    await db.insert(providerUnlocks).values({
-      id: randomUUID(),
-      memberId: profileId,
-      providerId: provider_id,
-      creditId: credit_id || null,
-      stripeSessionId: sessionId,
-      amountCharged: session.amount_total ?? 0,
-    }).onConflictDoNothing();
-
-    // Idempotently mark the credit as used (if one was reserved)
-    if (credit_id) {
-      await db
-        .update(memberCredits)
-        .set({ used: true, usedAt: new Date() })
-        .where(and(eq(memberCredits.id, credit_id), eq(memberCredits.used, false)));
-    }
-
-    res.json({
-      unlocked: true,
-      providerId: provider_id,
-      credit_applied_cents: Number(credit_applied_cents ?? 0),
-      amount_charged_cents: session.amount_total ?? 0,
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    res.status(500).json({ error: message });
-  }
+  res.status(410).json({
+    error: "Per-provider unlock status is no longer available. Provider access is determined by your Plus subscription.",
+    upgrade_required: true,
+  });
 });
 
 /**
@@ -639,33 +467,6 @@ router.post(
       if (event.type === "checkout.session.completed") {
         const session = event.data.object as Stripe.Checkout.Session;
         const sessionType = session.metadata?.type;
-
-        // ── Provider unlock confirmed by Stripe ──────────────────────────────
-        if (sessionType === "provider_unlock") {
-          if (session.payment_status !== "paid") {
-            res.json({ received: true });
-            return;
-          }
-          const { provider_id, member_id, credit_id } = session.metadata!;
-          if (provider_id && member_id) {
-            await db.insert(providerUnlocks).values({
-              id: randomUUID(),
-              memberId: member_id,
-              providerId: provider_id,
-              creditId: credit_id || null,
-              stripeSessionId: session.id,
-              amountCharged: session.amount_total ?? 0,
-            }).onConflictDoNothing();
-
-            // Idempotently mark referral credit as used — only after payment confirmed
-            if (credit_id) {
-              await db
-                .update(memberCredits)
-                .set({ used: true, usedAt: new Date() })
-                .where(and(eq(memberCredits.id, credit_id), eq(memberCredits.used, false)));
-            }
-          }
-        }
 
         // ── Member subscription confirmed by Stripe ──────────────────────────
         if (sessionType === "member_subscription") {

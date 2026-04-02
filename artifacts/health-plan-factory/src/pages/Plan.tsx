@@ -112,7 +112,7 @@ interface LmnContext {
   estimatedAnnualSavingsCents: number;
 }
 
-function ModalityCard({ item, rank, lmnContext, unusedCredits, nearbyProviderCount, zipCode }: { item: PlanItem; rank: number; lmnContext?: LmnContext; unusedCredits?: number; nearbyProviderCount?: number | null; zipCode?: string }) {
+function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, onUpgrade }: { item: PlanItem; rank: number; lmnContext?: LmnContext; nearbyProviderCount?: number | null; zipCode?: string; onUpgrade?: () => void }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -276,51 +276,42 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits, nearbyProviderCou
             </div>
           )}
 
-          {/* Provider CTA — locked */}
+          {/* Provider CTA — upgrade to Plus */}
           <div style={{
             padding: "1rem",
             borderRadius: 10,
-            border: unusedCredits && unusedCredits > 0
-              ? "1.5px solid rgba(224,32,64,0.35)"
-              : "1.5px dashed rgba(212,34,126,0.2)",
-            background: unusedCredits && unusedCredits > 0
-              ? "rgba(224,32,64,0.05)"
-              : "rgba(212,34,126,0.02)",
+            border: "1.5px dashed rgba(212,34,126,0.2)",
+            background: "rgba(212,34,126,0.02)",
             display: "flex",
             alignItems: "center",
             gap: "0.75rem",
           }}>
-            <span style={{ fontSize: "1.25rem" }}>{unusedCredits && unusedCredits > 0 ? "🎁" : "🔒"}</span>
+            <span style={{ fontSize: "1.25rem" }}>🔒</span>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", marginBottom: 2 }}>
-                See vetted providers near you
+                Upgrade to Plus to see matched providers
               </p>
-              {unusedCredits && unusedCredits > 0 ? (
-                <p style={{ fontSize: "0.72rem", color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
-                  1 referral credit applied — $3.00 discount
-                </p>
-              ) : (
-                <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                  Unlock for {item.modality.category === "medical" ? "$3" : item.modality.category === "telehealth" ? "$1" : "$2"} · HSA-eligible providers flagged
-                </p>
-              )}
+              <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                Plus members get real, matched local providers for every modality — $9.99/mo, no per-provider fees.
+              </p>
             </div>
-            <Link
-              to="/sign-up"
+            <button
+              onClick={onUpgrade}
               style={{
                 padding: "0.5rem 0.875rem",
                 borderRadius: 8,
-                background: unusedCredits && unusedCredits > 0 ? "var(--hpf-crimson)" : "var(--hpf-pink)",
+                background: "var(--hpf-pink)",
                 color: "white",
                 fontSize: "0.75rem",
                 fontWeight: 600,
-                textDecoration: "none",
+                border: "none",
+                cursor: "pointer",
                 fontFamily: "var(--app-font-sans)",
                 whiteSpace: "nowrap",
               }}
             >
-              {unusedCredits && unusedCredits > 0 ? "Unlock Free" : "Unlock"}
-            </Link>
+              Upgrade →
+            </button>
           </div>
 
           {/* NPI Registry CTA — shown only for modalities with NPI coverage */}
@@ -412,7 +403,6 @@ export default function Plan() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [intake, setIntake] = useState<IntakeData | null>(null);
   const [lmnEligibleIds, setLmnEligibleIds] = useState<Set<string>>(new Set());
-  const [unusedCreditsCents, setUnusedCreditsCents] = useState(0);
   const [providerCounts, setProviderCounts] = useState<Record<string, number | null>>({});
 
   // Share modal state
@@ -425,18 +415,40 @@ export default function Plan() {
   // PDF download state
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  // Fetch unused referral credits when authenticated
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    fetch(`${BASE}/api/credits/mine`, { credentials: "include" })
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (data && typeof data.unusedCreditsCents === "number") {
-          setUnusedCreditsCents(data.unusedCreditsCents);
-        }
-      })
-      .catch(() => {});
-  }, [isAuthenticated]);
+  // Plus checkout state
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutModal, setCheckoutModal] = useState<{ checkout_url?: string } | null>(null);
+
+  const handlePlusCheckout = async () => {
+    if (!isAuthenticated) {
+      navigate("/sign-up?plan=plus");
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/subscriptions/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const data = await res.json();
+      setCheckoutModal(data);
+    } catch {
+      // Fallback to pricing page if checkout fails
+      navigate("/pricing");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleConfirmCheckout = () => {
+    if (checkoutModal?.checkout_url) {
+      window.location.href = checkoutModal.checkout_url;
+    } else {
+      navigate("/pricing");
+      setCheckoutModal(null);
+    }
+  };
 
   // Fetch LMN-eligible modality IDs for personalized physician callout
   useEffect(() => {
@@ -1045,7 +1057,7 @@ export default function Plan() {
                   ),
                 };
               }
-              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} unusedCredits={unusedCreditsCents} nearbyProviderCount={providerCounts[item.modality.id] ?? null} zipCode={intake?.zipCode} />;
+              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} nearbyProviderCount={providerCounts[item.modality.id] ?? null} zipCode={intake?.zipCode} onUpgrade={handlePlusCheckout} />;
             })}
           </div>
         </div>
@@ -1147,7 +1159,7 @@ export default function Plan() {
             lineHeight: 1.2,
             marginBottom: "0.75rem",
           }}>
-            Find vetted providers,<br />unlock your full plan
+            Connect with real providers.<br />Upgrade to Plus.
           </h2>
           {Object.values(providerCounts).some(c => c !== null && c > 0) && (
             <p style={{
@@ -1160,23 +1172,6 @@ export default function Plan() {
               ✨ {Object.values(providerCounts).reduce<number>((acc, c) => acc + (c || 0), 0)} providers found near you for this plan
             </p>
           )}
-          {unusedCreditsCents > 0 ? (
-            <div style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              background: "rgba(224,32,64,0.2)",
-              border: "1px solid rgba(224,32,64,0.4)",
-              borderRadius: 8,
-              padding: "0.4rem 0.875rem",
-              marginBottom: "1rem",
-            }}>
-              <span style={{ fontSize: "0.85rem" }}>🎁</span>
-              <span style={{ fontSize: "0.75rem", color: "var(--crimson-light)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>
-                1 referral credit applied — ${(unusedCreditsCents / 100).toFixed(2)} discount
-              </span>
-            </div>
-          ) : null}
           <p style={{
             fontSize: "0.8rem",
             color: "rgba(255,255,255,0.55)",
@@ -1186,14 +1181,13 @@ export default function Plan() {
             maxWidth: 380,
             margin: "0 auto 1.5rem",
           }}>
-            {unusedCreditsCents > 0
-              ? "Your referral credit covers your first provider unlock — sign up to redeem it."
-              : "Save your plan, book appointments, and get AI accountability coaching — starting at $1 to unlock a provider list."}
+            Plus members see real matched local providers for every modality — phone, website, booking — no per-provider fees. $9.99/mo.
           </p>
 
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <Link
-              to="/sign-up"
+            <button
+              onClick={handlePlusCheckout}
+              disabled={checkoutLoading}
               style={{
                 padding: "0.875rem 1.75rem",
                 borderRadius: 10,
@@ -1201,12 +1195,14 @@ export default function Plan() {
                 color: "white",
                 fontWeight: 700,
                 fontSize: "0.9rem",
-                textDecoration: "none",
                 fontFamily: "var(--app-font-sans)",
+                border: "none",
+                cursor: checkoutLoading ? "wait" : "pointer",
+                opacity: checkoutLoading ? 0.7 : 1,
               }}
             >
-              See Providers
-            </Link>
+              {checkoutLoading ? "Loading…" : "Upgrade to Plus →"}
+            </button>
             <Link
               to="/sign-up"
               style={{
@@ -1224,6 +1220,46 @@ export default function Plan() {
               Save Plan
             </Link>
           </div>
+          {/* Checkout confirmation modal */}
+          {checkoutModal && (
+            <div
+              style={{
+                position: "fixed", inset: 0, zIndex: 50,
+                background: "rgba(44,40,37,0.55)", backdropFilter: "blur(4px)",
+                display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+              }}
+              onClick={() => setCheckoutModal(null)}
+            >
+              <div
+                style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 400, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--hpf-pink)", marginBottom: "0.5rem" }}>
+                  Upgrade to Plus
+                </h3>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: "0.5rem" }}>
+                  <strong>$9.99/mo</strong> — See real matched local providers for every modality in your plan. Phone, website, and booking info included.
+                </p>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", marginBottom: "1.25rem" }}>
+                  Cancel anytime. Referral credits apply as a first-month discount.
+                </p>
+                <div style={{ display: "flex", gap: "0.75rem" }}>
+                  <button
+                    onClick={() => setCheckoutModal(null)}
+                    style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmCheckout}
+                    style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-pink)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                  >
+                    Continue to checkout →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Disclaimer */}

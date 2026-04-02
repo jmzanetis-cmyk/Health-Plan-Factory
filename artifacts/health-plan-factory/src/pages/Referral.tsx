@@ -240,7 +240,7 @@ export default function Referral() {
 
   function shareVia(channel: "sms" | "email" | "whatsapp" | "twitter") {
     if (!referralLink) return;
-    const msg = `Join me on HealthPlanFactory — the personalized wellness platform that helps you find the right modalities for your goals and budget. Use my referral link for a free unlock credit: ${referralLink}`;
+    const msg = `Join me on HealthPlanFactory — the personalized wellness platform that helps you find the right modalities for your goals and budget. Use my referral link to earn a credit toward Plus: ${referralLink}`;
     const encodedMsg = encodeURIComponent(msg);
     const encodedLink = encodeURIComponent(referralLink);
     const urls: Record<string, string> = {
@@ -266,7 +266,7 @@ export default function Referral() {
           </h1>
         </div>
         <p className="text-sm" style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-secondary)" }}>
-          Share HealthPlanFactory with friends and earn a free modality unlock credit for every person who joins and builds their first plan. They get a free unlock credit too.
+          Share HealthPlanFactory with friends and earn a referral credit for every person who joins and builds their first plan. Credits are applied as a discount on your first month of Plus.
         </p>
       </div>
 
@@ -304,7 +304,7 @@ export default function Referral() {
               You have {data?.creditSummary.unusedCreditsFormatted} in referral credits
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Credits are automatically applied to your next modality unlock or plan upgrade.
+              Credits are automatically applied as a discount on your first month of Plus.
             </p>
           </div>
         </div>
@@ -319,7 +319,7 @@ export default function Referral() {
           {[
             { step: "1", text: "Share your unique referral link with friends, family, or colleagues." },
             { step: "2", text: "When they sign up and build their first wellness plan, the reward triggers." },
-            { step: "3", text: "You both receive a $3.00 modality unlock credit — enough to unlock your first app-based plan." },
+            { step: "3", text: "You both receive a referral credit — automatically applied as a discount on your first month of Plus." },
           ].map((item) => (
             <div key={item.step} className="flex items-start gap-3">
               <div

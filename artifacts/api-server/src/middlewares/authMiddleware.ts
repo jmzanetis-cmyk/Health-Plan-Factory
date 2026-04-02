@@ -15,7 +15,9 @@ import {
 
 declare global {
   namespace Express {
-    interface User extends AuthUser {}
+    interface User extends AuthUser {
+      subscriptionStatus?: string | null;
+    }
 
     interface Request {
       isAuthenticated(): this is AuthedRequest;
@@ -85,19 +87,23 @@ export async function authMiddleware(
     return;
   }
 
-  // Hydrate role from DB so it's always current (covers role changes without re-login)
+  // Hydrate role and subscriptionStatus from DB so they're always current
   const userId = refreshed.user.id;
   let role: AuthUser["role"] = refreshed.user.role ?? "member";
+  let subscriptionStatus: string | null = null;
   try {
     const [profile] = await db
-      .select({ role: profiles.role })
+      .select({ role: profiles.role, subscriptionStatus: profiles.subscriptionStatus })
       .from(profiles)
       .where(eq(profiles.id, userId));
-    if (profile) role = profile.role as AuthUser["role"];
+    if (profile) {
+      role = profile.role as AuthUser["role"];
+      subscriptionStatus = profile.subscriptionStatus ?? null;
+    }
   } catch {
     // Use cached role if DB is unavailable
   }
 
-  req.user = { ...refreshed.user, role };
+  req.user = { ...refreshed.user, role, subscriptionStatus };
   next();
 }
