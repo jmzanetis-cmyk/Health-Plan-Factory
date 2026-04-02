@@ -65,8 +65,8 @@ export default function Modalities() {
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://healthplanfactory.com/" },
-          { "@type": "ListItem", "position": 2, "name": "Modalities", "item": "https://healthplanfactory.com/modalities" },
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": { "@id": "https://healthplanfactory.com/" } },
+          { "@type": "ListItem", "position": 2, "name": "Modalities", "item": { "@id": "https://healthplanfactory.com/modalities" } },
         ],
       },
       {
