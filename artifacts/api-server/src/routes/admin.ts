@@ -674,22 +674,22 @@ async function getTopPlanItems(profileId: string) {
 
 /**
  * Core re-engagement send logic for a single member.
- * Returns 'sent' | 'skipped' | 'no-plan' | 'no-email'.
- *
- * NOTE: 'sent' reflects a successful Resend API call attempt. `sendEmail()` is
- * fire-and-forget (void) and handles provider errors internally by logging a
- * 'failed' row in notification_log. To check actual delivery status post-send,
- * query notification_log for the member's most recent re-engagement-dayN row.
+ * Returns 'sent' | 'failed' | 'skipped' | 'no-plan' | 'no-email'.
+ * 'sent'    — Resend accepted the message and notification_log shows status=sent.
+ * 'failed'  — Resend call failed; notification_log shows status=failed.
+ * 'skipped' — Already sent this type, or member has opted out of email.
+ * 'no-plan' — Member has no plan yet.
+ * 'no-email'— Member's profile has no email address.
  *
  * NOTE: This helper does NOT check Plus/Employer subscription status.
- * The admin single-send endpoint intentionally uses it as an override to allow
+ * The admin single-send endpoint intentionally omits this check to allow
  * admins to test any member. The bulk endpoint applies the subscription filter
  * before calling this function.
  */
 async function sendReEngagementEmail(
   memberId: string,
   day: 3 | 7,
-): Promise<"sent" | "skipped" | "no-plan" | "no-email"> {
+): Promise<"sent" | "failed" | "skipped" | "no-plan" | "no-email"> {
   const notifType = day === 3 ? ("re-engagement-day3" as const) : ("re-engagement-day7" as const);
   const appUrl = process.env.APP_URL ?? BASE_URL;
 
@@ -754,7 +754,23 @@ async function sendReEngagementEmail(
   }
 
   await sendEmail(profile.id, profile.email, subject, html, notifType);
-  return "sent";
+
+  // Verify the actual delivery outcome by reading the notification_log entry
+  // that sendEmail wrote. sendEmail awaits both the API call and the log write,
+  // so the row is committed before we get here.
+  const [logRow] = await db
+    .select({ status: notificationLog.status })
+    .from(notificationLog)
+    .where(
+      and(
+        eq(notificationLog.profileId, memberId),
+        eq(notificationLog.type, notifType),
+      ),
+    )
+    .orderBy(desc(notificationLog.createdAt))
+    .limit(1);
+
+  return logRow?.status === "sent" ? "sent" : "failed";
 }
 
 /**
@@ -855,6 +871,7 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
     });
 
     let attempted = 0;
+    let failed = 0;
     let skipped = 0;
     let errors = 0;
 
@@ -862,6 +879,7 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
       try {
         const result = await sendReEngagementEmail(memberId, day);
         if (result === "sent") attempted++;
+        else if (result === "failed") failed++;
         else skipped++;
       } catch (e) {
         console.error(`[re-engagement] Failed for member ${memberId}:`, e);
@@ -869,7 +887,7 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
       }
     }
 
-    res.json({ attempted, skipped, errors, total: nonPlusIds.length, day });
+    res.json({ attempted, failed, skipped, errors, total: nonPlusIds.length, day });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

@@ -329,7 +329,7 @@ function TestDigestSection() {
   );
 }
 
-type BulkResult = { attempted: number; skipped: number; errors: number; total: number; day: number } | null;
+type BulkResult = { attempted: number; failed: number; skipped: number; errors: number; total: number; day: number } | null;
 type SingleResult = { result: "sent" | "skipped" | "no-plan" | "no-email"; memberId: string; day: number } | null;
 
 function ReEngagementSection() {
@@ -481,7 +481,7 @@ function ReEngagementSection() {
               <CheckCircle2 size={14} /> Bulk run complete — Day {bulkResult.day}
             </div>
             <div style={{ color: "var(--text-secondary)" }}>
-              {bulkResult.attempted} attempted · {bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
+              {bulkResult.attempted} sent · {bulkResult.failed > 0 ? `${bulkResult.failed} provider errors · ` : ""}{bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
             </div>
           </div>
         )}
