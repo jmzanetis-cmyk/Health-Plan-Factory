@@ -830,11 +830,12 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
 
     const candidateIds = eligibleRows.map((r) => r.profileId).filter(Boolean) as string[];
 
-    // Filter out Plus/Employer subscribers in-memory
+    // Filter out Plus/Employer subscribers — only fetch the candidate profile rows
     const allProfiles = candidateIds.length > 0
       ? await db
           .select({ id: profiles.id, subscriptionStatus: profiles.subscriptionStatus })
           .from(profiles)
+          .where(sql`${profiles.id} = ANY(${candidateIds})`)
       : [];
 
     const profileMap = new Map(allProfiles.map((p) => [p.id, p]));
