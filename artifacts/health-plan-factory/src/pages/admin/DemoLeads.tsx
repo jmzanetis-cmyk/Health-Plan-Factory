@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronDown, Mail, Building2, Users, MessageSquare, StickyNote, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Mail, Loader2 } from "lucide-react";
 import { AdminNav } from "./Dashboard";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -27,7 +27,7 @@ const STATUS_LABELS: Record<DemoStatus, string> = {
 };
 
 const STATUS_COLORS: Record<DemoStatus, { bg: string; text: string; border: string }> = {
-  new: { bg: "rgba(212,34,126,0.08)", text: "#D4227E", border: "rgba(212,34,126,0.2)" },
+  new: { bg: "rgba(212,34,126,0.1)", text: "#D4227E", border: "rgba(212,34,126,0.25)" },
   contacted: { bg: "rgba(59,130,246,0.08)", text: "#2563eb", border: "rgba(59,130,246,0.2)" },
   qualified: { bg: "rgba(22,163,74,0.08)", text: "#15803d", border: "rgba(22,163,74,0.2)" },
   closed: { bg: "rgba(107,114,128,0.08)", text: "#6b7280", border: "rgba(107,114,128,0.2)" },
@@ -41,36 +41,15 @@ const ALL_FILTERS: Array<{ value: string; label: string }> = [
   { value: "closed", label: "Closed" },
 ];
 
-function StatusBadge({ status }: { status: string }) {
-  const colors = STATUS_COLORS[status as DemoStatus] ?? { bg: "rgba(107,114,128,0.08)", text: "#6b7280", border: "rgba(107,114,128,0.2)" };
-  return (
-    <span style={{
-      display: "inline-block",
-      padding: "2px 10px",
-      borderRadius: 20,
-      fontSize: "0.7rem",
-      fontWeight: 700,
-      textTransform: "uppercase",
-      letterSpacing: "0.06em",
-      background: colors.bg,
-      color: colors.text,
-      border: `1.5px solid ${colors.border}`,
-      fontFamily: "var(--app-font-sans)",
-    }}>
-      {STATUS_LABELS[status as DemoStatus] ?? status}
-    </span>
-  );
-}
+function StatusSelect({ lead, onUpdate, filter }: {
+  lead: DemoLead;
+  onUpdate: (updated: DemoLead, removedFromFilter: boolean) => void;
+  filter: string;
+}) {
+  const [busy, setBusy] = useState(false);
 
-function LeadRow({ lead, onUpdate }: { lead: DemoLead; onUpdate: (updated: DemoLead) => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [notes, setNotes] = useState(lead.notes ?? "");
-  const [notesDirty, setNotesDirty] = useState(false);
-  const [statusUpdating, setStatusUpdating] = useState(false);
-
-  const updateStatus = async (newStatus: DemoStatus) => {
-    setStatusUpdating(true);
+  const handleChange = async (newStatus: DemoStatus) => {
+    setBusy(true);
     try {
       const res = await fetch(`${BASE}/api/admin/demo-requests/${lead.id}`, {
         method: "PATCH",
@@ -80,14 +59,58 @@ function LeadRow({ lead, onUpdate }: { lead: DemoLead; onUpdate: (updated: DemoL
       });
       if (res.ok) {
         const updated: DemoLead = await res.json();
-        onUpdate(updated);
+        const removedFromFilter = Boolean(filter && filter !== newStatus);
+        onUpdate(updated, removedFromFilter);
       }
     } finally {
-      setStatusUpdating(false);
+      setBusy(false);
     }
   };
 
-  const saveNotes = async () => {
+  const colors = STATUS_COLORS[lead.status as DemoStatus] ?? STATUS_COLORS.closed;
+
+  return (
+    <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+      <select
+        value={lead.status}
+        onChange={(e) => handleChange(e.target.value as DemoStatus)}
+        disabled={busy}
+        style={{
+          appearance: "none",
+          padding: "4px 28px 4px 10px",
+          borderRadius: 20,
+          border: `1.5px solid ${colors.border}`,
+          background: colors.bg,
+          color: colors.text,
+          fontFamily: "var(--app-font-sans)",
+          fontSize: "0.72rem",
+          fontWeight: 700,
+          cursor: busy ? "not-allowed" : "pointer",
+          outline: "none",
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          opacity: busy ? 0.6 : 1,
+        }}
+      >
+        {(["new", "contacted", "qualified", "closed"] as DemoStatus[]).map((s) => (
+          <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+        ))}
+      </select>
+      {busy ? (
+        <Loader2 size={10} className="animate-spin" style={{ position: "absolute", right: 8, color: colors.text, pointerEvents: "none" }} />
+      ) : (
+        <ChevronDown size={10} style={{ position: "absolute", right: 8, color: colors.text, pointerEvents: "none" }} />
+      )}
+    </div>
+  );
+}
+
+function NotesCell({ lead, onUpdate }: { lead: DemoLead; onUpdate: (updated: DemoLead) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [notes, setNotes] = useState(lead.notes ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
     setSaving(true);
     try {
       const res = await fetch(`${BASE}/api/admin/demo-requests/${lead.id}`, {
@@ -99,238 +122,98 @@ function LeadRow({ lead, onUpdate }: { lead: DemoLead; onUpdate: (updated: DemoL
       if (res.ok) {
         const updated: DemoLead = await res.json();
         onUpdate(updated);
-        setNotesDirty(false);
+        setEditing(false);
       }
     } finally {
       setSaving(false);
     }
   };
 
-  const st = lead.status as DemoStatus;
-  const statusColors = STATUS_COLORS[st] ?? STATUS_COLORS.closed;
-
-  return (
-    <div style={{
-      background: "white",
-      borderRadius: 12,
-      border: "1.5px solid rgba(212,34,126,0.08)",
-      overflow: "hidden",
-      transition: "box-shadow 0.15s",
-    }}>
-      {/* Row header */}
+  if (!editing) {
+    return (
       <button
-        onClick={() => setExpanded((e) => !e)}
+        onClick={() => setEditing(true)}
+        title={lead.notes || "Click to add notes"}
         style={{
-          width: "100%",
           background: "none",
           border: "none",
           cursor: "pointer",
-          padding: "14px 18px",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.75rem",
+          padding: "2px 4px",
+          borderRadius: 4,
+          maxWidth: 160,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          display: "block",
           textAlign: "left",
+          color: lead.notes ? "var(--text-primary)" : "var(--text-muted)",
+          fontFamily: "var(--app-font-sans)",
+          fontSize: "0.78rem",
+          lineHeight: "1.4",
         }}
       >
-        {/* Status badge */}
-        <span style={{
-          flexShrink: 0,
-          display: "inline-flex",
-          alignItems: "center",
-          padding: "2px 10px",
-          borderRadius: 20,
-          fontSize: "0.68rem",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.06em",
-          background: statusColors.bg,
-          color: statusColors.text,
-          border: `1.5px solid ${statusColors.border}`,
-          fontFamily: "var(--app-font-sans)",
-          minWidth: 76,
-          justifyContent: "center",
-        }}>
-          {STATUS_LABELS[st] ?? st}
-        </span>
-
-        {/* Company + contact */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{
-            fontFamily: "var(--app-font-sans)",
-            fontWeight: 700,
-            fontSize: "0.9rem",
-            color: "var(--hpf-pink)",
-            margin: 0,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}>
-            {lead.company}
-            <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: "0.4rem", fontSize: "0.82rem" }}>
-              {lead.companySize}
-            </span>
-          </p>
-          <p style={{
-            fontFamily: "var(--app-font-sans)",
-            fontSize: "0.74rem",
-            color: "var(--text-muted)",
-            margin: 0,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}>
-            {lead.name} · {lead.email} · {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-          </p>
-        </div>
-
-        <ChevronDown
-          size={16}
-          style={{
-            color: "var(--text-muted)",
-            transform: expanded ? "rotate(180deg)" : "none",
-            transition: "transform 0.2s",
-            flexShrink: 0,
-          }}
-        />
+        {lead.notes || <span style={{ fontStyle: "italic", opacity: 0.6 }}>Add note…</span>}
       </button>
+    );
+  }
 
-      {/* Expanded details */}
-      {expanded && (
-        <div style={{ padding: "0 18px 18px", borderTop: "1px solid rgba(212,34,126,0.07)" }}>
-          {/* Quick info grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.5rem", margin: "14px 0" }}>
-            <div style={{ background: "rgba(212,34,126,0.04)", borderRadius: 8, padding: "10px 14px" }}>
-              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Contact</p>
-              <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-primary)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>{lead.name}</p>
-            </div>
-            <div style={{ background: "rgba(212,34,126,0.04)", borderRadius: 8, padding: "10px 14px" }}>
-              <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Team size</p>
-              <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-primary)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>{lead.companySize}</p>
-            </div>
-            {lead.phone && (
-              <div style={{ background: "rgba(212,34,126,0.04)", borderRadius: 8, padding: "10px 14px" }}>
-                <p style={{ margin: "0 0 2px", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Phone</p>
-                <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-primary)", fontFamily: "var(--app-font-sans)", fontWeight: 600 }}>{lead.phone}</p>
-              </div>
-            )}
-          </div>
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 180 }}>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={3}
+        autoFocus
+        style={{
+          border: "1.5px solid rgba(212,34,126,0.2)",
+          borderRadius: 6,
+          padding: "6px 8px",
+          fontFamily: "var(--app-font-sans)",
+          fontSize: "0.76rem",
+          color: "var(--text-primary)",
+          resize: "vertical",
+          outline: "none",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      />
+      <div style={{ display: "flex", gap: 4 }}>
+        <button
+          onClick={save}
+          disabled={saving}
+          style={{ padding: "3px 10px", borderRadius: 5, background: "var(--hpf-pink)", color: "white", border: "none", fontFamily: "var(--app-font-sans)", fontSize: "0.72rem", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}
+        >
+          {saving ? "…" : "Save"}
+        </button>
+        <button
+          onClick={() => { setEditing(false); setNotes(lead.notes ?? ""); }}
+          style={{ padding: "3px 10px", borderRadius: 5, background: "white", color: "var(--text-muted)", border: "1px solid rgba(0,0,0,0.1)", fontFamily: "var(--app-font-sans)", fontSize: "0.72rem", cursor: "pointer" }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
 
-          {/* Message */}
-          {lead.message && (
-            <div style={{ marginBottom: 14 }}>
-              <p style={{ margin: "0 0 6px", fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-                Their message
-              </p>
-              <div style={{ background: "#f8f6f1", borderLeft: "3px solid rgba(212,34,126,0.3)", borderRadius: "0 8px 8px 0", padding: "10px 14px" }}>
-                <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-primary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                  {lead.message}
-                </p>
-              </div>
-            </div>
-          )}
+function MessageCell({ message }: { message: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!message) return <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.76rem", fontFamily: "var(--app-font-sans)" }}>—</span>;
 
-          {/* Status update */}
-          <div style={{ marginBottom: 14 }}>
-            <p style={{ margin: "0 0 6px", fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-              Update status
-            </p>
-            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
-              {(["new", "contacted", "qualified", "closed"] as DemoStatus[]).map((s) => (
-                <button
-                  key={s}
-                  disabled={lead.status === s || statusUpdating}
-                  onClick={() => updateStatus(s)}
-                  style={{
-                    padding: "5px 14px",
-                    borderRadius: 8,
-                    border: `1.5px solid ${STATUS_COLORS[s].border}`,
-                    background: lead.status === s ? STATUS_COLORS[s].bg : "white",
-                    color: STATUS_COLORS[s].text,
-                    fontFamily: "var(--app-font-sans)",
-                    fontSize: "0.78rem",
-                    fontWeight: 600,
-                    cursor: lead.status === s || statusUpdating ? "default" : "pointer",
-                    opacity: statusUpdating ? 0.6 : 1,
-                    transition: "background 0.15s",
-                  }}
-                >
-                  {STATUS_LABELS[s]}
-                </button>
-              ))}
-              {statusUpdating && <Loader2 size={14} className="animate-spin" style={{ color: "var(--hpf-pink)" }} />}
-            </div>
-          </div>
+  const short = message.length > 80 ? message.slice(0, 80) + "…" : message;
 
-          {/* Internal notes */}
-          <div style={{ marginBottom: 14 }}>
-            <p style={{ margin: "0 0 6px", fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-              Internal notes <span style={{ fontWeight: 400, color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>(private)</span>
-            </p>
-            <textarea
-              value={notes}
-              onChange={(e) => { setNotes(e.target.value); setNotesDirty(e.target.value !== (lead.notes ?? "")); }}
-              rows={3}
-              placeholder="Add internal notes about this lead…"
-              style={{
-                width: "100%",
-                border: "1.5px solid rgba(212,34,126,0.15)",
-                borderRadius: 8,
-                padding: "10px 12px",
-                fontFamily: "var(--app-font-sans)",
-                fontSize: "0.82rem",
-                color: "var(--text-primary)",
-                background: "white",
-                resize: "vertical",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            />
-            {notesDirty && (
-              <button
-                onClick={saveNotes}
-                disabled={saving}
-                style={{
-                  marginTop: 6,
-                  padding: "6px 16px",
-                  background: saving ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 8,
-                  fontFamily: "var(--app-font-sans)",
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  cursor: saving ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                {saving && <Loader2 size={12} className="animate-spin" />}
-                Save notes
-              </button>
-            )}
-          </div>
-
-          {/* Action buttons */}
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <a
-              href={`mailto:${lead.email}`}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: "0.3rem",
-                padding: "5px 14px", borderRadius: 8,
-                background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)",
-                fontSize: "0.78rem", fontWeight: 600,
-                fontFamily: "var(--app-font-sans)", textDecoration: "none",
-                border: "1.5px solid rgba(212,34,126,0.12)",
-              }}
-            >
-              <Mail size={12} /> Email {lead.name.split(" ")[0]}
-            </a>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", padding: "5px 14px", borderRadius: 8, background: "rgba(26,42,58,0.04)", color: "var(--hpf-navy)", fontSize: "0.78rem", fontFamily: "var(--app-font-sans)", border: "1.5px solid rgba(26,42,58,0.1)" }}>
-              <Building2 size={12} /> {lead.company}
-            </span>
-          </div>
-        </div>
+  return (
+    <div>
+      <p style={{ margin: 0, fontFamily: "var(--app-font-sans)", fontSize: "0.78rem", color: "var(--text-primary)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+        {expanded ? message : short}
+      </p>
+      {message.length > 80 && (
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", fontSize: "0.72rem", fontWeight: 600, padding: "2px 0", display: "flex", alignItems: "center", gap: 2 }}
+        >
+          {expanded ? <><ChevronUp size={11} /> Show less</> : <><ChevronDown size={11} /> Show more</>}
+        </button>
       )}
     </div>
   );
@@ -356,7 +239,6 @@ export default function DemoLeads() {
     }
   }, []);
 
-  // Also fetch "new" count for the badge
   const fetchNewCount = useCallback(async () => {
     try {
       const res = await fetch(`${BASE}/api/admin/demo-requests?status=new`, { credentials: "include" });
@@ -372,19 +254,50 @@ export default function DemoLeads() {
     fetchNewCount();
   }, [filter, fetchLeads, fetchNewCount]);
 
-  const handleUpdate = (updated: DemoLead) => {
-    setLeads((prev) => prev.map((l) => l.id === updated.id ? updated : l));
-    // Refresh new count after status update
+  const handleStatusUpdate = (updated: DemoLead, removedFromFilter: boolean) => {
+    if (removedFromFilter) {
+      // Remove the row from filtered view since it no longer matches
+      setLeads((prev) => prev.filter((l) => l.id !== updated.id));
+    } else {
+      setLeads((prev) => prev.map((l) => l.id === updated.id ? updated : l));
+    }
     fetchNewCount();
+  };
+
+  const handleNotesUpdate = (updated: DemoLead) => {
+    setLeads((prev) => prev.map((l) => l.id === updated.id ? updated : l));
+  };
+
+  const cellStyle: React.CSSProperties = {
+    padding: "12px 14px",
+    borderBottom: "1px solid rgba(212,34,126,0.06)",
+    verticalAlign: "top",
+    fontFamily: "var(--app-font-sans)",
+    fontSize: "0.82rem",
+    color: "var(--text-primary)",
+  };
+
+  const headerStyle: React.CSSProperties = {
+    padding: "10px 14px",
+    fontFamily: "var(--app-font-sans)",
+    fontSize: "0.68rem",
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: "var(--text-muted)",
+    background: "rgba(212,34,126,0.03)",
+    borderBottom: "1.5px solid rgba(212,34,126,0.1)",
+    textAlign: "left",
+    whiteSpace: "nowrap",
   };
 
   return (
     <div className="min-h-screen" style={{ background: "var(--warm-white)", padding: "32px 24px" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <AdminNav active="/admin/demo-requests" />
 
         {/* Header */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 20 }}>
           <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.6rem", fontWeight: 700, color: "var(--hpf-pink)", margin: "0 0 4px" }}>
             Demo Lead Pipeline
           </h1>
@@ -422,7 +335,7 @@ export default function DemoLeads() {
           ))}
         </div>
 
-        {/* Leads list */}
+        {/* Table */}
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
             <Loader2 size={28} className="animate-spin" style={{ color: "var(--hpf-pink)" }} />
@@ -432,10 +345,70 @@ export default function DemoLeads() {
             No demo leads found{filter ? ` with status "${filter}"` : ""}.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-            {leads.map((lead) => (
-              <LeadRow key={lead.id} lead={lead} onUpdate={handleUpdate} />
-            ))}
+          <div style={{ background: "white", borderRadius: 14, border: "1.5px solid rgba(212,34,126,0.1)", overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={headerStyle}>Company</th>
+                    <th style={headerStyle}>Contact</th>
+                    <th style={headerStyle}>Email</th>
+                    <th style={headerStyle}>Team size</th>
+                    <th style={{ ...headerStyle, minWidth: 160 }}>Message</th>
+                    <th style={headerStyle}>Status</th>
+                    <th style={{ ...headerStyle, minWidth: 180 }}>Notes</th>
+                    <th style={headerStyle}>Date</th>
+                    <th style={headerStyle}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leads.map((lead, idx) => (
+                    <tr
+                      key={lead.id}
+                      style={{ background: idx % 2 === 0 ? "white" : "rgba(212,34,126,0.015)" }}
+                    >
+                      <td style={{ ...cellStyle, fontWeight: 700, color: "var(--hpf-pink)", whiteSpace: "nowrap" }}>
+                        {lead.company}
+                      </td>
+                      <td style={{ ...cellStyle, whiteSpace: "nowrap" }}>{lead.name}</td>
+                      <td style={{ ...cellStyle, whiteSpace: "nowrap" }}>
+                        <a href={`mailto:${lead.email}`} style={{ color: "var(--hpf-pink)", textDecoration: "none", fontSize: "0.78rem", fontFamily: "var(--app-font-sans)" }}>
+                          {lead.email}
+                        </a>
+                      </td>
+                      <td style={{ ...cellStyle, whiteSpace: "nowrap" }}>{lead.companySize}</td>
+                      <td style={{ ...cellStyle, maxWidth: 220 }}>
+                        <MessageCell message={lead.message} />
+                      </td>
+                      <td style={{ ...cellStyle, whiteSpace: "nowrap" }}>
+                        <StatusSelect lead={lead} onUpdate={handleStatusUpdate} filter={filter} />
+                      </td>
+                      <td style={{ ...cellStyle }}>
+                        <NotesCell lead={lead} onUpdate={handleNotesUpdate} />
+                      </td>
+                      <td style={{ ...cellStyle, whiteSpace: "nowrap", fontSize: "0.74rem", color: "var(--text-muted)" }}>
+                        {new Date(lead.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </td>
+                      <td style={{ ...cellStyle, whiteSpace: "nowrap" }}>
+                        <a
+                          href={`mailto:${lead.email}`}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 4,
+                            padding: "4px 10px", borderRadius: 6,
+                            background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)",
+                            fontSize: "0.74rem", fontWeight: 600,
+                            fontFamily: "var(--app-font-sans)", textDecoration: "none",
+                            border: "1.5px solid rgba(212,34,126,0.12)",
+                          }}
+                        >
+                          <Mail size={11} /> Email
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
