@@ -31,8 +31,12 @@ const RESEND_KEY = process.env.RESEND_API_KEY;
 const RESEND_TEST_SINK = "delivered@resend.dev";
 const RESEND_FROM = "Health Plan Factory <onboarding@resend.dev>";
 
-// Skip entire suite if RESEND_API_KEY is not set
-const describeIfConfigured = RESEND_KEY ? describe : describe.skip;
+// Skip entire suite unless both RESEND_API_KEY and RUN_RESEND_SMOKE=true are set.
+// This prevents accidental outbound API calls in CI environments that have the
+// key but do not intend to make real network requests during a test run.
+const describeIfConfigured = (RESEND_KEY && process.env.RUN_RESEND_SMOKE === "true")
+  ? describe
+  : describe.skip;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
