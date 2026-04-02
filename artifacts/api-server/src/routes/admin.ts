@@ -791,23 +791,35 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
     const notifType = day === 3 ? ("re-engagement-day3" as const) : ("re-engagement-day7" as const);
     const cutoff = new Date(Date.now() - day * 24 * 60 * 60 * 1000);
 
-    // Find all members who:
-    // 1. Have a plan created >= `day` days ago
-    // 2. Have no active Plus subscription
-    // 3. Have not already received this re-engagement type
-    const eligiblePlans = await db
-      .select({ profileId: plans.profileId })
+    // Build a subquery that finds each member's LATEST plan creation timestamp.
+    // Only members whose *latest* plan was created >= `day` days ago are eligible.
+    // This prevents targeting a member who recently rebuilt their plan.
+    const latestPlanPerMember = db
+      .select({
+        profileId: plans.profileId,
+        latestAt: sql<Date>`max(${plans.createdAt})`.as("latest_at"),
+      })
       .from(plans)
+      .groupBy(plans.profileId)
+      .as("latest_plan_per_member");
+
+    // Find all eligible profileIds:
+    // 1. Latest plan was created >= `day` days ago
+    // 2. No prior re-engagement notification of this type (deduplication)
+    // 3. Subscription filter applied in-memory below
+    const eligibleRows = await db
+      .select({ profileId: latestPlanPerMember.profileId })
+      .from(latestPlanPerMember)
       .where(
         and(
-          lte(plans.createdAt, cutoff),
+          lte(latestPlanPerMember.latestAt, cutoff),
           notExists(
             db
               .select({ id: notificationLog.id })
               .from(notificationLog)
               .where(
                 and(
-                  eq(notificationLog.profileId, sql`${plans.profileId}`),
+                  eq(notificationLog.profileId, latestPlanPerMember.profileId),
                   eq(notificationLog.type, notifType),
                   eq(notificationLog.status, "sent"),
                 ),
@@ -816,18 +828,17 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
         ),
       );
 
-    // Deduplicate profileIds
-    const uniqueProfileIds = [...new Set(eligiblePlans.map((p) => p.profileId).filter(Boolean) as string[])];
+    const candidateIds = eligibleRows.map((r) => r.profileId).filter(Boolean) as string[];
 
-    // Fetch all profiles in batch to filter out Plus/Employer subscribers
-    const allProfiles = uniqueProfileIds.length > 0
+    // Filter out Plus/Employer subscribers in-memory
+    const allProfiles = candidateIds.length > 0
       ? await db
           .select({ id: profiles.id, subscriptionStatus: profiles.subscriptionStatus })
           .from(profiles)
       : [];
 
     const profileMap = new Map(allProfiles.map((p) => [p.id, p]));
-    const nonPlusIds = uniqueProfileIds.filter((id) => {
+    const nonPlusIds = candidateIds.filter((id) => {
       const p = profileMap.get(id);
       return p && p.subscriptionStatus !== "plus" && p.subscriptionStatus !== "employer";
     });
