@@ -517,7 +517,7 @@ export default function Dashboard() {
               {earnedMilestones.map((m) => (
                 <Link
                   key={m.id}
-                  to="/referral"
+                  to={`/referral?milestone=${m.id}`}
                   className="no-underline inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-opacity hover:opacity-80"
                   style={{ background: "rgba(212,34,126,0.08)", color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(212,34,126,0.12)" }}
                 >

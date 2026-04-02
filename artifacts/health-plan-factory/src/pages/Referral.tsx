@@ -146,6 +146,7 @@ export default function Referral() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteNote, setInviteNote] = useState("");
   const [inviteSending, setInviteSending] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
 
   // Celebration banner — shown when ?milestone=<id> is in the URL OR a newly-earned milestone is returned by the API
   const celebrationMilestoneIdParam = searchParams.get("milestone");
@@ -222,9 +223,10 @@ export default function Referral() {
         }),
       });
       if (res.ok) {
-        toast({ title: "Invite sent!", description: `Your referral invite was sent to ${trimmed}.` });
+        setInviteSuccess(trimmed);
         setInviteEmail("");
         setInviteNote("");
+        setTimeout(() => setInviteSuccess(null), 6000);
       } else {
         const err = await res.json().catch(() => ({}));
         toast({ title: "Failed to send", description: err?.error ?? "Please try again.", variant: "destructive" });
@@ -489,6 +491,25 @@ export default function Referral() {
               }}
             />
           </form>
+          {inviteSuccess && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "12px 16px",
+                borderRadius: 10,
+                background: "rgba(125,181,92,0.08)",
+                border: "1.5px solid rgba(125,181,92,0.3)",
+                marginTop: 4,
+              }}
+            >
+              <Check size={16} style={{ color: sage, flexShrink: 0 }} />
+              <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, margin: 0, fontWeight: 600 }}>
+                Invite sent to <span style={{ textDecoration: "underline" }}>{inviteSuccess}</span>! They'll receive your personalized invitation shortly.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

@@ -157,7 +157,7 @@ async function maybeAwardMilestone(referrerId: string): Promise<MilestoneId | nu
         .limit(1);
 
       if (referrer?.email && newMilestone) {
-        const dashboardUrl = `${BASE_URL}/referral`;
+        const dashboardUrl = `${BASE_URL}/referral?milestone=${newMilestone.id}`;
         const bonusFormatted = newMilestone.bonusCents > 0
           ? `$${(newMilestone.bonusCents / 100).toFixed(2)}`
           : "$3.00"; // base reward already credited
