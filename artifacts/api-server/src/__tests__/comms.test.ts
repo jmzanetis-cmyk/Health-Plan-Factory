@@ -112,24 +112,27 @@ describe("sendEmail — notification_log writes", () => {
   });
 });
 
-describe("sendEmail — RESEND_API_KEY absent guard", () => {
+describe("sendEmail — failure recorded in notification_log (not silently dropped)", () => {
   let profileId: string;
-  let originalKey: string | undefined;
 
   beforeAll(async () => {
-    originalKey = process.env.RESEND_API_KEY;
     profileId = await createTestProfile();
   });
 
   afterAll(async () => {
-    process.env.RESEND_API_KEY = originalKey;
     await cleanup([profileId]);
   });
 
-  it("writes a `failed` log entry (not a silent drop) when key is absent at module level", async () => {
-    // The comms module is singleton-initialised so we test the DB logging path
-    // directly via the processQueuedNotifications path where resendClient is null.
-    // We insert a queued entry manually and run the processor with no Resend configured.
+  beforeEach(() => {
+    mockResendSend.mockReset();
+  });
+
+  it("processQueuedNotifications never leaves an entry in queued state after an API error", async () => {
+    // The comms module singleton initialises resendClient at import time.
+    // We verify the failure-recording path by inserting a queued entry and
+    // making the mocked Resend throw, then confirming status changes from queued.
+    mockResendSend.mockRejectedValueOnce(new Error("Simulated API error"));
+
     const logId = randomUUID();
     await db.insert(notificationLog).values({
       id: logId,
@@ -141,9 +144,6 @@ describe("sendEmail — RESEND_API_KEY absent guard", () => {
       metadata: { to: "test@example.com", subject: "Magic Link", bodyHtml: "<p>Click here</p>" },
     });
 
-    // Mock resendClient absent — simulate by making send throw a specific error
-    mockResendSend.mockRejectedValueOnce(new Error("No Resend client"));
-
     const { processQueuedNotifications } = await import("../lib/comms");
     await processQueuedNotifications(new Date());
 
@@ -152,9 +152,10 @@ describe("sendEmail — RESEND_API_KEY absent guard", () => {
       .from(notificationLog)
       .where(eq(notificationLog.id, logId));
 
-    // Should be resolved (either sent or failed), never remain queued
+    // Must never remain queued — must be resolved to sent or failed
     expect(updated.status).not.toBe("queued");
-    // cleanup
+    expect(updated.status).toBe("failed");
+
     await db.delete(notificationLog).where(eq(notificationLog.id, logId));
   });
 });
@@ -268,5 +269,82 @@ describe("processQueuedNotifications — batch dispatch", () => {
 
     expect(updated.status).toBe("failed");
     expect((updated.metadata as Record<string, unknown>).error).toMatch(/SMTP timeout/);
+  });
+});
+
+describe("sendNotification — respects communicationPrefs", () => {
+  let optedInId: string;
+  let optedOutId: string;
+
+  beforeAll(async () => {
+    // Profile with email enabled (default)
+    optedInId = await createTestProfile("member");
+
+    // Profile with email disabled
+    optedOutId = randomUUID();
+    await db.insert(profiles).values({
+      id: optedOutId,
+      email: `${optedOutId}@comms-test.example.com`,
+      displayName: "Opted Out User",
+      role: "member",
+      communicationPrefs: { email: false, sms: false },
+    });
+  });
+
+  afterAll(async () => {
+    await cleanup([optedInId, optedOutId]);
+  });
+
+  beforeEach(() => {
+    mockResendSend.mockReset();
+    mockResendSend.mockResolvedValue({ data: { id: "msg_notif" }, error: null });
+  });
+
+  it("sends email and writes sent log when profile has email pref enabled", async () => {
+    const { sendNotification } = await import("../lib/comms");
+    await sendNotification({
+      profileId: optedInId,
+      email: "notify@example.com",
+      type: "plan-ready",
+      subject: "Your Plan is Ready",
+      html: "<p>Plan</p>",
+      smsBody: "Your plan is ready",
+    });
+
+    // sendNotification is fire-and-forget — give promises time to settle
+    await new Promise(r => setTimeout(r, 300));
+
+    const logs = await db
+      .select()
+      .from(notificationLog)
+      .where(eq(notificationLog.profileId, optedInId));
+
+    const emailLog = logs.find(l => l.channel === "email" && l.type === "plan-ready");
+    expect(emailLog).toBeDefined();
+    expect(emailLog!.status).toBe("sent");
+    expect(mockResendSend).toHaveBeenCalled();
+  });
+
+  it("skips email and writes no sent log when profile has email pref disabled", async () => {
+    const { sendNotification } = await import("../lib/comms");
+    await sendNotification({
+      profileId: optedOutId,
+      email: "opted-out@example.com",
+      type: "weekly-summary",
+      subject: "Weekly Summary",
+      html: "<p>Summary</p>",
+      smsBody: "Summary",
+    });
+
+    await new Promise(r => setTimeout(r, 300));
+
+    const logs = await db
+      .select()
+      .from(notificationLog)
+      .where(eq(notificationLog.profileId, optedOutId));
+
+    // No logs at all for opted-out profile
+    expect(logs.length).toBe(0);
+    expect(mockResendSend).not.toHaveBeenCalled();
   });
 });
