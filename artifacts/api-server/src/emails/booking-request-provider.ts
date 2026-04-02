@@ -29,10 +29,10 @@ export function bookingRequestProviderEmail(props: BookingRequestProviderProps):
     : "";
   const displayName = props.memberName ?? "A Health Plan Factory member";
   const replyEmail = props.contactEmail || props.memberEmail;
-  const goalLine = props.requestedModality ?? props.goal;
+  const subjectContext = props.requestedModality ?? props.goal;
 
   return {
-    subject: `A new client wants to book with you — ${displayName}${goalLine ? `, ${goalLine}` : ""}`,
+    subject: `A new client wants to book with you — ${displayName}${subjectContext ? `, ${subjectContext}` : ""}`,
     html: `<!DOCTYPE html>
 <html>
 <head>
@@ -78,9 +78,13 @@ export function bookingRequestProviderEmail(props: BookingRequestProviderProps):
                   <p style="margin:0 0 14px;font-size:14px;color:${DEEP};font-family:Arial,sans-serif;">
                     <a href="mailto:${escHtml(replyEmail)}" style="color:${PINK};text-decoration:none;">${escHtml(replyEmail)}</a>
                   </p>
-                  ${goalLine ? `
-                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">${props.requestedModality ? "Requested modality" : "Wellness goal"}</p>
-                  <p style="margin:0;font-size:14px;color:${DEEP};font-family:Arial,sans-serif;">${escHtml(goalLine)}</p>
+                  ${props.requestedModality ? `
+                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">Requested modality</p>
+                  <p style="margin:0 0 14px;font-size:14px;color:${DEEP};font-family:Arial,sans-serif;">${escHtml(props.requestedModality)}</p>
+                  ` : ""}
+                  ${props.goal ? `
+                  <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${PINK};font-family:Arial,sans-serif;">Wellness goal</p>
+                  <p style="margin:0;font-size:14px;color:${DEEP};font-family:Arial,sans-serif;">${escHtml(props.goal)}</p>
                   ` : ""}
                 </td>
               </tr>

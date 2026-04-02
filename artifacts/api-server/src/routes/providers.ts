@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions, bookingRequests, plans, planItems } from "@workspace/db";
+import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions, bookingRequests, plans, planItems, memberIntakes } from "@workspace/db";
 import { eq, and, inArray, desc as descOrd } from "drizzle-orm";
 import { sendEmail } from "../lib/comms";
 import { bookingRequestProviderEmail } from "../emails/booking-request-provider";
@@ -110,6 +110,7 @@ router.get("/providers", async (req, res) => {
 
     const providerIds = rows.map((p) => p.id);
     let credMap: Record<string, string[]> = {};
+    let modalityMap: Record<string, { id: string; name: string }[]> = {};
     if (providerIds.length > 0) {
       const creds = await db
         .select({ providerId: providerCredentials.providerId, name: providerCredentials.credentialName })
@@ -118,6 +119,21 @@ router.get("/providers", async (req, res) => {
       for (const c of creds) {
         if (!credMap[c.providerId]) credMap[c.providerId] = [];
         credMap[c.providerId].push(c.name);
+      }
+
+      // Enrich each provider with its modalities
+      const modalityLinks = await db
+        .select({
+          providerId: providerModalities.providerId,
+          id: modalitiesTable.id,
+          name: modalitiesTable.name,
+        })
+        .from(providerModalities)
+        .innerJoin(modalitiesTable, eq(providerModalities.modalityId, modalitiesTable.id))
+        .where(inArray(providerModalities.providerId, providerIds));
+      for (const m of modalityLinks) {
+        if (!modalityMap[m.providerId]) modalityMap[m.providerId] = [];
+        modalityMap[m.providerId].push({ id: m.id, name: m.name });
       }
     }
 
@@ -136,6 +152,7 @@ router.get("/providers", async (req, res) => {
     const enriched = rows.map((p) => ({
       ...p,
       credentials: credMap[p.id] ?? [],
+      modalities: modalityMap[p.id] ?? [],
       contactGated: false,
     }));
     res.json({ locked: false, count: enriched.length, providers: enriched });
@@ -888,24 +905,23 @@ router.post("/providers/:id/book", async (req, res) => {
       providerEmail = providerProfile?.email ?? null;
     }
 
-    // Get member's primary goal from their latest plan
+    // Get member's primary wellness goal from their latest plan's intake data
     let memberGoal: string | null = null;
     try {
       const [latestPlan] = await db
-        .select({ id: plans.id })
+        .select({ id: plans.id, intakeId: plans.intakeId })
         .from(plans)
         .where(eq(plans.profileId, memberId))
         .orderBy(descOrd(plans.createdAt))
         .limit(1);
-      if (latestPlan) {
-        const [topItem] = await db
-          .select({ modalityName: modalitiesTable.name })
-          .from(planItems)
-          .innerJoin(modalitiesTable, eq(planItems.modalityId, modalitiesTable.id))
-          .where(eq(planItems.planId, latestPlan.id))
-          .orderBy(planItems.sortOrder)
+      if (latestPlan?.intakeId) {
+        const [intake] = await db
+          .select({ goals: memberIntakes.goals })
+          .from(memberIntakes)
+          .where(eq(memberIntakes.id, latestPlan.intakeId))
           .limit(1);
-        if (topItem) memberGoal = topItem.modalityName;
+        const goals = intake?.goals as string[] | null;
+        if (Array.isArray(goals) && goals.length > 0) memberGoal = goals[0];
       }
     } catch {
       // non-fatal — proceed without goal

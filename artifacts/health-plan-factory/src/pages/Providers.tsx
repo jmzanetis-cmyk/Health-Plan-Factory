@@ -136,6 +136,7 @@ export default function Providers() {
   const [bookingNote, setBookingNote] = useState("");
   const [bookingContactEmail, setBookingContactEmail] = useState("");
   const [submittingBooking, setSubmittingBooking] = useState(false);
+  const [memberWellnessGoal, setMemberWellnessGoal] = useState<string | null>(null);
 
   // Filters — initialise selectedModality from ?modality= query param
   const [selectedModality, setSelectedModality] = useState(searchParams.get("modality") ?? "");
@@ -159,6 +160,21 @@ export default function Providers() {
           if (Array.isArray(data)) setFavorites(new Set(data.map((f) => f.providerId)));
         });
     }
+  }, [user]);
+
+  // Fetch member's primary wellness goal from their intakes for booking prefill
+  useEffect(() => {
+    if (!user) return;
+    fetch(`${BASE}/api/intakes?profileId=${user.id}`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: Array<{ goals?: string[] }> | null) => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        // Use the most recently created intake (last in array) as the primary source
+        const latest = data[data.length - 1];
+        const goal = Array.isArray(latest?.goals) && latest.goals.length > 0 ? latest.goals[0] : null;
+        if (goal) setMemberWellnessGoal(goal);
+      })
+      .catch(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -244,6 +260,9 @@ export default function Providers() {
     let preFill = `Hi ${providerFirstName},\n\nI found your listing on Health Plan Factory and would love to schedule a session with you.`;
     if (modalityLabel) {
       preFill += ` I'm specifically interested in ${modalityLabel}.`;
+    }
+    if (memberWellnessGoal) {
+      preFill += ` My primary wellness goal is: ${memberWellnessGoal}.`;
     }
     preFill += "\n\nPlease let me know your availability and next steps. Thank you!";
     setBookingMessage(preFill);
