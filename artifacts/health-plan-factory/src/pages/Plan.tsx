@@ -422,6 +422,9 @@ export default function Plan() {
   const [copied, setCopied] = useState(false);
   const shareCardRef = useRef<HTMLDivElement>(null);
 
+  // PDF download state
+  const [pdfLoading, setPdfLoading] = useState(false);
+
   // Fetch unused referral credits when authenticated
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -580,6 +583,62 @@ export default function Plan() {
     }
   }
 
+  async function handleDownloadPdf() {
+    if (!plan || !intake || pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      const body = {
+        plan: {
+          included: plan.included.map((item) => ({
+            modalityId: item.modality.id,
+            name: item.modality.name,
+            emoji: item.modality.emoji,
+            description: item.modality.description ?? "",
+            evidenceLevel: item.modality.evidenceLevel,
+            hsaEligible: item.modality.hsaEligible ?? false,
+            category: item.modality.category ?? "",
+            frequency: item.frequency,
+            estimatedMonthlyCost: item.estimatedMonthlyCost,
+            rationale: item.rationale,
+            nearbyProviderCount: item.nearbyProviderCount ?? null,
+          })),
+          totalMonthlyCost: plan.totalMonthlyCost,
+          budgetUtilization: plan.budgetUtilization,
+        },
+        intake: {
+          budget: intake.budget,
+          goals: intake.goals ?? [],
+          zipCode: intake.zipCode ?? "",
+        },
+      };
+
+      const res = await fetch(`${BASE}/api/plans/pdf`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error("PDF generation failed");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `health-plan-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (err) {
+      console.error("PDF download error:", err);
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
   if (!plan || !intake) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--warm-white)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
@@ -647,6 +706,28 @@ export default function Plan() {
             }}
           >
             Edit Inputs
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            style={{
+              padding: "0.5rem 0.875rem",
+              borderRadius: 8,
+              border: "1.5px solid rgba(212,34,126,0.2)",
+              background: "white",
+              color: "var(--hpf-pink)",
+              fontWeight: 600,
+              fontSize: "0.78rem",
+              cursor: pdfLoading ? "wait" : "pointer",
+              fontFamily: "var(--app-font-sans)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.35rem",
+              opacity: pdfLoading ? 0.65 : 1,
+            }}
+          >
+            <span>{pdfLoading ? "⏳" : "⬇️"}</span> {pdfLoading ? "Generating…" : "PDF"}
           </button>
           <button
             type="button"
