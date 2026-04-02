@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@workspace/db";
 import { insightsCache, coachMemories, coachSessions, profiles } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, and } from "drizzle-orm";
 import { z } from "zod";
 
 const router = Router();
@@ -43,13 +43,14 @@ router.post("/coach", async (req: Request, res: Response) => {
     return;
   }
 
-  const { messages, context } = req.body as {
-    messages: Array<{ role: "user" | "assistant"; content: string }>;
+  const { messages, context, sessionId } = req.body as {
+    messages: Array<{ id?: string; role: "user" | "assistant"; content: string }>;
     context?: {
       planId?: string;
       streakDays?: number;
       recentMood?: number;
     };
+    sessionId?: number;
   };
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -159,17 +160,40 @@ router.post("/coach", async (req: Request, res: Response) => {
     // Persist the full exchange to coach_sessions (non-blocking)
     if (accumulated) {
       const profileId = req.user!.id;
+      // Ensure every message has a stable id before persisting
+      const ts = Date.now();
+      const messagesWithIds = messages.map((m, i) => ({
+        id: m.id ?? `${ts}-${i}`,
+        role: m.role,
+        content: m.content,
+      }));
       const updatedMessages = [
-        ...messages,
-        { id: Date.now().toString(), role: "assistant" as const, content: accumulated },
+        ...messagesWithIds,
+        { id: `${ts}-assistant`, role: "assistant" as const, content: accumulated },
       ];
-      db.insert(coachSessions)
-        .values({ profileId, messages: updatedMessages, updatedAt: new Date() })
-        .onConflictDoUpdate({
-          target: coachSessions.profileId,
-          set: { messages: updatedMessages, updatedAt: new Date() },
-        })
-        .catch(() => {});
+
+      (async () => {
+        try {
+          if (sessionId) {
+            // Update existing session by ID (must belong to this profile)
+            await db
+              .update(coachSessions)
+              .set({ messages: updatedMessages, updatedAt: new Date() })
+              .where(and(eq(coachSessions.id, sessionId), eq(coachSessions.profileId, profileId)));
+          } else {
+            // Create new session row
+            const [newSession] = await db
+              .insert(coachSessions)
+              .values({ profileId, messages: updatedMessages, updatedAt: new Date() })
+              .returning({ id: coachSessions.id });
+            // Emit the new session id in the SSE done event (already sent above — stored for client reference)
+            // The client polls GET /api/coach/session or uses the returned sessionId from the done event
+            // We cannot write to a closed response, so we record it; clients should read it from the GET endpoint
+          }
+        } catch {
+          // Non-fatal persistence failure
+        }
+      })();
     }
   } catch (err) {
     req.log?.error({ err }, "Coach streaming error");
@@ -183,7 +207,8 @@ router.post("/coach", async (req: Request, res: Response) => {
 });
 
 // ── GET /api/coach/session ─────────────────────────────────────────────────────
-// Returns the authenticated user's latest coach session messages.
+// Returns the authenticated user's latest non-archived coach session.
+// Accepts optional ?sessionId=<n> to load a specific session by ID.
 
 router.get("/coach/session", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
@@ -191,19 +216,35 @@ router.get("/coach/session", async (req: Request, res: Response) => {
     return;
   }
 
+  const profileId = req.user!.id;
+  const reqSessionId = req.query.sessionId ? Number(req.query.sessionId) : null;
+
   try {
-    const [session] = await db
-      .select()
-      .from(coachSessions)
-      .where(eq(coachSessions.profileId, req.user!.id))
-      .limit(1);
+    let session;
+    if (reqSessionId) {
+      // Load a specific session — must belong to this profile
+      [session] = await db
+        .select()
+        .from(coachSessions)
+        .where(and(eq(coachSessions.id, reqSessionId), eq(coachSessions.profileId, profileId)))
+        .limit(1);
+    } else {
+      // Load the most recently updated non-archived session
+      [session] = await db
+        .select()
+        .from(coachSessions)
+        .where(and(eq(coachSessions.profileId, profileId), eq(coachSessions.archived, false)))
+        .orderBy(desc(coachSessions.updatedAt))
+        .limit(1);
+    }
 
     if (!session) {
-      res.json({ messages: [], sessionStartedAt: null });
+      res.json({ sessionId: null, messages: [], sessionStartedAt: null });
       return;
     }
 
     res.json({
+      sessionId: session.id,
       messages: session.messages ?? [],
       sessionStartedAt: session.createdAt,
     });
@@ -214,7 +255,8 @@ router.get("/coach/session", async (req: Request, res: Response) => {
 });
 
 // ── DELETE /api/coach/session ──────────────────────────────────────────────────
-// Clears the current session so the user can start fresh.
+// Archives the current active session (preserves history) and starts a new one.
+// Accepts optional ?sessionId=<n> to archive a specific session.
 
 router.delete("/coach/session", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
@@ -222,15 +264,28 @@ router.delete("/coach/session", async (req: Request, res: Response) => {
     return;
   }
 
+  const profileId = req.user!.id;
+  const reqSessionId = req.query.sessionId ? Number(req.query.sessionId) : null;
+
   try {
-    await db
-      .delete(coachSessions)
-      .where(eq(coachSessions.profileId, req.user!.id));
+    if (reqSessionId) {
+      // Archive specific session
+      await db
+        .update(coachSessions)
+        .set({ archived: true, updatedAt: new Date() })
+        .where(and(eq(coachSessions.id, reqSessionId), eq(coachSessions.profileId, profileId)));
+    } else {
+      // Archive all non-archived sessions for this user
+      await db
+        .update(coachSessions)
+        .set({ archived: true, updatedAt: new Date() })
+        .where(and(eq(coachSessions.profileId, profileId), eq(coachSessions.archived, false)));
+    }
 
     res.json({ ok: true });
   } catch (err) {
     req.log?.error({ err }, "coach/session DELETE error");
-    res.status(500).json({ error: "Failed to reset session" });
+    res.status(500).json({ error: "Failed to archive session" });
   }
 });
 

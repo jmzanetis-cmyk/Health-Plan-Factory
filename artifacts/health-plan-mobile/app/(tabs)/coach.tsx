@@ -125,6 +125,7 @@ export default function CoachScreen() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [memorySessionCount, setMemorySessionCount] = useState(0);
   const [isResetting, setIsResetting] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
   const messagesRef = useRef<Message[]>([OPENING_MESSAGE]);
   const saveMemoryRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -169,23 +170,24 @@ export default function CoachScreen() {
     }
   }
 
-  async function loadServerSession(): Promise<{ messages: Message[]; sessionStartedAt: string | null }> {
+  async function loadServerSession(): Promise<{ sessionId: number | null; messages: Message[]; sessionStartedAt: string | null }> {
     try {
       const apiBase = getApiBaseUrl();
       const headers = await getAuthHeaders();
-      if (!headers.Authorization) return { messages: [], sessionStartedAt: null };
+      if (!headers.Authorization) return { sessionId: null, messages: [], sessionStartedAt: null };
 
       const res = await fetch(`${apiBase}/api/coach/session`, {
         headers: { "Content-Type": "application/json", ...headers },
       });
-      if (!res.ok) return { messages: [], sessionStartedAt: null };
+      if (!res.ok) return { sessionId: null, messages: [], sessionStartedAt: null };
       const data = await res.json();
       return {
+        sessionId: data.sessionId ?? null,
         messages: Array.isArray(data.messages) ? data.messages : [],
         sessionStartedAt: data.sessionStartedAt ?? null,
       };
     } catch {
-      return { messages: [], sessionStartedAt: null };
+      return { sessionId: null, messages: [], sessionStartedAt: null };
     }
   }
 
@@ -218,9 +220,10 @@ export default function CoachScreen() {
     async function load() {
       try {
         // Try server session first, fall back to AsyncStorage
-        const { messages: serverMsgs, sessionStartedAt } = await loadServerSession();
+        const { sessionId: serverId, messages: serverMsgs, sessionStartedAt } = await loadServerSession();
 
         if (serverMsgs.length > 0) {
+          setCurrentSessionId(serverId);
           const dateLabel = sessionStartedAt
             ? `Continuing from ${formatSessionDate(sessionStartedAt)}`
             : "Continuing from a previous session";
@@ -280,11 +283,14 @@ export default function CoachScreen() {
           onPress: async () => {
             setIsResetting(true);
             try {
-              // Delete server session
+              // Archive server session (preserves history, starts fresh on next load)
               const apiBase = getApiBaseUrl();
               const headers = await getAuthHeaders();
               if (headers.Authorization) {
-                await fetch(`${apiBase}/api/coach/session`, {
+                const url = currentSessionId
+                  ? `${apiBase}/api/coach/session?sessionId=${currentSessionId}`
+                  : `${apiBase}/api/coach/session`;
+                await fetch(url, {
                   method: "DELETE",
                   headers: { "Content-Type": "application/json", ...headers },
                 }).catch(() => {});
@@ -294,9 +300,10 @@ export default function CoachScreen() {
             } catch {
               // Non-fatal
             } finally {
-              // Reset to fresh state
+              // Reset to fresh state — next message will create a new session
               messagesRef.current = [OPENING_MESSAGE];
               setMessages([OPENING_MESSAGE]);
+              setCurrentSessionId(null);
               setIsResetting(false);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             }
@@ -344,7 +351,8 @@ export default function CoachScreen() {
           body: JSON.stringify({
             messages: currentMessages
               .filter((m) => m.id !== "opening" && m.role !== "separator")
-              .map((m) => ({ role: m.role, content: m.content })),
+              .map((m) => ({ id: m.id, role: m.role, content: m.content })),
+            ...(currentSessionId ? { sessionId: currentSessionId } : {}),
           }),
         });
 

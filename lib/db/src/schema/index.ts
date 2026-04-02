@@ -905,10 +905,14 @@ export const coachSessions = pgTable(
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
     messages: jsonb("messages").$type<CoachMessage[]>().notNull().default([]),
+    archived: boolean("archived").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("coach_sessions_profile_id_idx").on(t.profileId)],
+  (t) => [
+    index("coach_sessions_profile_id_idx").on(t.profileId),
+    index("coach_sessions_updated_at_idx").on(t.updatedAt),
+  ],
 );
 
 export type CoachSession = InferSelectModel<typeof coachSessions>;
