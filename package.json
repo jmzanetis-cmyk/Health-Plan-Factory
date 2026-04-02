@@ -11,6 +11,8 @@
   "private": true,
   "devDependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "marked": "^17.0.5",
+    "pdfkit": "^0.18.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
   },

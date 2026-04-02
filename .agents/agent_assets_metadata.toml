@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "0B_zEmrXcimMBLpui4LOB"
 uri = "file://artifacts/health-plan-factory/public/assets/factory-hero.png"
 type = "image"
 title = "factory hero illustration little man worker"
+
+[[outputs]]
+id = "_oksy9U7218arL7KOXDuU"
+uri = "file://docs/business-plan.pdf"
+type = "pdf"
+title = "Health Plan Factory — Business Plan (PDF)"
