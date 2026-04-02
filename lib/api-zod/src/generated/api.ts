@@ -1669,3 +1669,42 @@ export const GetPublicObjectParams = zod.object({
 export const GetStorageObjectParams = zod.object({
   objectPath: zod.coerce.string(),
 });
+
+// ── Re-engagement drip admin endpoints ───────────────────────────────────────
+
+/**
+ * @summary Send a day-3 or day-7 re-engagement email to a single member.
+ * POST /api/admin/re-engagement/send
+ */
+export const ReEngagementSendBody = zod.object({
+  memberId: zod.string(),
+  day: zod.union([zod.literal(3), zod.literal(7)]),
+});
+
+export const ReEngagementSendResponse = zod.object({
+  result: zod.enum(["sent", "failed", "skipped", "no-plan", "no-email"]),
+  memberId: zod.string(),
+  day: zod.number(),
+});
+
+/**
+ * @summary Bulk-trigger re-engagement emails for all eligible non-Plus members.
+ * POST /api/admin/re-engagement/bulk
+ */
+export const ReEngagementBulkBody = zod.object({
+  day: zod.union([zod.literal(3), zod.literal(7)]),
+});
+
+export const ReEngagementBulkResponse = zod.object({
+  attempted: zod.number(),
+  failed: zod.number(),
+  skipped: zod.number(),
+  errors: zod.number(),
+  total: zod.number(),
+  day: zod.number(),
+});
+
+export type ReEngagementSendBody = zod.infer<typeof ReEngagementSendBody>;
+export type ReEngagementSendResponse = zod.infer<typeof ReEngagementSendResponse>;
+export type ReEngagementBulkBody = zod.infer<typeof ReEngagementBulkBody>;
+export type ReEngagementBulkResponse = zod.infer<typeof ReEngagementBulkResponse>;

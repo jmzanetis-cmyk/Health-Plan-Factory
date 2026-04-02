@@ -8,6 +8,8 @@ import {
   GetAdminStatsResponse,
   ListAdminSettingsResponse,
   UpsertAdminSettingResponse,
+  ReEngagementSendBody,
+  ReEngagementBulkBody,
 } from "@workspace/api-zod";
 import { buildDigestForMember } from "../lib/weeklyDigest";
 import { weeklyDigestEmail } from "../emails/weekly-digest";
@@ -780,16 +782,12 @@ async function sendReEngagementEmail(
  */
 router.post("/admin/re-engagement/send", async (req, res) => {
   try {
-    const { memberId, day } = req.body as { memberId?: string; day?: number };
-    if (!memberId) {
-      res.status(400).json({ error: "memberId is required" });
+    const parsed = ReEngagementSendBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
       return;
     }
-    if (day !== 3 && day !== 7) {
-      res.status(400).json({ error: "day must be 3 or 7" });
-      return;
-    }
-
+    const { memberId, day } = parsed.data;
     const result = await sendReEngagementEmail(memberId, day);
     res.json({ result, memberId, day });
   } catch (err: unknown) {
@@ -808,11 +806,12 @@ router.post("/admin/re-engagement/send", async (req, res) => {
  */
 router.post("/admin/re-engagement/bulk", async (req, res) => {
   try {
-    const { day } = req.body as { day?: number };
-    if (day !== 3 && day !== 7) {
-      res.status(400).json({ error: "day must be 3 or 7" });
+    const parsed = ReEngagementBulkBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
       return;
     }
+    const { day } = parsed.data;
 
     const notifType = day === 3 ? ("re-engagement-day3" as const) : ("re-engagement-day7" as const);
     const cutoff = new Date(Date.now() - day * 24 * 60 * 60 * 1000);
