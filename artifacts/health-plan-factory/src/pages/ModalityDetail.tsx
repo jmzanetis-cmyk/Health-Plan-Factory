@@ -185,6 +185,70 @@ export default function ModalityDetail() {
 
   const ogDescription = modality.metaDescription ?? modality.description;
 
+  const pageUrl = `https://healthplanfactory.com/modalities/${modality.id}`;
+
+  const faqPairs = [
+    {
+      q: `Is ${modality.name} HSA or FSA eligible?`,
+      a: modality.hsaEligible
+        ? `${modality.name} is generally eligible for HSA/FSA reimbursement when accompanied by a Letter of Medical Necessity (LMN) from a licensed physician. ${modality.lmnEligible ? "Health Plan Factory can help you obtain an LMN through our DPC physician network." : ""}`
+        : `${modality.name} is not typically reimbursable through HSA/FSA without an LMN from a licensed physician. A Letter of Medical Necessity may unlock reimbursement in some cases.`,
+    },
+    {
+      q: `How much does ${modality.name} cost per month?`,
+      a: `Typical monthly cost for ${modality.name} ranges from $${modality.costLow} to $${modality.costHigh}. Frequency is typically ${modality.typicalFrequency}. Costs vary by location, provider credentials, and session length.`,
+    },
+    {
+      q: `What is the evidence level for ${modality.name}?`,
+      a: modality.evidenceLevel === "Strong"
+        ? `${modality.name} has Strong evidence: multiple randomized controlled trials and systematic reviews support its effectiveness.`
+        : modality.evidenceLevel === "Moderate"
+        ? `${modality.name} has Moderate evidence: clinical studies and observational research show promising results, though larger trials are ongoing.`
+        : `${modality.name} has Emerging evidence: early-stage and observational data show potential, and well-designed trials are still accumulating.`,
+    },
+    ...(modality.evidenceSummary
+      ? [{
+          q: `What conditions can ${modality.name} help with?`,
+          a: modality.evidenceSummary.split("\n\n")[0] ?? modality.evidenceSummary,
+        }]
+      : []),
+  ];
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://healthplanfactory.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Modalities", "item": "https://healthplanfactory.com/modalities" },
+          { "@type": "ListItem", "position": 3, "name": modality.name, "item": pageUrl },
+        ],
+      },
+      {
+        "@type": "MedicalWebPage",
+        "name": `${modality.name} — Evidence Summary`,
+        "description": ogDescription,
+        "url": pageUrl,
+        "inLanguage": "en-US",
+        "about": { "@type": "MedicalTherapy", "name": modality.name },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Health Plan Factory",
+          "url": "https://healthplanfactory.com",
+        },
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": faqPairs.map(({ q, a }) => ({
+          "@type": "Question",
+          "name": q,
+          "acceptedAnswer": { "@type": "Answer", "text": a },
+        })),
+      },
+    ],
+  };
+
   return (
     <>
       <Helmet>
@@ -196,6 +260,7 @@ export default function ModalityDetail() {
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={`${modality.name} | Health Plan Factory`} />
         <meta name="twitter:description" content={ogDescription} />
+        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
       {/* ── Print styles ──────────────────────────────────────────────────────── */}

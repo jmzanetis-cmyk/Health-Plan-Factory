@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -58,8 +59,44 @@ export default function Modalities() {
   const categories = ["all", ...Array.from(new Set(modalities.map((m) => m.category)))];
   const filtered = filter === "all" ? modalities : modalities.filter((m) => m.category === filter);
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://healthplanfactory.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Modalities", "item": "https://healthplanfactory.com/modalities" },
+        ],
+      },
+      {
+        "@type": "ItemList",
+        "name": "Wellness Modalities Evidence Library",
+        "description": "Every wellness modality rated by research evidence, cross-referenced with health conditions and budget.",
+        "url": "https://healthplanfactory.com/modalities",
+        "numberOfItems": modalities.length,
+        "itemListElement": modalities.map((m, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "name": m.name,
+          "url": `https://healthplanfactory.com/modalities/${m.id}`,
+          "description": m.metaDescription ?? m.description,
+        })),
+      },
+    ],
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--warm-white)" }}>
+      <Helmet>
+        <title>Wellness Modalities Evidence Library | Health Plan Factory</title>
+        <meta name="description" content="Browse 20+ evidence-rated wellness modalities — massage, acupuncture, nutrition, yoga, and more — with HSA eligibility, cost ranges, and provider matching." />
+        <meta property="og:title" content="Wellness Modalities Evidence Library | Health Plan Factory" />
+        <meta property="og:description" content="Every wellness modality rated by research evidence and matched to your budget and conditions." />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify(itemListJsonLd)}</script>
+      </Helmet>
+
       {/* Hero */}
       <div style={{ background: navy, padding: "64px 24px 56px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { PlanSpeculator } from "@/components/PlanSpeculator";
 import { TestimonialsSection } from "@/components/TestimonialsSection";
@@ -253,7 +254,26 @@ export default function Landing() {
     setBannerDismissed(true);
   };
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": FAQS.map(({ q, a }) => ({
+      "@type": "Question",
+      "name": q,
+      "acceptedAnswer": { "@type": "Answer", "text": a },
+    })),
+  };
+
   return (
+    <>
+      <Helmet>
+        <title>Health Plan Factory — Your Personalized Wellness Plan</title>
+        <meta name="description" content="Tell us your budget, conditions, and goals. Health Plan Factory assembles a prioritized, costed wellness plan and matches it to vetted providers near you." />
+        <meta property="og:title" content="Health Plan Factory — Your Personalized Wellness Plan" />
+        <meta property="og:description" content="Personalized wellness plans built around your life, budget, and conditions. Matched to vetted providers near you." />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
     <div style={{ background: "var(--warm-white)", overflowX: "hidden" }}>
 
       {/* ── PERSONALIZED WELCOME BANNER ── */}
@@ -1279,6 +1299,7 @@ export default function Landing() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 
