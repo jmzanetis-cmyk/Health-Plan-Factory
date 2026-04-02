@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { demoRequests } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { Resend } from "resend";
@@ -103,19 +103,74 @@ router.post("/demo-request", async (req, res) => {
   }
 });
 
+const VALID_DEMO_STATUSES = ["new", "contacted", "qualified", "closed"] as const;
+type DemoStatus = typeof VALID_DEMO_STATUSES[number];
+
 router.get("/admin/demo-requests", async (req, res) => {
   if (!req.isAuthenticated() || req.user!.role !== "admin") {
     res.status(403).json({ error: "Admin access required" });
     return;
   }
+
+  const status = req.query.status as string | undefined;
+  if (status && !VALID_DEMO_STATUSES.includes(status as DemoStatus)) {
+    res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_DEMO_STATUSES.join(", ")}` });
+    return;
+  }
+
   try {
     const rows = await db
       .select()
       .from(demoRequests)
-      .orderBy(demoRequests.createdAt);
+      .where(status ? eq(demoRequests.status, status) : undefined)
+      .orderBy(desc(demoRequests.createdAt));
     res.json(rows);
   } catch {
     res.status(500).json({ error: "Failed to fetch demo requests" });
+  }
+});
+
+const PatchDemoRequestBody = z.object({
+  status: z.enum(VALID_DEMO_STATUSES).optional(),
+  notes: z.string().max(5000).optional(),
+});
+
+router.patch("/admin/demo-requests/:id", async (req, res) => {
+  if (!req.isAuthenticated() || req.user!.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+
+  const { id } = req.params;
+  const parsed = PatchDemoRequestBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
+    return;
+  }
+
+  const updates = parsed.data;
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "No fields to update" });
+    return;
+  }
+
+  try {
+    const [updated] = await db
+      .update(demoRequests)
+      .set({
+        ...(updates.status !== undefined && { status: updates.status }),
+        ...(updates.notes !== undefined && { notes: updates.notes }),
+      })
+      .where(eq(demoRequests.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Demo request not found" });
+      return;
+    }
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Failed to update demo request" });
   }
 });
 

@@ -726,6 +726,7 @@ export const demoRequests = pgTable(
     phone: text("phone"),
     message: text("message"),
     status: text("status").notNull().default("new"), // new | contacted | qualified | closed
+    notes: text("notes"),                            // private internal admin notes
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [index("demo_requests_email_idx").on(t.email)],

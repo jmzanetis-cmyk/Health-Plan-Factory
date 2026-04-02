@@ -69,6 +69,7 @@ import AdminEmployers from "@/pages/admin/Employers";
 import AdminMessages from "@/pages/admin/Messages";
 import AdminTestimonials from "@/pages/admin/Testimonials";
 import AdminBookingRequests from "@/pages/admin/BookingRequests";
+import AdminDemoLeads from "@/pages/admin/DemoLeads";
 
 import EmployerPortal from "@/pages/employer/EmployerPortal";
 import EmployerDashboard from "@/pages/employer/EmployerDashboard";
@@ -157,6 +158,7 @@ function AppRoutes() {
       <Route path="/admin/messages" element={<Layout><ProtectedRoute role="admin"><AdminMessages /></ProtectedRoute></Layout>} />
       <Route path="/admin/testimonials" element={<Layout><ProtectedRoute role="admin"><AdminTestimonials /></ProtectedRoute></Layout>} />
       <Route path="/admin/booking-requests" element={<Layout><ProtectedRoute role="admin"><AdminBookingRequests /></ProtectedRoute></Layout>} />
+      <Route path="/admin/demo-requests" element={<Layout><ProtectedRoute role="admin"><AdminDemoLeads /></ProtectedRoute></Layout>} />
 
       {/* Employer routes */}
       <Route path="/employer" element={<Layout><EmployerPortal /></Layout>} />

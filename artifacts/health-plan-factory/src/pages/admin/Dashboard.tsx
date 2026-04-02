@@ -74,10 +74,20 @@ const navLinks = [
   { to: "/admin/employers", label: "Employers" },
   { to: "/admin/messages", label: "Messages" },
   { to: "/admin/booking-requests", label: "Bookings" },
+  { to: "/admin/demo-requests", label: "Demo Leads" },
   { to: "/admin/settings", label: "Settings" },
 ];
 
 export function AdminNav({ active }: { active: string }) {
+  const [demoNewCount, setDemoNewCount] = useState<number>(0);
+
+  useEffect(() => {
+    fetch(`${BASE}/api/admin/demo-requests?status=new`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: unknown[]) => { if (Array.isArray(data)) setDemoNewCount(data.length); })
+      .catch(() => {});
+  }, []);
+
   return (
     <nav className="flex gap-1 flex-wrap mb-8">
       {navLinks.map((n) => (
@@ -90,9 +100,27 @@ export function AdminNav({ active }: { active: string }) {
             color: active === n.to ? "white" : "var(--hpf-pink)",
             border: "1.5px solid rgba(212,34,126,0.12)",
             fontFamily: "var(--app-font-sans)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
           {n.label}
+          {n.to === "/admin/demo-requests" && demoNewCount > 0 && (
+            <span style={{
+              background: active === n.to ? "rgba(255,255,255,0.25)" : "var(--hpf-pink)",
+              color: "white",
+              borderRadius: 20,
+              padding: "0 6px",
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              lineHeight: "1.6",
+              minWidth: 18,
+              textAlign: "center",
+            }}>
+              {demoNewCount}
+            </span>
+          )}
         </Link>
       ))}
     </nav>
