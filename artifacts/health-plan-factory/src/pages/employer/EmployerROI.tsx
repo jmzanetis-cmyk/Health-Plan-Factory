@@ -379,10 +379,16 @@ export default function EmployerROI() {
           return;
         }
         if (cancelled) return;
-        const [trData, bkData, meData] = await Promise.all([tr.json(), bk.json(), me.json()]);
-        setTrend(trData.trend ?? []);
-        setTrendSuppressed(!!trData.privacySuppressed);
-        setBenchmarks(bkData);
+
+        const [trData, bkData, meData] = await Promise.all([
+          tr.ok ? tr.json() : {},
+          bk.ok ? bk.json() : null,
+          me.ok ? me.json() : {},
+        ]);
+
+        setTrend(trData?.trend ?? []);
+        setTrendSuppressed(!!trData?.privacySuppressed);
+        if (bkData) setBenchmarks(bkData);
         if (meData?.stipendPerEmployee) {
           setDefaultStipend(meData.stipendPerEmployee * 12 * (meData.numberOfEmployees ?? 1));
         }
