@@ -18,7 +18,7 @@ import {
   referralMilestones,
 } from "@workspace/db";
 import { eq, and, desc, count, sql, gte } from "drizzle-orm";
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import { z } from "zod";
 import { sendEmail, sendNotification } from "../lib/comms";
 import { referralRewardEmail } from "../emails/referral-reward";
@@ -564,9 +564,11 @@ async function handleSendInvite(req: Request, res: Response, body: { email: stri
 
     await db.transaction(async (tx) => {
       // Acquire a session-level advisory lock scoped to this profile.
-      // We derive a 64-bit integer from the first 8 hex chars of the profile id
-      // (or use a hash of the string for non-UUID ids).
-      const lockKey = Buffer.from(profileId).readBigUInt64BE(0) & BigInt("0x7FFFFFFFFFFFFFFF");
+      // SHA-256 of the profileId → take first 8 bytes as BigInt. This gives a
+      // stable, collision-resistant 64-bit key regardless of id length/encoding.
+      // The sign mask ensures the value fits in PostgreSQL's signed bigint range.
+      const hashBuf = createHash("sha256").update(profileId).digest();
+      const lockKey = hashBuf.readBigUInt64BE(0) & BigInt("0x7FFFFFFFFFFFFFFF");
       await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
 
       const [{ inviteCount }] = await tx
