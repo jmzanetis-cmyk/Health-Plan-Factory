@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { PlanSpeculator } from "@/components/PlanSpeculator";
 import { TestimonialsSection } from "@/components/TestimonialsSection";
+import { FounderLetterSection } from "@/components/FounderLetterSection";
 import type { SurveyData } from "@/pages/Survey";
 import { GOALS } from "@/types/onboarding";
 
@@ -1031,6 +1032,9 @@ export default function Landing() {
 
       {/* ── TESTIMONIALS ── */}
       <TestimonialsSection sectionTag="From early members" />
+
+      {/* ── FOUNDER LETTER ── */}
+      <FounderLetterSection />
 
       {/* ── SAVINGS CALCULATOR CTA ── */}
       <section
