@@ -788,7 +788,7 @@ router.post("/admin/re-engagement/send", async (req, res) => {
  * Eligibility: has plan, no active Plus subscription, created plan >= N days ago,
  * no prior re-engagement email of that type (day).
  * Body: { day: 3 | 7 }
- * Returns: { dispatched, skipped, errors, total }
+ * Returns: { attempted, skipped, errors, total }
  */
 router.post("/admin/re-engagement/bulk", async (req, res) => {
   try {
@@ -854,14 +854,14 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
       return p && p.subscriptionStatus !== "plus" && p.subscriptionStatus !== "employer";
     });
 
-    let dispatched = 0;
+    let attempted = 0;
     let skipped = 0;
     let errors = 0;
 
     for (const memberId of nonPlusIds) {
       try {
         const result = await sendReEngagementEmail(memberId, day);
-        if (result === "sent") dispatched++;
+        if (result === "sent") attempted++;
         else skipped++;
       } catch (e) {
         console.error(`[re-engagement] Failed for member ${memberId}:`, e);
@@ -869,7 +869,7 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
       }
     }
 
-    res.json({ dispatched, skipped, errors, total: nonPlusIds.length, day });
+    res.json({ attempted, skipped, errors, total: nonPlusIds.length, day });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

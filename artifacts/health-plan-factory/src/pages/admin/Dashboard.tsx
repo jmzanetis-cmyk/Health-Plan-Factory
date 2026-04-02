@@ -329,15 +329,14 @@ function TestDigestSection() {
   );
 }
 
-type BulkResult = { dispatched: number; skipped: number; errors: number; total: number; day: number } | null;
+type BulkResult = { attempted: number; skipped: number; errors: number; total: number; day: number } | null;
 type SingleResult = { result: "sent" | "skipped" | "no-plan" | "no-email"; memberId: string; day: number } | null;
 
 function ReEngagementSection() {
   const [memberId, setMemberId] = useState("");
   const [singleDay, setSingleDay] = useState<3 | 7>(3);
-  const [bulkDay, setBulkDay] = useState<3 | 7>(3);
   const [sendingSingle, setSendingSingle] = useState(false);
-  const [runningBulk, setRunningBulk] = useState(false);
+  const [runningBulk, setRunningBulk] = useState<3 | 7 | null>(null);
   const [singleResult, setSingleResult] = useState<SingleResult>(null);
   const [bulkResult, setBulkResult] = useState<BulkResult>(null);
   const [singleError, setSingleError] = useState<string | null>(null);
@@ -365,9 +364,9 @@ function ReEngagementSection() {
     }
   };
 
-  const runBulk = async () => {
-    if (!window.confirm(`Send day-${bulkDay} re-engagement emails to ALL eligible non-Plus members. Continue?`)) return;
-    setRunningBulk(true);
+  const runBulk = async (day: 3 | 7) => {
+    if (!window.confirm(`Send day-${day} re-engagement emails to ALL eligible non-Plus members. Continue?`)) return;
+    setRunningBulk(day);
     setBulkResult(null);
     setBulkError(null);
     try {
@@ -375,7 +374,7 @@ function ReEngagementSection() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ day: bulkDay }),
+        body: JSON.stringify({ day }),
       });
       const data = await res.json();
       if (res.ok) setBulkResult(data);
@@ -383,7 +382,7 @@ function ReEngagementSection() {
     } catch {
       setBulkError("Network error — please try again");
     } finally {
-      setRunningBulk(false);
+      setRunningBulk(null);
     }
   };
 
@@ -452,25 +451,28 @@ function ReEngagementSection() {
 
       {/* Bulk send */}
       <div className="p-4 rounded-xl" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
-        <p className="text-xs font-semibold mb-3" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <p className="text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           Bulk Send — All Eligible Non-Plus Members
         </p>
+        <p className="text-xs mb-3" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+          Targets members whose latest plan was created ≥ N days ago with no prior send of that type.
+        </p>
         <div className="flex gap-3 flex-wrap items-center">
-          <select
-            value={bulkDay}
-            onChange={(e) => setBulkDay(Number(e.target.value) as 3 | 7)}
-            style={{ border: "1.5px solid rgba(212,34,126,0.18)", borderRadius: 8, padding: "9px 12px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-primary)", background: "white", cursor: "pointer" }}
-          >
-            <option value={3}>Day 3 — Plan Summary (plan created ≥ 3 days ago)</option>
-            <option value={7}>Day 7 — Provider Nudge (plan created ≥ 7 days ago)</option>
-          </select>
           <button
-            onClick={runBulk}
-            disabled={runningBulk}
-            style={{ background: "#1a2a3a", color: "white", border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: runningBulk ? "not-allowed" : "pointer", opacity: runningBulk ? 0.6 : 1, display: "flex", alignItems: "center", gap: 6 }}
+            onClick={() => runBulk(3)}
+            disabled={runningBulk !== null}
+            style={{ background: "#1a2a3a", color: "white", border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: runningBulk !== null ? "not-allowed" : "pointer", opacity: runningBulk !== null ? 0.6 : 1, display: "flex", alignItems: "center", gap: 6 }}
           >
-            {runningBulk ? <Loader2 size={14} className="animate-spin" /> : null}
-            Run Bulk Drip
+            {runningBulk === 3 ? <Loader2 size={14} className="animate-spin" /> : null}
+            Run day-3 drip
+          </button>
+          <button
+            onClick={() => runBulk(7)}
+            disabled={runningBulk !== null}
+            style={{ background: "#1a2a3a", color: "white", border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: runningBulk !== null ? "not-allowed" : "pointer", opacity: runningBulk !== null ? 0.6 : 1, display: "flex", alignItems: "center", gap: 6 }}
+          >
+            {runningBulk === 7 ? <Loader2 size={14} className="animate-spin" /> : null}
+            Run day-7 drip
           </button>
         </div>
         {bulkResult && (
@@ -479,7 +481,7 @@ function ReEngagementSection() {
               <CheckCircle2 size={14} /> Bulk run complete — Day {bulkResult.day}
             </div>
             <div style={{ color: "var(--text-secondary)" }}>
-              {bulkResult.dispatched} attempted · {bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
+              {bulkResult.attempted} attempted · {bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
             </div>
           </div>
         )}
