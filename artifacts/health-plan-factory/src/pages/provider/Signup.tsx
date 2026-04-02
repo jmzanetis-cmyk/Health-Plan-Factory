@@ -154,13 +154,11 @@ export default function ProviderSignup() {
         credentials: "include",
         body: JSON.stringify({ providerId }),
       });
-      const data = await res.json() as { checkout_url?: string; stripe_required?: boolean; stripe_mode?: string };
+      const data = await res.json() as { checkout_url?: string; error?: string };
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
-      } else if (data.stripe_required || data.stripe_mode === "demo") {
-        setStripeMode("demo");
       } else {
-        throw new Error("Unexpected response from payment server");
+        throw new Error(data.error ?? "Unexpected response from payment server");
       }
     } catch (e: unknown) {
       setSubmitError(e instanceof Error ? e.message : "Payment setup failed");

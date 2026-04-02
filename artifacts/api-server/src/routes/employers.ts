@@ -917,20 +917,10 @@ router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req
     const totalCents = Math.round(unitAmountCents * headcount * feeMultiplier);
 
     if (!stripe) {
-      // Demo mode — no Stripe key configured
-      res.json({
-        stripe_mode: "demo",
-        message: "Configure STRIPE_SECRET_KEY to enable live Stripe Checkout.",
-        invoice_preview: {
-          companyName: employer.companyName,
-          contractedHeadcount: headcount,
-          enrolledMembers: enrolled,
-          stipendPerEmployee: fmt_cents(unitAmountCents),
-          platformFee: `${employer.platformFeePercent}%`,
-          totalMonthly: fmt_cents(totalCents),
-          billingCycle: "monthly",
-          formula: `${headcount} employees × ${fmt_cents(unitAmountCents)} × ${feeMultiplier.toFixed(3)}`,
-        },
+      // STRIPE_SECRET_KEY not configured — block checkout.
+      // This path is unreachable in production where STRIPE_SECRET_KEY is set.
+      res.status(402).json({
+        error: "Stripe is not configured. STRIPE_SECRET_KEY must be set to enable employer billing.",
       });
       return;
     }
@@ -973,7 +963,7 @@ router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req
       metadata: { employerId: employer.id },
     });
 
-    res.json({ stripe_mode: "live", url: session.url });
+    res.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err);
     res.status(500).json({ error: "Failed to create billing session" });

@@ -142,11 +142,8 @@ export default function EmployerDashboard() {
         headers: { "Content-Type": "application/json" },
       });
       const json = await res.json();
-      if (json.stripe_mode === "live" && json.url) {
+      if (json.url) {
         window.location.href = json.url;
-      } else if (json.invoice_preview) {
-        const p = json.invoice_preview;
-        setBillingMsg(`Demo mode — invoice preview: ${p.contractedHeadcount} contracted × ${p.stipendPerEmployee} + ${p.platformFee} fee = ${p.totalMonthly}/mo (${p.enrolledMembers} currently enrolled). Set STRIPE_SECRET_KEY to go live.`);
       } else {
         setBillingMsg(json.error ?? "Unable to create billing session.");
       }

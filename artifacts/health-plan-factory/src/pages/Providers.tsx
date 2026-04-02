@@ -13,7 +13,6 @@ interface UnlockResult {
   amount_charged_formatted: string;
   message: string;
   checkout_url?: string;
-  stripe_required?: boolean;
 }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -207,7 +206,7 @@ export default function Providers() {
       });
       const data: UnlockResult = await res.json();
 
-      if (!res.ok && !data.checkout_url && !data.stripe_required) {
+      if (!res.ok && !data.checkout_url) {
         toast({ title: "Unlock failed", description: (data as { error?: string }).error ?? "Something went wrong.", variant: "destructive" });
         return;
       }
@@ -416,9 +415,7 @@ export default function Providers() {
             <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
               {unlockModal.unlocked
                 ? "Your referral credit covered this unlock. You can now view full contact details."
-                : unlockModal.stripe_required
-                  ? "Stripe is not yet configured in this environment. Set STRIPE_SECRET_KEY to enable live payments."
-                  : "Your referral credit discount is applied. Complete payment via Stripe to reveal full contact details."}
+                : "Your referral credit discount is applied. Complete payment via Stripe to reveal full contact details."}
             </p>
 
             {unlockModal.unlocked ? (
@@ -441,10 +438,9 @@ export default function Providers() {
                     if (unlockModal.checkout_url) window.location.href = unlockModal.checkout_url;
                     else setUnlockModal(null);
                   }}
-                  disabled={!!unlockModal.stripe_required}
-                  style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: unlockModal.stripe_required ? "rgba(212,34,126,0.1)" : "var(--hpf-crimson)", color: unlockModal.stripe_required ? "var(--text-muted)" : "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: unlockModal.stripe_required ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+                  style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-crimson)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
                 >
-                  {unlockModal.stripe_required ? "Not yet available" : "Proceed to payment →"}
+                  Proceed to payment →
                 </button>
               </div>
             )}

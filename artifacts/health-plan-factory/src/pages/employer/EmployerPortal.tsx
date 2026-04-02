@@ -203,11 +203,10 @@ function SuccessPanel({ employer }: { employer: Employer }) {
       .then((json) => {
         if (cancelled) return;
         setCheckoutLoading(false);
-        if (json.stripe_mode === "live" && json.url) {
+        if (json.url) {
           window.location.href = json.url;
         } else {
-          // Test / sandbox mode — no live redirect; show completion prompt
-          setCheckoutDone(true);
+          setCheckoutError(json.error ?? "Unable to create billing session. Please try again.");
         }
       })
       .catch(() => {
