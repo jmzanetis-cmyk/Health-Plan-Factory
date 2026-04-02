@@ -691,7 +691,7 @@ async function getTopPlanItems(profileId: string) {
 async function sendReEngagementEmail(
   memberId: string,
   day: 3 | 7,
-): Promise<"sent" | "failed" | "skipped" | "no-plan" | "no-email"> {
+): Promise<"sent" | "failed" | "skipped" | "no-plan" | "no-email" | "member-not-found"> {
   const notifType = day === 3 ? ("re-engagement-day3" as const) : ("re-engagement-day7" as const);
   const appUrl = process.env.APP_URL ?? BASE_URL;
 
@@ -702,7 +702,8 @@ async function sendReEngagementEmail(
     .where(eq(profiles.id, memberId))
     .limit(1);
 
-  if (!profile?.email) return "no-email";
+  if (!profile) return "member-not-found";
+  if (!profile.email) return "no-email";
 
   // Respect email opt-out
   const prefs = await getCommsPrefs(memberId);
@@ -869,7 +870,7 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
       return p && p.subscriptionStatus !== "plus" && p.subscriptionStatus !== "employer";
     });
 
-    let attempted = 0;
+    let sent = 0;
     let failed = 0;
     let skipped = 0;
     let errors = 0;
@@ -877,7 +878,7 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
     for (const memberId of nonPlusIds) {
       try {
         const result = await sendReEngagementEmail(memberId, day);
-        if (result === "sent") attempted++;
+        if (result === "sent") sent++;
         else if (result === "failed") failed++;
         else skipped++;
       } catch (e) {
@@ -886,7 +887,7 @@ router.post("/admin/re-engagement/bulk", async (req, res) => {
       }
     }
 
-    res.json({ attempted, failed, skipped, errors, total: nonPlusIds.length, day });
+    res.json({ sent, failed, skipped, errors, total: nonPlusIds.length, day });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

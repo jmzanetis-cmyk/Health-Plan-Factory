@@ -329,8 +329,8 @@ function TestDigestSection() {
   );
 }
 
-type BulkResult = { attempted: number; failed: number; skipped: number; errors: number; total: number; day: number } | null;
-type SingleResult = { result: "sent" | "failed" | "skipped" | "no-plan" | "no-email"; memberId: string; day: number } | null;
+type BulkResult = { sent: number; failed: number; skipped: number; errors: number; total: number; day: number } | null;
+type SingleResult = { result: "sent" | "failed" | "skipped" | "no-plan" | "no-email" | "member-not-found"; memberId: string; day: number } | null;
 
 function ReEngagementSection() {
   const [memberId, setMemberId] = useState("");
@@ -391,7 +391,8 @@ function ReEngagementSection() {
     failed: "Provider delivery failed — check notification log.",
     skipped: "Skipped — already sent or opted out.",
     "no-plan": "Skipped — member has no plan.",
-    "no-email": "Skipped — no email address on file.",
+    "no-email": "Skipped — profile has no email address.",
+    "member-not-found": "Error — member ID not found.",
   };
 
   return (
@@ -482,7 +483,7 @@ function ReEngagementSection() {
               <CheckCircle2 size={14} /> Bulk run complete — Day {bulkResult.day}
             </div>
             <div style={{ color: "var(--text-secondary)" }}>
-              {bulkResult.attempted} sent · {bulkResult.failed > 0 ? `${bulkResult.failed} provider errors · ` : ""}{bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
+              {bulkResult.sent} sent · {bulkResult.failed > 0 ? `${bulkResult.failed} provider errors · ` : ""}{bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible
             </div>
           </div>
         )}

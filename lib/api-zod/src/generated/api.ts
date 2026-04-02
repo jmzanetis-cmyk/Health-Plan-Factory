@@ -1682,7 +1682,7 @@ export const ReEngagementSendBody = zod.object({
 });
 
 export const ReEngagementSendResponse = zod.object({
-  result: zod.enum(["sent", "failed", "skipped", "no-plan", "no-email"]),
+  result: zod.enum(["sent", "failed", "skipped", "no-plan", "no-email", "member-not-found"]),
   memberId: zod.string(),
   day: zod.number(),
 });
@@ -1696,7 +1696,7 @@ export const ReEngagementBulkBody = zod.object({
 });
 
 export const ReEngagementBulkResponse = zod.object({
-  attempted: zod.number(),
+  sent: zod.number(),
   failed: zod.number(),
   skipped: zod.number(),
   errors: zod.number(),
