@@ -5,12 +5,21 @@ export interface ReferralInviteEmailProps {
   personalNote?: string | null;
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function referralInviteEmail(props: ReferralInviteEmailProps): { subject: string; html: string } {
-  const referrer = props.referrerName ?? "A friend";
+  const referrer = escapeHtml(props.referrerName ?? "A friend");
   const noteHtml = props.personalNote
     ? `<div style="background:#fdf4f9;border-left:4px solid #D4227E;border-radius:4px;padding:16px 20px;margin-bottom:24px;">
-        <p style="color:#2C2825;font-family:Arial,sans-serif;font-size:14px;font-style:italic;line-height:1.6;margin:0;">"${props.personalNote.replace(/"/g, "&quot;")}"</p>
-        <p style="color:#6b7280;font-family:Arial,sans-serif;font-size:12px;margin:8px 0 0;">— ${referrer}</p>
+        <p style="color:#2C2825;font-family:Arial,sans-serif;font-size:14px;font-style:italic;line-height:1.6;margin:0;">&ldquo;${escapeHtml(props.personalNote)}&rdquo;</p>
+        <p style="color:#6b7280;font-family:Arial,sans-serif;font-size:12px;margin:8px 0 0;">&mdash; ${referrer}</p>
       </div>`
     : "";
 

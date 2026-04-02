@@ -43,6 +43,7 @@ interface MilestoneInfo {
   bonusCents: number;
   earned: boolean;
   rewardedAt: string | null;
+  newlyEarned?: boolean;
 }
 
 interface NextMilestoneInfo {
@@ -146,8 +147,8 @@ export default function Referral() {
   const [inviteNote, setInviteNote] = useState("");
   const [inviteSending, setInviteSending] = useState(false);
 
-  // Celebration banner — shown when ?milestone=<id> is in the URL
-  const celebrationMilestoneId = searchParams.get("milestone");
+  // Celebration banner — shown when ?milestone=<id> is in the URL OR a newly-earned milestone is returned by the API
+  const celebrationMilestoneIdParam = searchParams.get("milestone");
 
   useEffect(() => {
     if (!user) return;
@@ -186,9 +187,12 @@ export default function Referral() {
   const rewardedCount = data?.rewardedCount ?? 0;
   const milestones = data?.milestones ?? [];
   const nextMilestone = data?.nextMilestone ?? null;
-  const celebrationMilestone = celebrationMilestoneId
-    ? milestones.find((m) => m.id === celebrationMilestoneId)
-    : null;
+
+  // Show celebration banner for: ?milestone= query param OR newly-earned milestone from API (within last hour)
+  const newlyEarnedMilestone = milestones.find((m) => m.newlyEarned);
+  const celebrationMilestone = celebrationMilestoneIdParam
+    ? milestones.find((m) => m.id === celebrationMilestoneIdParam)
+    : newlyEarnedMilestone ?? null;
 
   async function copyLink() {
     if (!referralLink) return;
@@ -208,13 +212,13 @@ export default function Referral() {
     if (!trimmed || inviteSending) return;
     setInviteSending(true);
     try {
-      const res = await fetch(`${BASE}/api/referrals/send-invite`, {
+      const res = await fetch(`${BASE}/api/referrals/invite`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          inviteeEmail: trimmed,
-          ...(inviteNote.trim() ? { personalNote: inviteNote.trim() } : {}),
+          email: trimmed,
+          ...(inviteNote.trim() ? { note: inviteNote.trim() } : {}),
         }),
       });
       if (res.ok) {

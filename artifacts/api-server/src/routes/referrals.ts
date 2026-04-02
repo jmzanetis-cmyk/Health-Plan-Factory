@@ -76,10 +76,10 @@ async function ensureReferralCode(profileId: string): Promise<string> {
 // ── Milestone definitions ───────────────────────────────────────────────────
 // Each milestone: id, label, threshold (rewarded referrals), emoji, bonus cents
 const MILESTONE_TIERS = [
-  { id: "pioneer",    label: "Pioneer",    threshold: 1,  emoji: "🌱", bonusCents: 0   },
-  { id: "advocate",   label: "Advocate",   threshold: 5,  emoji: "🌿", bonusCents: 200 }, // $2 bonus
-  { id: "champion",   label: "Champion",   threshold: 10, emoji: "🏆", bonusCents: 700 }, // $7 bonus
-  { id: "ambassador", label: "Ambassador", threshold: 25, emoji: "💎", bonusCents: 1700 }, // $17 bonus
+  { id: "pioneer",    label: "Pioneer",    threshold: 1,  emoji: "🌱", bonusCents: 300  }, // $3 bonus
+  { id: "advocate",   label: "Advocate",   threshold: 5,  emoji: "🌿", bonusCents: 500  }, // $5 bonus
+  { id: "champion",   label: "Champion",   threshold: 10, emoji: "🏆", bonusCents: 1000 }, // $10 bonus
+  { id: "ambassador", label: "Ambassador", threshold: 25, emoji: "💎", bonusCents: 2000 }, // $20 bonus
 ] as const;
 
 type MilestoneId = typeof MILESTONE_TIERS[number]["id"];
@@ -247,15 +247,20 @@ router.get("/referrals/mine", async (req: Request, res: Response) => {
     const earnedSet = new Set(earnedMilestones.map((m) => m.milestone));
     const rewardedCount = history.filter((r) => r.status === "rewarded").length;
 
-    const milestonesWithStatus = MILESTONE_TIERS.map((tier) => ({
-      id: tier.id,
-      label: tier.label,
-      emoji: tier.emoji,
-      threshold: tier.threshold,
-      bonusCents: tier.bonusCents,
-      earned: earnedSet.has(tier.id),
-      rewardedAt: earnedMilestones.find((m) => m.milestone === tier.id)?.rewardedAt ?? null,
-    }));
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const milestonesWithStatus = MILESTONE_TIERS.map((tier) => {
+      const earned = earnedMilestones.find((m) => m.milestone === tier.id);
+      return {
+        id: tier.id,
+        label: tier.label,
+        emoji: tier.emoji,
+        threshold: tier.threshold,
+        bonusCents: tier.bonusCents,
+        earned: earnedSet.has(tier.id),
+        rewardedAt: earned?.rewardedAt ?? null,
+        newlyEarned: earned ? earned.rewardedAt >= oneHourAgo : false,
+      };
+    });
 
     // Next milestone to unlock
     const nextMilestone = MILESTONE_TIERS.find((t) => !earnedSet.has(t.id) && rewardedCount < t.threshold) ?? null;
@@ -531,30 +536,12 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
   })();
 }
 
-/**
- * POST /api/referrals/send-invite
- * Sends a referral invite email to a specified email address with a pre-filled signup link.
- * Rate limited to 10 invites per day per user.
- * Body: { inviteeEmail: string }
- */
-router.post("/referrals/send-invite", async (req: Request, res: Response) => {
-  if (!requireAuth(req, res)) return;
+/** Shared handler for both invite endpoints */
+async function handleSendInvite(req: Request, res: Response, body: { email: string; note?: string | null }): Promise<void> {
   const profileId = req.user!.id;
-
-  const body = z.object({
-    inviteeEmail: z.string().email(),
-    personalNote: z.string().max(300).optional(),
-  }).safeParse(req.body);
-  if (!body.success) {
-    res.status(400).json({ error: "Validation error", details: body.error.flatten() });
-    return;
-  }
 
   try {
     // ── Rate limiting: max 10 invites per day per user ──────────────────
-    // We count invite emails sent in the last 24 hours using memberCredits
-    // source="invite-sent" rows (a lightweight audit trail already in the DB).
-    // This avoids adding a separate table just for rate limiting.
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [{ inviteCount }] = await db
       .select({ inviteCount: count() })
@@ -585,19 +572,18 @@ router.post("/referrals/send-invite", async (req: Request, res: Response) => {
       referrerName: profile?.displayName ?? null,
       referralCode,
       signupUrl,
-      personalNote: body.data.personalNote ?? null,
+      personalNote: body.note ?? null,
     });
 
     await sendEmail(
       profileId,
-      body.data.inviteeEmail,
+      body.email,
       subject,
       html,
       "referral-invite",
     );
 
-    // Record the invite attempt as a zero-amount "invite-sent" credit row
-    // (serves as the rate-limit audit trail without adding a new table)
+    // Record the invite attempt as a zero-amount "invite-sent" credit row (rate-limit audit trail)
     await db.insert(memberCredits).values({
       id: randomUUID(),
       profileId,
@@ -605,13 +591,53 @@ router.post("/referrals/send-invite", async (req: Request, res: Response) => {
       amountCents: 0,
       used: true,
       createdAt: new Date(),
-    }).catch(() => {}); // non-fatal
+    }).catch(() => {});
 
     res.json({ message: "Invite sent", referralCode, signupUrl });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
   }
+}
+
+/**
+ * POST /api/referrals/invite  (primary endpoint per spec)
+ * Body: { email: string, note?: string }
+ */
+router.post("/referrals/invite", async (req: Request, res: Response) => {
+  if (!requireAuth(req, res)) return;
+
+  const parsed = z.object({
+    email: z.string().email(),
+    note: z.string().max(300).optional(),
+  }).safeParse(req.body);
+
+  if (!parsed.success) {
+    res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
+    return;
+  }
+
+  await handleSendInvite(req, res, { email: parsed.data.email, note: parsed.data.note });
+});
+
+/**
+ * POST /api/referrals/send-invite  (backward-compat alias)
+ * Body: { inviteeEmail: string, personalNote?: string }
+ */
+router.post("/referrals/send-invite", async (req: Request, res: Response) => {
+  if (!requireAuth(req, res)) return;
+
+  const parsed = z.object({
+    inviteeEmail: z.string().email(),
+    personalNote: z.string().max(300).optional(),
+  }).safeParse(req.body);
+
+  if (!parsed.success) {
+    res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
+    return;
+  }
+
+  await handleSendInvite(req, res, { email: parsed.data.inviteeEmail, note: parsed.data.personalNote });
 });
 
 /**
