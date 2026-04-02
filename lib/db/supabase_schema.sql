@@ -1,13 +1,14 @@
 -- =============================================================================
 -- Health Plan Factory — Complete Supabase Schema
--- Generated from lib/db/src/schema/index.ts (Drizzle ORM source of truth)
+-- Consolidates all migrations: 0000 through 0008
 -- Idempotent: safe to run on an empty or partially-migrated database.
 --
--- HOW TO USE:
+-- HOW TO APPLY:
 --   1. Open the Supabase SQL Editor:
 --      https://app.supabase.com/project/rlugmlnozbertfuonlwp/sql
 --   2. Paste this entire file into the editor.
---   3. Click "Run". All statements are idempotent (IF NOT EXISTS / DO...EXCEPTION).
+--   3. Click "Run". All statements use IF NOT EXISTS / DO...EXCEPTION
+--      patterns so they are safe to run multiple times.
 --
 -- =============================================================================
 
@@ -50,11 +51,13 @@ DO $$ BEGIN
     'referral-invite', 'referral-reward', 'magic-link', 'weekly-summary', 'streak-at-risk'
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 DO $$ BEGIN ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 'session-confirmed'; EXCEPTION WHEN others THEN NULL; END $$;
 DO $$ BEGIN ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 'referral-reward'; EXCEPTION WHEN others THEN NULL; END $$;
 DO $$ BEGIN ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 'demo-request'; EXCEPTION WHEN others THEN NULL; END $$;
 DO $$ BEGIN ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 'review-nudge'; EXCEPTION WHEN others THEN NULL; END $$;
+DO $$ BEGIN ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 're-engagement-day3'; EXCEPTION WHEN others THEN NULL; END $$;
+DO $$ BEGIN ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 're-engagement-day7'; EXCEPTION WHEN others THEN NULL; END $$;
+DO $$ BEGIN ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 'booking-request'; EXCEPTION WHEN others THEN NULL; END $$;
 
 DO $$ BEGIN
   CREATE TYPE "public"."plan_status" AS ENUM('generated', 'saved', 'active');
@@ -361,9 +364,12 @@ CREATE TABLE IF NOT EXISTS "demo_requests" (
   "company_size" text NOT NULL,
   "email" text NOT NULL,
   "phone" text,
+  "message" text,
   "status" text DEFAULT 'new' NOT NULL,
   "created_at" timestamp DEFAULT now() NOT NULL
 );
+
+ALTER TABLE "demo_requests" ADD COLUMN IF NOT EXISTS "message" text;
 
 CREATE TABLE IF NOT EXISTS "provider_reviews" (
   "id" text PRIMARY KEY NOT NULL,
@@ -450,6 +456,19 @@ CREATE TABLE IF NOT EXISTS "referral_milestones" (
   "milestone" text NOT NULL,
   "rewarded_at" timestamp DEFAULT now() NOT NULL,
   "bonus_credit_cents" integer DEFAULT 0 NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "booking_requests" (
+  "id" text PRIMARY KEY NOT NULL,
+  "member_id" text NOT NULL,
+  "provider_id" text NOT NULL,
+  "member_email" text NOT NULL,
+  "contact_email" text,
+  "requested_modality" text,
+  "message" text NOT NULL,
+  "note" text,
+  "status" text NOT NULL DEFAULT 'pending',
+  "created_at" timestamp NOT NULL DEFAULT now()
 );
 
 -- ── Foreign key constraints (idempotent) ─────────────────────────────────────
@@ -644,6 +663,16 @@ DO $$ BEGIN
     FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+DO $$ BEGIN
+  ALTER TABLE "booking_requests" ADD CONSTRAINT "booking_requests_member_id_profiles_id_fk"
+    FOREIGN KEY ("member_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "booking_requests" ADD CONSTRAINT "booking_requests_provider_id_providers_id_fk"
+    FOREIGN KEY ("provider_id") REFERENCES "public"."providers"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 -- ── Indexes ───────────────────────────────────────────────────────────────────
 
 CREATE UNIQUE INDEX IF NOT EXISTS "employer_members_pk" ON "employer_members" USING btree ("employer_id","profile_id");
@@ -692,6 +721,9 @@ CREATE INDEX IF NOT EXISTS "coach_sessions_updated_at_idx" ON "coach_sessions" U
 CREATE UNIQUE INDEX IF NOT EXISTS "coach_memories_profile_id_idx" ON "coach_memories" USING btree ("profile_id");
 CREATE INDEX IF NOT EXISTS "referral_milestones_profile_idx" ON "referral_milestones" USING btree ("profile_id");
 CREATE UNIQUE INDEX IF NOT EXISTS "referral_milestones_profile_milestone_idx" ON "referral_milestones" USING btree ("profile_id","milestone");
+CREATE INDEX IF NOT EXISTS "booking_requests_member_idx" ON "booking_requests" USING btree ("member_id");
+CREATE INDEX IF NOT EXISTS "booking_requests_provider_idx" ON "booking_requests" USING btree ("provider_id");
+CREATE INDEX IF NOT EXISTS "booking_requests_created_at_idx" ON "booking_requests" USING btree ("created_at");
 
 -- ── Verification query ────────────────────────────────────────────────────────
 -- Run this after applying the schema to confirm all tables were created:
@@ -701,6 +733,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS "referral_milestones_profile_milestone_idx" ON
 -- WHERE table_schema = 'public'
 --   AND table_name IN (
 --     'admin_settings',
+--     'booking_requests',
 --     'coach_memories',
 --     'coach_sessions',
 --     'demo_requests',
@@ -733,4 +766,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS "referral_milestones_profile_milestone_idx" ON
 --     'users'
 --   )
 -- ORDER BY table_name;
--- Expected: 31 rows
+-- Expected: 32 rows
