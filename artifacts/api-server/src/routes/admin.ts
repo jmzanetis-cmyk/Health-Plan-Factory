@@ -908,6 +908,13 @@ router.get("/admin/booking-requests", async (req, res) => {
 
   const { status } = req.query as { status?: string };
 
+  const VALID_BOOKING_STATUSES = ["pending", "contacted", "declined"] as const;
+  type BookingStatus = typeof VALID_BOOKING_STATUSES[number];
+  if (status && !VALID_BOOKING_STATUSES.includes(status as BookingStatus)) {
+    res.status(400).json({ error: `Invalid status filter. Must be one of: ${VALID_BOOKING_STATUSES.join(", ")}` });
+    return;
+  }
+
   try {
     const rows = await db
       .select({
