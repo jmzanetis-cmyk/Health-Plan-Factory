@@ -13,6 +13,7 @@ interface DemoFormState {
   email: string;
   phone: string;
   teamSize: string;
+  message: string;
   submitted: boolean;
   submitting: boolean;
   error: string | null;
@@ -25,12 +26,13 @@ export default function ForEmployers() {
     email: "",
     phone: "",
     teamSize: "",
+    message: "",
     submitted: false,
     submitting: false,
     error: null,
   });
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value, error: null }));
   }
 
@@ -47,6 +49,7 @@ export default function ForEmployers() {
           companySize: form.teamSize,
           email: form.email,
           phone: form.phone || undefined,
+          message: form.message || undefined,
         }),
       });
       if (!res.ok) {
@@ -493,10 +496,17 @@ export default function ForEmployers() {
               <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: "var(--app-font-sans)" }}>
                 We'll be in touch shortly
               </h3>
-              <p className="text-sm font-light" style={{ color: "rgba(255,255,255,0.55)", fontFamily: "var(--app-font-sans)" }}>
+              <p className="text-sm font-light mb-6" style={{ color: "rgba(255,255,255,0.55)", fontFamily: "var(--app-font-sans)" }}>
                 Check your inbox — we've sent a confirmation to <strong style={{ color: "white" }}>{form.email}</strong>.
                 Our team will follow up within 1 business day.
               </p>
+              <Link
+                to="/employer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold no-underline transition-all"
+                style={{ background: "rgba(255,255,255,0.12)", color: "white", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(255,255,255,0.15)" }}
+              >
+                Already a customer? Sign in to your portal →
+              </Link>
             </div>
           ) : (
             <form
@@ -539,6 +549,35 @@ export default function ForEmployers() {
                   />
                 </div>
               ))}
+
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="message"
+                  className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--app-font-sans)" }}
+                >
+                  Message (optional)
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={3}
+                  placeholder="Tell us about your team's wellness goals or any questions you have…"
+                  value={form.message}
+                  onChange={handleChange}
+                  style={{
+                    background: "rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    color: "white",
+                    fontFamily: "var(--app-font-sans)",
+                    fontSize: "0.875rem",
+                    outline: "none",
+                    resize: "vertical",
+                  }}
+                />
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <label
@@ -599,6 +638,19 @@ export default function ForEmployers() {
                 No spam. We'll respond within 1 business day.
               </p>
             </form>
+          )}
+
+          {!form.submitted && (
+            <p className="text-center mt-6 text-sm" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "var(--app-font-sans)" }}>
+              Already a customer?{" "}
+              <Link
+                to="/employer"
+                className="no-underline font-semibold"
+                style={{ color: "rgba(255,255,255,0.65)" }}
+              >
+                Sign in to your employer portal →
+              </Link>
+            </p>
           )}
         </div>
       </div>

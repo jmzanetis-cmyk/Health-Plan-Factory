@@ -721,6 +721,7 @@ export const demoRequests = pgTable(
     companySize: text("company_size").notNull(),
     email: text("email").notNull(),
     phone: text("phone"),
+    message: text("message"),
     status: text("status").notNull().default("new"), // new | contacted | qualified | closed
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

@@ -18,6 +18,7 @@ const DemoRequestBody = z.object({
   companySize: z.string().min(1).max(50),
   email: z.string().email(),
   phone: z.string().max(30).optional(),
+  message: z.string().max(2000).optional(),
 });
 
 async function sendRawEmail(to: string, subject: string, html: string): Promise<void> {
@@ -44,13 +45,13 @@ router.post("/demo-request", async (req, res) => {
     return;
   }
 
-  const { name, company, companySize, email, phone } = parsed.data;
+  const { name, company, companySize, email, phone, message } = parsed.data;
 
   try {
     const id = randomUUID();
     const [record] = await db
       .insert(demoRequests)
-      .values({ id, name, company, companySize, email, phone })
+      .values({ id, name, company, companySize, email, phone, message })
       .returning();
 
     const adminHtml = `
@@ -62,6 +63,7 @@ router.post("/demo-request", async (req, res) => {
           <tr><td style="padding:8px;font-weight:600;color:#555">Company Size</td><td style="padding:8px">${companySize}</td></tr>
           <tr style="background:#f9f9f9"><td style="padding:8px;font-weight:600;color:#555">Email</td><td style="padding:8px"><a href="mailto:${email}">${email}</a></td></tr>
           ${phone ? `<tr><td style="padding:8px;font-weight:600;color:#555">Phone</td><td style="padding:8px">${phone}</td></tr>` : ""}
+          ${message ? `<tr style="background:#f9f9f9"><td style="padding:8px;font-weight:600;color:#555;vertical-align:top">Message</td><td style="padding:8px;white-space:pre-wrap">${message}</td></tr>` : ""}
         </table>
         <p style="margin-top:24px;color:#888;font-size:13px">Lead ID: ${id}</p>
       </div>
