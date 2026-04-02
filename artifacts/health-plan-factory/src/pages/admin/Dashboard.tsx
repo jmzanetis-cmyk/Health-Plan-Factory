@@ -68,6 +68,7 @@ const navLinks = [
   { to: "/admin/dashboard", label: "Overview" },
   { to: "/admin/users", label: "Users" },
   { to: "/admin/providers", label: "Providers" },
+  { to: "/admin/reviews", label: "Reviews" },
   { to: "/admin/modalities", label: "Modalities" },
   { to: "/admin/testimonials", label: "Testimonials" },
   { to: "/admin/employers", label: "Employers" },

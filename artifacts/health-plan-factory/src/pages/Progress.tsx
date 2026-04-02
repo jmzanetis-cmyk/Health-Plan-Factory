@@ -7,7 +7,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceDot,
 } from "recharts";
-import { Loader2, Plus, CheckCircle, BadgeCheck, Sparkles, AlertTriangle, Printer, RefreshCw } from "lucide-react";
+import { Loader2, Plus, CheckCircle, BadgeCheck, Sparkles, AlertTriangle, Printer, RefreshCw, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 
@@ -216,6 +216,11 @@ function MetricInput({ label, name, register }: { label: string; name: keyof Log
   );
 }
 
+interface UnreviewedProvider {
+  providerId: string;
+  providerName: string;
+}
+
 export default function Progress() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -228,6 +233,7 @@ export default function Progress() {
   const [lmnEligibleIds, setLmnEligibleIds] = useState<string[]>([]);
   const [insightsData, setInsightsData] = useState<InsightsData | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [reviewNudge, setReviewNudge] = useState<UnreviewedProvider | null>(null);
 
   const fetchInsights = (refresh = false) => {
     if (!user) return;
@@ -272,6 +278,13 @@ export default function Progress() {
       .catch(() => {});
     // Fetch longitudinal insights
     fetchInsights(false);
+    // Fetch unreviewed unlocked providers for nudge
+    fetch(`${BASE}/api/providers/me/unreviewed`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { providers: UnreviewedProvider[] } | null) => {
+        if (data?.providers?.length) setReviewNudge(data.providers[0]);
+      })
+      .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -303,6 +316,13 @@ export default function Progress() {
       reset({ sessionDate: new Date().toISOString().slice(0, 10) });
       setShowForm(false);
       toast({ title: "Progress logged!", description: "Your wellness metrics have been saved." });
+      // After logging a session, check for unreviewed providers to nudge
+      fetch(`${BASE}/api/providers/me/unreviewed`, { credentials: "include" })
+        .then((r) => r.ok ? r.json() : null)
+        .then((data: { providers: UnreviewedProvider[] } | null) => {
+          if (data?.providers?.length) setReviewNudge(data.providers[0]);
+        })
+        .catch(() => {});
     } catch {
       toast({ title: "Error", description: "Could not save your log. Please try again.", variant: "destructive" });
     } finally {
@@ -364,6 +384,37 @@ export default function Progress() {
             <Plus size={15} /> Log Entry
           </button>
         </div>
+
+        {/* Review nudge banner */}
+        {reviewNudge && (
+          <div className="flex items-center gap-3 px-5 py-4 rounded-xl" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <Star size={18} fill="#f59e0b" style={{ color: "#f59e0b", flexShrink: 0 }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold" style={{ color: "#92400e", fontFamily: "var(--app-font-sans)" }}>
+                How was your session with {reviewNudge.providerName}?
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "#a16207", fontFamily: "var(--app-font-sans)" }}>
+                Leave a quick rating to help other members find great providers.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link
+                to={`/providers?reviewProvider=${reviewNudge.providerId}`}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
+                style={{ background: "#f59e0b", textDecoration: "none" }}
+              >
+                Rate now
+              </Link>
+              <button
+                onClick={() => setReviewNudge(null)}
+                className="text-xs"
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#a16207", fontFamily: "var(--app-font-sans)" }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Log form */}
         {showForm && (

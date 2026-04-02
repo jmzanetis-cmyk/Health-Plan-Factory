@@ -3,6 +3,30 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Users, Star, Calendar, TrendingUp, ChevronRight, ExternalLink, Clock, MapPin, Video, Eye } from "lucide-react";
 
+interface Review {
+  id: string;
+  rating: number;
+  reviewText: string | null;
+  isHidden: boolean;
+  createdAt: string;
+  memberName: string | null;
+}
+
+function StarDisplay({ rating }: { rating: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          size={12}
+          fill={s <= rating ? "#f59e0b" : "none"}
+          style={{ color: s <= rating ? "#f59e0b" : "#d1d5db" }}
+        />
+      ))}
+    </div>
+  );
+}
+
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
 interface Provider {
@@ -57,6 +81,9 @@ export default function ProviderDashboard() {
   const { user } = useAuth();
   const [provider, setProvider] = useState<Provider | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
     fetch(`${BASE}/api/providers/me`, { credentials: "include" })
@@ -66,6 +93,17 @@ export default function ProviderDashboard() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    fetch(`${BASE}/api/providers/me/reviews`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { reviews: Review[]; averageRating: number | null; reviewCount: number } | null) => {
+        if (data) {
+          setReviews(data.reviews);
+          setAverageRating(data.averageRating);
+          setReviewCount(data.reviewCount);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const displayName = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : user?.email ?? "Provider";
@@ -106,7 +144,7 @@ export default function ProviderDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <StatCard icon={<Users size={18} style={{ color: "var(--hpf-pink)" }} />} label="Profile views this month" value="—" trend="+12%" />
-          <StatCard icon={<Star size={18} style={{ color: "var(--hpf-crimson)" }} />} label="Average rating" value={provider?.rating ? Number(provider.rating).toFixed(1) : "—"} />
+          <StatCard icon={<Star size={18} style={{ color: "var(--hpf-crimson)" }} />} label="Average rating" value={averageRating !== null ? `${averageRating.toFixed(1)} ★` : "—"} trend={reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? "s" : ""}` : undefined} />
           <StatCard icon={<Calendar size={18} style={{ color: "var(--sage)" }} />} label="Bookings this month" value="—" />
           <StatCard icon={<TrendingUp size={18} style={{ color: "var(--hpf-pink)" }} />} label="Plan recommendations" value="—" trend="Coming soon" />
         </div>
@@ -251,6 +289,58 @@ export default function ProviderDashboard() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* My Reviews */}
+        <div className="rounded-xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold flex items-center gap-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+              <Star size={16} style={{ color: "#f59e0b" }} />
+              Member Reviews
+            </h2>
+            {reviewCount > 0 && (
+              <span className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                {reviewCount} review{reviewCount !== 1 ? "s" : ""} · avg {averageRating?.toFixed(1)} ★
+              </span>
+            )}
+          </div>
+
+          {reviews.length === 0 ? (
+            <p className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+              No reviews yet. Once members rate you after sessions, they'll appear here.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {reviews.slice(0, 5).map((r) => (
+                <div key={r.id} style={{ background: r.isHidden ? "rgba(192,57,43,0.04)" : "rgba(212,34,126,0.03)", borderRadius: 8, padding: "0.625rem 0.75rem", border: `1px solid ${r.isHidden ? "rgba(192,57,43,0.12)" : "rgba(212,34,126,0.06)"}` }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <StarDisplay rating={r.rating} />
+                    <span className="text-xs font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+                      {r.memberName ?? "Member"}
+                    </span>
+                    <span className="text-xs ml-auto" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                      {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                    {r.isHidden && (
+                      <span className="text-xs font-medium px-1.5 py-0.5 rounded" style={{ background: "rgba(192,57,43,0.08)", color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>
+                        Hidden
+                      </span>
+                    )}
+                  </div>
+                  {r.reviewText && (
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                      {r.reviewText}
+                    </p>
+                  )}
+                </div>
+              ))}
+              {reviews.length > 5 && (
+                <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textAlign: "center" }}>
+                  +{reviews.length - 5} more review{reviews.length - 5 !== 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
       </div>

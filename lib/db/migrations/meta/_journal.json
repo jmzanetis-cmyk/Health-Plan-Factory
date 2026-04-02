@@ -29,6 +29,13 @@
       "when": 1775200000000,
       "tag": "0003_demo_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775300000000,
+      "tag": "0004_provider_reviews",
+      "breakpoints": true
     }
   ]
 }

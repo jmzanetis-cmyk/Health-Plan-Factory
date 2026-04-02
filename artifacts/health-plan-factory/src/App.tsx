@@ -62,6 +62,7 @@ import ProviderLeads from "@/pages/provider/Leads";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminUsers from "@/pages/admin/Users";
 import AdminProviders from "@/pages/admin/Providers";
+import AdminReviews from "@/pages/admin/Reviews";
 import AdminModalities from "@/pages/admin/Modalities";
 import AdminSettings from "@/pages/admin/Settings";
 import AdminEmployers from "@/pages/admin/Employers";
@@ -147,6 +148,7 @@ function AppRoutes() {
       <Route path="/admin/dashboard" element={<Layout><ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute></Layout>} />
       <Route path="/admin/users" element={<Layout><ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute></Layout>} />
       <Route path="/admin/providers" element={<Layout><ProtectedRoute role="admin"><AdminProviders /></ProtectedRoute></Layout>} />
+      <Route path="/admin/reviews" element={<Layout><ProtectedRoute role="admin"><AdminReviews /></ProtectedRoute></Layout>} />
       <Route path="/admin/modalities" element={<Layout><ProtectedRoute role="admin"><AdminModalities /></ProtectedRoute></Layout>} />
       <Route path="/admin/settings" element={<Layout><ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute></Layout>} />
       <Route path="/admin/employers" element={<Layout><ProtectedRoute role="admin"><AdminEmployers /></ProtectedRoute></Layout>} />

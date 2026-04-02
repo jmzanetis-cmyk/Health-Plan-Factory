@@ -19,6 +19,7 @@ import notificationLogRouter from "./notificationLog";
 import demoRequestsRouter from "./demoRequests";
 import healthSyncRouter from "./healthSync";
 import storageRouter from "./storage";
+import reviewsRouter from "./reviews";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(notificationLogRouter);
 router.use(demoRequestsRouter);
 router.use(healthSyncRouter);
 router.use(storageRouter);
+router.use(reviewsRouter);
 
 export default router;

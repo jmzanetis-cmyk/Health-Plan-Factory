@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe, Unlock, CheckCircle2 } from "lucide-react";
+import { Loader2, BookmarkIcon, BookmarkCheck, SlidersHorizontal, X, Phone, Globe, Unlock, CheckCircle2, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UnlockResult {
@@ -46,6 +46,55 @@ interface Favorite {
   providerId: string;
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  reviewText: string | null;
+  createdAt: string;
+  memberName: string | null;
+}
+
+interface ProviderReviewData {
+  reviews: Review[];
+  averageRating: number | null;
+  reviewCount: number;
+}
+
+interface ReviewModalState {
+  providerId: string;
+  providerName: string;
+  existingRating?: number;
+  existingText?: string;
+}
+
+function StarRating({ rating, onRate, size = 18 }: { rating: number; onRate?: (r: number) => void; size?: number }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => onRate && onRate(s)}
+          onMouseEnter={() => onRate && setHovered(s)}
+          onMouseLeave={() => onRate && setHovered(0)}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 2,
+            cursor: onRate ? "pointer" : "default",
+            color: s <= (hovered || rating) ? "#f59e0b" : "#d1d5db",
+            lineHeight: 1,
+          }}
+          disabled={!onRate}
+        >
+          <Star size={size} fill={s <= (hovered || rating) ? "#f59e0b" : "none"} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function SkeletonCard() {
   return (
     <div className="p-5 rounded-2xl animate-pulse" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
@@ -76,6 +125,14 @@ export default function Providers() {
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
   const [unlockModal, setUnlockModal] = useState<UnlockResult | null>(null);
+
+  // Reviews state
+  const [reviewsMap, setReviewsMap] = useState<Record<string, ProviderReviewData>>({});
+  const [reviewModal, setReviewModal] = useState<ReviewModalState | null>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [expandedReviewsId, setExpandedReviewsId] = useState<string | null>(null);
 
   // Filters — initialise selectedModality from ?modality= query param
   // (supports deep-link from /modalities/:slug evidence library pages)
@@ -193,6 +250,68 @@ export default function Providers() {
       })
       .catch(() => setLoading(false));
   }, [selectedModality, zipCode, telehealth]);
+
+  const fetchReviews = (providerId: string) => {
+    if (!user || reviewsMap[providerId]) return;
+    fetch(`${BASE}/api/providers/${providerId}/reviews`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: ProviderReviewData | null) => {
+        if (data) setReviewsMap((prev) => ({ ...prev, [providerId]: data }));
+      })
+      .catch(() => {});
+  };
+
+  const openReviewModal = (p: { id: string; name: string }) => {
+    const existing = reviewsMap[p.id];
+    const myReview = existing?.reviews?.find((r) => r.memberName === user?.firstName);
+    setReviewModal({ providerId: p.id, providerName: p.name, existingRating: myReview?.rating, existingText: myReview?.reviewText ?? undefined });
+    setReviewRating(myReview?.rating ?? 0);
+    setReviewText(myReview?.reviewText ?? "");
+  };
+
+  const submitReview = async () => {
+    if (!reviewModal || reviewRating === 0) {
+      toast({ title: "Rating required", description: "Please select a star rating before submitting.", variant: "destructive" });
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const res = await fetch(`${BASE}/api/providers/${reviewModal.providerId}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ rating: reviewRating, reviewText: reviewText.trim() || null }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? "Failed to submit review");
+      }
+      toast({ title: "Review submitted!", description: "Thank you for sharing your experience." });
+      // Refresh reviews for this provider
+      setReviewsMap((prev) => {
+        const { [reviewModal.providerId]: _, ...rest } = prev;
+        return rest;
+      });
+      fetchReviews(reviewModal.providerId);
+      setReviewModal(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not submit review";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  // Open review modal if ?reviewProvider=<id> is set (from email nudge link)
+  useEffect(() => {
+    const reviewProviderId = searchParams.get("reviewProvider");
+    if (!reviewProviderId || !user) return;
+    const p = providers.find((pr) => pr.id === reviewProviderId);
+    if (!p) return;
+    fetchReviews(reviewProviderId);
+    openReviewModal(p);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, providers, user]);
 
   const toggleFavorite = async (providerId: string) => {
     if (!user) {
@@ -333,6 +452,65 @@ export default function Providers() {
         </div>
       )}
 
+      {/* ── Review Modal ── */}
+      {reviewModal && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+          }}
+          onClick={() => setReviewModal(null)}
+        >
+          <div
+            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 420, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Star size={20} style={{ color: "#f59e0b" }} />
+              <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--hpf-pink)", margin: 0 }}>
+                Rate {reviewModal.providerName}
+              </h3>
+            </div>
+            <p className="text-xs mb-4" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+              Your review helps other members choose the right provider.
+            </p>
+            <div className="mb-4">
+              <p className="text-sm font-semibold mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Star rating</p>
+              <StarRating rating={reviewRating} onRate={setReviewRating} size={28} />
+            </div>
+            <div className="mb-5">
+              <p className="text-sm font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Written review (optional)</p>
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Share your experience with this provider…"
+                rows={3}
+                maxLength={800}
+                className="w-full px-3 py-2.5 text-sm resize-none outline-none"
+                style={{ background: "var(--warm-white)", border: "1.5px solid rgba(212,34,126,0.12)", borderRadius: 8, color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setReviewModal(null)}
+                style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitReview}
+                disabled={submittingReview || reviewRating === 0}
+                style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: reviewRating === 0 ? "rgba(212,34,126,0.1)" : "var(--hpf-pink)", color: reviewRating === 0 ? "var(--text-muted)" : "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: reviewRating === 0 || submittingReview ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)", opacity: submittingReview ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
+              >
+                {submittingReview && <Loader2 size={14} className="animate-spin" />}
+                {reviewModal.existingRating ? "Update review" : "Submit review"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -465,6 +643,8 @@ export default function Providers() {
           ) : (
             providers.map((p) => {
               const isSaved = favorites.has(p.id);
+              const reviewData = reviewsMap[p.id];
+              const isExpanded = expandedReviewsId === p.id;
               return (
                 <div
                   key={p.id}
@@ -552,6 +732,78 @@ export default function Providers() {
                       </span>
                     )}
                   </div>
+
+                  {/* Rating summary row — always visible to logged-in members */}
+                  {user && (
+                    <div className="flex items-center gap-2 pt-1 border-t" style={{ borderColor: "rgba(212,34,126,0.06)" }}>
+                      {reviewData ? (
+                        reviewData.reviewCount > 0 ? (
+                          <>
+                            <StarRating rating={Math.round(reviewData.averageRating ?? 0)} size={13} />
+                            <span className="text-xs font-semibold" style={{ color: "#f59e0b", fontFamily: "var(--app-font-sans)" }}>
+                              {reviewData.averageRating?.toFixed(1)}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (isExpanded) setExpandedReviewsId(null);
+                                else { setExpandedReviewsId(p.id); fetchReviews(p.id); }
+                              }}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", fontSize: "0.7rem" }}
+                            >
+                              {reviewData.reviewCount} review{reviewData.reviewCount !== 1 ? "s" : ""} {isExpanded ? "▲" : "▼"}
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>No reviews yet</span>
+                        )
+                      ) : (
+                        <button
+                          onClick={() => { fetchReviews(p.id); setExpandedReviewsId(p.id); }}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "0.25rem" }}
+                        >
+                          <Star size={12} /> See reviews
+                        </button>
+                      )}
+                      {unlockedIds.has(p.id) && (
+                        <button
+                          onClick={() => openReviewModal(p)}
+                          className="ml-auto text-xs font-semibold"
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}
+                        >
+                          + Rate
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Expanded reviews list */}
+                  {isExpanded && reviewData && reviewData.reviews.length > 0 && (
+                    <div className="flex flex-col gap-2 pt-1 border-t" style={{ borderColor: "rgba(212,34,126,0.06)" }}>
+                      {reviewData.reviews.slice(0, 3).map((r) => (
+                        <div key={r.id} style={{ background: "rgba(212,34,126,0.03)", borderRadius: 8, padding: "0.5rem 0.75rem" }}>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <StarRating rating={r.rating} size={11} />
+                            <span className="text-xs font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+                              {r.memberName ?? "Member"}
+                            </span>
+                            <span className="text-xs ml-auto" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                              {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                            </span>
+                          </div>
+                          {r.reviewText && (
+                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", margin: 0 }}>
+                              {r.reviewText}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                      {reviewData.reviews.length > 3 && (
+                        <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textAlign: "center" }}>
+                          +{reviewData.reviews.length - 3} more review{reviewData.reviews.length - 3 !== 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Contact row — gated behind unlock */}
                   <div className="flex flex-wrap gap-3 pt-1 border-t items-center" style={{ borderColor: "rgba(212,34,126,0.06)" }}>

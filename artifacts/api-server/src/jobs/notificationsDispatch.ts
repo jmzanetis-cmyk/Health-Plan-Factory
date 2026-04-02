@@ -10,14 +10,15 @@
  */
 import { schedule } from "node-cron";
 import { db } from "@workspace/db";
-import { planProgressLogs, profiles, notificationLog } from "@workspace/db";
-import { eq, lt, gt, and, gte, isNull, or, ne } from "drizzle-orm";
+import { planProgressLogs, profiles, notificationLog, providerReviews, providerUnlocks, providers } from "@workspace/db";
+import { eq, lt, gt, and, gte, isNull, or, ne, lte, notInArray } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { queueNotification, processQueuedNotifications } from "../lib/comms";
 import { sessionReminderEmail } from "../emails/session-reminder";
 import { accountabilityNudgeEmail } from "../emails/accountability-nudge";
 import { paymentDueEmail } from "../emails/payment-due";
 import { weeklyDigestEmail } from "../emails/weekly-digest";
+import { reviewNudgeEmail } from "../emails/review-nudge";
 import { buildDigestForMember } from "../lib/weeklyDigest";
 import { logger } from "../lib/logger";
 
@@ -37,7 +38,7 @@ async function wasRecentlySent(
     .where(
       and(
         eq(notificationLog.profileId, profileId),
-        eq(notificationLog.type, type as "session-reminder" | "accountability-nudge" | "weekly-summary" | "streak-at-risk"),
+        eq(notificationLog.type, type as "session-reminder" | "accountability-nudge" | "weekly-summary" | "streak-at-risk" | "review-nudge" | "payment-due"),
         gte(notificationLog.sentAt, since),
         eq(notificationLog.status, "sent"),
       ),
@@ -324,26 +325,134 @@ async function dispatchPaymentDueReminders(): Promise<{ sent: number; skipped: n
 }
 
 /**
+ * Post-session review nudge dispatch.
+ * Finds sessions that passed in the last 24–48 hours where the member has
+ * unlocked the provider but hasn't left a review yet. Sends one nudge per
+ * member-provider pair, deduplicated by a 7-day window.
+ */
+async function dispatchReviewNudges(): Promise<{ sent: number; skipped: number }> {
+  let sent = 0;
+  let skipped = 0;
+
+  const now = new Date();
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+  try {
+    // Find unlocks where the member has not yet reviewed that provider
+    const unlocks = await db
+      .select({
+        memberId: providerUnlocks.memberId,
+        providerId: providerUnlocks.providerId,
+        providerName: providers.name,
+      })
+      .from(providerUnlocks)
+      .innerJoin(providers, eq(providerUnlocks.providerId, providers.id))
+      .where(eq(providers.status, "approved"));
+
+    // Get all existing reviews to exclude
+    const existingReviews = await db
+      .select({ memberId: providerReviews.memberId, providerId: providerReviews.providerId })
+      .from(providerReviews);
+
+    const reviewedSet = new Set(existingReviews.map((r) => `${r.memberId}::${r.providerId}`));
+
+    // Find sessions logged in the past 24-48h window
+    const recentSessions = await db
+      .select({
+        profileId: planProgressLogs.profileId,
+        sessionDate: planProgressLogs.sessionDate,
+        modalityId: planProgressLogs.modalityId,
+      })
+      .from(planProgressLogs)
+      .where(
+        and(
+          gt(planProgressLogs.sessionDate, twoDaysAgo),
+          lte(planProgressLogs.sessionDate, oneDayAgo),
+        ),
+      );
+
+    const sessionProfileIds = new Set(
+      recentSessions.map((s) => s.profileId).filter(Boolean) as string[],
+    );
+
+    if (sessionProfileIds.size === 0) return { sent, skipped };
+
+    const memberProfiles = await db
+      .select({
+        id: profiles.id,
+        email: profiles.email,
+        displayName: profiles.displayName,
+      })
+      .from(profiles)
+      .where(sql`${profiles.id} = ANY(${Array.from(sessionProfileIds)})`);
+
+    const profileMap = new Map(memberProfiles.map((p) => [p.id, p]));
+
+    for (const unlock of unlocks) {
+      const key = `${unlock.memberId}::${unlock.providerId}`;
+      if (reviewedSet.has(key)) { skipped++; continue; }
+      if (!sessionProfileIds.has(unlock.memberId)) { skipped++; continue; }
+
+      const profile = profileMap.get(unlock.memberId);
+      if (!profile) { skipped++; continue; }
+
+      const alreadySent = await wasRecentlySent(
+        unlock.memberId,
+        "review-nudge",
+        7 * 24 * 60 * 60 * 1000,
+      );
+      if (alreadySent) { skipped++; continue; }
+
+      const reviewUrl = `${BASE_URL}/providers?reviewProvider=${unlock.providerId}`;
+      const { subject, html } = reviewNudgeEmail({
+        displayName: profile.displayName,
+        providerName: unlock.providerName,
+        providerId: unlock.providerId,
+        reviewUrl,
+      });
+
+      await queueNotification({
+        profileId: unlock.memberId,
+        email: profile.email,
+        type: "review-nudge",
+        subject,
+        html,
+        smsBody: `Health Plan Factory: How was your session with ${unlock.providerName}? Leave a quick review: ${reviewUrl}`,
+        scheduledFor: new Date(),
+      });
+      sent++;
+    }
+  } catch (err) {
+    logger.error({ err }, "Review nudge dispatch error");
+  }
+
+  return { sent, skipped };
+}
+
+/**
  * Daily batch job (08:00 UTC):
  *  - Session reminders: catch-all for upcoming sessions (24h/1h windows).
  *    Primary path is queueNotification() at session creation in progress.ts, but this
  *    daily sweep catches sessions that existed before the queue was introduced.
  *  - Accountability nudges, weekly summaries, payment-due reminders.
+ *  - Review nudges: sent after a session date has passed for unlocked providers.
  * Queue processor (every 15 min) flushes all queued entries to the provider.
  */
 async function runDailyBatchJob(): Promise<void> {
   logger.info("Daily batch notification job started");
 
   try {
-    const [reminders, nudges, weeklyDigests, paymentDue] = await Promise.all([
+    const [reminders, nudges, weeklyDigests, paymentDue, reviewNudges] = await Promise.all([
       dispatchSessionReminders(),
       dispatchAccountabilityNudges(),
       dispatchWeeklyDigests(),
       dispatchPaymentDueReminders(),
+      dispatchReviewNudges(),
     ]);
 
     logger.info(
-      { reminders, nudges, weeklyDigests, paymentDue },
+      { reminders, nudges, weeklyDigests, paymentDue, reviewNudges },
       "Daily batch notification job complete",
     );
   } catch (err) {

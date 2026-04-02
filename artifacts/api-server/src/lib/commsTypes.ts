@@ -11,4 +11,5 @@ export type NotificationType =
   | "magic-link"
   | "weekly-summary"
   | "streak-at-risk"
-  | "demo-request";
+  | "demo-request"
+  | "review-nudge";

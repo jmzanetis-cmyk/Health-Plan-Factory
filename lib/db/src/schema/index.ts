@@ -598,6 +598,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "weekly-summary",
   "streak-at-risk",
   "demo-request",
+  "review-nudge",
 ]);
 
 export const notificationStatusEnum = pgEnum("notification_status", [
@@ -850,3 +851,37 @@ export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
 });
 export type InsertTestimonial = InferInsertModel<typeof testimonials>;
 export type Testimonial = InferSelectModel<typeof testimonials>;
+
+// ── provider_reviews ──────────────────────────────────────────────────────────
+// Members submit 1–5 star ratings + optional written reviews after sessions.
+// Admins can hide (moderate) reviews by setting isHidden = true.
+
+export const providerReviews = pgTable(
+  "provider_reviews",
+  {
+    id: text("id").primaryKey(),
+    providerId: text("provider_id")
+      .notNull()
+      .references(() => providers.id, { onDelete: "cascade" }),
+    memberId: text("member_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(),              // 1–5
+    reviewText: text("review_text"),                  // optional written review
+    isHidden: boolean("is_hidden").notNull().default(false), // admin moderation flag
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("provider_reviews_provider_idx").on(t.providerId),
+    index("provider_reviews_member_idx").on(t.memberId),
+    uniqueIndex("provider_reviews_member_provider_unique_idx").on(t.memberId, t.providerId),
+  ],
+);
+
+export const insertProviderReviewSchema = createInsertSchema(providerReviews).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProviderReview = InferInsertModel<typeof providerReviews>;
+export type ProviderReview = InferSelectModel<typeof providerReviews>;
