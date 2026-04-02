@@ -80,29 +80,36 @@ export function parseNPIProvider(raw: NPIRawResult, hsaEligible: boolean): NPIPr
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
+export interface NPISearchOptions {
+  taxonomy: string;
+  hsaEligible: boolean;
+  taxonomyDesc?: string;
+  /** Optional 2-letter US state code */
+  state?: string;
+  /** Optional city name */
+  city?: string;
+  /** Optional 5-digit ZIP (still supported for backward compat) */
+  zip?: string;
+  limit?: number;
+}
+
 /**
- * Fetch licensed practitioners from the CMS NPI Registry by ZIP code and taxonomy.
+ * Fetch licensed practitioners from the CMS NPI Registry.
+ * All location params (state, city, zip) are optional — omitting all performs
+ * a nationwide search.
  * Routes through the backend proxy at /api/npi to avoid browser CORS restrictions.
- * The backend passes `taxonomy_description` to the NPI API for server-side filtering.
  */
-export async function fetchNPIByZipAndTaxonomy(
-  zip: string,
-  taxonomyCode: string,
-  hsaEligible: boolean,
-  taxonomyDesc?: string,
-  limit = 50,
-): Promise<NPIProvider[]> {
-  const zip5 = zip.replace(/\D/g, "").slice(0, 5);
-  if (zip5.length < 5) throw new Error("Please enter a valid 5-digit ZIP code.");
+export async function fetchNPIProviders(options: NPISearchOptions): Promise<NPIProvider[]> {
+  const { taxonomy, hsaEligible, taxonomyDesc, state, city, zip, limit = 50 } = options;
 
   const params = new URLSearchParams({
-    zip: zip5,
-    taxonomy: taxonomyCode,
+    taxonomy,
     limit: String(limit),
   });
-  if (taxonomyDesc) {
-    params.set("taxonomyDesc", taxonomyDesc);
-  }
+  if (taxonomyDesc) params.set("taxonomyDesc", taxonomyDesc);
+  if (state && state.length === 2) params.set("state", state);
+  if (city && city.trim()) params.set("city", city.trim());
+  if (zip && /^\d{5}$/.test(zip)) params.set("zip", zip);
 
   const res = await fetch(`${BASE}/api/npi?${params.toString()}`, {
     signal: AbortSignal.timeout(15_000),
@@ -115,17 +122,28 @@ export async function fetchNPIByZipAndTaxonomy(
   }
 
   const all: NPIRawResult[] = data.results || [];
-  const prefix4 = taxonomyCode.slice(0, 4);
+  const prefix4 = taxonomy.slice(0, 4);
 
-  // Client-side filter by taxonomy code for extra precision (NPI API does desc keyword filtering)
   const filtered = all.filter((r) =>
     (r.taxonomies || []).some(
-      (t) => t.code === taxonomyCode || t.code?.startsWith(prefix4),
+      (t) => t.code === taxonomy || t.code?.startsWith(prefix4),
     ),
   );
 
-  // If server-side desc filtering returned results but none match the exact code,
-  // return all server-side results (they matched the taxonomy_description keyword)
   const results = filtered.length > 0 ? filtered : all;
   return results.map((r) => parseNPIProvider(r, hsaEligible));
+}
+
+/**
+ * @deprecated Use fetchNPIProviders() instead.
+ * Kept for backward compatibility with any callers that pass a ZIP.
+ */
+export async function fetchNPIByZipAndTaxonomy(
+  zip: string,
+  taxonomyCode: string,
+  hsaEligible: boolean,
+  taxonomyDesc?: string,
+  limit = 50,
+): Promise<NPIProvider[]> {
+  return fetchNPIProviders({ taxonomy: taxonomyCode, hsaEligible, taxonomyDesc, zip, limit });
 }

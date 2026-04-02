@@ -2,20 +2,25 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { NPI_CATEGORIES, type NpiCategory } from "@/data/npiCategories";
-import { fetchNPIByZipAndTaxonomy, type NPIProvider } from "@/lib/npiClient";
+import { fetchNPIProviders, type NPIProvider } from "@/lib/npiClient";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
-function getStoredZip(): string {
-  try {
-    const raw = sessionStorage.getItem("hpf_intake");
-    if (!raw) return "";
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return (parsed?.zipCode as string) || "";
-  } catch {
-    return "";
-  }
-}
+const US_STATES = [
+  ["AL","Alabama"],["AK","Alaska"],["AZ","Arizona"],["AR","Arkansas"],
+  ["CA","California"],["CO","Colorado"],["CT","Connecticut"],["DE","Delaware"],
+  ["FL","Florida"],["GA","Georgia"],["HI","Hawaii"],["ID","Idaho"],
+  ["IL","Illinois"],["IN","Indiana"],["IA","Iowa"],["KS","Kansas"],
+  ["KY","Kentucky"],["LA","Louisiana"],["ME","Maine"],["MD","Maryland"],
+  ["MA","Massachusetts"],["MI","Michigan"],["MN","Minnesota"],["MS","Mississippi"],
+  ["MO","Missouri"],["MT","Montana"],["NE","Nebraska"],["NV","Nevada"],
+  ["NH","New Hampshire"],["NJ","New Jersey"],["NM","New Mexico"],["NY","New York"],
+  ["NC","North Carolina"],["ND","North Dakota"],["OH","Ohio"],["OK","Oklahoma"],
+  ["OR","Oregon"],["PA","Pennsylvania"],["RI","Rhode Island"],["SC","South Carolina"],
+  ["SD","South Dakota"],["TN","Tennessee"],["TX","Texas"],["UT","Utah"],
+  ["VT","Vermont"],["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],
+  ["WI","Wisconsin"],["WY","Wyoming"],["DC","Washington D.C."],
+] as const;
 
 function CostBar({ category }: { category: NpiCategory }) {
   return (
@@ -319,20 +324,28 @@ function SkeletonCard() {
   );
 }
 
+function locationLabel(state: string, city: string): string {
+  if (city && state) return `${city}, ${state}`;
+  if (state) return state;
+  if (city) return city;
+  return "nationwide";
+}
+
 export default function ProviderSearch() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const initZip = searchParams.get("zip") || getStoredZip();
   const initModality = searchParams.get("modality") || "";
 
-  const [zip, setZip] = useState(initZip);
+  const [selectedState, setSelectedState] = useState("");
+  const [city, setCity] = useState("");
   const [selectedModality, setSelectedModality] = useState(initModality);
   const [providers, setProviders] = useState<NPIProvider[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [searched, setSearched] = useState(false);
+  const [lastLocation, setLastLocation] = useState({ state: "", city: "" });
   const [insights, setInsights] = useState<Record<string, string>>({});
   const [insightLoading, setInsightLoading] = useState<string | null>(null);
   const [saveToast, setSaveToast] = useState("");
@@ -340,21 +353,29 @@ export default function ProviderSearch() {
   const category = selectedModality ? NPI_CATEGORIES[selectedModality] : null;
   const npiEntries = Object.entries(NPI_CATEGORIES);
 
-  const runSearch = useCallback(async (modalityKey: string, zipVal: string) => {
+  const runSearch = useCallback(async (modalityKey: string, stateVal: string, cityVal: string) => {
     const cat = NPI_CATEGORIES[modalityKey];
-    if (!cat || !zipVal) return;
+    if (!cat) return;
 
     setLoading(true);
     setErrorMsg("");
     setProviders([]);
     setSearched(true);
+    setLastLocation({ state: stateVal, city: cityVal });
 
     try {
-      const results = await fetchNPIByZipAndTaxonomy(zipVal, cat.taxonomy, cat.hsaEligible, cat.taxonomyDesc);
+      const results = await fetchNPIProviders({
+        taxonomy: cat.taxonomy,
+        hsaEligible: cat.hsaEligible,
+        taxonomyDesc: cat.taxonomyDesc,
+        state: stateVal || undefined,
+        city: cityVal || undefined,
+      });
       setProviders(results);
       if (results.length === 0) {
+        const loc = locationLabel(stateVal, cityVal);
         setErrorMsg(
-          `No ${cat.label} found in the NPI Registry near ZIP ${zipVal.slice(0, 5)}. Try a nearby ZIP code.`,
+          `No ${cat.label} found in the NPI Registry${loc !== "nationwide" ? ` in ${loc}` : " nationwide"}. Try broadening your search.`,
         );
       }
     } catch (err) {
@@ -366,8 +387,8 @@ export default function ProviderSearch() {
   }, []);
 
   useEffect(() => {
-    if (initModality && initZip) {
-      runSearch(initModality, initZip);
+    if (initModality) {
+      runSearch(initModality, "", "");
     }
   }, []);
 
@@ -376,11 +397,7 @@ export default function ProviderSearch() {
       setErrorMsg("Please select a provider category.");
       return;
     }
-    if (!zip || zip.replace(/\D/g, "").length < 5) {
-      setErrorMsg("Please enter a valid 5-digit ZIP code.");
-      return;
-    }
-    runSearch(selectedModality, zip);
+    runSearch(selectedModality, selectedState, city);
   }
 
   async function handleInsight(provider: NPIProvider) {
@@ -408,7 +425,7 @@ export default function ProviderSearch() {
         }
       }
     } catch {
-      // silently fail — no error shown for insight
+      // silently fail
     } finally {
       setInsightLoading(null);
     }
@@ -422,6 +439,19 @@ export default function ProviderSearch() {
     setSaveToast(`${provider.name.split(",")[0]} saved to bookmarks!`);
     setTimeout(() => setSaveToast(""), 3000);
   }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.6rem 0.75rem",
+    borderRadius: 8,
+    border: "1.5px solid rgba(212,34,126,0.2)",
+    fontSize: "0.85rem",
+    fontFamily: "var(--app-font-sans)",
+    color: "var(--hpf-deep)",
+    outline: "none",
+    boxSizing: "border-box",
+    background: "white",
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--warm-white)" }}>
@@ -477,7 +507,7 @@ export default function ProviderSearch() {
             marginTop: "0.5rem",
             marginBottom: "0.35rem",
           }}>
-            Find Licensed Providers Near You
+            Nationwide Provider Search
           </h1>
           <p style={{
             fontSize: "0.875rem",
@@ -485,16 +515,17 @@ export default function ProviderSearch() {
             fontFamily: "var(--app-font-sans)",
             lineHeight: 1.6,
           }}>
-            Real practitioners verified by the federal NPI Registry — covering 8 wellness modalities.
+            Real licensed practitioners from the federal NPI Registry — all 50 states, 8 wellness specialties. Filter by state or city, or browse nationwide.
           </p>
         </div>
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "280px 1fr",
-          gap: "1.75rem",
-          alignItems: "start",
-        }}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "280px 1fr",
+            gap: "1.75rem",
+            alignItems: "start",
+          }}
           className="npi-grid"
         >
           <style>{`
@@ -524,37 +555,39 @@ export default function ProviderSearch() {
               fontFamily: "var(--app-font-sans)",
               marginBottom: "0.4rem",
             }}>
-              Your ZIP Code
+              State <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span>
+            </label>
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              style={{ ...inputStyle, marginBottom: "0.75rem", appearance: "auto" }}
+            >
+              <option value="">All States — Nationwide</option>
+              {US_STATES.map(([code, name]) => (
+                <option key={code} value={code}>{name}</option>
+              ))}
+            </select>
+
+            <label style={{
+              display: "block",
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+              color: "var(--text-muted)",
+              fontFamily: "var(--app-font-sans)",
+              marginBottom: "0.4rem",
+            }}>
+              City <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span>
             </label>
             <input
               type="text"
-              inputMode="numeric"
-              maxLength={5}
-              placeholder="e.g. 10001"
-              value={zip}
-              onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+              placeholder="e.g. Chicago"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              style={{
-                width: "100%",
-                padding: "0.6rem 0.75rem",
-                borderRadius: 8,
-                border: "1.5px solid rgba(212,34,126,0.2)",
-                fontSize: "0.9rem",
-                fontFamily: "var(--app-font-mono)",
-                color: "var(--hpf-deep)",
-                outline: "none",
-                boxSizing: "border-box",
-                marginBottom: "0.35rem",
-              }}
+              style={{ ...inputStyle, marginBottom: "1.25rem" }}
             />
-            <p style={{
-              fontSize: "0.65rem",
-              color: "var(--text-muted)",
-              fontFamily: "var(--app-font-sans)",
-              marginBottom: "1.25rem",
-            }}>
-              Searches within the exact ZIP (NPI Registry is ZIP-exact)
-            </p>
 
             <label style={{
               display: "block",
@@ -637,7 +670,7 @@ export default function ProviderSearch() {
                 padding: "3rem 2rem",
                 textAlign: "center",
               }}>
-                <span style={{ fontSize: "2.5rem", display: "block", marginBottom: "0.75rem" }}>🔍</span>
+                <span style={{ fontSize: "2.5rem", display: "block", marginBottom: "0.75rem" }}>🇺🇸</span>
                 <p style={{
                   fontSize: "0.95rem",
                   fontWeight: 600,
@@ -645,14 +678,14 @@ export default function ProviderSearch() {
                   fontFamily: "var(--app-font-serif)",
                   marginBottom: "0.4rem",
                 }}>
-                  Select a category and enter your ZIP
+                  Search across all 50 states
                 </p>
                 <p style={{
                   fontSize: "0.78rem",
                   color: "var(--text-muted)",
                   fontFamily: "var(--app-font-sans)",
                 }}>
-                  Results come directly from the federal NPI Registry — real licensed practitioners, no ads.
+                  Select a provider category — filter by state or city, or leave blank to browse nationwide. Results come directly from the federal NPI Registry.
                 </p>
               </div>
             )}
@@ -690,7 +723,11 @@ export default function ProviderSearch() {
                   fontFamily: "var(--app-font-sans)",
                   marginBottom: "0.875rem",
                 }}>
-                  Showing <strong style={{ color: "var(--hpf-deep)" }}>{providers.length}</strong> licensed {category?.label.toLowerCase()} in ZIP {zip.slice(0, 5)}
+                  Showing <strong style={{ color: "var(--hpf-deep)" }}>{providers.length}</strong> licensed {category?.label.toLowerCase()}
+                  {locationLabel(lastLocation.state, lastLocation.city) !== "nationwide"
+                    ? <> in <strong style={{ color: "var(--hpf-deep)" }}>{locationLabel(lastLocation.state, lastLocation.city)}</strong></>
+                    : <> <strong style={{ color: "var(--hpf-deep)" }}>nationwide</strong></>
+                  }
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
                   {providers.map((p) => (

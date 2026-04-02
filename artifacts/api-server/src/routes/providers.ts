@@ -970,17 +970,18 @@ router.get("/providers/counts", async (req, res) => {
 
 // ── GET /api/npi ──────────────────────────────────────────────────────────────
 // Thin proxy to the CMS NPI Registry API — bypasses browser CORS restrictions.
-// Query params: zip (5-digit), taxonomy (NPI taxonomy code), limit (optional, max 200)
+// Query params (all optional for location):
+//   zip (5-digit), state (2-letter), city (string), taxonomy (NPI taxonomy code),
+//   taxonomyDesc (keyword), limit (optional, max 200)
+// If no location params are supplied the search is nationwide.
 router.get("/npi", async (req, res) => {
   const zip = String(req.query.zip || "").replace(/\D/g, "").slice(0, 5);
+  const state = String(req.query.state || "").toUpperCase().slice(0, 2);
+  const city = String(req.query.city || "").trim().slice(0, 80);
   const taxonomy = String(req.query.taxonomy || "");
   const taxonomyDesc = String(req.query.taxonomyDesc || "");
   const limit = Math.min(Number(req.query.limit) || 50, 200);
 
-  if (zip.length !== 5) {
-    res.status(400).json({ error: "Invalid ZIP code" });
-    return;
-  }
   if (!taxonomy && !taxonomyDesc) {
     res.status(400).json({ error: "Taxonomy code or description required" });
     return;
@@ -989,14 +990,14 @@ router.get("/npi", async (req, res) => {
   try {
     const params = new URLSearchParams({
       version: "2.1",
-      postal_code: zip,
       enumeration_type: "NPI-1",
       limit: String(limit),
       skip: "0",
     });
-    if (taxonomyDesc) {
-      params.set("taxonomy_description", taxonomyDesc);
-    }
+    if (zip.length === 5) params.set("postal_code", zip);
+    if (state.length === 2) params.set("state", state);
+    if (city) params.set("city", city);
+    if (taxonomyDesc) params.set("taxonomy_description", taxonomyDesc);
 
     const npiRes = await fetch(
       `https://npiregistry.cms.hhs.gov/api/?${params.toString()}`,
