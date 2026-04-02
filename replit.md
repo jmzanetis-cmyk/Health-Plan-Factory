@@ -48,6 +48,10 @@ The project is structured as a pnpm monorepo, separating deployable applications
     - **Coach Enrichment:** Injects top insights into system prompts for context-aware coaching.
     - **Demo Requests:** `POST /api/demo-request` (stores lead in DB, sends admin alert + confirmation email). `GET /api/admin/demo-requests` (admin only).
     - **Employer PDF Export:** `GET /api/employer/export-pdf` (authenticated employer — generates a branded PDF wellness report with spend, utilization buckets, top modalities, and monthly chart).
+    - **Employer Wellness Trend:** `GET /api/employer/wellness-trend` (month-over-month avg wellness scores from planProgressLogs; K-anonymity floor = 5 members).
+    - **Employer Benchmarks:** `GET /api/employer/benchmarks` (employer vs. platform-wide anonymized averages for wellness score and stipend utilization; K-anonymity).
+    - **Coach Memory:** `GET /api/coach/memory` + `POST /api/coach/memory` (persistent long-term memory per user; Claude auto-summarizes sessions into facts; injected into system prompt).
+    - **Referral Direct Invite:** `POST /api/referrals/send-invite` (already existed; now exposed in UI with email form on Referral page).
 
 **Shared Libraries (`lib/`):**
 - **`lib/db`:** Drizzle ORM schema and PostgreSQL connection. Handles migrations and schema definitions.

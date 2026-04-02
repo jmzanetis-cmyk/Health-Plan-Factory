@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { fetch } from "expo/fetch";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
@@ -39,6 +40,9 @@ const OPENING_MESSAGE: Message = {
   content:
     "Hey! I'm your HealthPlanFactory accountability coach. I'm here to help you stay on track, answer questions about your wellness plan, and celebrate your wins.\n\nWhat's on your mind today?",
 };
+
+const STORAGE_KEY = "hpf_coach_messages_v2";
+const MAX_STORED_MESSAGES = 30;
 
 function getApiBaseUrl(): string {
   if (process.env.EXPO_PUBLIC_DOMAIN) {
@@ -75,6 +79,18 @@ function MessageBubble({ message }: { message: Message }) {
   );
 }
 
+function MemoryBadge({ sessionCount }: { sessionCount: number }) {
+  if (sessionCount === 0) return null;
+  return (
+    <View style={styles.memoryBadge}>
+      <Feather name="zap" size={10} color={COLORS.purple} />
+      <Text style={styles.memoryBadgeText}>
+        Memory active · {sessionCount} session{sessionCount !== 1 ? "s" : ""}
+      </Text>
+    </View>
+  );
+}
+
 export default function CoachScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -85,11 +101,108 @@ export default function CoachScreen() {
   const [messages, setMessages] = useState<Message[]>([OPENING_MESSAGE]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [memorySessionCount, setMemorySessionCount] = useState(0);
   const messagesRef = useRef<Message[]>([OPENING_MESSAGE]);
+  const saveMemoryRef = useRef<NodeJS.Timeout | null>(null);
 
   function genId() {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   }
+
+  async function getAuthHeaders(): Promise<Record<string, string>> {
+    try {
+      const token = await getToken();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function persistMessages(msgs: Message[]) {
+    try {
+      const storable = msgs
+        .filter((m) => !m.isStreaming)
+        .slice(-MAX_STORED_MESSAGES);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(storable));
+    } catch {
+      // Storage failure is non-fatal
+    }
+  }
+
+  async function loadServerMemory(): Promise<number> {
+    try {
+      const apiBase = getApiBaseUrl();
+      const headers = await getAuthHeaders();
+      if (!headers.Authorization) return 0;
+
+      const res = await fetch(`${apiBase}/api/coach/memory`, {
+        headers: { "Content-Type": "application/json", ...headers },
+      });
+      if (!res.ok) return 0;
+      const data = await res.json();
+      return data.sessionCount ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async function saveSessionMemory(msgs: Message[]) {
+    try {
+      const meaningful = msgs.filter(
+        (m) => m.id !== "opening" && !m.isStreaming && m.content.length > 5
+      );
+      if (meaningful.length < 2) return;
+
+      const apiBase = getApiBaseUrl();
+      const headers = await getAuthHeaders();
+      if (!headers.Authorization) return;
+
+      await fetch(`${apiBase}/api/coach/memory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({
+          messages: meaningful.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      setMemorySessionCount((c) => c + 1);
+    } catch {
+      // Non-fatal — memory save failure doesn't break the chat
+    }
+  }
+
+  // Load stored messages on mount
+  useEffect(() => {
+    async function load() {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed: Message[] = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const restored = parsed.filter((m) => !m.isStreaming);
+            const withWelcome = [OPENING_MESSAGE, ...restored.filter((m) => m.id !== "opening")];
+            messagesRef.current = withWelcome;
+            setMessages(withWelcome);
+          }
+        }
+
+        const sessionCount = await loadServerMemory();
+        setMemorySessionCount(sessionCount);
+      } catch {
+        // Silently continue with defaults
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    }
+    load();
+  }, []);
+
+  const scheduleMemorySave = useCallback(() => {
+    if (saveMemoryRef.current) clearTimeout(saveMemoryRef.current);
+    saveMemoryRef.current = setTimeout(() => {
+      saveSessionMemory(messagesRef.current);
+    }, 3000);
+  }, []);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -153,9 +266,9 @@ export default function CoachScreen() {
           lineBuffer = lines.pop() ?? "";
 
           for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith("data: ")) continue;
-            const json = trimmed.slice(6).trim();
+            const trimmedLine = line.trim();
+            if (!trimmedLine.startsWith("data: ")) continue;
+            const json = trimmedLine.slice(6).trim();
             if (!json || json === "[DONE]") continue;
             try {
               const parsed = JSON.parse(json);
@@ -173,7 +286,7 @@ export default function CoachScreen() {
                 break;
               }
             } catch {
-              // skip malformed frames — they arrive when lines span chunk boundaries
+              // skip malformed frames
             }
           }
         }
@@ -190,14 +303,18 @@ export default function CoachScreen() {
           }
         }
 
-        messagesRef.current = messagesRef.current.map((m) =>
+        const finalMessages = messagesRef.current.map((m) =>
           m.id === assistantId
             ? { ...m, content: accumulated, isStreaming: false }
             : m
         );
-        setMessages([...messagesRef.current]);
+        messagesRef.current = finalMessages;
+        setMessages([...finalMessages]);
+
+        await persistMessages(finalMessages);
+        scheduleMemorySave();
       } catch {
-        messagesRef.current = messagesRef.current.map((m) =>
+        const errorMessages = messagesRef.current.map((m) =>
           m.id === assistantId
             ? {
                 ...m,
@@ -207,12 +324,13 @@ export default function CoachScreen() {
               }
             : m
         );
-        setMessages([...messagesRef.current]);
+        messagesRef.current = errorMessages;
+        setMessages([...errorMessages]);
       } finally {
         setIsSending(false);
       }
     },
-    [isSending, getToken]
+    [isSending, getToken, scheduleMemorySave]
   );
 
   const reversedMessages = [...messages].reverse();
@@ -233,31 +351,41 @@ export default function CoachScreen() {
             <Text style={styles.headerSub}>Powered by Claude</Text>
           </View>
         </View>
-        <View style={styles.onlineIndicator} />
+        <View style={styles.headerRight}>
+          <MemoryBadge sessionCount={memorySessionCount} />
+          <View style={styles.onlineIndicator} />
+        </View>
       </View>
 
-      <FlatList
-        data={reversedMessages}
-        keyExtractor={(m) => m.id}
-        inverted
-        renderItem={({ item }) => <MessageBubble message={item} />}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        keyboardDismissMode="interactive"
-        keyboardShouldPersistTaps="handled"
-        ListHeaderComponent={
-          isSending && reversedMessages[0]?.isStreaming !== true ? (
-            <View style={styles.typingRow}>
-              <View style={styles.avatarDot}>
-                <Feather name="cpu" size={12} color={COLORS.white} />
+      {isLoadingHistory ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={COLORS.purple} size="small" />
+          <Text style={styles.loadingText}>Restoring your conversation…</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={reversedMessages}
+          keyExtractor={(m) => m.id}
+          inverted
+          renderItem={({ item }) => <MessageBubble message={item} />}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={
+            isSending && reversedMessages[0]?.isStreaming !== true ? (
+              <View style={styles.typingRow}>
+                <View style={styles.avatarDot}>
+                  <Feather name="cpu" size={12} color={COLORS.white} />
+                </View>
+                <View style={styles.typingBubble}>
+                  <ActivityIndicator color={COLORS.purple} size="small" />
+                </View>
               </View>
-              <View style={styles.typingBubble}>
-                <ActivityIndicator color={COLORS.purple} size="small" />
-              </View>
-            </View>
-          ) : null
-        }
-      />
+            ) : null
+          }
+        />
+      )}
 
       <View style={[styles.inputArea, { paddingBottom: botPad + SPACING.md }]}>
         <View style={styles.chipsRow}>
@@ -328,6 +456,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.warm,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: SPACING.md },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
   coachAvatar: {
     width: 36,
     height: 36,
@@ -352,6 +481,33 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: COLORS.sage,
+  },
+  memoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(124,58,237,0.08)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(124,58,237,0.15)",
+  },
+  memoryBadgeText: {
+    fontFamily: FONTS.body,
+    fontSize: 10,
+    color: COLORS.purple,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.sm,
+  },
+  loadingText: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
   listContent: {
     paddingHorizontal: SPACING.lg,

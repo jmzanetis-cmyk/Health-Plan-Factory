@@ -885,3 +885,26 @@ export const insertProviderReviewSchema = createInsertSchema(providerReviews).om
 });
 export type InsertProviderReview = InferInsertModel<typeof providerReviews>;
 export type ProviderReview = InferSelectModel<typeof providerReviews>;
+
+// ── coachMemories ──────────────────────────────────────────────────────────────
+// Stores a compressed text summary of each member's coach conversations.
+// The summary is injected into the system prompt as long-term memory context.
+
+export const coachMemories = pgTable(
+  "coach_memories",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    summary: text("summary").notNull().default(""),
+    facts: jsonb("facts").$type<string[]>().notNull().default([]),
+    sessionCount: integer("session_count").notNull().default(0),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("coach_memories_profile_id_idx").on(t.profileId),
+  ],
+);
+
+export type CoachMemory = InferSelectModel<typeof coachMemories>;

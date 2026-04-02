@@ -1316,4 +1316,206 @@ router.get("/employer/export-pdf", requireEmployerAuth, async (req, res) => {
   }
 });
 
+// ── Employer Wellness Score Trend ─────────────────────────────────────────────
+// Returns month-over-month average wellness scores for this employer's cohort
+// over the last 6 months. Uses planProgressLogs.rating (1–10 scale).
+
+router.get("/employer/wellness-trend", requireEmployerAuth, async (req, res) => {
+  try {
+    const [employer] = await db
+      .select({ id: employers.id })
+      .from(employers)
+      .where(eq(employers.adminProfileId, req.user!.id))
+      .limit(1);
+
+    if (!employer) {
+      res.status(404).json({ error: "No employer account found" });
+      return;
+    }
+
+    const members = await db
+      .select({ profileId: employerMembers.profileId })
+      .from(employerMembers)
+      .where(eq(employerMembers.employerId, employer.id));
+
+    const K_ANON_MIN = 5;
+    if (members.length < K_ANON_MIN) {
+      // Return 6 months of nulls — too few members to reveal data
+      const trend = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        trend.push({ month: d.toISOString().slice(0, 7), avgScore: null });
+      }
+      res.json({ trend, privacySuppressed: true });
+      return;
+    }
+
+    const profileIds = members.map((m) => m.profileId);
+
+    const rows = await db
+      .select({
+        month: sql<string>`to_char(${planProgressLogs.createdAt}, 'YYYY-MM')`,
+        avgScore: sql<number>`round(avg(${planProgressLogs.rating})::numeric, 1)`,
+      })
+      .from(planProgressLogs)
+      .where(
+        and(
+          inArray(planProgressLogs.profileId, profileIds),
+          sql`${planProgressLogs.rating} is not null`,
+          sql`${planProgressLogs.createdAt} >= now() - interval '6 months'`,
+        ),
+      )
+      .groupBy(sql`to_char(${planProgressLogs.createdAt}, 'YYYY-MM')`);
+
+    const scoreMap = new Map(rows.map((r) => [r.month, Number(r.avgScore)]));
+
+    const trend = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const m = d.toISOString().slice(0, 7);
+      trend.push({ month: m, avgScore: scoreMap.get(m) ?? null });
+    }
+
+    res.json({ trend, privacySuppressed: false });
+  } catch (err) {
+    console.error("[employer] wellness-trend error:", err);
+    res.status(500).json({ error: "Failed to load wellness trend" });
+  }
+});
+
+// ── Employer Benchmarks ────────────────────────────────────────────────────────
+// Returns the employer's own metrics vs anonymised platform-wide averages.
+// Platform averages are computed across all employers with >= K_ANON_MIN members
+// to preserve privacy.
+
+router.get("/employer/benchmarks", requireEmployerAuth, async (req, res) => {
+  try {
+    const [employer] = await db
+      .select({ id: employers.id, numberOfEmployees: employers.numberOfEmployees, stipendPerEmployee: employers.stipendPerEmployee })
+      .from(employers)
+      .where(eq(employers.adminProfileId, req.user!.id))
+      .limit(1);
+
+    if (!employer) {
+      res.status(404).json({ error: "No employer account found" });
+      return;
+    }
+
+    const K_ANON_MIN = 5;
+
+    // Employer's own cohort
+    const myMembers = await db
+      .select({
+        profileId: employerMembers.profileId,
+        spentThisMonth: employerMembers.spentThisMonth,
+        budgetMonth: employerMembers.budgetMonth,
+        monthlyBudget: employerMembers.monthlyBudget,
+      })
+      .from(employerMembers)
+      .where(eq(employerMembers.employerId, employer.id));
+
+    const totalEnrolled = myMembers.length;
+    const isSuppressed = totalEnrolled < K_ANON_MIN;
+
+    let employerAvgScore: number | null = null;
+    let employerUtilization: number | null = null;
+
+    if (!isSuppressed && totalEnrolled > 0) {
+      const profileIds = myMembers.map((m) => m.profileId);
+      const ratingRows = await db
+        .select({ avg: sql<number>`round(avg(${planProgressLogs.rating})::numeric, 1)` })
+        .from(planProgressLogs)
+        .where(and(inArray(planProgressLogs.profileId, profileIds), sql`${planProgressLogs.rating} is not null`));
+
+      if (ratingRows[0]?.avg != null) {
+        employerAvgScore = Number(ratingRows[0].avg);
+      }
+
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const totalBudget = myMembers.reduce((s, m) => s + (m.monthlyBudget ?? 0), 0);
+      const totalSpent = myMembers.reduce(
+        (s, m) => s + (m.budgetMonth === currentMonth ? (m.spentThisMonth ?? 0) : 0),
+        0,
+      );
+      if (totalBudget > 0) {
+        employerUtilization = Math.round((totalSpent / totalBudget) * 100);
+      }
+    }
+
+    // Platform-wide averages: from all employer_members across all employers
+    // K-anonymised: only include data from employers with >= K_ANON_MIN members
+    const platformRows = await db
+      .select({
+        employerId: employerMembers.employerId,
+        cnt: count(employerMembers.profileId),
+        totalBudget: sql<number>`sum(${employerMembers.monthlyBudget})`,
+        totalSpent: sql<number>`sum(case when ${employerMembers.budgetMonth} = to_char(now(), 'YYYY-MM') then ${employerMembers.spentThisMonth} else 0 end)`,
+      })
+      .from(employerMembers)
+      .groupBy(employerMembers.employerId);
+
+    const qualifiedEmployers = platformRows.filter((r) => Number(r.cnt) >= K_ANON_MIN);
+
+    let platformAvgUtil: number | null = null;
+    if (qualifiedEmployers.length > 0) {
+      const totalPlatformBudget = qualifiedEmployers.reduce((s, r) => s + Number(r.totalBudget), 0);
+      const totalPlatformSpent = qualifiedEmployers.reduce((s, r) => s + Number(r.totalSpent), 0);
+      if (totalPlatformBudget > 0) {
+        platformAvgUtil = Math.round((totalPlatformSpent / totalPlatformBudget) * 100);
+      }
+    }
+
+    // Platform-wide avg wellness score — from all qualifying employer cohorts
+    let platformAvgScore: number | null = null;
+    if (qualifiedEmployers.length > 0) {
+      const qualifiedEmployerIds = qualifiedEmployers.map((r) => r.employerId);
+      const qualifiedMemberRows = await db
+        .select({ profileId: employerMembers.profileId })
+        .from(employerMembers)
+        .where(inArray(employerMembers.employerId, qualifiedEmployerIds));
+
+      if (qualifiedMemberRows.length >= K_ANON_MIN) {
+        const qualifiedProfileIds = qualifiedMemberRows.map((r) => r.profileId);
+        const scoreRow = await db
+          .select({ avg: sql<number>`round(avg(${planProgressLogs.rating})::numeric, 1)` })
+          .from(planProgressLogs)
+          .where(and(inArray(planProgressLogs.profileId, qualifiedProfileIds), sql`${planProgressLogs.rating} is not null`));
+
+        if (scoreRow[0]?.avg != null) {
+          platformAvgScore = Number(scoreRow[0].avg);
+        }
+      }
+    }
+
+    // Obfuscate exact platform sample size for privacy (show as ranges)
+    const totalPlatformMembers = qualifiedEmployers.reduce((s, r) => s + Number(r.cnt), 0);
+    let sampleSizeLabel: string;
+    if (totalPlatformMembers >= 500) sampleSizeLabel = "500+";
+    else if (totalPlatformMembers >= 100) sampleSizeLabel = "100+";
+    else if (totalPlatformMembers >= 50) sampleSizeLabel = "50+";
+    else if (totalPlatformMembers >= 10) sampleSizeLabel = "10+";
+    else sampleSizeLabel = "< 10";
+
+    res.json({
+      privacySuppressed: isSuppressed,
+      employer: {
+        totalEnrolled,
+        avgWellnessScore: employerAvgScore,
+        utilizationRate: employerUtilization,
+      },
+      platform: {
+        avgWellnessScore: platformAvgScore,
+        utilizationRate: platformAvgUtil,
+        sampleSize: sampleSizeLabel,
+        qualifiedEmployerCount: qualifiedEmployers.length,
+      },
+    });
+  } catch (err) {
+    console.error("[employer] benchmarks error:", err);
+    res.status(500).json({ error: "Failed to load benchmarks" });
+  }
+});
+
 export default router;

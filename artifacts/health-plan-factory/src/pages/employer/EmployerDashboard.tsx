@@ -38,6 +38,7 @@ export function EmployerNav({ active }: { active: string }) {
   const links = [
     { to: "/employer/dashboard", label: "Overview" },
     { to: "/employer/members", label: "Members" },
+    { to: "/employer/roi", label: "ROI & Impact" },
     { to: "/employer/settings", label: "Coverage Rules" },
   ];
   return (

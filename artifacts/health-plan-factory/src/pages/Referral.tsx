@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { Copy, Check, Gift, Users, Star, ArrowRight } from "lucide-react";
+import { Copy, Check, Gift, Users, Star, ArrowRight, Send, Trophy, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -61,12 +61,76 @@ function StatusPill({ status }: { status: "pending" | "rewarded" }) {
   );
 }
 
+// ── Milestone definitions ────────────────────────────────────────────────────
+const MILESTONES = [
+  { id: "first", label: "First Invite", description: "Send your first referral link", icon: "🌱", threshold: 1, type: "sent" },
+  { id: "rewarded1", label: "First Win", description: "Earn your first referral reward", icon: "🌿", threshold: 1, type: "rewarded" },
+  { id: "rewarded3", label: "Super Referrer", description: "3 rewarded referrals", icon: "🌳", threshold: 3, type: "rewarded" },
+  { id: "rewarded5", label: "Champion", description: "5 rewarded referrals", icon: "🏆", threshold: 5, type: "rewarded" },
+  { id: "rewarded10", label: "Elite Advocate", description: "10 rewarded referrals", icon: "💎", threshold: 10, type: "rewarded" },
+];
+
+function MilestoneBadge({
+  milestone,
+  earned,
+  rewardedCount,
+  sentCount,
+}: {
+  milestone: typeof MILESTONES[0];
+  earned: boolean;
+  rewardedCount: number;
+  sentCount: number;
+}) {
+  const relevant = milestone.type === "rewarded" ? rewardedCount : sentCount;
+  const progress = Math.min(relevant / milestone.threshold, 1);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+        padding: "14px 10px",
+        borderRadius: 14,
+        background: earned ? "rgba(125,181,92,0.06)" : "rgba(212,34,126,0.03)",
+        border: `1.5px solid ${earned ? "rgba(125,181,92,0.25)" : "rgba(212,34,126,0.08)"}`,
+        minWidth: 100,
+        flex: 1,
+        opacity: earned ? 1 : 0.7,
+        position: "relative",
+      }}
+    >
+      {earned && (
+        <div style={{ position: "absolute", top: 8, right: 8, width: 16, height: 16, borderRadius: 8, background: sage, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Check size={10} color="white" strokeWidth={3} />
+        </div>
+      )}
+      <span style={{ fontSize: 28 }}>{milestone.icon}</span>
+      <div style={{ textAlign: "center" }}>
+        <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 700, color: earned ? sage : navy, margin: 0 }}>
+          {milestone.label}
+        </p>
+        <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 10, color: "var(--text-muted)", margin: "2px 0 0" }}>
+          {milestone.description}
+        </p>
+      </div>
+      {!earned && (
+        <div style={{ width: "100%", height: 4, borderRadius: 2, background: "rgba(212,34,126,0.1)", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${progress * 100}%`, background: "rgba(212,34,126,0.35)", borderRadius: 2, transition: "width 0.5s" }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Referral() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteSending, setInviteSending] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -112,6 +176,32 @@ export default function Referral() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast({ title: "Copy failed", description: "Please copy the link manually.", variant: "destructive" });
+    }
+  }
+
+  async function sendDirectInvite(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = inviteEmail.trim().toLowerCase();
+    if (!trimmed || inviteSending) return;
+    setInviteSending(true);
+    try {
+      const res = await fetch(`${BASE}/api/referrals/send-invite`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteeEmail: trimmed }),
+      });
+      if (res.ok) {
+        toast({ title: "Invite sent!", description: `Your referral invite was sent to ${trimmed}.` });
+        setInviteEmail("");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast({ title: "Failed to send", description: err?.error ?? "Please try again.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Network error", description: "Unable to send invite. Please try again.", variant: "destructive" });
+    } finally {
+      setInviteSending(false);
     }
   }
 
@@ -270,6 +360,93 @@ export default function Referral() {
             Unable to load referral link. Please refresh the page.
           </p>
         )}
+      </div>
+
+      {/* ── Direct Invite ──────────────────────────────────────────────────── */}
+      {referralLink && (
+        <div className="p-6 flex flex-col gap-4" style={cardStyle}>
+          <div className="flex items-center gap-2">
+            <Send size={16} style={{ color: navy }} />
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: navy }}>
+              Send a direct invite
+            </h2>
+          </div>
+          <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+            Enter a friend's email address and we'll send them a personalized invitation with your referral link.
+          </p>
+          <form onSubmit={sendDirectInvite} style={{ display: "flex", gap: 8 }}>
+            <input
+              type="email"
+              required
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="friend@example.com"
+              style={{
+                flex: 1,
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1.5px solid rgba(212,34,126,0.2)",
+                fontFamily: "var(--app-font-sans)",
+                fontSize: 14,
+                color: navy,
+                background: "white",
+                outline: "none",
+              }}
+            />
+            <button
+              type="submit"
+              disabled={inviteSending || !inviteEmail.trim()}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 18px",
+                borderRadius: 10,
+                border: "none",
+                background: inviteSending || !inviteEmail.trim() ? "rgba(212,34,126,0.25)" : "#D4227E",
+                color: "white",
+                fontFamily: "var(--app-font-sans)",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: inviteSending || !inviteEmail.trim() ? "not-allowed" : "pointer",
+                flexShrink: 0,
+              }}
+            >
+              {inviteSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              {inviteSending ? "Sending…" : "Send"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ── Milestones ─────────────────────────────────────────────────────── */}
+      <div className="p-6 flex flex-col gap-4" style={cardStyle}>
+        <div className="flex items-center gap-2">
+          <Trophy size={16} style={{ color: navy }} />
+          <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: navy }}>
+            Milestones
+          </h2>
+        </div>
+        <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+          Earn badges as you grow your referral network. Rewards unlock automatically.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          {MILESTONES.map((m) => {
+            const sentCount = data?.referralHistory.length ?? 0;
+            const rewardedCount = rewarded.length;
+            const relevant = m.type === "rewarded" ? rewardedCount : sentCount;
+            const earned = relevant >= m.threshold;
+            return (
+              <MilestoneBadge
+                key={m.id}
+                milestone={m}
+                earned={earned}
+                rewardedCount={rewardedCount}
+                sentCount={sentCount}
+              />
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Referral History ───────────────────────────────────────────────── */}

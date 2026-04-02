@@ -73,6 +73,7 @@ import EmployerPortal from "@/pages/employer/EmployerPortal";
 import EmployerDashboard from "@/pages/employer/EmployerDashboard";
 import EmployerMembers from "@/pages/employer/EmployerMembers";
 import EmployerSettings from "@/pages/employer/EmployerSettings";
+import EmployerROI from "@/pages/employer/EmployerROI";
 
 import LmnGuide from "@/pages/LmnGuide";
 import HsaUnlock from "@/pages/HsaUnlock";
@@ -159,6 +160,7 @@ function AppRoutes() {
       <Route path="/employer" element={<Layout><EmployerPortal /></Layout>} />
       <Route path="/employer/dashboard" element={<Layout><ProtectedRoute role="employer"><EmployerDashboard /></ProtectedRoute></Layout>} />
       <Route path="/employer/members" element={<Layout><ProtectedRoute role="employer"><EmployerMembers /></ProtectedRoute></Layout>} />
+      <Route path="/employer/roi" element={<Layout><ProtectedRoute role="employer"><EmployerROI /></ProtectedRoute></Layout>} />
       <Route path="/employer/settings" element={<Layout><ProtectedRoute role="employer"><EmployerSettings /></ProtectedRoute></Layout>} />
 
       {/* 404 */}
