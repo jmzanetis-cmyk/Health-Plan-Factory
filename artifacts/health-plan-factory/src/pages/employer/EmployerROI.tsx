@@ -209,7 +209,8 @@ function BenchmarkCard({ data }: { data: BenchmarkData }) {
 interface RoiInputs {
   headcount: number;
   avgSalary: number;
-  sickDaysPerYear: number;
+  sickDaysReduced: number;
+  productivityPct: number;
   annualStipendCents: number;
 }
 
@@ -217,7 +218,8 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
   const [inputs, setInputs] = useState<RoiInputs>({
     headcount: 50,
     avgSalary: 75000,
-    sickDaysPerYear: 6.5,
+    sickDaysReduced: 2.0,    // RAND 2013 research default
+    productivityPct: 2.5,    // HBR 2010 research default
     annualStipendCents: defaultStipendCents,
   });
 
@@ -228,18 +230,12 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
     }
   }
 
-  // Research-based multipliers
-  // Sources:
-  //   Sick-day reduction: RAND Wellness Programs in the Workplace (2013) — avg 2.0 days/yr reduction
-  //   Productivity gain: Berry, Mirabito & Baun (2010), HBR — 2.5% productivity improvement
-  //   ROI: Chapman LS (2012), JOEM — avg $3.27 return per $1 spent on wellness
-  const SICK_DAYS_REDUCED = 2.0;       // avg days/yr reduced per employee (RAND 2013)
-  const PRODUCTIVITY_MULTIPLIER = 0.025; // 2.5% productivity gain (HBR 2010)
-  const WORK_DAYS_PER_YEAR = 235;       // standard US working days
+  // Formulas use all editable inputs — sources noted in the disclaimer below.
+  const WORK_DAYS_PER_YEAR = 235; // standard US working days
 
   const dailySalary = inputs.avgSalary / WORK_DAYS_PER_YEAR;
-  const sickDaySavings = Math.round(inputs.headcount * SICK_DAYS_REDUCED * dailySalary);
-  const productivityGain = Math.round(inputs.headcount * inputs.avgSalary * PRODUCTIVITY_MULTIPLIER);
+  const sickDaySavings = Math.round(inputs.headcount * inputs.sickDaysReduced * dailySalary);
+  const productivityGain = Math.round(inputs.headcount * inputs.avgSalary * (inputs.productivityPct / 100));
   const totalValue = sickDaySavings + productivityGain;
   const annualStipendTotal = Math.round(inputs.annualStipendCents / 100);
   const netROIPct = annualStipendTotal > 0
@@ -273,14 +269,16 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
         {([
-          { key: "headcount" as const, label: "Enrolled Employees", prefix: "", suffix: " employees", min: 1 },
-          { key: "avgSalary" as const, label: "Avg Annual Salary", prefix: "$", suffix: "", min: 0 },
-          { key: "sickDaysPerYear" as const, label: "Avg Sick Days / Year", prefix: "", suffix: " days", min: 0 },
-          { key: "annualStipendCents" as const, label: "Annual Stipend Spend", prefix: "$", suffix: " (total)", min: 0 },
+          { key: "headcount" as const, label: "Enrolled Employees", prefix: "", suffix: "%", min: 1, hint: "" },
+          { key: "avgSalary" as const, label: "Avg Annual Salary", prefix: "$", suffix: "", min: 0, hint: "" },
+          { key: "sickDaysReduced" as const, label: "Sick Days Reduced / Year", prefix: "", suffix: " days", min: 0, hint: "RAND 2013: ~2 days avg" },
+          { key: "productivityPct" as const, label: "Productivity Gain %", prefix: "", suffix: "%", min: 0, hint: "HBR 2010: ~2.5% avg" },
+          { key: "annualStipendCents" as const, label: "Annual Stipend Spend", prefix: "$", suffix: " (total)", min: 0, hint: "" },
         ] as const).map((f) => (
-          <div key={f.key}>
-            <label style={{ display: "block", fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" as const, letterSpacing: "0.07em", marginBottom: 6 }}>
+          <div key={f.key} style={f.key === "annualStipendCents" ? { gridColumn: "1 / -1" } : {}}>
+            <label style={{ display: "block", fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" as const, letterSpacing: "0.07em", marginBottom: 4 }}>
               {f.label}
+              {f.hint && <span style={{ fontSize: 10, fontWeight: 400, textTransform: "none", letterSpacing: 0, marginLeft: 6 }}>({f.hint})</span>}
             </label>
             <div style={{ position: "relative" }}>
               {f.prefix && (
@@ -291,6 +289,7 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
               <input
                 type="number"
                 min={f.min}
+                step={f.key === "productivityPct" || f.key === "sickDaysReduced" ? 0.1 : 1}
                 value={f.key === "annualStipendCents" ? Math.round(inputs[f.key] / 100) : inputs[f.key]}
                 onChange={(e) => {
                   if (f.key === "annualStipendCents") {
@@ -309,8 +308,8 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
         {[
-          { label: "Sick-Day Savings", value: fmtDollar(sickDaySavings), sub: `${SICK_DAYS_REDUCED} days × ${inputs.headcount} employees`, color: sage },
-          { label: "Productivity Gain", value: fmtDollar(productivityGain), sub: `${(PRODUCTIVITY_MULTIPLIER * 100).toFixed(1)}% of payroll recovered`, color: "#4a90e2" },
+          { label: "Sick-Day Savings", value: fmtDollar(sickDaySavings), sub: `${inputs.sickDaysReduced} days × ${inputs.headcount} employees`, color: sage },
+          { label: "Productivity Gain", value: fmtDollar(productivityGain), sub: `${inputs.productivityPct.toFixed(1)}% of payroll recovered`, color: "#4a90e2" },
           { label: "Total Annual Value", value: fmtDollar(totalValue), sub: "combined program benefit", color: navy },
           {
             label: "Net ROI",
@@ -340,10 +339,10 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
       }}>
         <Info size={14} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: 2 }} />
         <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
-          <strong>Disclaimer:</strong> These estimates are illustrative and based on published wellness research averages.
-          Sick-day reduction: RAND Corporation, <em>Wellness Programs in the Workplace</em> (2013) — 2.0 days/yr avg.
-          Productivity gain: Berry, Mirabito & Baun (2010), Harvard Business Review — 2.5% payroll improvement.
-          Actual results vary by organization, demographics, and program engagement.
+          <strong>Disclaimer:</strong> All inputs are editable to reflect your organization's actual data. Research-based defaults:
+          Sick-day reduction default (2.0 days/yr): RAND Corporation, <em>Wellness Programs in the Workplace</em> (2013).
+          Productivity gain default (2.5%): Berry, Mirabito & Baun (2010), Harvard Business Review.
+          Estimates are illustrative — actual results vary by organization, demographics, and program engagement.
         </p>
       </div>
     </div>
