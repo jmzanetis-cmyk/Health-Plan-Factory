@@ -223,6 +223,13 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
     annualStipendCents: defaultStipendCents,
   });
 
+  // Sync stipend default when async fetch resolves (prop arrives after first render)
+  useEffect(() => {
+    if (defaultStipendCents > 0) {
+      setInputs((prev) => ({ ...prev, annualStipendCents: defaultStipendCents }));
+    }
+  }, [defaultStipendCents]);
+
   function upd(field: keyof RoiInputs, raw: string) {
     const val = parseFloat(raw);
     if (!isNaN(val) && val >= 0) {
