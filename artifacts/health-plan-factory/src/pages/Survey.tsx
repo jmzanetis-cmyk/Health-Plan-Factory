@@ -229,6 +229,11 @@ export default function Survey() {
   const finish = useCallback(
     (finalData: SurveyData) => {
       sessionStorage.setItem("hpf_survey", JSON.stringify(finalData));
+      fetch(`${import.meta.env.BASE_URL}api/survey-response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalData),
+      }).catch((err) => console.error("[Survey] Failed to save survey response:", err));
       navigate("/");
     },
     [navigate],

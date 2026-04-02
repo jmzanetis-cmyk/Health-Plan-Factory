@@ -1007,3 +1007,32 @@ export const insertBookingRequestSchema = createInsertSchema(bookingRequests).om
 });
 export type InsertBookingRequest = InferInsertModel<typeof bookingRequests>;
 export type BookingRequest = InferSelectModel<typeof bookingRequests>;
+
+// ── survey_responses ──────────────────────────────────────────────────────────
+// Anonymous market research responses collected from the onboarding survey.
+// profileId is nullable — captures the user if already logged in, otherwise null.
+
+export const surveyResponses = pgTable(
+  "survey_responses",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id").references(() => profiles.id, { onDelete: "set null" }),
+    healthcareSituation: text("healthcare_situation"),
+    healthcareGaps: jsonb("healthcare_gaps").$type<string[]>(),
+    desiredImprovements: jsonb("desired_improvements").$type<string[]>(),
+    likelihoodRating: integer("likelihood_rating"),
+    likelihoodComment: text("likelihood_comment"),
+    goals: jsonb("goals").$type<string[]>(),
+    budgetRange: text("budget_range"),
+    budgetMidpoint: integer("budget_midpoint"),
+    referralSource: text("referral_source"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("survey_responses_profile_idx").on(t.profileId)],
+);
+
+export const insertSurveyResponseSchema = createInsertSchema(surveyResponses).omit({
+  createdAt: true,
+});
+export type InsertSurveyResponse = InferInsertModel<typeof surveyResponses>;
+export type SurveyResponse = InferSelectModel<typeof surveyResponses>;
