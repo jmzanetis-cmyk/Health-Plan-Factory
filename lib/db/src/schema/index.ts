@@ -886,6 +886,34 @@ export const insertProviderReviewSchema = createInsertSchema(providerReviews).om
 export type InsertProviderReview = InferInsertModel<typeof providerReviews>;
 export type ProviderReview = InferSelectModel<typeof providerReviews>;
 
+// ── coach_sessions ────────────────────────────────────────────────────────────
+// Stores the full message history for a member's current coach session.
+// Only the most recent session is kept (upserted on profileId).
+// Used to persist chat across app restarts and device changes.
+
+export type CoachMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+};
+
+export const coachSessions = pgTable(
+  "coach_sessions",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    messages: jsonb("messages").$type<CoachMessage[]>().notNull().default([]),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("coach_sessions_profile_id_idx").on(t.profileId)],
+);
+
+export type CoachSession = InferSelectModel<typeof coachSessions>;
+export type InsertCoachSession = InferInsertModel<typeof coachSessions>;
+
 // ── coachMemories ──────────────────────────────────────────────────────────────
 // Stores a compressed text summary of each member's coach conversations.
 // The summary is injected into the system prompt as long-term memory context.

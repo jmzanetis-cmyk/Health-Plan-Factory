@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@workspace/db";
-import { insightsCache, coachMemories, profiles } from "@workspace/db";
+import { insightsCache, coachMemories, coachSessions, profiles } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -136,6 +136,8 @@ router.post("/coach", async (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
+  let accumulated = "";
+
   try {
     const stream = client.messages.stream({
       model: "claude-3-5-haiku-20241022",
@@ -146,12 +148,29 @@ router.post("/coach", async (req: Request, res: Response) => {
 
     for await (const event of stream) {
       if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+        accumulated += event.delta.text;
         res.write(`data: ${JSON.stringify({ type: "text", text: event.delta.text })}\n\n`);
       }
     }
 
     res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
     res.end();
+
+    // Persist the full exchange to coach_sessions (non-blocking)
+    if (accumulated) {
+      const profileId = req.user!.id;
+      const updatedMessages = [
+        ...messages,
+        { id: Date.now().toString(), role: "assistant" as const, content: accumulated },
+      ];
+      db.insert(coachSessions)
+        .values({ profileId, messages: updatedMessages, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: coachSessions.profileId,
+          set: { messages: updatedMessages, updatedAt: new Date() },
+        })
+        .catch(() => {});
+    }
   } catch (err) {
     req.log?.error({ err }, "Coach streaming error");
     if (!res.headersSent) {
@@ -160,6 +179,58 @@ router.post("/coach", async (req: Request, res: Response) => {
       res.write(`data: ${JSON.stringify({ type: "error", message: "Coach error" })}\n\n`);
       res.end();
     }
+  }
+});
+
+// ── GET /api/coach/session ─────────────────────────────────────────────────────
+// Returns the authenticated user's latest coach session messages.
+
+router.get("/coach/session", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  try {
+    const [session] = await db
+      .select()
+      .from(coachSessions)
+      .where(eq(coachSessions.profileId, req.user!.id))
+      .limit(1);
+
+    if (!session) {
+      res.json({ messages: [], sessionStartedAt: null });
+      return;
+    }
+
+    res.json({
+      messages: session.messages ?? [],
+      sessionStartedAt: session.createdAt,
+    });
+  } catch (err) {
+    req.log?.error({ err }, "coach/session GET error");
+    res.status(500).json({ error: "Failed to load coach session" });
+  }
+});
+
+// ── DELETE /api/coach/session ──────────────────────────────────────────────────
+// Clears the current session so the user can start fresh.
+
+router.delete("/coach/session", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  try {
+    await db
+      .delete(coachSessions)
+      .where(eq(coachSessions.profileId, req.user!.id));
+
+    res.json({ ok: true });
+  } catch (err) {
+    req.log?.error({ err }, "coach/session DELETE error");
+    res.status(500).json({ error: "Failed to reset session" });
   }
 });
 

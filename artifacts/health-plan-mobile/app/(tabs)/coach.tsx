@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,7 +23,7 @@ import { interceptEmergencyText } from "@/lib/emergencyCheck";
 
 interface Message {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "separator";
   content: string;
   isStreaming?: boolean;
 }
@@ -51,7 +52,27 @@ function getApiBaseUrl(): string {
   return "";
 }
 
+function formatSessionDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 function MessageBubble({ message }: { message: Message }) {
+  if (message.role === "separator") {
+    return (
+      <View style={styles.separatorRow}>
+        <View style={styles.separatorLine} />
+        <Text style={styles.separatorText}>{message.content}</Text>
+        <View style={styles.separatorLine} />
+      </View>
+    );
+  }
+
   const isUser = message.role === "user";
   return (
     <View
@@ -103,6 +124,7 @@ export default function CoachScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [memorySessionCount, setMemorySessionCount] = useState(0);
+  const [isResetting, setIsResetting] = useState(false);
   const messagesRef = useRef<Message[]>([OPENING_MESSAGE]);
   const saveMemoryRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -122,7 +144,7 @@ export default function CoachScreen() {
   async function persistMessages(msgs: Message[]) {
     try {
       const storable = msgs
-        .filter((m) => !m.isStreaming)
+        .filter((m) => !m.isStreaming && m.role !== "separator")
         .slice(-MAX_STORED_MESSAGES);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(storable));
     } catch {
@@ -147,10 +169,30 @@ export default function CoachScreen() {
     }
   }
 
+  async function loadServerSession(): Promise<{ messages: Message[]; sessionStartedAt: string | null }> {
+    try {
+      const apiBase = getApiBaseUrl();
+      const headers = await getAuthHeaders();
+      if (!headers.Authorization) return { messages: [], sessionStartedAt: null };
+
+      const res = await fetch(`${apiBase}/api/coach/session`, {
+        headers: { "Content-Type": "application/json", ...headers },
+      });
+      if (!res.ok) return { messages: [], sessionStartedAt: null };
+      const data = await res.json();
+      return {
+        messages: Array.isArray(data.messages) ? data.messages : [],
+        sessionStartedAt: data.sessionStartedAt ?? null,
+      };
+    } catch {
+      return { messages: [], sessionStartedAt: null };
+    }
+  }
+
   async function saveSessionMemory(msgs: Message[]) {
     try {
       const meaningful = msgs.filter(
-        (m) => m.id !== "opening" && !m.isStreaming && m.content.length > 5
+        (m) => m.id !== "opening" && !m.isStreaming && m.role !== "separator" && m.content.length > 5
       );
       if (meaningful.length < 2) return;
 
@@ -171,18 +213,40 @@ export default function CoachScreen() {
     }
   }
 
-  // Load stored messages on mount
+  // Load history from server session on mount
   useEffect(() => {
     async function load() {
       try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed: Message[] = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const restored = parsed.filter((m) => !m.isStreaming);
-            const withWelcome = [OPENING_MESSAGE, ...restored.filter((m) => m.id !== "opening")];
-            messagesRef.current = withWelcome;
-            setMessages(withWelcome);
+        // Try server session first, fall back to AsyncStorage
+        const { messages: serverMsgs, sessionStartedAt } = await loadServerSession();
+
+        if (serverMsgs.length > 0) {
+          const dateLabel = sessionStartedAt
+            ? `Continuing from ${formatSessionDate(sessionStartedAt)}`
+            : "Continuing from a previous session";
+          const separator: Message = {
+            id: "separator-server",
+            role: "separator",
+            content: dateLabel,
+          };
+          const restored = serverMsgs.map((m: Message) => ({
+            ...m,
+            isStreaming: false,
+          }));
+          const withWelcome = [OPENING_MESSAGE, separator, ...restored.filter((m: Message) => m.id !== "opening")];
+          messagesRef.current = withWelcome;
+          setMessages(withWelcome);
+        } else {
+          // Fall back to AsyncStorage
+          const stored = await AsyncStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            const parsed: Message[] = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const restored = parsed.filter((m) => !m.isStreaming && m.role !== "separator");
+              const withWelcome = [OPENING_MESSAGE, ...restored.filter((m) => m.id !== "opening")];
+              messagesRef.current = withWelcome;
+              setMessages(withWelcome);
+            }
           }
         }
 
@@ -203,6 +267,44 @@ export default function CoachScreen() {
       saveSessionMemory(messagesRef.current);
     }, 3000);
   }, []);
+
+  async function handleNewConversation() {
+    Alert.alert(
+      "Start New Conversation",
+      "This will clear your current chat history. Your coach memory (goals, preferences) is preserved.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Start Fresh",
+          style: "destructive",
+          onPress: async () => {
+            setIsResetting(true);
+            try {
+              // Delete server session
+              const apiBase = getApiBaseUrl();
+              const headers = await getAuthHeaders();
+              if (headers.Authorization) {
+                await fetch(`${apiBase}/api/coach/session`, {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json", ...headers },
+                }).catch(() => {});
+              }
+              // Clear local storage
+              await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
+            } catch {
+              // Non-fatal
+            } finally {
+              // Reset to fresh state
+              messagesRef.current = [OPENING_MESSAGE];
+              setMessages([OPENING_MESSAGE]);
+              setIsResetting(false);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+          },
+        },
+      ]
+    );
+  }
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -241,7 +343,7 @@ export default function CoachScreen() {
           },
           body: JSON.stringify({
             messages: currentMessages
-              .filter((m) => m.id !== "opening")
+              .filter((m) => m.id !== "opening" && m.role !== "separator")
               .map((m) => ({ role: m.role, content: m.content })),
           }),
         });
@@ -333,6 +435,7 @@ export default function CoachScreen() {
     [isSending, getToken, scheduleMemorySave]
   );
 
+  const hasHistory = messages.length > 1;
   const reversedMessages = [...messages].reverse();
 
   return (
@@ -353,6 +456,16 @@ export default function CoachScreen() {
         </View>
         <View style={styles.headerRight}>
           <MemoryBadge sessionCount={memorySessionCount} />
+          {hasHistory && !isLoadingHistory && (
+            <TouchableOpacity
+              style={styles.newConvoBtn}
+              onPress={handleNewConversation}
+              disabled={isResetting}
+              activeOpacity={0.7}
+            >
+              <Feather name="edit-2" size={13} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          )}
           <View style={styles.onlineIndicator} />
         </View>
       </View>
@@ -482,6 +595,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: COLORS.sage,
   },
+  newConvoBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   memoryBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -513,6 +634,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
     gap: SPACING.md,
+  },
+  separatorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    marginVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+  },
+  separatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  separatorText: {
+    fontFamily: FONTS.body,
+    fontSize: 11,
+    color: COLORS.textMuted,
+    flexShrink: 1,
   },
   bubbleRow: {
     flexDirection: "row",
