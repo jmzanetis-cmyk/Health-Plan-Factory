@@ -156,7 +156,11 @@ test.describe("Direct invite form", () => {
 
     await page.locator('button[type="submit"]').filter({ hasText: /send/i }).click();
 
+    // Success message shows the invited email address
     await expect(page.locator("text=friend@example.com")).toBeVisible({ timeout: 8000 });
+
+    // After success, the email input should be cleared (form reset)
+    await expect(emailInput).toHaveValue("", { timeout: 5000 });
   });
 
   test("shows error message when invite fails with 429 rate limit", async ({ page }) => {
@@ -227,6 +231,21 @@ test.describe("Dashboard milestone badge links", () => {
 
     const links = await page.locator(`a[href*="/referral"]`).all();
     expect(links.length).toBeGreaterThan(0);
+
+    // Find a badge link that includes a milestone ID query param
+    const hrefs = await Promise.all(links.map((l) => l.getAttribute("href")));
+    const milestoneBadgeHref = hrefs.find((h) => h?.includes("milestone="));
+
+    if (milestoneBadgeHref) {
+      // Click the milestone badge and verify navigation to /referral?milestone=<id>
+      const badgeLink = page.locator(`a[href="${milestoneBadgeHref}"]`).first();
+      await badgeLink.click();
+      await page.waitForLoadState("networkidle");
+
+      expect(page.url()).toContain("milestone=");
+      const bodyText = await page.textContent("body");
+      expect(bodyText).toMatch(/Pioneer|Advocate|Champion|Ambassador/i);
+    }
   });
 });
 

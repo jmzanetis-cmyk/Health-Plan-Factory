@@ -214,6 +214,95 @@ describe("POST /api/referrals/invite", () => {
   });
 });
 
+// ── 2b. POST /api/referrals/send-invite — backward-compat alias ──────────────
+
+describe("POST /api/referrals/send-invite (alias)", () => {
+  const profileId = `test-sinvite-${randomUUID().slice(0, 8)}`;
+
+  beforeAll(async () => {
+    await createTestProfile(profileId);
+  });
+
+  afterAll(async () => {
+    await cleanupProfile(profileId);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    const app = buildTestApp(null);
+    const res = await request(app)
+      .post("/api/referrals/send-invite")
+      .send({ inviteeEmail: "test@example.com" });
+    expect(res.status).toBe(401);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 for missing inviteeEmail", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app)
+      .post("/api/referrals/send-invite")
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 for invalid inviteeEmail format", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app)
+      .post("/api/referrals/send-invite")
+      .send({ inviteeEmail: "not-an-email" });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 for personalNote exceeding 300 characters", async () => {
+    const app = buildTestApp(profileId);
+    const res = await request(app)
+      .post("/api/referrals/send-invite")
+      .send({ inviteeEmail: "valid@example.com", personalNote: "x".repeat(301) });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("succeeds and writes an audit row on valid input via alias endpoint", async () => {
+    const app = buildTestApp(profileId);
+
+    const before = await db
+      .select()
+      .from(memberCredits)
+      .where(
+        and(
+          eq(memberCredits.profileId, profileId),
+          eq(memberCredits.source, "invite-sent")
+        )
+      );
+
+    const res = await request(app)
+      .post("/api/referrals/send-invite")
+      .send({ inviteeEmail: "aliased@example.com", personalNote: "Hey!" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("message", "Invite sent");
+    expect(res.body).toHaveProperty("referralCode");
+    expect(res.body.referralCode).toMatch(/^HPF-/);
+    expect(res.body).toHaveProperty("signupUrl");
+
+    const after = await db
+      .select()
+      .from(memberCredits)
+      .where(
+        and(
+          eq(memberCredits.profileId, profileId),
+          eq(memberCredits.source, "invite-sent")
+        )
+      );
+
+    expect(after.length).toBe(before.length + 1);
+    const newest = after[after.length - 1];
+    expect(newest.amountCents).toBe(0);
+    expect(newest.used).toBe(true);
+  });
+});
+
 // ── 3. Rate-limit pressure test: 15 concurrent → 10 success + 5 429 ──────────
 
 describe("POST /api/referrals/invite — rate-limit pressure (15 concurrent)", () => {
@@ -227,7 +316,7 @@ describe("POST /api/referrals/invite — rate-limit pressure (15 concurrent)", (
     await cleanupProfile(profileId);
   });
 
-  it("allows exactly 10 invites and blocks the remaining 5 with 429", async () => {
+  it("allows exactly 10 invites, blocks 5 with 429, and writes exactly 10 invite-sent audit rows", async () => {
     const app = buildTestApp(profileId);
 
     const results = await Promise.all(
@@ -244,6 +333,18 @@ describe("POST /api/referrals/invite — rate-limit pressure (15 concurrent)", (
 
     expect(successes.length).toBe(10);
     expect(tooMany.length).toBe(5);
+
+    // Verify exactly 10 invite-sent audit rows in DB (rate-limit enforced atomically)
+    const auditRows = await db
+      .select()
+      .from(memberCredits)
+      .where(
+        and(
+          eq(memberCredits.profileId, profileId),
+          eq(memberCredits.source, "invite-sent")
+        )
+      );
+    expect(auditRows.length).toBe(10);
   }, 40000);
 });
 
@@ -575,7 +676,101 @@ describe("Milestone idempotency: concurrent maybeAwardMilestone calls", () => {
   });
 });
 
-// ── 6. POST /api/referrals/track — concurrency idempotency ───────────────────
+// ── 6a. POST /api/referrals/track — milestone award via endpoint ──────────────
+
+describe("POST /api/referrals/track — milestone award triggered via endpoint", () => {
+  it("triggers pioneer milestone award when referrer reaches threshold via /track", async () => {
+    const referrerId = `test-trk-ms-r-${randomUUID().slice(0, 6)}`;
+    const referredId = `test-trk-ms-d-${randomUUID().slice(0, 6)}`;
+
+    await createTestProfile(referrerId);
+    await createTestProfile(referredId);
+
+    const refCode = `HPF-TRKMS${randomUUID().slice(0, 4).toUpperCase()}`;
+
+    await db.update(profiles)
+      .set({ referralCode: refCode })
+      .where(eq(profiles.id, referrerId));
+
+    await db.insert(referrals).values({
+      id: randomUUID(),
+      referrerId,
+      referredMemberId: referredId,
+      code: refCode,
+      status: "pending",
+      createdAt: new Date(),
+    }).onConflictDoNothing();
+
+    await db.insert(memberIntakes).values({
+      id: randomUUID(),
+      profileId: referredId,
+      budget: 200,
+      goals: [],
+      conditions: [],
+      preferences: [],
+      exclusions: [],
+      radius: 25,
+      telehealth: false,
+    }).onConflictDoNothing();
+
+    await db.insert(plans).values({
+      id: randomUUID(),
+      profileId: referredId,
+      totalMonthlyCost: 100,
+      budgetUtilization: 50,
+      budget: 200,
+      status: "generated",
+    }).onConflictDoNothing();
+
+    const app = buildTestApp(referredId);
+
+    try {
+      const res = await request(app).post("/api/referrals/track").send({});
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("message", "ok");
+
+      // Wait briefly for the async milestone award (called with .catch in the router)
+      await new Promise<void>((resolve) => setTimeout(resolve, 500));
+
+      // Verify pioneer milestone was awarded to the referrer
+      const milestoneRows = await db
+        .select()
+        .from(referralMilestones)
+        .where(
+          and(
+            eq(referralMilestones.profileId, referrerId),
+            eq(referralMilestones.milestone, "pioneer")
+          )
+        );
+      expect(milestoneRows.length).toBe(1);
+      expect(milestoneRows[0].bonusCreditCents).toBe(300);
+
+      // Verify milestone bonus credit was written
+      const milestoneCredits = await db
+        .select()
+        .from(memberCredits)
+        .where(
+          and(
+            eq(memberCredits.profileId, referrerId),
+            eq(memberCredits.source, "milestone")
+          )
+        );
+      expect(milestoneCredits.length).toBe(1);
+      expect(milestoneCredits[0].amountCents).toBe(300);
+    } finally {
+      await db.delete(referralMilestones).where(eq(referralMilestones.profileId, referrerId));
+      await db.delete(memberCredits).where(eq(memberCredits.profileId, referrerId));
+      await db.delete(memberCredits).where(eq(memberCredits.profileId, referredId));
+      await db.delete(referrals).where(eq(referrals.referrerId, referrerId));
+      await db.delete(plans).where(eq(plans.profileId, referredId));
+      await db.delete(memberIntakes).where(eq(memberIntakes.profileId, referredId));
+      await db.delete(profiles).where(eq(profiles.id, referrerId));
+      await db.delete(profiles).where(eq(profiles.id, referredId));
+    }
+  }, 20000);
+});
+
+// ── 6b. POST /api/referrals/track — concurrency idempotency ──────────────────
 
 describe("POST /api/referrals/track — concurrency idempotency (reward exactly once)", () => {
   it("grants exactly one referral reward under 5 concurrent /track calls", async () => {
