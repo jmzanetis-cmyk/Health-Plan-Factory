@@ -42,9 +42,9 @@ export default function About() {
   return (
     <div className="min-h-screen" style={{ background: "var(--warm-white)" }}>
 
-      {/* ── HERO ── */}
+      {/* ── FOUNDER STORY (top) ── */}
       <section
-        className="relative px-6 md:px-12 py-20"
+        className="px-6 md:px-12 py-20"
         style={{
           background: "var(--off-white)",
           borderBottom: "1px solid rgba(212,34,126,0.08)",
@@ -57,44 +57,66 @@ export default function About() {
             backgroundSize: "24px 24px",
           }}
         />
-        <div className="max-w-3xl mx-auto relative z-10">
-          <div className="section-tag">Our story</div>
+        <div className="max-w-2xl mx-auto relative">
+          <div className="section-tag">Founder</div>
           <h1
-            className="mb-5 leading-tight"
+            className="mb-6 leading-tight"
             style={{
               fontFamily: "var(--app-font-serif)",
-              fontSize: "clamp(2.5rem, 5vw, 4rem)",
+              fontSize: "clamp(2.2rem, 4.5vw, 3.5rem)",
               fontWeight: 700,
               letterSpacing: "-0.02em",
               color: "var(--hpf-deep)",
             }}
           >
-            Wellness that fits{" "}
-            <em style={{ color: "var(--hpf-crimson)" }}>your budget</em>,
-            <br />
-            not someone else's.
+            Built from a personal frustration.
           </h1>
           <p
-            className="mb-8 max-w-xl leading-relaxed"
-            style={{ fontSize: "1.05rem", fontWeight: 300, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
+            className="text-base font-light leading-relaxed mb-5"
+            style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
-            HealthPlanFactory was built for people who care about their health but live in the real world — where money is finite, time is short, and one-size-fits-all advice doesn't cut it.
+            A few years ago I woke up and couldn't move my left leg. Sciatica — overnight, no warning. What followed was months of trying everything one at a time: chiropractors, massage therapy, steroid injections, inversion therapy, decompression therapy, acupuncture. Each one helped a little, or not at all, or for a week before the pain came back.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/survey"
-              className="inline-flex items-center px-7 py-3.5 rounded-md text-sm font-semibold text-white no-underline"
-              style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", boxShadow: "0 4px 16px rgba(212,34,126,0.2)" }}
+          <p
+            className="text-base font-light leading-relaxed mb-5"
+            style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
+          >
+            I spent thousands of dollars with no roadmap — just a pile of appointments and a lot of hope. It eventually resolved. But I always wondered: what if I'd had a more calculated approach from the start? What if someone had looked at my specific situation and said — start here, in this order, at this frequency?
+          </p>
+          <p
+            className="text-base font-light leading-relaxed mb-8"
+            style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
+          >
+            That question is why HealthPlanFactory exists. A plan built around you — evidence-ranked, budget-fitted, and connected to real providers you can actually book.
+          </p>
+          <div
+            className="flex items-center gap-3 pt-5"
+            style={{ borderTop: "1px solid rgba(212,34,126,0.08)" }}
+          >
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "2px solid rgba(212,34,126,0.15)",
+                flexShrink: 0,
+              }}
             >
-              Build my plan free →
-            </Link>
-            <Link
-              to="/how-it-works"
-              className="inline-flex items-center px-6 py-3.5 rounded-md text-sm font-medium no-underline"
-              style={{ border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
-            >
-              How it works
-            </Link>
+              <img
+                src="/founder.jpg"
+                alt="Founder"
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+              />
+            </div>
+            <div>
+              <p style={{ fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: "0.88rem", color: "var(--hpf-pink)", margin: 0 }}>
+                Jordan Zanetis — Founder & CEO
+              </p>
+              <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+                Health Plan Factory · Somerset, NJ
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -162,78 +184,6 @@ export default function About() {
             >
               HealthPlanFactory is the answer to that question.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOUNDER ── */}
-      <section
-        className="px-6 md:px-12 py-20"
-        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.07)", borderBottom: "1px solid rgba(212,34,126,0.07)" }}
-      >
-        <div className="max-w-4xl mx-auto">
-          {/* Bio */}
-          <div className="max-w-2xl">
-            <div className="section-tag">Founder</div>
-            <h2
-              className="mb-4 leading-tight"
-              style={{
-                fontFamily: "var(--app-font-serif)",
-                fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
-                fontWeight: 700,
-                letterSpacing: "-0.015em",
-                color: "var(--hpf-deep)",
-              }}
-            >
-              Built from a personal frustration.
-            </h2>
-            <p
-              className="text-sm font-light leading-relaxed mb-4"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-            >
-              A few years ago I woke up and couldn't move my left leg. Sciatica — overnight, no warning. What followed was months of trying everything one at a time: chiropractors, massage therapy, steroid injections, inversion therapy, decompression therapy, acupuncture. Each one helped a little, or not at all, or for a week before the pain came back.
-            </p>
-            <p
-              className="text-sm font-light leading-relaxed mb-4"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-            >
-              I spent thousands of dollars with no roadmap — just a pile of appointments and a lot of hope. It eventually resolved. But I always wondered: what if I'd had a more calculated approach from the start? What if someone had looked at my specific situation and said — start here, in this order, at this frequency?
-            </p>
-            <p
-              className="text-sm font-light leading-relaxed mb-6"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-            >
-              That question is why HealthPlanFactory exists. A plan built around you — evidence-ranked, budget-fitted, and connected to real providers you can actually book.
-            </p>
-            <div
-              className="flex items-center gap-3 pt-4"
-              style={{ borderTop: "1px solid rgba(212,34,126,0.08)" }}
-            >
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  border: "2px solid rgba(212,34,126,0.15)",
-                  flexShrink: 0,
-                }}
-              >
-                <img
-                  src="/founder.jpg"
-                  alt="Founder"
-                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
-                />
-              </div>
-              <div>
-                <p style={{ fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: "0.85rem", color: "var(--hpf-pink)", margin: 0 }}>
-                  Founder & CEO
-                </p>
-                <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
-                  Health Plan Factory
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -318,30 +268,43 @@ export default function About() {
       {/* ── TESTIMONIALS ── */}
       <TestimonialsSection sectionTag="What members say" />
 
-      {/* ── CTA ── */}
+      {/* ── INVITE (bottom) ── */}
       <section
-        className="px-6 md:px-12 py-20 text-center"
-        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
+        className="relative px-6 md:px-12 py-20 text-center"
+        style={{
+          background: "var(--off-white)",
+          borderTop: "1px solid rgba(212,34,126,0.08)",
+        }}
       >
-        <div className="max-w-2xl mx-auto">
-          <div className="text-3xl mb-4">🏭</div>
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "radial-gradient(rgba(212,34,126,0.06) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="max-w-3xl mx-auto relative z-10">
+          <div className="section-tag">Our story</div>
           <h2
-            className="mb-4"
+            className="mb-5 leading-tight"
             style={{
               fontFamily: "var(--app-font-serif)",
-              fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
+              fontSize: "clamp(2.2rem, 4.5vw, 3.5rem)",
               fontWeight: 700,
               letterSpacing: "-0.02em",
-              color: "var(--hpf-pink)",
+              color: "var(--hpf-deep)",
             }}
           >
-            Ready to see your plan?
+            Wellness that fits{" "}
+            <em style={{ color: "var(--hpf-crimson)" }}>your budget</em>,
+            <br />
+            not someone else's.
           </h2>
           <p
-            className="mb-8 text-sm font-light leading-relaxed"
-            style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", maxWidth: 420, margin: "0 auto 2rem" }}
+            className="mb-8 max-w-xl mx-auto leading-relaxed"
+            style={{ fontSize: "1.05rem", fontWeight: 300, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
-            Free to build. No credit card. No commitment — just a wellness plan built around your budget and your life.
+            HealthPlanFactory was built for people who care about their health but live in the real world — where money is finite, time is short, and one-size-fits-all advice doesn't cut it.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
@@ -354,10 +317,10 @@ export default function About() {
                 letterSpacing: "0.01em",
               }}
             >
-              Build my free plan →
+              Build my plan free →
             </Link>
             <Link
-              to="/providers"
+              to="/how-it-works"
               className="inline-flex items-center px-8 py-4 rounded-lg text-sm font-semibold no-underline"
               style={{
                 border: "1.5px solid rgba(212,34,126,0.2)",
@@ -366,7 +329,7 @@ export default function About() {
                 letterSpacing: "0.01em",
               }}
             >
-              Find providers
+              How it works
             </Link>
           </div>
         </div>
