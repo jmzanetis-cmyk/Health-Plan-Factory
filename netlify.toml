@@ -1,6 +1,6 @@
 [build]
   command = "pnpm run build"
-  publish = "dist/public"
+  publish = "artifacts/health-plan-factory/dist/public"
 
 [[redirects]]
   from = "/api/*"
