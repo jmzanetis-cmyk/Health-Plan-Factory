@@ -20,6 +20,7 @@ import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
+import { loadConnectionState, type HealthConnectionState } from "@/lib/healthSync";
 
 function getMobileApiBase(): string {
   if (process.env.EXPO_PUBLIC_DOMAIN) {
@@ -198,6 +199,99 @@ const notifStyles = StyleSheet.create({
   },
 });
 
+function ConnectedServicesSection({ profileId }: { profileId?: string }) {
+  const router = useRouter();
+  const [connections, setConnections] = useState<HealthConnectionState>({
+    appleHealth: false,
+    googleFit: false,
+    lastSynced: null,
+  });
+
+  useEffect(() => {
+    loadConnectionState(profileId).then(setConnections);
+  }, [profileId]);
+
+  const isIos = Platform.OS === "ios";
+  const isAndroid = Platform.OS === "android";
+
+  const anyConnected = connections.appleHealth || connections.googleFit;
+
+  return (
+    <View style={connStyles.card}>
+      <TouchableOpacity
+        style={connStyles.row}
+        onPress={() => router.push("/health-connect" as never)}
+        activeOpacity={0.7}
+      >
+        <View style={connStyles.icon}>
+          <Feather name="activity" size={16} color={COLORS.amber} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={connStyles.label}>
+            {isIos ? "Apple Health" : isAndroid ? "Google Fit" : "Health Apps"}
+          </Text>
+          {anyConnected ? (
+            <Text style={connStyles.statusConnected}>Connected</Text>
+          ) : (
+            <Text style={connStyles.statusDisconnected}>Not connected</Text>
+          )}
+        </View>
+        {anyConnected && (
+          <View style={connStyles.connectedDot} />
+        )}
+        <Feather name="chevron-right" size={16} color={COLORS.textLight} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const connStyles = StyleSheet.create({
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: "hidden",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    padding: SPACING.lg,
+  },
+  icon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.amberPale,
+  },
+  label: {
+    fontFamily: FONTS.bodyMedium,
+    fontSize: 15,
+    color: COLORS.navy,
+  },
+  statusConnected: {
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    color: COLORS.sage,
+    marginTop: 1,
+  },
+  statusDisconnected: {
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 1,
+  },
+  connectedDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.sage,
+  },
+});
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -307,6 +401,9 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <Text style={styles.sectionLabel}>Connected Services</Text>
+        <ConnectedServicesSection profileId={user?.id} />
 
         <Text style={styles.sectionLabel}>Notifications</Text>
         <NotificationPrefsSection />

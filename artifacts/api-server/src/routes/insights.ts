@@ -6,11 +6,13 @@ import {
   plans,
   modalities,
   insightsCache,
+  healthSyncLogs,
   type InsightCard,
   type AttentionItem,
   type PlanProgressLog,
   type Modality,
   type PlanItem,
+  type HealthSyncLog,
 } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -146,11 +148,12 @@ function buildSparkline(
 function computeWellnessScore(
   journalEntries: PlanProgressLog[],
   sessionRecords: PlanProgressLog[],
-  activePlanItems: PlanItem[]
+  activePlanItems: PlanItem[],
+  latestHealthSync?: HealthSyncLog | null
 ): number {
-  if (journalEntries.length === 0) return 0;
+  if (journalEntries.length === 0 && !latestHealthSync) return 0;
 
-  // Base score from average journal rating (0–70 pts), last 30 entries
+  // Base score from average journal rating (0–60 pts), last 30 entries
   const ratingEntries = journalEntries
     .filter((l) => l.rating != null)
     .slice(0, 30);
@@ -158,7 +161,7 @@ function computeWellnessScore(
     ratingEntries.length > 0
       ? ratingEntries.reduce((s, l) => s + (l.rating ?? 0), 0) / ratingEntries.length
       : 5;
-  const baseScore = (avgRating / 10) * 70;
+  const baseScore = (avgRating / 10) * 60;
 
   // Session completion rate (0–20 pts): distinct modalities with a session in last 30 days
   const thirtyDaysAgo = Date.now() - 30 * 24 * 3600 * 1000;
@@ -189,7 +192,25 @@ function computeWellnessScore(
     else if (last7Avg < prev7Avg - 0.5) trendScore = 0;
   }
 
-  return Math.round(Math.min(100, baseScore + completionScore + trendScore));
+  // Health sync bonus (0–10 pts): reflects synced device data
+  let healthBonus = 0;
+  if (latestHealthSync) {
+    if (latestHealthSync.steps != null) {
+      healthBonus += Math.min(4, Math.round((latestHealthSync.steps / 10000) * 4));
+    }
+    if (latestHealthSync.sleepMinutes != null) {
+      const h = latestHealthSync.sleepMinutes / 60;
+      healthBonus += h >= 7 && h <= 9 ? 2 : h >= 6 ? 1 : 0;
+    }
+    if (latestHealthSync.activeMinutes != null) {
+      healthBonus += Math.min(2, Math.round((latestHealthSync.activeMinutes / 30) * 2));
+    }
+    if (latestHealthSync.mindfulnessMinutes != null && latestHealthSync.mindfulnessMinutes > 0) {
+      healthBonus += 2;
+    }
+  }
+
+  return Math.round(Math.min(100, baseScore + completionScore + trendScore + healthBonus));
 }
 
 export async function computeAndCacheInsights(profileId: string): Promise<void> {
@@ -228,10 +249,18 @@ export async function computeAndCacheInsights(profileId: string): Promise<void> 
   const allModalities = await db.select().from(modalities);
   const modalityMap = new Map<string, Modality>(allModalities.map((m) => [m.id, m]));
 
+  // Fetch most recent health sync data for this profile
+  const [latestHealthSync] = await db
+    .select()
+    .from(healthSyncLogs)
+    .where(eq(healthSyncLogs.profileId, profileId))
+    .orderBy(desc(healthSyncLogs.date))
+    .limit(1);
+
   const journalCount = journalEntries.length;
   const sessionCount = sessionRecords.length;
 
-  const wellnessScore = computeWellnessScore(journalEntries, sessionRecords, activePlanItems);
+  const wellnessScore = computeWellnessScore(journalEntries, sessionRecords, activePlanItems, latestHealthSync ?? null);
 
   const insights: InsightCard[] = [];
   const attentionItems: AttentionItem[] = [];

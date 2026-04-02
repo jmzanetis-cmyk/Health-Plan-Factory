@@ -17,6 +17,7 @@ import magicLinksRouter from "./magicLinks";
 import commsPrefsRouter from "./commsPrefs";
 import notificationLogRouter from "./notificationLog";
 import demoRequestsRouter from "./demoRequests";
+import healthSyncRouter from "./healthSync";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(magicLinksRouter);
 router.use(commsPrefsRouter);
 router.use(notificationLogRouter);
 router.use(demoRequestsRouter);
+router.use(healthSyncRouter);
 
 export default router;

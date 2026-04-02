@@ -25,6 +25,8 @@ import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import "@/lib/backgroundHealthSync";
+import { registerBackgroundHealthSync } from "@/lib/backgroundHealthSync";
 
 if (process.env.EXPO_PUBLIC_DOMAIN) {
   setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
@@ -38,7 +40,7 @@ const queryClient = new QueryClient({
 });
 
 function AuthGate() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
   const segments = useSegments();
 
@@ -55,6 +57,12 @@ function AuthGate() {
     }
   }, [isAuthenticated, isLoading, segments, router]);
 
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      registerBackgroundHealthSync(user.id).catch(() => {});
+    }
+  }, [isAuthenticated, user?.id]);
+
   return null;
 }
 
@@ -66,6 +74,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false, presentation: "card" }} />
+        <Stack.Screen name="health-connect" options={{ headerShown: false, presentation: "card" }} />
       </Stack>
     </>
   );

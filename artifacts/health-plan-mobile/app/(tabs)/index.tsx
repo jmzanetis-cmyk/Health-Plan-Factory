@@ -19,6 +19,7 @@ import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListProgress, useListModalities } from "@workspace/api-client-react";
 import type { ProgressLogRecord, ModalityRecord } from "@workspace/api-client-react";
 import { setupNotifications, scheduleSessionReminder } from "@/lib/notifications";
+import { loadConnectionState, syncHealthData, type DailyHealthMetrics } from "@/lib/healthSync";
 
 const RING_SIZE = 140;
 const RING_STROKE = 14;
@@ -148,11 +149,13 @@ export default function HomeScreen() {
 
   const [routines, setRoutines] = useState<RoutineItem[]>(QUICK_ROUTINES);
   const [refreshing, setRefreshing] = useState(false);
+  const [healthMetrics, setHealthMetrics] = useState<DailyHealthMetrics | null>(null);
+  const [healthConnected, setHealthConnected] = useState(false);
 
   const entries = progressData ?? [];
   const modalities = modalitiesData ?? [];
   const streak = calculateStreak(entries);
-  const wellnessScore = calculateWellnessScore(entries);
+  const wellnessScore = calculateWellnessScore(entries, healthMetrics);
   const trialDaysLeft = getDaysLeftInTrial(authData?.user?.createdAt);
   const todayStr = new Date().toDateString();
   const hasEntryToday = entries.some(
@@ -165,9 +168,29 @@ export default function HomeScreen() {
     }
   }, [streak, trialDaysLeft, hasEntryToday]);
 
+  useEffect(() => {
+    if (!profileId || Platform.OS === "web") return;
+    (async () => {
+      const state = await loadConnectionState(profileId);
+      const connected = state.appleHealth || state.googleFit;
+      setHealthConnected(connected);
+      if (connected) {
+        const metrics = await syncHealthData(profileId);
+        if (metrics) setHealthMetrics(metrics);
+      }
+    })();
+  }, [profileId]);
+
   async function onRefresh() {
     setRefreshing(true);
     await refetch();
+    if (profileId && Platform.OS !== "web") {
+      const state = await loadConnectionState(profileId);
+      if (state.appleHealth || state.googleFit) {
+        const metrics = await syncHealthData(profileId);
+        if (metrics) setHealthMetrics(metrics);
+      }
+    }
     setRefreshing(false);
   }
 
@@ -238,6 +261,58 @@ export default function HomeScreen() {
               <Text style={styles.metaValue}>{doneCount}/{routines.length}</Text>
               <Text style={styles.metaLabel}>Today</Text>
             </View>
+          </View>
+        </View>
+      )}
+
+      {Platform.OS !== "web" && !healthConnected && (
+        <TouchableOpacity
+          style={styles.healthPromptCard}
+          onPress={() => router.push("/health-connect" as never)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.healthPromptIcon}>
+            <Feather name="activity" size={18} color={COLORS.amber} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.healthPromptTitle}>Connect your health app</Text>
+            <Text style={styles.healthPromptSub}>Auto-sync steps, sleep & more</Text>
+          </View>
+          <Feather name="chevron-right" size={16} color={COLORS.textLight} />
+        </TouchableOpacity>
+      )}
+
+      {healthMetrics && (
+        <View style={styles.healthMetricsCard}>
+          <View style={styles.healthMetricsHeader}>
+            <Feather name="activity" size={14} color={COLORS.sage} />
+            <Text style={styles.healthMetricsTitle}>Today from {healthMetrics.source === "apple_health" ? "Apple Health" : "Google Fit"}</Text>
+          </View>
+          <View style={styles.healthMetricsRow}>
+            {healthMetrics.steps != null && (
+              <View style={styles.healthMetricItem}>
+                <Text style={styles.healthMetricValue}>{healthMetrics.steps.toLocaleString()}</Text>
+                <Text style={styles.healthMetricLabel}>Steps</Text>
+              </View>
+            )}
+            {healthMetrics.sleepMinutes != null && (
+              <View style={styles.healthMetricItem}>
+                <Text style={styles.healthMetricValue}>{Math.round(healthMetrics.sleepMinutes / 60 * 10) / 10}h</Text>
+                <Text style={styles.healthMetricLabel}>Sleep</Text>
+              </View>
+            )}
+            {healthMetrics.activeMinutes != null && (
+              <View style={styles.healthMetricItem}>
+                <Text style={styles.healthMetricValue}>{healthMetrics.activeMinutes}m</Text>
+                <Text style={styles.healthMetricLabel}>Active</Text>
+              </View>
+            )}
+            {healthMetrics.mindfulnessMinutes != null && (
+              <View style={styles.healthMetricItem}>
+                <Text style={styles.healthMetricValue}>{healthMetrics.mindfulnessMinutes}m</Text>
+                <Text style={styles.healthMetricLabel}>Mindful</Text>
+              </View>
+            )}
           </View>
         </View>
       )}
@@ -363,15 +438,35 @@ function calculateStreak(entries: ProgressLogRecord[]): number {
   return streak;
 }
 
-function calculateWellnessScore(entries: ProgressLogRecord[]): number {
-  if (!entries.length) return 62;
+function calculateWellnessScore(entries: ProgressLogRecord[], health?: DailyHealthMetrics | null): number {
+  if (!entries.length && !health) return 62;
+
   const recent = entries.slice(0, 7);
   const ratings = recent.map((e) => e.rating).filter((v): v is number => v != null);
-  if (!ratings.length) return 62;
-  const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-  const ratingScore = (avg / 5) * 70;
-  const streakBonus = Math.min(entries.length * 2, 20);
-  return Math.round(ratingScore + streakBonus + 10);
+  const baseRatingScore = ratings.length
+    ? (ratings.reduce((a, b) => a + b, 0) / ratings.length / 5) * 60
+    : 50;
+  const streakBonus = Math.min(entries.length * 2, 15);
+
+  let healthBonus = 0;
+  if (health) {
+    if (health.steps != null) {
+      healthBonus += Math.min((health.steps / 10000) * 10, 10);
+    }
+    if (health.sleepMinutes != null) {
+      const sleepHours = health.sleepMinutes / 60;
+      const sleepScore = sleepHours >= 7 && sleepHours <= 9 ? 5 : sleepHours >= 6 ? 3 : 1;
+      healthBonus += sleepScore;
+    }
+    if (health.activeMinutes != null) {
+      healthBonus += Math.min((health.activeMinutes / 30) * 5, 5);
+    }
+    if (health.mindfulnessMinutes != null && health.mindfulnessMinutes > 0) {
+      healthBonus += 5;
+    }
+  }
+
+  return Math.min(100, Math.round(baseRatingScore + streakBonus + healthBonus + 10));
 }
 
 const styles = StyleSheet.create({
@@ -571,5 +666,76 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     lineHeight: 16,
     textAlign: "center",
+  },
+  healthPromptCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: SPACING.lg,
+  },
+  healthPromptIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.amberPale,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  healthPromptTitle: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 14,
+    color: COLORS.navy,
+  },
+  healthPromptSub: {
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  healthMetricsCard: {
+    backgroundColor: COLORS.sagePale,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.sage + "33",
+    marginBottom: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  healthMetricsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+  },
+  healthMetricsTitle: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 12,
+    color: COLORS.sage,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  healthMetricsRow: {
+    flexDirection: "row",
+    gap: SPACING.md,
+    marginTop: SPACING.xs,
+  },
+  healthMetricItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  healthMetricValue: {
+    fontFamily: FONTS.mono,
+    fontSize: 18,
+    color: COLORS.navy,
+  },
+  healthMetricLabel: {
+    fontFamily: FONTS.body,
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 2,
   },
 });

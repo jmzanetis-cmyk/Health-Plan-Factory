@@ -756,3 +756,35 @@ export const insertProviderUnlockSchema = createInsertSchema(providerUnlocks).om
 });
 export type InsertProviderUnlock = InferInsertModel<typeof providerUnlocks>;
 export type ProviderUnlock = InferSelectModel<typeof providerUnlocks>;
+
+// ── health_sync_logs ──────────────────────────────────────────────────────────
+// Stores daily health metrics synced from Apple Health or Google Fit.
+
+export const healthSyncLogs = pgTable(
+  "health_sync_logs",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    source: text("source").notNull(),
+    steps: integer("steps"),
+    sleepMinutes: integer("sleep_minutes"),
+    activeMinutes: integer("active_minutes"),
+    mindfulnessMinutes: integer("mindfulness_minutes"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("health_sync_logs_profile_idx").on(t.profileId),
+    uniqueIndex("health_sync_logs_profile_date_idx").on(t.profileId, t.date),
+  ],
+);
+
+export const insertHealthSyncLogSchema = createInsertSchema(healthSyncLogs).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertHealthSyncLog = InferInsertModel<typeof healthSyncLogs>;
+export type HealthSyncLog = InferSelectModel<typeof healthSyncLogs>;
