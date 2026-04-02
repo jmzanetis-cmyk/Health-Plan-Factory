@@ -134,7 +134,7 @@ function BenchmarkCard({ data }: { data: BenchmarkData }) {
         color: up ? sage : "#c42b2b",
         marginLeft: 8,
       }}>
-        {up ? "+" : ""}{d > 0 ? d.toFixed(1) : d.toFixed(0)}{unit} vs platform
+        {up ? "+" : "-"}{Math.abs(d).toFixed(1)}{unit} vs platform
       </span>
     );
   }
