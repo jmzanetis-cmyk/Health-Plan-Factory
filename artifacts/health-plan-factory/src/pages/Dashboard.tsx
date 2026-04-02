@@ -481,8 +481,8 @@ export default function Dashboard() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
+              { to: "/coach", label: "AI Coach", desc: "Chat with your wellness coach", emoji: "🤖" },
               { to: "/onboarding", label: "Build New Plan", desc: "Update goals and get a fresh plan", emoji: "⚗️" },
-              { to: "/providers", label: "Find Providers", desc: "Browse wellness providers near you", emoji: "🗺️" },
               { to: "/progress", label: "Log Progress", desc: "Track your mood, pain, and energy", emoji: "📈" },
               { to: "/referral", label: "Refer & Earn", desc: "Share your link and earn free credits", emoji: "🎁" },
             ].map((a) => (

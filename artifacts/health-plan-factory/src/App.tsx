@@ -53,6 +53,7 @@ import Providers from "@/pages/Providers";
 import Bookmarks from "@/pages/Bookmarks";
 import Progress from "@/pages/Progress";
 import Profile from "@/pages/Profile";
+import Coach from "@/pages/Coach";
 
 import ProviderDashboard from "@/pages/provider/Dashboard";
 import ProviderSignup from "@/pages/provider/Signup";
@@ -141,6 +142,7 @@ function AppRoutes() {
       <Route path="/profile" element={<Layout><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
       <Route path="/hsa-unlock" element={<Layout><ProtectedRoute><HsaUnlock /></ProtectedRoute></Layout>} />
       <Route path="/referral" element={<Layout><ProtectedRoute><Referral /></ProtectedRoute></Layout>} />
+      <Route path="/coach" element={<Layout hideFooter><ProtectedRoute><Coach /></ProtectedRoute></Layout>} />
 
       {/* Provider routes — protected */}
       <Route path="/provider/dashboard" element={<Layout><ProtectedRoute role="provider"><ProviderDashboard /></ProtectedRoute></Layout>} />

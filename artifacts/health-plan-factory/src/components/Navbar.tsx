@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, ChevronDown, LogOut, LayoutDashboard, User } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, LayoutDashboard, User, Bot } from "lucide-react";
 import { Logo } from "./Logo";
 import { useAuth } from "@workspace/replit-auth-web";
 
@@ -82,6 +82,14 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
             >
               <LayoutDashboard size={15} />
               Dashboard
+            </button>
+            <button
+              onClick={() => { setOpen(false); onClose?.(); navigate("/coach"); }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50"
+              style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
+            >
+              <Bot size={15} />
+              Coach
             </button>
             <button
               onClick={() => { setOpen(false); onClose?.(); navigate("/profile"); }}
