@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { startInsightsRefreshJob } from "./jobs/insightsRefresh";
 import { startNotificationsDispatchJob } from "./jobs/notificationsDispatch";
 import Stripe from "stripe";
+import { Resend } from "resend";
 
 const rawPort = process.env["PORT"];
 
@@ -16,6 +17,27 @@ const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+async function validateResendKey(): Promise<void> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    logger.warn("Resend: RESEND_API_KEY not set — email delivery disabled");
+    return;
+  }
+  try {
+    const resend = new Resend(key);
+    const { data, error } = await resend.domains.list();
+    if (error) {
+      logger.error({ err: error.message }, "Resend: key validation failed — email delivery disabled");
+    } else {
+      const domainNames = (data?.data ?? []).map((d: { name: string }) => d.name);
+      logger.info({ domains: domainNames }, "Resend: API key validated successfully");
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ err: msg }, "Resend: key validation failed — email delivery disabled");
+  }
 }
 
 async function validateStripeKey(): Promise<void> {
@@ -61,6 +83,7 @@ app.listen(port, async (err) => {
   logger.info({ port }, "Server listening");
   logServiceStatus();
   await validateStripeKey();
+  await validateResendKey();
   startInsightsRefreshJob();
   startNotificationsDispatchJob();
 });
