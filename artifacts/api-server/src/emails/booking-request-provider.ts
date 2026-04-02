@@ -29,7 +29,9 @@ export function bookingRequestProviderEmail(props: BookingRequestProviderProps):
     : "";
   const displayName = props.memberName ?? "A Health Plan Factory member";
   const replyEmail = props.contactEmail || props.memberEmail;
-  const subjectContext = props.requestedModality ?? props.goal;
+  // Include both modality and goal in subject when available; fallback gracefully
+  const subjectParts = [props.requestedModality, props.goal].filter(Boolean);
+  const subjectContext = subjectParts.length > 0 ? subjectParts.join(" · ") : null;
 
   return {
     subject: `A new client wants to book with you — ${displayName}${subjectContext ? `, ${subjectContext}` : ""}`,
