@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
-import { ArrowRight, ArrowLeft, DollarSign, FileText, Stethoscope, CheckCircle, Loader2, Copy, Check } from "lucide-react";
+import { ArrowRight, ArrowLeft, DollarSign, FileText, Stethoscope, CheckCircle, Loader2, Copy, Check, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
@@ -36,6 +36,7 @@ export default function HsaUnlock() {
   const [marking, setMarking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [draftMessage, setDraftMessage] = useState("");
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -97,6 +98,35 @@ export default function HsaUnlock() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  const handleDownloadPdf = async () => {
+    if (pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/lmn/pdf`, { credentials: "include" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast({ title: "Download failed", description: (err as { error?: string })?.error ?? "Could not generate PDF.", variant: "destructive" });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const safeName = (user?.name ?? "member").toLowerCase().replace(/\s+/g, "-");
+      a.download = `lmn-draft-${safeName}-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch {
+      toast({ title: "Download failed", description: "Could not generate the PDF. Please try again.", variant: "destructive" });
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   const savingsFormatted = lmnData?.estimatedAnnualSavings
@@ -343,6 +373,14 @@ export default function HsaUnlock() {
               <ArrowLeft size={14} /> Back
             </button>
             <button
+              onClick={handleDownloadPdf}
+              disabled={pdfLoading}
+              style={{ flex: "none", background: "rgba(26,42,58,0.06)", border: "1.5px solid rgba(26,42,58,0.15)", padding: "13px 18px", borderRadius: 10, cursor: pdfLoading ? "wait" : "pointer", fontFamily: "var(--app-font-sans)", fontWeight: 600, fontSize: 14, color: navy, display: "flex", alignItems: "center", gap: 6, opacity: pdfLoading ? 0.65 : 1 }}
+            >
+              {pdfLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              {pdfLoading ? "Generating…" : "Download LMN Draft (PDF)"}
+            </button>
+            <button
               onClick={handleMarkReceived}
               disabled={marking}
               style={{ flex: 1, background: sage, color: "white", padding: "14px 0", borderRadius: 10, border: "none", cursor: marking ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: marking ? 0.7 : 1 }}
@@ -371,10 +409,18 @@ export default function HsaUnlock() {
                 <div style={{ fontFamily: "var(--app-font-serif)", fontSize: 36, fontWeight: 800, color: sage }}>{savingsFormatted}</div>
               </div>
             )}
-            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
               <Link to="/progress" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: navy, color: "white", padding: "12px 20px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
                 View My Sessions <ArrowRight size={14} />
               </Link>
+              <button
+                onClick={handleDownloadPdf}
+                disabled={pdfLoading}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(26,42,58,0.06)", border: "1.5px solid rgba(26,42,58,0.15)", color: navy, padding: "12px 20px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 14, cursor: pdfLoading ? "wait" : "pointer", opacity: pdfLoading ? 0.65 : 1 }}
+              >
+                {pdfLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                {pdfLoading ? "Generating…" : "Download LMN Draft (PDF)"}
+              </button>
               <Link to="/providers" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(212,34,126,0.06)", color: navy, padding: "12px 20px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
                 Find DPC Providers
               </Link>
