@@ -119,11 +119,16 @@ export function ProviderMap({ providers, geocoded }: ProviderMapProps) {
                     {[provider.address, provider.city, provider.state, provider.zip].filter(Boolean).join(", ")}
                   </p>
                 )}
+                <p style={{ fontSize: "0.62rem", color: "#a0b0bf", fontFamily: "monospace", marginBottom: "0.35rem" }}>
+                  NPI #{provider.npi}
+                </p>
                 <a
-                  href={`${BASE}/providers/search`}
+                  href={`https://npiregistry.cms.hhs.gov/provider-view/${provider.npi}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{ fontSize: "0.72rem", fontWeight: 600, color: "#D4227E", textDecoration: "none" }}
                 >
-                  NPI #{provider.npi}
+                  View Profile →
                 </a>
               </div>
             </Popup>

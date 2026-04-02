@@ -417,6 +417,7 @@ export default function ProviderSearch() {
     let cancelled = false;
 
     async function batchGeocode() {
+      if (cancelled) return;
       const uniqueKeys = [
         ...new Set(
           providers
@@ -456,8 +457,11 @@ export default function ProviderSearch() {
       }
     }
 
-    batchGeocode();
-    return () => { cancelled = true; };
+    const debounceTimer = setTimeout(() => { batchGeocode(); }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(debounceTimer);
+    };
   }, [providers]);
 
   function handleSearch() {
