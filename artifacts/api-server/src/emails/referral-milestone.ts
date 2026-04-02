@@ -7,6 +7,15 @@ interface ReferralMilestoneEmailProps {
   dashboardUrl: string;
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function referralMilestoneEmail({
   referrerName,
   milestoneName,
@@ -15,7 +24,7 @@ export function referralMilestoneEmail({
   totalRewardedCount,
   dashboardUrl,
 }: ReferralMilestoneEmailProps): { subject: string; html: string } {
-  const name = referrerName ?? "there";
+  const name = escapeHtml(referrerName ?? "there");
   const subject = `${milestoneEmoji} You've reached ${milestoneName} — ${bonusCredit} bonus credit!`;
 
   const html = `<!DOCTYPE html>

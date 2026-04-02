@@ -588,7 +588,8 @@ async function handleSendInvite(req: Request, res: Response, body: { email: stri
       "referral-invite",
     );
 
-    // Record the invite attempt as a zero-amount "invite-sent" credit row (rate-limit audit trail)
+    // Record the invite attempt as a zero-amount "invite-sent" credit row (rate-limit audit trail).
+    // This must succeed to ensure rate limiting is enforced — do NOT swallow errors here.
     await db.insert(memberCredits).values({
       id: randomUUID(),
       profileId,
@@ -596,7 +597,7 @@ async function handleSendInvite(req: Request, res: Response, body: { email: stri
       amountCents: 0,
       used: true,
       createdAt: new Date(),
-    }).catch(() => {});
+    });
 
     res.json({ message: "Invite sent", referralCode, signupUrl });
   } catch (err) {
