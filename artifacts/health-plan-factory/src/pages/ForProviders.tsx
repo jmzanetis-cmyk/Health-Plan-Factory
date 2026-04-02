@@ -15,11 +15,18 @@ export default function ForProviders() {
             </p>
             <div className="flex gap-3">
               <Link
-                to="/provider/signup"
+                to="/list-your-practice"
                 className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-semibold text-white no-underline"
                 style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
               >
-                Apply as a provider →
+                List your practice →
+              </Link>
+              <Link
+                to="/provider/signup"
+                className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-medium no-underline"
+                style={{ background: "transparent", border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
+              >
+                Apply directly →
               </Link>
             </div>
           </div>
@@ -80,14 +87,14 @@ export default function ForProviders() {
 
           <div className="mt-10 text-center">
             <Link
-              to="/provider/signup"
+              to="/list-your-practice"
               className="inline-flex items-center px-8 py-3.5 rounded-lg text-sm font-semibold text-white no-underline"
               style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
-              Apply as a founding provider →
+              List your practice — $29/mo →
             </Link>
             <p className="text-xs mt-3" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Applications reviewed within 2–3 business days
+              Applications reviewed within 1–2 business days
             </p>
           </div>
         </div>

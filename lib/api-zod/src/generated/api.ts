@@ -392,7 +392,12 @@ export const GetPlanResponse = zod.object({
       rationale: zod.string(),
       isDeprioritized: zod.boolean(),
       sortOrder: zod.number(),
-      nearbyProviderCount: zod.number().nullish(),
+      nearbyProviderCount: zod
+        .number()
+        .nullish()
+        .describe(
+          "Number of providers within the member's commute radius for this modality. Null if no location data was provided. Telehealth providers are always counted.",
+        ),
     }),
   ),
 });
@@ -1616,4 +1621,51 @@ export const ListNotificationLogResponse = zod.object({
   total: zod.number(),
   page: zod.number(),
   limit: zod.number(),
+});
+
+/**
+ * Returns a presigned GCS URL for direct upload. The client sends JSON
+metadata here, then uploads the file directly to the returned URL.
+
+ * @summary Request a presigned URL for file upload
+ */
+
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string().min(1).describe("Original file name."),
+  size: zod.number().min(1).describe("File size in bytes."),
+  contentType: zod
+    .string()
+    .min(1)
+    .describe("MIME type of the file (e.g. image\/jpeg)."),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string().url().describe("Presigned GCS URL for PUT upload."),
+  objectPath: zod
+    .string()
+    .describe("Normalized object path (e.g. \/objects\/uploads\/uuid)."),
+  metadata: zod
+    .object({
+      name: zod.string().min(1).describe("Original file name."),
+      size: zod.number().min(1).describe("File size in bytes."),
+      contentType: zod
+        .string()
+        .min(1)
+        .describe("MIME type of the file (e.g. image\/jpeg)."),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const GetPublicObjectParams = zod.object({
+  filePath: zod.coerce.string(),
+});
+
+/**
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  objectPath: zod.coerce.string(),
 });

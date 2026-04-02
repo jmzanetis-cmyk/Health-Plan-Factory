@@ -78,6 +78,7 @@ import ModalityDetail from "@/pages/ModalityDetail";
 import Referral from "@/pages/Referral";
 import SharedPlan from "@/pages/SharedPlan";
 import SavingsCalculator from "@/pages/SavingsCalculator";
+import ListYourPractice from "@/pages/ListYourPractice";
 
 import NotFound from "@/pages/not-found";
 
@@ -105,6 +106,9 @@ function AppRoutes() {
       {/* Auth */}
       <Route path="/sign-in" element={<Layout hideFooter><SignIn /></Layout>} />
       <Route path="/sign-up" element={<Layout hideFooter><SignUp /></Layout>} />
+
+      {/* Provider landing page */}
+      <Route path="/list-your-practice" element={<Layout><ListYourPractice /></Layout>} />
 
       {/* Public LMN/HSA guide */}
       <Route path="/lmn-guide" element={<Layout><LmnGuide /></Layout>} />

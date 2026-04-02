@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@workspace/replit-auth-web";
-import { ChevronRight, ChevronLeft, Check, Loader2, Upload } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, Loader2, Upload, CreditCard, CheckCircle, ExternalLink, FileCheck } from "lucide-react";
+import { useUpload } from "@workspace/object-storage-web";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -25,6 +26,7 @@ const step2Schema = z.object({
   serviceRadiusMiles: z.coerce.number().min(0).max(500).optional(),
   offersTelehealth: z.boolean(),
   offersInPerson: z.boolean(),
+  availabilityNotes: z.string().max(300).optional(),
 }).refine((d) => d.offersTelehealth || d.offersInPerson, {
   message: "Select at least one service format",
   path: ["offersTelehealth"],
@@ -52,7 +54,7 @@ interface Modality {
   category: string;
 }
 
-const STEPS = ["Practice & credentials", "Location & format", "Specialties & pricing"];
+const STEPS = ["Practice & credentials", "Location & format", "Specialties & pricing", "Listing payment"];
 
 const inputStyle = {
   border: "1px solid rgba(212,34,126,0.15)",
@@ -72,6 +74,19 @@ export default function ProviderSignup() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Step1 & Step2 & Step3>>({});
   const [photoNote, setPhotoNote] = useState<string | null>(null);
+  const [providerId, setProviderId] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [stripeMode, setStripeMode] = useState<"live" | "demo" | null>(null);
+  const [credentialDocPath, setCredentialDocPath] = useState<string | null>(null);
+  const [credentialDocName, setCredentialDocName] = useState<string | null>(null);
+  const credentialInputRef = useRef<HTMLInputElement | null>(null);
+
+  const { uploadFile, isUploading: isUploadingCredential } = useUpload({
+    basePath: `${BASE}/api/storage`,
+    onSuccess: (response) => {
+      setCredentialDocPath(response.objectPath);
+    },
+  });
 
   useEffect(() => {
     fetch(`${BASE}/api/modalities`)
@@ -95,7 +110,6 @@ export default function ProviderSignup() {
     setSubmitting(true);
     setSubmitError(null);
 
-    // Build modalityPricingRanges array for the API
     const modalityPricingRanges = (payload.modalityIds as string[]).map((id: string) => {
       const p = (payload.modalityPricing as Record<string, { costMin?: number; costMax?: number }> | undefined)?.[id];
       return { modalityId: id, costMin: p?.costMin ? Number(p.costMin) : undefined, costMax: p?.costMax ? Number(p.costMax) : undefined };
@@ -111,17 +125,52 @@ export default function ProviderSignup() {
           modalityPricingRanges,
           website: payload.website || undefined,
           serviceRadiusMiles: payload.serviceRadiusMiles ? Number(payload.serviceRadiusMiles) : undefined,
+          credentialDocPath: credentialDocPath || undefined,
         }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { error?: string })?.error ?? `Error ${res.status}`);
       }
-      navigate("/provider/dashboard");
+      const created = await res.json();
+      const newProviderId = created.id ?? null;
+      setProviderId(newProviderId);
+      setStep(3);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: unknown) {
       setSubmitError(e instanceof Error ? e.message : "Submission failed");
       setSubmitting(false);
     }
+  };
+
+  const handleListingCheckout = async () => {
+    if (!providerId) return;
+    setCheckoutLoading(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch(`${BASE}/api/providers/listing-checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ providerId }),
+      });
+      const data = await res.json() as { checkout_url?: string; stripe_required?: boolean; stripe_mode?: string };
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else if (data.stripe_required || data.stripe_mode === "demo") {
+        setStripeMode("demo");
+      } else {
+        throw new Error("Unexpected response from payment server");
+      }
+    } catch (e: unknown) {
+      setSubmitError(e instanceof Error ? e.message : "Payment setup failed");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleDemoComplete = () => {
+    navigate("/provider/dashboard");
   };
 
   if (isLoading) {
@@ -203,7 +252,7 @@ export default function ProviderSignup() {
                 <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Profile photo</label>
                 <div
                   className="relative flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer transition-all"
-                  style={{ border: "2px dashed rgba(212,34,126,0.15)", background: "rgba(212,34,126,0.02)", minHeight: "96px" }}
+                  style={{ border: "2px dashed rgba(212,34,126,0.15)", background: "rgba(212,34,126,0.02)", minHeight: "72px" }}
                   onClick={() => setPhotoNote("Photo uploads will be available after your application is approved.")}
                 >
                   <Upload size={20} style={{ color: "var(--text-muted)" }} />
@@ -211,6 +260,48 @@ export default function ProviderSignup() {
                     {photoNote ?? "Upload a professional headshot (available after approval)"}
                   </p>
                 </div>
+              </div>
+
+              {/* Credential document upload */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>License / credential document</label>
+                <div
+                  className="relative flex flex-col items-center justify-center gap-2 rounded-xl cursor-pointer transition-all"
+                  style={{ border: credentialDocPath ? "2px solid rgba(125,181,92,0.4)" : "2px dashed rgba(212,34,126,0.15)", background: credentialDocPath ? "rgba(125,181,92,0.04)" : "rgba(212,34,126,0.02)", minHeight: "72px" }}
+                  onClick={() => credentialInputRef.current?.click()}
+                >
+                  {isUploadingCredential ? (
+                    <Loader2 size={20} className="animate-spin" style={{ color: "var(--hpf-pink)" }} />
+                  ) : credentialDocPath ? (
+                    <>
+                      <FileCheck size={20} style={{ color: "var(--sage)" }} />
+                      <p className="text-xs text-center font-medium" style={{ color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
+                        {credentialDocName ?? "Document uploaded"}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Click to replace</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={20} style={{ color: "var(--text-muted)" }} />
+                      <p className="text-xs text-center" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                        Upload your license or certificate (PDF, JPG, PNG)
+                      </p>
+                    </>
+                  )}
+                  <input
+                    ref={credentialInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    style={{ display: "none" }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setCredentialDocName(file.name);
+                      await uploadFile(file);
+                    }}
+                  />
+                </div>
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Used for verification only — not shown publicly. (Optional)</p>
               </div>
 
               <div>
@@ -310,6 +401,22 @@ export default function ProviderSignup() {
                 </div>
               </div>
 
+              <div style={{ borderTop: "1px solid rgba(212,34,126,0.06)", paddingTop: "16px" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Availability & hours</p>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Typical hours / scheduling notes</label>
+                  <textarea
+                    {...form2.register("availabilityNotes")}
+                    rows={3}
+                    placeholder="e.g. Mon–Fri 9am–5pm, evening slots available on Tuesdays"
+                    className="w-full px-4 py-3 rounded-lg text-sm outline-none resize-none"
+                    style={inputStyle}
+                  />
+                  {form2.formState.errors.availabilityNotes && <p className="text-xs mt-1" style={errorStyle}>{form2.formState.errors.availabilityNotes.message}</p>}
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Shown on your public profile to help members plan appointments.</p>
+                </div>
+              </div>
+
               <div className="mt-2 flex justify-between">
                 <button type="button" onClick={() => setStep(0)} className="flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium" style={{ border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", background: "transparent", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>
                   <ChevronLeft size={16} /> Back
@@ -359,7 +466,6 @@ export default function ProviderSignup() {
                 </div>
                 {form3.formState.errors.modalityIds && <p className="text-xs mt-1 mb-2" style={errorStyle}>{form3.formState.errors.modalityIds.message}</p>}
 
-                {/* Per-modality pricing rows */}
                 {(form3.watch("modalityIds") || []).length > 0 && (
                   <div className="flex flex-col gap-2 mt-1">
                     <p className="text-xs font-semibold" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Pricing per modality (optional — min / max $)</p>
@@ -418,11 +524,88 @@ export default function ProviderSignup() {
                   <ChevronLeft size={16} /> Back
                 </button>
                 <button type="submit" disabled={submitting} className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white" style={{ background: submitting ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}>
-                  {submitting ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
-                  {submitting ? "Submitting..." : "Submit application →"}
+                  {submitting ? <Loader2 size={15} className="animate-spin" /> : <ChevronRight size={15} />}
+                  {submitting ? "Saving..." : "Continue to payment →"}
                 </button>
               </div>
             </form>
+          )}
+
+          {/* Step 4 — Listing payment */}
+          {step === 3 && (
+            <div className="flex flex-col gap-6">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: "rgba(212,34,126,0.08)" }}>
+                  <CreditCard size={22} style={{ color: "var(--hpf-pink)" }} />
+                </div>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", letterSpacing: "0.08em" }}>Almost there</p>
+                <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.4rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
+                  Activate your listing
+                </h3>
+                <p className="text-sm mt-2" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                  Your profile has been submitted and is pending review. Set up your monthly listing to go live when approved.
+                </p>
+              </div>
+
+              {/* Pricing summary */}
+              <div className="rounded-xl p-5" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.1)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Provider Listing — Monthly</span>
+                  <span className="text-lg font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>$29/mo</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {[
+                    "Active listing visible to all members",
+                    "Lead notifications when members view your profile",
+                    "Provider dashboard to manage availability & pricing",
+                    "0% commission for first 90 days (Founding Provider)",
+                    "Cancel anytime from your dashboard",
+                  ].map((item) => (
+                    <div key={item} className="flex items-center gap-2">
+                      <CheckCircle size={12} style={{ color: "var(--sage)", flexShrink: 0 }} />
+                      <span className="text-xs" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {stripeMode === "demo" ? (
+                <div className="flex flex-col gap-4">
+                  <div className="p-4 rounded-xl text-sm" style={{ background: "rgba(125,181,92,0.08)", border: "1px solid rgba(125,181,92,0.2)", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                    <p className="font-semibold mb-1" style={{ color: "var(--sage)" }}>Demo mode — payment skipped</p>
+                    <p className="text-xs">Stripe is not configured in this environment. Your application has been submitted and is pending admin review.</p>
+                  </div>
+                  <button
+                    onClick={handleDemoComplete}
+                    className="w-full py-3.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+                    style={{ background: "var(--sage)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                  >
+                    <CheckCircle size={15} /> Go to my dashboard
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {submitError && (
+                    <div className="p-3 rounded-lg text-sm" style={{ background: "rgba(192,57,43,0.06)", border: "1px solid rgba(192,57,43,0.15)", color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>
+                      {submitError}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleListingCheckout}
+                    disabled={checkoutLoading}
+                    className="w-full py-4 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+                    style={{ background: checkoutLoading ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: checkoutLoading ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+                  >
+                    {checkoutLoading ? <Loader2 size={15} className="animate-spin" /> : <ExternalLink size={15} />}
+                    {checkoutLoading ? "Preparing checkout..." : "Subscribe — $29/month →"}
+                  </button>
+                  <p className="text-xs text-center" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                    Secured by Stripe. Your listing activates after admin approval — you won't be charged until then.
+                  </p>
+                </>
+              )}
+            </div>
           )}
         </div>
 

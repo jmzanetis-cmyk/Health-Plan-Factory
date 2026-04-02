@@ -11,6 +11,8 @@ import {
 import { buildDigestForMember } from "../lib/weeklyDigest";
 import { weeklyDigestEmail } from "../emails/weekly-digest";
 import { sendEmail } from "../lib/comms";
+import { providerApprovedEmail } from "../emails/provider-approved";
+import { providerRejectedEmail } from "../emails/provider-rejected";
 
 const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
@@ -160,6 +162,13 @@ router.patch("/admin/providers/:id", async (req, res) => {
       rejectionReason?: string;
     };
 
+    // Fetch the current provider to detect status transitions
+    const [existing] = await db.select().from(providers).where(eq(providers.id, id)).limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Provider not found" });
+      return;
+    }
+
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (status) updates.status = status;
     if (verificationStatus) updates.verificationStatus = verificationStatus;
@@ -175,6 +184,65 @@ router.patch("/admin/providers/:id", async (req, res) => {
       res.status(404).json({ error: "Provider not found" });
       return;
     }
+
+    // Send approval / rejection email on status transitions
+    const previousStatus = existing.status;
+    const newStatus = status ?? existing.status;
+
+    if (previousStatus !== "approved" && newStatus === "approved" && existing.profileId) {
+      // Grant provider role so the user can access the provider dashboard
+      await db
+        .update(profiles)
+        .set({ role: "provider", updatedAt: new Date() })
+        .where(eq(profiles.id, existing.profileId));
+
+      // Look up the provider owner's profile for their email
+      try {
+        const [profile] = await db
+          .select({ email: profiles.email, displayName: profiles.displayName })
+          .from(profiles)
+          .where(eq(profiles.id, existing.profileId))
+          .limit(1);
+
+        if (profile?.email) {
+          const origin = process.env.APP_URL ?? "https://healthplanfactory.com";
+          const { subject, html } = providerApprovedEmail({
+            displayName: profile.displayName,
+            providerName: existing.name,
+            dashboardUrl: `${origin}/provider/dashboard`,
+          });
+          sendEmail(existing.profileId, profile.email, subject, html, "welcome").catch((e) =>
+            console.error("[admin] Failed to send provider approval email:", e),
+          );
+        }
+      } catch (emailErr) {
+        console.error("[admin] Error fetching profile for approval email:", emailErr);
+      }
+    } else if (previousStatus !== "rejected" && newStatus === "rejected" && existing.profileId) {
+      try {
+        const [profile] = await db
+          .select({ email: profiles.email, displayName: profiles.displayName })
+          .from(profiles)
+          .where(eq(profiles.id, existing.profileId))
+          .limit(1);
+
+        if (profile?.email) {
+          const origin = process.env.APP_URL ?? "https://healthplanfactory.com";
+          const { subject, html } = providerRejectedEmail({
+            displayName: profile.displayName,
+            providerName: existing.name,
+            rejectionReason: (rejectionReason ?? existing.rejectionReason) || null,
+            reapplyUrl: `${origin}/contact`,
+          });
+          sendEmail(existing.profileId, profile.email, subject, html, "welcome").catch((e) =>
+            console.error("[admin] Failed to send provider rejection email:", e),
+          );
+        }
+      } catch (emailErr) {
+        console.error("[admin] Error fetching profile for rejection email:", emailErr);
+      }
+    }
+
     res.json({ provider: updated });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";

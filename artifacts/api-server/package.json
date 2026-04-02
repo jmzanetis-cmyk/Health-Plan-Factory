@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
+    "@google-cloud/storage": "^7.19.0",
     "@supabase/supabase-js": "^2.101.0",
     "@types/pdfkit": "^0.17.5",
     "@workspace/api-zod": "workspace:*",
@@ -19,6 +20,7 @@
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
+    "google-auth-library": "^10.6.2",
     "node-cron": "^4.2.1",
     "openid-client": "^6.8.2",
     "pdfkit": "^0.18.0",

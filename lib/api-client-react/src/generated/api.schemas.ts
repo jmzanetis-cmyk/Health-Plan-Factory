@@ -139,6 +139,32 @@ export interface ErrorResponse {
   details?: ErrorResponseDetails;
 }
 
+export interface UploadUrlRequest {
+  /**
+   * Original file name.
+   * @minLength 1
+   */
+  name: string;
+  /**
+   * File size in bytes.
+   * @minimum 1
+   */
+  size: number;
+  /**
+   * MIME type of the file (e.g. image/jpeg).
+   * @minLength 1
+   */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  /** Presigned GCS URL for PUT upload. */
+  uploadURL: string;
+  /** Normalized object path (e.g. /objects/uploads/uuid). */
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
 export interface ModalityRecord {
   id: string;
   name: string;
@@ -253,6 +279,8 @@ export interface PlanItemRecord {
   rationale: string;
   isDeprioritized: boolean;
   sortOrder: number;
+  /** Number of providers within the member's commute radius for this modality. Null if no location data was provided. Telehealth providers are always counted. */
+  nearbyProviderCount?: number | null;
 }
 
 export interface PlanWithItems {

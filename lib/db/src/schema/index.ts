@@ -146,6 +146,8 @@ export const providers = pgTable(
     serviceRadiusMiles: integer("service_radius_miles"),
     costPerSession: integer("cost_per_session"),
     rejectionReason: text("rejection_reason"),
+    credentialDocPath: text("credential_doc_path"),
+    availabilityNotes: text("availability_notes"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -788,3 +790,39 @@ export const insertHealthSyncLogSchema = createInsertSchema(healthSyncLogs).omit
 });
 export type InsertHealthSyncLog = InferInsertModel<typeof healthSyncLogs>;
 export type HealthSyncLog = InferSelectModel<typeof healthSyncLogs>;
+
+// ── provider_subscriptions ─────────────────────────────────────────────────────
+// Monthly listing fee paid by providers to be listed on the platform.
+// Created after a successful Stripe Checkout Session for the listing fee.
+
+export const providerSubscriptions = pgTable(
+  "provider_subscriptions",
+  {
+    id: text("id").primaryKey(),
+    providerId: text("provider_id")
+      .notNull()
+      .references(() => providers.id, { onDelete: "cascade" }),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    stripeSessionId: text("stripe_session_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    stripeCustomerId: text("stripe_customer_id"),
+    amountCents: integer("amount_cents").notNull().default(2900), // $29/mo
+    status: text("status").notNull().default("active"), // active | canceled | past_due
+    currentPeriodEnd: timestamp("current_period_end"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("provider_subscriptions_provider_idx").on(t.providerId),
+    index("provider_subscriptions_profile_idx").on(t.profileId),
+  ],
+);
+
+export const insertProviderSubscriptionSchema = createInsertSchema(providerSubscriptions).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProviderSubscription = InferInsertModel<typeof providerSubscriptions>;
+export type ProviderSubscription = InferSelectModel<typeof providerSubscriptions>;

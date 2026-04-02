@@ -16,5 +16,6 @@ export interface PlanItemRecord {
   rationale: string;
   isDeprioritized: boolean;
   sortOrder: number;
+  /** Number of providers within the member's commute radius for this modality. Null if no location data was provided. Telehealth providers are always counted. */
   nearbyProviderCount?: number | null;
 }

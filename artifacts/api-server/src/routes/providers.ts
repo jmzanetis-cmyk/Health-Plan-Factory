@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks } from "@workspace/db";
+import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   ListProvidersQueryParams,
@@ -188,6 +188,8 @@ router.post("/providers", async (req, res) => {
       licenseState?: string;
       serviceRadiusMiles?: number;
       offersInPerson?: boolean;
+      credentialDocPath?: string;
+      availabilityNotes?: string;
       modalityPricingRanges?: Array<{ modalityId: string; costMin?: number; costMax?: number }>;
     };
 
@@ -213,6 +215,8 @@ router.post("/providers", async (req, res) => {
         offersInPerson: rawBody.offersInPerson ?? true,
         serviceRadiusMiles: rawBody.serviceRadiusMiles ? Number(rawBody.serviceRadiusMiles) : null,
         costPerSession: providerData.costPerSession ?? null,
+        credentialDocPath: rawBody.credentialDocPath ?? null,
+        availabilityNotes: rawBody.availabilityNotes ?? null,
         createdAt: now,
         updatedAt: now,
       })
@@ -248,11 +252,9 @@ router.post("/providers", async (req, res) => {
       });
     }
 
-    // Update the profile role to "provider" so ProtectedRoute lets them in
-    await db
-      .update(profiles)
-      .set({ role: "provider", updatedAt: new Date() })
-      .where(eq(profiles.id, req.user!.id));
+    // Note: role is NOT upgraded to "provider" here.
+    // The profile role is set to "provider" by admin approval in PATCH /admin/providers/:id.
+    // Until approved, the user retains their current role (e.g. "member").
 
     res.status(201).json(GetAdminProviderResponse.parse(created));
   } catch (err: unknown) {
@@ -274,7 +276,7 @@ router.patch("/providers/me", async (req, res) => {
       return;
     }
     const provider = rows[0];
-    const allowed = ["name", "bio", "city", "state", "zipCode", "phone", "website", "acceptsInsurance", "offersTelehealth", "costPerSession"] as const;
+    const allowed = ["name", "bio", "city", "state", "zipCode", "phone", "website", "acceptsInsurance", "offersTelehealth", "costPerSession", "availabilityNotes"] as const;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     for (const field of allowed) {
       if (field in req.body) updates[field] = req.body[field] ?? null;
@@ -665,6 +667,24 @@ router.post(
               .where(eq(profiles.id, member_id));
           }
         }
+
+        // ── Provider listing subscription confirmed by Stripe ─────────────────
+        if (sessionType === "provider_listing") {
+          const { provider_id, profile_id } = session.metadata!;
+          if (provider_id && profile_id) {
+            await db.insert(providerSubscriptions).values({
+              id: randomUUID(),
+              providerId: provider_id,
+              profileId: profile_id,
+              stripeSessionId: session.id,
+              stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+              stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
+              amountCents: session.amount_total ?? 2900,
+              status: "active",
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            }).onConflictDoNothing();
+          }
+        }
       }
       res.json({ received: true });
     } catch (err: unknown) {
@@ -766,6 +786,102 @@ router.post("/subscriptions/checkout", async (req, res) => {
       amount_charged_cents: netCents,
       amount_charged_formatted: `$${(netCents / 100).toFixed(2)}`,
       subscription_price_cents: SUBSCRIPTION_PRICE_CENTS,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /api/providers/listing-checkout
+ * Creates a Stripe Checkout Session for a provider's monthly listing subscription.
+ * The provider record must already exist (created in step 3 of the signup wizard).
+ * Returns { checkout_url } when Stripe is configured, or stripe_mode: "demo" otherwise.
+ */
+router.post("/providers/listing-checkout", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const profileId = req.user!.id;
+  const { providerId } = req.body as { providerId?: string };
+
+  if (!providerId) {
+    res.status(400).json({ error: "providerId is required" });
+    return;
+  }
+
+  try {
+    // Verify the provider belongs to this user
+    const [provider] = await db
+      .select({ id: providers.id, name: providers.name, status: providers.status })
+      .from(providers)
+      .where(and(eq(providers.id, providerId), eq(providers.profileId, profileId)))
+      .limit(1);
+
+    if (!provider) {
+      res.status(404).json({ error: "Provider profile not found" });
+      return;
+    }
+
+    const LISTING_PRICE_CENTS = 2900; // $29/mo
+
+    if (!stripe) {
+      // Demo mode — record a demo subscription and return
+      await db.insert(providerSubscriptions).values({
+        id: randomUUID(),
+        providerId: provider.id,
+        profileId,
+        amountCents: LISTING_PRICE_CENTS,
+        status: "active",
+        stripeSessionId: null,
+        stripeSubscriptionId: null,
+        stripeCustomerId: null,
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      }).onConflictDoNothing();
+
+      res.json({
+        stripe_required: false,
+        stripe_mode: "demo",
+        message: "Stripe not configured — listing subscription recorded in demo mode.",
+      });
+      return;
+    }
+
+    const origin = `${req.protocol}://${req.get("host")}`;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: LISTING_PRICE_CENTS,
+            recurring: { interval: "month" },
+            product_data: {
+              name: "Health Plan Factory — Provider Listing",
+              description: `Monthly listing fee for ${provider.name}`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        type: "provider_listing",
+        provider_id: providerId,
+        profile_id: profileId,
+      },
+      success_url: `${origin}/provider/dashboard?listing=success`,
+      cancel_url: `${origin}/provider/signup?listing=canceled`,
+    });
+
+    res.json({
+      checkout_url: session.url,
+      session_id: session.id,
+      amount_cents: LISTING_PRICE_CENTS,
+      amount_formatted: `$${(LISTING_PRICE_CENTS / 100).toFixed(2)}/mo`,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";

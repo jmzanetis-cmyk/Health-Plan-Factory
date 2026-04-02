@@ -127,4 +127,6 @@ export * from "./updateModalityBody";
 export * from "./updatePlanBody";
 export * from "./updateProviderStatusBody";
 export * from "./updateProviderStatusBodyStatus";
+export * from "./uploadUrlRequest";
+export * from "./uploadUrlResponse";
 export * from "./upsertAdminSettingBody";

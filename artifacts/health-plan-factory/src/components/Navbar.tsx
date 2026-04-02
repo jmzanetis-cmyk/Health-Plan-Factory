@@ -7,7 +7,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 const navLinks = [
   { href: "/how-it-works", label: "How It Works" },
   { href: "/modalities", label: "Modalities" },
-  { href: "/for-providers", label: "For Providers" },
+  { href: "/list-your-practice", label: "List Your Practice" },
   { href: "/for-employers", label: "For Employers" },
   { href: "/pricing", label: "Pricing" },
 ];
