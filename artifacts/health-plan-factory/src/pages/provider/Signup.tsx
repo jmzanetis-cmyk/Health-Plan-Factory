@@ -76,7 +76,6 @@ export default function ProviderSignup() {
   const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [providerId, setProviderId] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [stripeMode, setStripeMode] = useState<"live" | "demo" | null>(null);
   const [credentialDocPath, setCredentialDocPath] = useState<string | null>(null);
   const [credentialDocName, setCredentialDocName] = useState<string | null>(null);
   const credentialInputRef = useRef<HTMLInputElement | null>(null);
@@ -167,9 +166,6 @@ export default function ProviderSignup() {
     }
   };
 
-  const handleDemoComplete = () => {
-    navigate("/provider/dashboard");
-  };
 
   if (isLoading) {
     return (
@@ -568,41 +564,23 @@ export default function ProviderSignup() {
                 </div>
               </div>
 
-              {stripeMode === "demo" ? (
-                <div className="flex flex-col gap-4">
-                  <div className="p-4 rounded-xl text-sm" style={{ background: "rgba(125,181,92,0.08)", border: "1px solid rgba(125,181,92,0.2)", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                    <p className="font-semibold mb-1" style={{ color: "var(--sage)" }}>Demo mode — payment skipped</p>
-                    <p className="text-xs">Stripe is not configured in this environment. Your application has been submitted and is pending admin review.</p>
-                  </div>
-                  <button
-                    onClick={handleDemoComplete}
-                    className="w-full py-3.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-                    style={{ background: "var(--sage)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
-                  >
-                    <CheckCircle size={15} /> Go to my dashboard
-                  </button>
+              {submitError && (
+                <div className="p-3 rounded-lg text-sm" style={{ background: "rgba(192,57,43,0.06)", border: "1px solid rgba(192,57,43,0.15)", color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>
+                  {submitError}
                 </div>
-              ) : (
-                <>
-                  {submitError && (
-                    <div className="p-3 rounded-lg text-sm" style={{ background: "rgba(192,57,43,0.06)", border: "1px solid rgba(192,57,43,0.15)", color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>
-                      {submitError}
-                    </div>
-                  )}
-                  <button
-                    onClick={handleListingCheckout}
-                    disabled={checkoutLoading}
-                    className="w-full py-4 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-                    style={{ background: checkoutLoading ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: checkoutLoading ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
-                  >
-                    {checkoutLoading ? <Loader2 size={15} className="animate-spin" /> : <ExternalLink size={15} />}
-                    {checkoutLoading ? "Preparing checkout..." : "Subscribe — $29/month →"}
-                  </button>
-                  <p className="text-xs text-center" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                    Secured by Stripe. Your listing activates after admin approval — you won't be charged until then.
-                  </p>
-                </>
               )}
+              <button
+                onClick={handleListingCheckout}
+                disabled={checkoutLoading}
+                className="w-full py-4 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+                style={{ background: checkoutLoading ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: checkoutLoading ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                {checkoutLoading ? <Loader2 size={15} className="animate-spin" /> : <ExternalLink size={15} />}
+                {checkoutLoading ? "Preparing checkout..." : "Subscribe — $29/month →"}
+              </button>
+              <p className="text-xs text-center" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
+                Secured by Stripe. Your listing activates after admin approval — you won't be charged until then.
+              </p>
             </div>
           )}
         </div>
