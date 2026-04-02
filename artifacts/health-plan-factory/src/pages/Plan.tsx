@@ -4,6 +4,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { type Plan, type PlanItem, planSchema, deserializePlan } from "@/lib/planEngine";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
 import { type EvidenceLevel } from "@/data/modalities";
+import { NPI_CATEGORIES } from "@/data/npiCategories";
 import { Logo } from "@/components/Logo";
 
 function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; isTelehealth?: boolean }) {
@@ -111,7 +112,7 @@ interface LmnContext {
   estimatedAnnualSavingsCents: number;
 }
 
-function ModalityCard({ item, rank, lmnContext, unusedCredits, nearbyProviderCount }: { item: PlanItem; rank: number; lmnContext?: LmnContext; unusedCredits?: number; nearbyProviderCount?: number | null }) {
+function ModalityCard({ item, rank, lmnContext, unusedCredits, nearbyProviderCount, zipCode }: { item: PlanItem; rank: number; lmnContext?: LmnContext; unusedCredits?: number; nearbyProviderCount?: number | null; zipCode?: string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -321,6 +322,48 @@ function ModalityCard({ item, rank, lmnContext, unusedCredits, nearbyProviderCou
               {unusedCredits && unusedCredits > 0 ? "Unlock Free" : "Unlock"}
             </Link>
           </div>
+
+          {/* NPI Registry CTA — shown only for modalities with NPI coverage */}
+          {NPI_CATEGORIES[item.modality.id] && (() => {
+            const npiParams = new URLSearchParams({ modality: item.modality.id });
+            if (zipCode) npiParams.set("zip", zipCode);
+            return (
+              <Link
+                to={`/providers/search?${npiParams.toString()}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  marginTop: "0.75rem",
+                  padding: "0.6rem 0.875rem",
+                  borderRadius: 10,
+                  background: "rgba(59,130,246,0.05)",
+                  border: "1px solid rgba(59,130,246,0.15)",
+                  textDecoration: "none",
+                }}
+              >
+                <span style={{ fontSize: "0.9rem" }}>🔍</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: "#1d4ed8",
+                    fontFamily: "var(--app-font-sans)",
+                    marginBottom: 1,
+                  }}>
+                    Find real licensed providers →
+                  </p>
+                  <p style={{
+                    fontSize: "0.65rem",
+                    color: "var(--text-muted)",
+                    fontFamily: "var(--app-font-sans)",
+                  }}>
+                    Free lookup via the federal NPI Registry
+                  </p>
+                </div>
+              </Link>
+            );
+          })()}
         </div>
       )}
     </div>
@@ -905,7 +948,7 @@ export default function Plan() {
                   ),
                 };
               }
-              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} unusedCredits={unusedCreditsCents} nearbyProviderCount={providerCounts[item.modality.id] ?? null} />;
+              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} unusedCredits={unusedCreditsCents} nearbyProviderCount={providerCounts[item.modality.id] ?? null} zipCode={intake?.zipCode} />;
             })}
           </div>
         </div>

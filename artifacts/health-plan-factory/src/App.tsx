@@ -80,6 +80,7 @@ import Referral from "@/pages/Referral";
 import SharedPlan from "@/pages/SharedPlan";
 import SavingsCalculator from "@/pages/SavingsCalculator";
 import ListYourPractice from "@/pages/ListYourPractice";
+import ProviderSearch from "@/pages/ProviderSearch";
 
 import NotFound from "@/pages/not-found";
 
@@ -127,6 +128,7 @@ function AppRoutes() {
       <Route path="/plan/shared/:shareToken" element={<Layout><SharedPlan /></Layout>} />
       {/* Providers / Discover — both routes are public; auth gated internally for bookmarks/contact */}
       <Route path="/providers" element={<Layout><Providers /></Layout>} />
+      <Route path="/providers/search" element={<Layout><ProviderSearch /></Layout>} />
       <Route path="/discover" element={<Layout><Providers /></Layout>} />
       <Route path="/bookmarks" element={<Layout><ProtectedRoute><Bookmarks /></ProtectedRoute></Layout>} />
       <Route path="/progress" element={<Layout><ProtectedRoute><Progress /></ProtectedRoute></Layout>} />

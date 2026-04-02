@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
+import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@workspace/db";
 import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
@@ -18,6 +19,28 @@ const stripeKey = process.env.STRIPE_SECRET_KEY;
 const stripe: Stripe | null = stripeKey
   ? new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" })
   : null;
+
+// ── Anthropic AI (lazy — only active when ANTHROPIC_API_KEY is set) ───────────
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
+
+// ── Simple in-memory rate limiter for unauthenticated AI insight requests ─────
+const insightRateLimit = new Map<string, { count: number; resetAt: number }>();
+const INSIGHT_LIMIT = 5;
+const INSIGHT_WINDOW_MS = 3_600_000; // 1 hour
+
+// Canned insight fallbacks by modality (used when AI unavailable)
+const CANNED_INSIGHTS: Record<string, string> = {
+  massage: "Massage therapy can meaningfully reduce muscle tension, chronic pain, and stress. Ask your therapist whether they specialize in therapeutic or medical massage to understand how they can best support your goals.",
+  chiropractic: "Chiropractic care has strong evidence for back and neck pain relief through spinal adjustment and soft tissue work. Ask about their assessment process and how many visits they typically recommend before evaluating progress.",
+  acupuncture: "Acupuncture has clinical evidence for pain relief, stress reduction, and sleep regulation. Ask how many sessions they recommend before you assess whether the treatment is working for you.",
+  "physical-therapy": "Physical therapy is one of the most evidence-backed approaches for injury rehabilitation and chronic pain management. Ask about the home exercise program they'll design to extend your progress between sessions.",
+  "registered-dietitian": "A registered dietitian provides the most clinically rigorous nutrition guidance, especially for conditions like metabolic dysfunction or digestive issues. Ask what lab data or health history they'll use to personalize your eating strategy.",
+  dpc: "Direct Primary Care gives you unlimited access to a physician for a flat monthly fee — making preventive care and LMNs for HSA reimbursement much more accessible. Ask whether they can issue a Letter of Medical Necessity for wellness services already in your plan.",
+  shiatsu: "Shiatsu combines Japanese pressure-point techniques with meridian theory to relieve tension and restore energy flow. Ask about their training background and which health conditions they most commonly treat.",
+  "herbal-medicine": "Naturopathic physicians integrate evidence-guided botanical medicine with whole-person wellness care. Ask which herbal approaches they typically use for your primary health concern and how they track progress.",
+};
 
 const router: IRouter = Router();
 
@@ -942,6 +965,109 @@ router.get("/providers/counts", async (req, res) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
+  }
+});
+
+// ── GET /api/npi ──────────────────────────────────────────────────────────────
+// Thin proxy to the CMS NPI Registry API — bypasses browser CORS restrictions.
+// Query params: zip (5-digit), taxonomy (NPI taxonomy code), limit (optional, max 200)
+router.get("/npi", async (req, res) => {
+  const zip = String(req.query.zip || "").replace(/\D/g, "").slice(0, 5);
+  const taxonomy = String(req.query.taxonomy || "");
+  const taxonomyDesc = String(req.query.taxonomyDesc || "");
+  const limit = Math.min(Number(req.query.limit) || 50, 200);
+
+  if (zip.length !== 5) {
+    res.status(400).json({ error: "Invalid ZIP code" });
+    return;
+  }
+  if (!taxonomy && !taxonomyDesc) {
+    res.status(400).json({ error: "Taxonomy code or description required" });
+    return;
+  }
+
+  try {
+    const params = new URLSearchParams({
+      version: "2.1",
+      postal_code: zip,
+      enumeration_type: "NPI-1",
+      limit: String(limit),
+      skip: "0",
+    });
+    if (taxonomyDesc) {
+      params.set("taxonomy_description", taxonomyDesc);
+    }
+
+    const npiRes = await fetch(
+      `https://npiregistry.cms.hhs.gov/api/?${params.toString()}`,
+      { signal: AbortSignal.timeout(10_000) },
+    );
+    if (!npiRes.ok) {
+      res.status(502).json({ error: `NPI Registry returned ${npiRes.status}` });
+      return;
+    }
+    const data = await npiRes.json();
+    res.json(data);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Upstream error";
+    res.status(502).json({ error: msg });
+  }
+});
+
+// ── POST /api/providers/insight ───────────────────────────────────────────────
+// Returns a 2-sentence AI wellness insight for a given NPI provider + modality.
+// Rate-limited to 5 req/hr for unauthenticated users (in-memory, resets on restart).
+router.post("/providers/insight", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    const ip = String(req.ip || req.socket.remoteAddress || "unknown");
+    const now = Date.now();
+    const entry = insightRateLimit.get(ip);
+    if (entry && now < entry.resetAt) {
+      if (entry.count >= INSIGHT_LIMIT) {
+        res.status(429).json({
+          error: "Rate limit exceeded. Sign in for unlimited AI insights.",
+        });
+        return;
+      }
+      entry.count++;
+    } else {
+      insightRateLimit.set(ip, { count: 1, resetAt: now + INSIGHT_WINDOW_MS });
+    }
+  }
+
+  const { providerName, specialty, city, state, modalityId } =
+    req.body as {
+      providerName?: string;
+      specialty?: string;
+      city?: string;
+      state?: string;
+      modalityId?: string;
+    };
+
+  const fallback =
+    CANNED_INSIGHTS[modalityId || ""] ||
+    `${specialty || "This provider"} can be a valuable part of a whole-person wellness plan. Ask about their experience with your specific health goals at the first visit.`;
+
+  if (!anthropic) {
+    res.json({ insight: fallback });
+    return;
+  }
+
+  try {
+    const location = [city, state].filter(Boolean).join(", ") || "your area";
+    const prompt = `You are a wellness advisor for HealthPlanFactory. Write exactly 2 concise sentences for a member who is considering seeing ${providerName || "a provider"} (${specialty || modalityId || "wellness care"}) in ${location}. Cover: (1) the primary evidence-based health benefit of this modality, and (2) one specific, smart question to ask at the first visit. Be warm but precise. No bullet points, no intros.`;
+
+    const msg = await anthropic.messages.create({
+      model: "claude-3-haiku-20240307",
+      max_tokens: 200,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const text = msg.content[0]?.type === "text" ? msg.content[0].text.trim() : "";
+    res.json({ insight: text || fallback });
+  } catch (err) {
+    console.error("[providers/insight] AI call failed:", err);
+    res.json({ insight: fallback });
   }
 });
 
