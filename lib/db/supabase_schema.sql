@@ -1,15 +1,23 @@
 -- =============================================================================
 -- Health Plan Factory — Complete Supabase Schema
--- Generated from all 6 Drizzle migration files (0000–0004 + 0002_plan_sharing)
+-- Generated from lib/db/src/schema/index.ts (Drizzle ORM source of truth)
 -- Idempotent: safe to run on an empty or partially-migrated database.
--- Run this in the Supabase SQL Editor: https://app.supabase.com/project/rlugmlnozbertfuonlwp/sql
+--
+-- HOW TO USE:
+--   1. Open the Supabase SQL Editor:
+--      https://app.supabase.com/project/rlugmlnozbertfuonlwp/sql
+--   2. Paste this entire file into the editor.
+--   3. Click "Run". All statements are idempotent (IF NOT EXISTS / DO...EXCEPTION).
+--
 -- =============================================================================
 
 -- ── Enums ────────────────────────────────────────────────────────────────────
 
 DO $$ BEGIN
-  CREATE TYPE "public"."credit_source" AS ENUM('referral', 'promo');
+  CREATE TYPE "public"."credit_source" AS ENUM('referral', 'promo', 'milestone', 'invite-sent');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER TYPE "public"."credit_source" ADD VALUE IF NOT EXISTS 'milestone'; EXCEPTION WHEN others THEN NULL; END $$;
+DO $$ BEGIN ALTER TYPE "public"."credit_source" ADD VALUE IF NOT EXISTS 'invite-sent'; EXCEPTION WHEN others THEN NULL; END $$;
 
 DO $$ BEGIN
   CREATE TYPE "public"."evidence_level" AS ENUM('Strong', 'Moderate', 'Emerging');
@@ -144,6 +152,8 @@ CREATE TABLE IF NOT EXISTS "providers" (
   "service_radius_miles" integer,
   "cost_per_session" integer,
   "rejection_reason" text,
+  "credential_doc_path" text,
+  "availability_notes" text,
   "created_at" timestamp DEFAULT now() NOT NULL,
   "updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -286,7 +296,7 @@ CREATE TABLE IF NOT EXISTS "member_credits" (
   "id" text PRIMARY KEY NOT NULL,
   "profile_id" text NOT NULL,
   "source" "credit_source" NOT NULL,
-  "amount_cents" integer DEFAULT 200 NOT NULL,
+  "amount_cents" integer DEFAULT 300 NOT NULL,
   "used" boolean DEFAULT false NOT NULL,
   "referral_id" text,
   "created_at" timestamp DEFAULT now() NOT NULL,
@@ -364,6 +374,82 @@ CREATE TABLE IF NOT EXISTS "provider_reviews" (
   "is_hidden" boolean DEFAULT false NOT NULL,
   "created_at" timestamp DEFAULT now() NOT NULL,
   "updated_at" timestamp DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "testimonials" (
+  "id" text PRIMARY KEY NOT NULL,
+  "name" text NOT NULL,
+  "location" text,
+  "goal" text,
+  "quote" text NOT NULL,
+  "stars" integer DEFAULT 5 NOT NULL,
+  "is_visible" boolean DEFAULT true NOT NULL,
+  "display_order" integer DEFAULT 0 NOT NULL,
+  "created_at" timestamp DEFAULT now() NOT NULL,
+  "updated_at" timestamp DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "provider_unlocks" (
+  "id" text PRIMARY KEY NOT NULL,
+  "member_id" text NOT NULL,
+  "provider_id" text NOT NULL,
+  "credit_id" text,
+  "stripe_session_id" text,
+  "amount_charged" integer DEFAULT 0 NOT NULL,
+  "created_at" timestamp DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "health_sync_logs" (
+  "id" text PRIMARY KEY NOT NULL,
+  "profile_id" text NOT NULL,
+  "date" text NOT NULL,
+  "source" text NOT NULL,
+  "steps" integer,
+  "sleep_minutes" integer,
+  "active_minutes" integer,
+  "mindfulness_minutes" integer,
+  "created_at" timestamp DEFAULT now() NOT NULL,
+  "updated_at" timestamp DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "provider_subscriptions" (
+  "id" text PRIMARY KEY NOT NULL,
+  "provider_id" text NOT NULL,
+  "profile_id" text NOT NULL,
+  "stripe_session_id" text,
+  "stripe_subscription_id" text,
+  "stripe_customer_id" text,
+  "amount_cents" integer DEFAULT 2900 NOT NULL,
+  "status" text DEFAULT 'active' NOT NULL,
+  "current_period_end" timestamp,
+  "created_at" timestamp DEFAULT now() NOT NULL,
+  "updated_at" timestamp DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "coach_sessions" (
+  "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  "profile_id" text NOT NULL,
+  "messages" jsonb DEFAULT '[]'::jsonb NOT NULL,
+  "archived" boolean DEFAULT false NOT NULL,
+  "created_at" timestamp DEFAULT now() NOT NULL,
+  "updated_at" timestamp DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "coach_memories" (
+  "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  "profile_id" text NOT NULL,
+  "summary" text DEFAULT '' NOT NULL,
+  "facts" jsonb DEFAULT '[]'::jsonb NOT NULL,
+  "session_count" integer DEFAULT 0 NOT NULL,
+  "updated_at" timestamp DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "referral_milestones" (
+  "id" text PRIMARY KEY NOT NULL,
+  "profile_id" text NOT NULL,
+  "milestone" text NOT NULL,
+  "rewarded_at" timestamp DEFAULT now() NOT NULL,
+  "bonus_credit_cents" integer DEFAULT 0 NOT NULL
 );
 
 -- ── Foreign key constraints (idempotent) ─────────────────────────────────────
@@ -518,6 +604,46 @@ DO $$ BEGIN
     FOREIGN KEY ("member_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+DO $$ BEGIN
+  ALTER TABLE "provider_unlocks" ADD CONSTRAINT "provider_unlocks_member_id_profiles_id_fk"
+    FOREIGN KEY ("member_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "provider_unlocks" ADD CONSTRAINT "provider_unlocks_credit_id_member_credits_id_fk"
+    FOREIGN KEY ("credit_id") REFERENCES "public"."member_credits"("id") ON DELETE set null;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "health_sync_logs" ADD CONSTRAINT "health_sync_logs_profile_id_profiles_id_fk"
+    FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "provider_subscriptions" ADD CONSTRAINT "provider_subscriptions_provider_id_providers_id_fk"
+    FOREIGN KEY ("provider_id") REFERENCES "public"."providers"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "provider_subscriptions" ADD CONSTRAINT "provider_subscriptions_profile_id_profiles_id_fk"
+    FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "coach_sessions" ADD CONSTRAINT "coach_sessions_profile_id_profiles_id_fk"
+    FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "coach_memories" ADD CONSTRAINT "coach_memories_profile_id_profiles_id_fk"
+    FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "referral_milestones" ADD CONSTRAINT "referral_milestones_profile_id_profiles_id_fk"
+    FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 -- ── Indexes ───────────────────────────────────────────────────────────────────
 
 CREATE UNIQUE INDEX IF NOT EXISTS "employer_members_pk" ON "employer_members" USING btree ("employer_id","profile_id");
@@ -549,12 +675,23 @@ CREATE INDEX IF NOT EXISTS "provider_modalities_modality_idx" ON "provider_modal
 CREATE INDEX IF NOT EXISTS "providers_zip_idx" ON "providers" USING btree ("zip_code");
 CREATE INDEX IF NOT EXISTS "providers_status_idx" ON "providers" USING btree ("status");
 CREATE INDEX IF NOT EXISTS "referrals_referrer_idx" ON "referrals" USING btree ("referrer_id");
-CREATE INDEX IF NOT EXISTS "referrals_referred_member_idx" ON "referrals" USING btree ("referred_member_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "referrals_referred_member_unique_idx" ON "referrals" USING btree ("referred_member_id");
 CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "sessions" USING btree ("expire");
 CREATE INDEX IF NOT EXISTS "demo_requests_email_idx" ON "demo_requests" USING btree ("email");
 CREATE INDEX IF NOT EXISTS "provider_reviews_provider_idx" ON "provider_reviews" USING btree ("provider_id");
 CREATE INDEX IF NOT EXISTS "provider_reviews_member_idx" ON "provider_reviews" USING btree ("member_id");
 CREATE UNIQUE INDEX IF NOT EXISTS "provider_reviews_member_provider_unique_idx" ON "provider_reviews" USING btree ("member_id","provider_id");
+CREATE INDEX IF NOT EXISTS "provider_unlocks_member_idx" ON "provider_unlocks" USING btree ("member_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "provider_unlocks_member_provider_unique_idx" ON "provider_unlocks" USING btree ("member_id","provider_id");
+CREATE INDEX IF NOT EXISTS "health_sync_logs_profile_idx" ON "health_sync_logs" USING btree ("profile_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "health_sync_logs_profile_date_idx" ON "health_sync_logs" USING btree ("profile_id","date");
+CREATE INDEX IF NOT EXISTS "provider_subscriptions_provider_idx" ON "provider_subscriptions" USING btree ("provider_id");
+CREATE INDEX IF NOT EXISTS "provider_subscriptions_profile_idx" ON "provider_subscriptions" USING btree ("profile_id");
+CREATE INDEX IF NOT EXISTS "coach_sessions_profile_id_idx" ON "coach_sessions" USING btree ("profile_id");
+CREATE INDEX IF NOT EXISTS "coach_sessions_updated_at_idx" ON "coach_sessions" USING btree ("updated_at");
+CREATE UNIQUE INDEX IF NOT EXISTS "coach_memories_profile_id_idx" ON "coach_memories" USING btree ("profile_id");
+CREATE INDEX IF NOT EXISTS "referral_milestones_profile_idx" ON "referral_milestones" USING btree ("profile_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "referral_milestones_profile_milestone_idx" ON "referral_milestones" USING btree ("profile_id","milestone");
 
 -- ── Verification query ────────────────────────────────────────────────────────
 -- Run this after applying the schema to confirm all tables were created:
@@ -563,9 +700,37 @@ CREATE UNIQUE INDEX IF NOT EXISTS "provider_reviews_member_provider_unique_idx" 
 -- FROM information_schema.tables
 -- WHERE table_schema = 'public'
 --   AND table_name IN (
---     'profiles','plans','plan_items','providers','modalities',
---     'provider_reviews','demo_requests','magic_links','notification_log',
---     'member_intakes','employers','employer_members','referrals','sessions'
+--     'admin_settings',
+--     'coach_memories',
+--     'coach_sessions',
+--     'demo_requests',
+--     'employer_members',
+--     'employer_modality_rules',
+--     'employers',
+--     'favorites',
+--     'health_sync_logs',
+--     'insights_cache',
+--     'lmn_requests',
+--     'magic_links',
+--     'member_credits',
+--     'member_intakes',
+--     'modalities',
+--     'notification_log',
+--     'plan_items',
+--     'plan_progress_logs',
+--     'plans',
+--     'profiles',
+--     'provider_credentials',
+--     'provider_modalities',
+--     'provider_reviews',
+--     'provider_subscriptions',
+--     'provider_unlocks',
+--     'providers',
+--     'referral_milestones',
+--     'referrals',
+--     'sessions',
+--     'testimonials',
+--     'users'
 --   )
 -- ORDER BY table_name;
--- Expected: 14 rows
+-- Expected: 31 rows
