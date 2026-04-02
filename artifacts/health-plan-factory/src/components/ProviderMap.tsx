@@ -4,8 +4,6 @@ import { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import type { NPIProvider } from "@/lib/npiClient";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
-
 const providerIcon = L.divIcon({
   className: "",
   html: `<div style="
