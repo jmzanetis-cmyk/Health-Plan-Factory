@@ -1,4 +1,6 @@
-const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
+import { useState } from "react";
+
+const BASE = import.meta.env.BASE_URL;
 
 const NAVY = "#1a2e4a";
 const AMBER = "#b8892a";
@@ -8,19 +10,17 @@ const MUTED = "#8496b0";
 const BODY_TEXT = "#4a5e7a";
 
 const paragraphs = [
-  "When I turned 38, I realized I had no idea what my health insurance actually covered. I'd been paying into it for years \u2014 and when I finally needed it, I felt completely lost. The deductible was higher than I remembered. The network didn't include my doctor. The plan that looked cheapest on paper cost me thousands in a single year.",
-  "I spent the next six months talking to benefits consultants, reading CMS data exports, and building spreadsheets I never wanted to build. Eventually something clicked: the math behind choosing a health plan isn't magic \u2014 it's just rarely explained in plain English. Nobody sits you down and walks you through it.",
-  "That's what HealthPlanFactory does. It takes your real numbers \u2014 your income, your household, your state, the providers you actually see \u2014 and works out which plan saves you the most money over a full year, not just which one has the lowest premium.",
-  "Since launching the beta, I've watched families save an average of $4,200 a year just by switching to a plan they already had access to. Not a secret plan. Not a hack. Just the right one, chosen with the right information.",
-  "I built this for the version of me who sat in that waiting room, staring at an EOB, wishing someone had just helped me think it through.",
+  "A few years ago, I woke up one morning and couldn't move my left leg. Not slowly — just couldn't. Sciatica had arrived overnight and decided to stay for what felt like forever. What followed was one of the most frustrating experiences of my life — not because of the pain, but because of how completely on my own I felt trying to fix it.",
+  "I tried everything. Massage therapy first — it helped, for a day or two. Then acupuncture, which I was skeptical about and which surprised me. Then steroid injections, which my doctor recommended and which gave me three weeks of relief before the pain came roaring back. Decompression therapy at a chiropractor's office, twice a week for a month. Regular chiropractic adjustments. Ice. Heat. Stretching routines I found on YouTube at 2am. Supplements I read about in forums. I spent thousands of dollars and months of my life trying things one at a time, hoping something would stick.",
+  "That question is why HealthPlanFactory exists. I built it because I was that person — throwing money and time at a problem with no roadmap, no system, and no one to tell me whether what I was doing made any sense together. Not as a replacement for doctors. My physicians were essential. But as a way to organize the space between appointments — the wellness decisions that are mine to make, fitted to what I can actually afford.",
+  "I want every person dealing with chronic pain, or anxiety, or low energy, or any of the hundred things that fall outside what insurance covers — to have a starting point that makes sense. A plan built around them. Evidence-ranked. Budget-fitted. And if possible, booked and tracked in the same place they found it.",
+  "HealthPlanFactory is that plan. I hope it helps you the way I wish something had helped me.",
 ];
 
 const pullQuote =
-  `What if I had a more calculated approach \u2014 one that looked at my actual prescriptions, my preferred doctors, and my realistic out-of-pocket exposure \u2014 before I ever clicked \u201cenroll\u201d?`;
+  "It eventually went away. But I always wondered — what if I had a more calculated approach from the start? What if someone had looked at my specific situation, my budget, my goals, and told me: start here, in this order, at this frequency? Would I have gotten there faster? With less money spent? With less time lost?";
 
 export function FounderLetterSection() {
-  const founderImageSrc = `${BASE}/assets/founder.jpg`;
-
   return (
     <section style={{ background: OFF_WHITE }}>
       <style>{`
@@ -105,7 +105,7 @@ export function FounderLetterSection() {
               marginBottom: "1.25rem",
             }}
           >
-            \u201c{pullQuote}\u201d
+            &ldquo;{pullQuote}&rdquo;
           </blockquote>
 
           {paragraphs.slice(2).map((text, i) => (
@@ -132,12 +132,20 @@ export function FounderLetterSection() {
             height: 2,
             background: AMBER,
             border: "none",
+            borderRadius: 1,
             margin: "2.5rem 0",
           }}
         />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", alignItems: "flex-start" }}>
-          <ImageWithFallback src={founderImageSrc} />
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+            alignItems: "flex-start",
+          }}
+        >
+          <FounderAvatar />
 
           <div>
             <p
@@ -161,7 +169,7 @@ export function FounderLetterSection() {
                 marginBottom: "0.15rem",
               }}
             >
-              Founder, HealthPlanFactory \u00b7 Zanetis Holdings LLC
+              Founder, HealthPlanFactory &middot; Zanetis Holdings LLC
             </p>
             <p
               style={{
@@ -180,54 +188,53 @@ export function FounderLetterSection() {
   );
 }
 
-function ImageWithFallback({ src }: { src: string }) {
+function FounderAvatar() {
+  const [imgFailed, setImgFailed] = useState(false);
+  const src = `${BASE}assets/IMG_0300_1775134477020.jpeg`;
+
   return (
-    <div style={{ position: "relative", width: 72, height: 72 }}>
-      <img
-        src={src}
-        alt="Jordan Zanetis"
-        width={72}
-        height={72}
-        style={{
-          width: 72,
-          height: 72,
-          borderRadius: "50%",
-          objectFit: "cover",
-          display: "block",
-        }}
-        onError={(e) => {
-          const img = e.currentTarget;
-          img.style.display = "none";
-          const fallback = img.nextElementSibling as HTMLElement | null;
-          if (fallback) fallback.style.display = "flex";
-        }}
-      />
-      <div
-        style={{
-          display: "none",
-          width: 72,
-          height: 72,
-          borderRadius: "50%",
-          background: NAVY,
-          alignItems: "center",
-          justifyContent: "center",
-          position: "absolute",
-          top: 0,
-          left: 0,
-        }}
-      >
-        <span
+    <div style={{ position: "relative", width: 72, height: 72, flexShrink: 0 }}>
+      {!imgFailed && (
+        <img
+          src={src}
+          alt="Jordan Zanetis"
+          width={72}
+          height={72}
           style={{
-            fontFamily: "var(--app-font-serif)",
-            fontWeight: 700,
-            fontSize: "1.4rem",
-            color: OFF_WHITE,
-            lineHeight: 1,
+            width: 72,
+            height: 72,
+            borderRadius: "50%",
+            objectFit: "cover",
+            display: "block",
+          }}
+          onError={() => setImgFailed(true)}
+        />
+      )}
+      {imgFailed && (
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: "50%",
+            background: NAVY,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          JZ
-        </span>
-      </div>
+          <span
+            style={{
+              fontFamily: "var(--app-font-serif)",
+              fontWeight: 700,
+              fontSize: "1.4rem",
+              color: OFF_WHITE,
+              lineHeight: 1,
+            }}
+          >
+            JZ
+          </span>
+        </div>
+      )}
     </div>
   );
 }
