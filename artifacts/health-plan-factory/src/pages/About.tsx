@@ -166,6 +166,93 @@ export default function About() {
         </div>
       </section>
 
+      {/* ── FOUNDER ── */}
+      <section
+        className="px-6 md:px-12 py-20"
+        style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.07)", borderBottom: "1px solid rgba(212,34,126,0.07)" }}
+      >
+        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-14 items-center">
+          {/* Photo */}
+          <div className="flex justify-center md:justify-start">
+            <div
+              style={{
+                width: 260,
+                height: 260,
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "3px solid rgba(212,34,126,0.15)",
+                boxShadow: "0 8px 40px rgba(212,34,126,0.12)",
+                flexShrink: 0,
+              }}
+            >
+              <img
+                src="/founder.jpg"
+                alt="Founder of Health Plan Factory"
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+              />
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <div className="section-tag">Founder</div>
+            <h2
+              className="mb-4 leading-tight"
+              style={{
+                fontFamily: "var(--app-font-serif)",
+                fontSize: "clamp(1.6rem, 3vw, 2.4rem)",
+                fontWeight: 700,
+                letterSpacing: "-0.015em",
+                color: "var(--hpf-deep)",
+              }}
+            >
+              Built from a personal frustration.
+            </h2>
+            <p
+              className="text-sm font-light leading-relaxed mb-4"
+              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
+            >
+              I spent years navigating a fragmented wellness landscape — expensive apps with generic advice, providers I couldn't afford, and HSA/FSA dollars I didn't know I could use. The gap between "wanting to be healthier" and "knowing how to get there on a real budget" was enormous.
+            </p>
+            <p
+              className="text-sm font-light leading-relaxed mb-6"
+              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
+            >
+              HealthPlanFactory is what I wish had existed. A platform that treats your wellness like a financial planner would — with real numbers, real trade-offs, and real local providers ready to book.
+            </p>
+            <div
+              className="flex items-center gap-3 pt-4"
+              style={{ borderTop: "1px solid rgba(212,34,126,0.08)" }}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  border: "2px solid rgba(212,34,126,0.15)",
+                  flexShrink: 0,
+                }}
+              >
+                <img
+                  src="/founder.jpg"
+                  alt="Founder"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+                />
+              </div>
+              <div>
+                <p style={{ fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: "0.85rem", color: "var(--hpf-pink)", margin: 0 }}>
+                  Founder & CEO
+                </p>
+                <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+                  Health Plan Factory
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── STATS ── */}
       <section
         className="px-6 md:px-12 py-14"
