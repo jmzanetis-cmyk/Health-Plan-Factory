@@ -15,6 +15,7 @@ import { StepRegion } from "@/components/onboarding/StepRegion";
 import { StepReview } from "@/components/onboarding/StepReview";
 import { BuildingScreen } from "@/components/onboarding/BuildingScreen";
 import { Logo } from "@/components/Logo";
+import { getApiBase } from "@/lib/apiBase";
 import { useState } from "react";
 
 const STEPS = [
@@ -187,7 +188,7 @@ export default function Onboarding() {
     // Falls back to local generatePlan if the server is unavailable.
     let enriched: Plan = plan;
     try {
-      const base = import.meta.env.BASE_URL.replace(/\/+$/, "");
+      const base = getApiBase();
       type SpeculateItem = {
         modalityId: string;
         score: number;

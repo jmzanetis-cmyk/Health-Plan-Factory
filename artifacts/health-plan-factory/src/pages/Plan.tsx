@@ -6,6 +6,7 @@ import { intakeSchema, type IntakeData } from "@/types/onboarding";
 import { type EvidenceLevel } from "@/data/modalities";
 import { NPI_CATEGORIES } from "@/data/npiCategories";
 import { Logo } from "@/components/Logo";
+import { getApiBase } from "@/lib/apiBase";
 
 function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; isTelehealth?: boolean }) {
   if (isTelehealth) {
@@ -63,7 +64,7 @@ function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; is
   );
 }
 
-const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
+const BASE = getApiBase();
 
 function EvidenceBadge({ level }: { level: EvidenceLevel }) {
   const styles: Record<EvidenceLevel, { bg: string; color: string }> = {
@@ -469,30 +470,34 @@ export default function Plan() {
       if (!storedPlan || !storedIntake) return;
 
       const rawIntake = JSON.parse(storedIntake);
-      const intakeResult = intakeSchema.safeParse(rawIntake);
-      if (!intakeResult.success) {
-        console.warn("Stored intake data failed validation — clearing");
-        sessionStorage.removeItem("hpf_intake");
-        sessionStorage.removeItem("hpf_plan");
-        return;
-      }
+      // Use partial schema so that missing/invalid optional fields don't wipe the plan.
+      // The user just completed onboarding — we should always show their plan.
+      const intakeResult = intakeSchema.partial().safeParse(rawIntake);
+      const resolvedIntake: IntakeData = {
+        budget: intakeResult.data?.budget ?? (typeof rawIntake?.budget === "number" ? rawIntake.budget : 250),
+        goals: intakeResult.data?.goals ?? (Array.isArray(rawIntake?.goals) ? rawIntake.goals : []),
+        conditions: intakeResult.data?.conditions ?? (Array.isArray(rawIntake?.conditions) ? rawIntake.conditions : []),
+        preferences: intakeResult.data?.preferences ?? (Array.isArray(rawIntake?.preferences) ? rawIntake.preferences : []),
+        exclusions: intakeResult.data?.exclusions ?? (Array.isArray(rawIntake?.exclusions) ? rawIntake.exclusions : []),
+        zipCode: intakeResult.data?.zipCode ?? (typeof rawIntake?.zipCode === "string" ? rawIntake.zipCode : ""),
+        radius: intakeResult.data?.radius ?? (typeof rawIntake?.radius === "number" ? rawIntake.radius : 25),
+        telehealth: intakeResult.data?.telehealth ?? (typeof rawIntake?.telehealth === "boolean" ? rawIntake.telehealth : false),
+      };
 
       const rawPlan = JSON.parse(storedPlan);
       const planResult = planSchema.safeParse(rawPlan);
       if (!planResult.success) {
-        console.warn("Stored plan data failed schema validation — clearing");
-        sessionStorage.removeItem("hpf_plan");
+        console.warn("Stored plan data failed schema validation", planResult.error.issues);
         return;
       }
 
       const rehydrated = deserializePlan(planResult.data);
       if (!rehydrated) {
-        console.warn("Stored plan references unknown modality IDs — clearing");
-        sessionStorage.removeItem("hpf_plan");
+        console.warn("Stored plan references unknown modality IDs — cannot display plan");
         return;
       }
 
-      setIntake(intakeResult.data);
+      setIntake(resolvedIntake);
       setPlan(rehydrated);
 
       // Seed provider counts from stored plan items (available for unauthenticated users

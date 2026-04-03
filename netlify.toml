@@ -2,10 +2,21 @@
   command = "pnpm run build"
   publish = "artifacts/health-plan-factory/dist/public"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
+# API proxy — set VITE_API_BASE_URL in Netlify's environment variables to point
+# at the deployed API server (e.g. https://your-api.replit.app).
+# The frontend reads VITE_API_BASE_URL at build time and makes API calls
+# directly to that origin, so no Netlify-level proxy redirect is needed.
+#
+# If you have an API server accessible at a fixed URL, you can also add:
+#
+#   [[redirects]]
+#     from   = "/api/*"
+#     to     = "https://your-api.replit.app/api/:splat"
+#     status = 200
+#     force  = true
+#
+# without VITE_API_BASE_URL — but prefer the env-var approach since it avoids
+# the Netlify rewrite layer.
 
 [[redirects]]
   from = "/*"
