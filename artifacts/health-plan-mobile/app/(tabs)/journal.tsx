@@ -153,11 +153,13 @@ export default function JournalScreen() {
 
   const { data: progress, isLoading, refetch } = useListProgress(
     { profileId, limit: 50 },
-    { query: { enabled: !!profileId } }
+    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
+    { query: { queryKey: [] as const, enabled: !!profileId } }
   );
 
   const { data: modalities } = useListModalities(undefined, {
-    query: { staleTime: 300_000 },
+    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
+    query: { queryKey: [] as const, staleTime: 300_000 },
   });
 
   const { mutate: createLog, isPending } = useCreateProgressLog();

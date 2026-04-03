@@ -121,7 +121,7 @@ export default function CoachScreen() {
   const [isResetting, setIsResetting] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
   const messagesRef = useRef<Message[]>([OPENING_MESSAGE]);
-  const saveMemoryRef = useRef<NodeJS.Timeout | null>(null);
+  const saveMemoryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function genId() {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);

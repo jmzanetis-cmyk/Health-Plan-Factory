@@ -100,13 +100,16 @@ wellness,health plan,AI coach,habit tracker,sleep tracker,nutrition,biometrics,w
 
 ## Age Rating
 
-**4+** — No objectionable content.
+**12+** — App includes AI wellness coaching, mental health crisis resources (988/741741), and health journal content that Apple classifies as 12+ for health & wellness apps.
 
 *Age rating questionnaire answers:*
 - Unrestricted web access: No
 - Gambling: No
 - Contests: No
-- Medical/health content: No (informational only, no clinical claims)
+- Medical/health content: Yes (informational wellness guidance, mental health crisis resources — no clinical claims or diagnoses)
+
+> **Note:** PRIVACY.md §4 documents the 12+ rationale in detail. Do NOT submit at 4+; App
+> Review will push back due to AI coaching + mental health crisis resource content.
 
 ---
 

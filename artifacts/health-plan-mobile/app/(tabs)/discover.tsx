@@ -318,7 +318,8 @@ export default function DiscoverScreen() {
   const [paywallVisible, setPaywallVisible] = useState(false);
 
   const { data: modalities } = useListModalities(undefined, {
-    query: { staleTime: 300_000 },
+    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
+    query: { queryKey: [] as const, staleTime: 300_000 },
   });
 
   const modalityFilters: string[] = ["All", ...(modalities ?? []).slice(0, 5).map((m) => m.name)];

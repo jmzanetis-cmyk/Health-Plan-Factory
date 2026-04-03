@@ -120,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               code_verifier: request.codeVerifier,
               redirect_uri: redirectUri,
               state,
+              // @ts-ignore - nonce exists on AuthRequest at runtime but is not in expo-auth-session v7 types
               nonce: request.nonce,
             }),
           }

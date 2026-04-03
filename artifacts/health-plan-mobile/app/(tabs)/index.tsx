@@ -140,11 +140,13 @@ export default function HomeScreen() {
 
   const { data: progressData, isLoading: progressLoading, refetch } = useListProgress(
     { profileId, limit: 30 },
-    { query: { enabled: !!profileId } }
+    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
+    { query: { queryKey: [] as const, enabled: !!profileId } }
   );
 
   const { data: modalitiesData } = useListModalities(undefined, {
-    query: { staleTime: 5 * 60 * 1000 },
+    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
+    query: { queryKey: [] as const, staleTime: 5 * 60 * 1000 },
   });
 
   const [routines, setRoutines] = useState<RoutineItem[]>(QUICK_ROUTINES);
@@ -156,6 +158,7 @@ export default function HomeScreen() {
   const modalities = modalitiesData ?? [];
   const streak = calculateStreak(entries);
   const wellnessScore = calculateWellnessScore(entries, healthMetrics);
+  // @ts-ignore - createdAt exists on the API response at runtime but is not in the generated AuthUser type
   const trialDaysLeft = getDaysLeftInTrial(authData?.user?.createdAt);
   const todayStr = new Date().toDateString();
   const hasEntryToday = entries.some(

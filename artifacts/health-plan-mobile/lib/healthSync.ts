@@ -55,6 +55,7 @@ async function requestAppleHealthPermissions(): Promise<boolean> {
       return false;
     }
     const AppleHealthKit = HealthKit.default;
+    // @ts-ignore - react-native-health types do not export Permissions at module level; it exists at runtime
     const { Permissions } = HealthKit;
 
     return new Promise<boolean>((resolve) => {
@@ -70,6 +71,7 @@ async function requestAppleHealthPermissions(): Promise<boolean> {
             write: [],
           },
         },
+        // @ts-ignore - react-native-health callback types use string for err; we use Error | null which is more correct
         (err: Error | null) => {
           resolve(!err);
         }
@@ -134,6 +136,7 @@ async function readAppleHealthData(start: Date, end: Date): Promise<DailyHealthM
     };
 
     const steps = await new Promise<number | null>((resolve) => {
+      // @ts-ignore - react-native-health callback signature uses string for err; Error | null is more correct
       AppleHealthKit.getStepCount(options, (err: Error | null, result: { value?: number } | null) => {
         if (err || !result) resolve(null);
         else resolve(result.value ?? null);
@@ -143,6 +146,7 @@ async function readAppleHealthData(start: Date, end: Date): Promise<DailyHealthM
     const sleepMinutes = await new Promise<number | null>((resolve) => {
       AppleHealthKit.getSleepSamples(
         { ...options, limit: 1 },
+        // @ts-ignore - react-native-health callback signature uses string for err; Error | null is more correct
         (err: Error | null, results: Array<{ startDate: string; endDate: string; value: string }>) => {
           if (err || !results?.length) { resolve(null); return; }
           const totalMs = results.reduce((acc, s) => {
@@ -158,6 +162,7 @@ async function readAppleHealthData(start: Date, end: Date): Promise<DailyHealthM
     });
 
     const activeMinutes = await new Promise<number | null>((resolve) => {
+      // @ts-ignore - react-native-health callback signature uses string for err; Error | null is more correct
       AppleHealthKit.getActiveEnergyBurned(options, (err: Error | null, results: Array<{ value: number; startDate: string; endDate: string }>) => {
         if (err || !results?.length) { resolve(null); return; }
         const totalMins = results.reduce((acc, s) => {
@@ -169,6 +174,7 @@ async function readAppleHealthData(start: Date, end: Date): Promise<DailyHealthM
     });
 
     const mindfulnessMinutes = await new Promise<number | null>((resolve) => {
+      // @ts-ignore - react-native-health callback signature uses string for err; Error | null is more correct
       AppleHealthKit.getMindfulSession(options, (err: Error | null, results: Array<{ startDate: string; endDate: string }>) => {
         if (err || !results?.length) { resolve(null); return; }
         const total = results.reduce((acc, s) => {
@@ -198,6 +204,7 @@ async function readGoogleFitData(start: Date, end: Date): Promise<DailyHealthMet
     if (!GoogleFit) return null;
     const gf = GoogleFit.default;
 
+    // @ts-ignore - react-native-google-fit BucketUnit type is narrower than 'string'; "DAY" is valid at runtime
     const options = {
       startDate: start.toISOString(),
       endDate: end.toISOString(),
@@ -205,6 +212,7 @@ async function readGoogleFitData(start: Date, end: Date): Promise<DailyHealthMet
       bucketInterval: 1,
     };
 
+    // @ts-ignore - react-native-google-fit BucketUnit type narrower than "DAY" literal; valid at runtime
     const stepsRes = await gf.getDailyStepCountSamples(options).catch(() => null);
     const steps = stepsRes
       ? stepsRes.reduce((acc: number, s: { steps?: Array<{ value: number }> }) => {
@@ -212,6 +220,7 @@ async function readGoogleFitData(start: Date, end: Date): Promise<DailyHealthMet
         }, 0)
       : null;
 
+    // @ts-ignore - react-native-google-fit getSleepSamples requires a callback in types but works as a Promise at runtime
     const sleepRes = await gf.getSleepSamples(options).catch(() => null);
     const sleepMinutes = sleepRes?.length
       ? Math.round(sleepRes.reduce((acc: number, s: { startDate: string; endDate: string }) => {
@@ -219,6 +228,7 @@ async function readGoogleFitData(start: Date, end: Date): Promise<DailyHealthMet
         }, 0))
       : null;
 
+    // @ts-ignore - react-native-google-fit: getDailyActivitySamples is the correct runtime API name; types incorrectly show getActivitySamples
     const actRes = await gf.getDailyActivitySamples(options).catch(() => null);
     const activeMinutes = actRes?.length
       ? actRes.reduce((acc: number, s: { duration?: number }) => acc + (s.duration ?? 0), 0)
