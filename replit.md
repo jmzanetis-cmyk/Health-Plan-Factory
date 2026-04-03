@@ -42,7 +42,7 @@ The project is structured as a pnpm monorepo, separating deployable applications
 - **Data Access:** `@workspace/db` for Drizzle ORM.
 - **Validation:** `@workspace/api-zod` for request/response validation.
 - **API Endpoints:**
-    - **Health Check:** `/api/health`
+    - **Health Check:** `/api/healthz` (not `/api/health` — note the 'z' suffix; `/api/healthz/config` also available for ops status)
     - **Insights:** `/api/insights/mine` (returns cached or recomputes insights), `/api/insights/refresh` (forces recomputation).
     - **Referrals:** `/api/referrals/mine` (generates/returns referral code, history, credits), `/api/referrals/register` (registers pending referral).
     - **Credits:** `/api/credits/mine` (returns credit balance/history).
