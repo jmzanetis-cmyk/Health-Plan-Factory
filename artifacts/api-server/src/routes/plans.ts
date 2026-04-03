@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
-import { plans, planItems, memberIntakes, modalities, profiles } from "@workspace/db";
-import { eq, desc, inArray } from "drizzle-orm";
+import { plans, planItems, memberIntakes, modalities, profiles, planModalityFeedback } from "@workspace/db";
+import { eq, desc, inArray, and } from "drizzle-orm";
 import { maybeRewardReferrer } from "./referrals";
 import {
   GeneratePlanBody,
@@ -452,6 +452,263 @@ router.patch("/plans/:id/outcome", async (req, res) => {
       .returning();
 
     res.json({ plan: updated });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * GET /api/plans/:id/modality-feedback
+ * Returns all modality feedback rows for the given plan (auth + ownership required).
+ * Response: { feedback: { modalityId: string; feedback: "helpful"|"not_helpful" }[] }
+ */
+router.get("/plans/:id/modality-feedback", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const planId = req.params.id;
+
+  try {
+    const [plan] = await db
+      .select({ profileId: plans.profileId })
+      .from(plans)
+      .where(eq(plans.id, planId))
+      .limit(1);
+
+    if (!plan) {
+      res.status(404).json({ error: "Plan not found" });
+      return;
+    }
+    if (!plan.profileId || (plan.profileId !== req.user!.id && req.user!.role !== "admin")) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    const rows = await db
+      .select({ modalityId: planModalityFeedback.modalityId, feedback: planModalityFeedback.feedback })
+      .from(planModalityFeedback)
+      .where(and(eq(planModalityFeedback.planId, planId), eq(planModalityFeedback.profileId, req.user!.id)));
+
+    res.json({ feedback: rows });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /api/plans/:id/modality-feedback
+ * Upserts thumbs-up / thumbs-down feedback for a single modality in a plan.
+ * Body: { modalityId: string; feedback: "helpful" | "not_helpful" }
+ * Response: { modalityId, feedback }
+ */
+const ModalityFeedbackBody = z.object({
+  modalityId: z.string().min(1),
+  feedback: z.enum(["helpful", "not_helpful"]),
+});
+
+router.post("/plans/:id/modality-feedback", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const planId = req.params.id;
+  const body = ModalityFeedbackBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Validation error", details: body.error.flatten() });
+    return;
+  }
+
+  try {
+    const [plan] = await db
+      .select({ profileId: plans.profileId })
+      .from(plans)
+      .where(eq(plans.id, planId))
+      .limit(1);
+
+    if (!plan) {
+      res.status(404).json({ error: "Plan not found" });
+      return;
+    }
+    if (!plan.profileId || (plan.profileId !== req.user!.id && req.user!.role !== "admin")) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    const { modalityId, feedback } = body.data;
+    const profileId = req.user!.id;
+
+    // Upsert: insert or update on unique (profileId, planId, modalityId)
+    await db
+      .insert(planModalityFeedback)
+      .values({
+        id: crypto.randomUUID(),
+        profileId,
+        planId,
+        modalityId,
+        feedback,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [planModalityFeedback.profileId, planModalityFeedback.planId, planModalityFeedback.modalityId],
+        set: { feedback, updatedAt: new Date() },
+      });
+
+    res.json({ modalityId, feedback });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /api/plans/:id/reconfigure
+ * Regenerates the current plan, adding all modalities marked "not_helpful" to the
+ * exclusions list. The new plan replaces the current one in the DB.
+ * Body: none (reads not_helpful feedback from DB automatically)
+ * Response: { plan, items }
+ */
+router.post("/plans/:id/reconfigure", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const planId = req.params.id;
+
+  try {
+    // Load the existing plan + its intake parameters
+    const [existingPlan] = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.id, planId))
+      .limit(1);
+
+    if (!existingPlan) {
+      res.status(404).json({ error: "Plan not found" });
+      return;
+    }
+    if (!existingPlan.profileId || (existingPlan.profileId !== req.user!.id && req.user!.role !== "admin")) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    // Collect not_helpful modality IDs for this plan
+    const notHelpfulRows = await db
+      .select({ modalityId: planModalityFeedback.modalityId })
+      .from(planModalityFeedback)
+      .where(
+        and(
+          eq(planModalityFeedback.planId, planId),
+          eq(planModalityFeedback.profileId, req.user!.id),
+          eq(planModalityFeedback.feedback, "not_helpful"),
+        ),
+      );
+
+    if (notHelpfulRows.length === 0) {
+      res.status(400).json({ error: "No modalities marked as not helpful" });
+      return;
+    }
+
+    const notHelpfulIds = notHelpfulRows.map((r) => r.modalityId);
+
+    // Load the intake that generated this plan
+    let intakeData = {
+      budget: existingPlan.budget,
+      goals: [] as string[],
+      conditions: [] as string[],
+      preferences: [] as string[],
+      exclusions: [] as string[],
+      zipCode: null as string | null,
+      radius: 25,
+      telehealth: false,
+    };
+
+    if (existingPlan.intakeId) {
+      const [intake] = await db
+        .select()
+        .from(memberIntakes)
+        .where(eq(memberIntakes.id, existingPlan.intakeId))
+        .limit(1);
+
+      if (intake) {
+        intakeData = {
+          budget: intake.budget ?? existingPlan.budget,
+          goals: (intake.goals as string[]) ?? [],
+          conditions: (intake.conditions as string[]) ?? [],
+          preferences: (intake.preferences as string[]) ?? [],
+          exclusions: (intake.exclusions as string[]) ?? [],
+          zipCode: intake.zipCode ?? null,
+          radius: intake.radius ?? 25,
+          telehealth: (intake.telehealth as boolean) ?? false,
+        };
+      }
+    }
+
+    // Add not_helpful modalities to exclusions (deduplicate)
+    const mergedExclusions = Array.from(new Set([...intakeData.exclusions, ...notHelpfulIds]));
+
+    // Run the plan engine with the merged exclusions
+    const allModalities = await db.select().from(modalities).where(eq(modalities.isActive, true));
+    const modalityIds = allModalities.map((m) => m.id);
+    const providerAvailability = await queryProviderAvailability(intakeData.zipCode, intakeData.radius, modalityIds);
+
+    const generated = runPlanEngine(allModalities, {
+      budget: intakeData.budget,
+      goals: intakeData.goals,
+      conditions: intakeData.conditions,
+      preferences: intakeData.preferences,
+      exclusions: mergedExclusions,
+      telehealth: intakeData.telehealth,
+      zipCode: intakeData.zipCode,
+      radius: intakeData.radius,
+    }, providerAvailability);
+
+    const now = new Date();
+    const newPlanId = crypto.randomUUID();
+
+    const itemValues = generated.items.map((item, idx) => ({
+      id: crypto.randomUUID(),
+      planId: newPlanId,
+      modalityId: item.modality.id,
+      score: item.score,
+      frequency: item.frequency,
+      estimatedMonthlyCost: item.estimatedMonthlyCost,
+      rationale: item.rationale,
+      isDeprioritized: item.isDeprioritized,
+      sortOrder: idx,
+      nearbyProviderCount: item.nearbyProviderCount ?? null,
+    }));
+
+    // Save new plan + items in a transaction
+    const { plan: newPlan, savedItems } = await db.transaction(async (tx) => {
+      const [newPlan] = await tx
+        .insert(plans)
+        .values({
+          id: newPlanId,
+          profileId: existingPlan.profileId,
+          intakeId: existingPlan.intakeId,
+          status: "generated",
+          totalMonthlyCost: generated.totalMonthlyCost,
+          budgetUtilization: generated.budgetUtilization,
+          budget: intakeData.budget,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      const savedItems = itemValues.length > 0
+        ? await tx.insert(planItems).values(itemValues).returning()
+        : [];
+
+      return { plan: newPlan, savedItems };
+    });
+
+    res.json({ plan: newPlan, items: savedItems });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

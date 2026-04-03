@@ -113,7 +113,7 @@ interface LmnContext {
   estimatedAnnualSavingsCents: number;
 }
 
-function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, onUpgrade }: { item: PlanItem; rank: number; lmnContext?: LmnContext; nearbyProviderCount?: number | null; zipCode?: string; onUpgrade?: () => void }) {
+function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, onUpgrade, feedback, onFeedback, feedbackLoading, isAuthenticated }: { item: PlanItem; rank: number; lmnContext?: LmnContext; nearbyProviderCount?: number | null; zipCode?: string; onUpgrade?: () => void; feedback?: "helpful" | "not_helpful"; onFeedback?: (modalityId: string, fb: "helpful" | "not_helpful") => void; feedbackLoading?: boolean; isAuthenticated?: boolean }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -226,6 +226,62 @@ function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, on
           {expanded ? "Less ↑" : "More ↓"}
         </button>
       </div>
+
+      {/* Working for me? — feedback row (authenticated users only) */}
+      {isAuthenticated && (
+        <div style={{
+          padding: "0.65rem 1.25rem",
+          borderTop: "1px solid rgba(212,34,126,0.05)",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
+          background: feedback === "not_helpful" ? "rgba(245,158,11,0.04)" : "transparent",
+        }}>
+          <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", flex: 1 }}>
+            Working for me?
+          </span>
+          <button
+            type="button"
+            disabled={feedbackLoading}
+            onClick={() => onFeedback?.(item.modality.id, "helpful")}
+            data-testid={`feedback-helpful-${item.modality.id}`}
+            aria-label="Thumbs up — this modality is helpful"
+            style={{
+              background: feedback === "helpful" ? "rgba(22,163,74,0.12)" : "rgba(0,0,0,0.04)",
+              border: feedback === "helpful" ? "1.5px solid rgba(22,163,74,0.4)" : "1.5px solid transparent",
+              borderRadius: 8,
+              padding: "0.3rem 0.6rem",
+              cursor: feedbackLoading ? "wait" : "pointer",
+              fontSize: "0.95rem",
+              lineHeight: 1,
+              transition: "all 0.15s",
+              opacity: feedbackLoading ? 0.6 : 1,
+            }}
+          >
+            👍
+          </button>
+          <button
+            type="button"
+            disabled={feedbackLoading}
+            onClick={() => onFeedback?.(item.modality.id, "not_helpful")}
+            data-testid={`feedback-not-helpful-${item.modality.id}`}
+            aria-label="Thumbs down — this modality is not helping"
+            style={{
+              background: feedback === "not_helpful" ? "rgba(245,158,11,0.15)" : "rgba(0,0,0,0.04)",
+              border: feedback === "not_helpful" ? "1.5px solid rgba(245,158,11,0.5)" : "1.5px solid transparent",
+              borderRadius: 8,
+              padding: "0.3rem 0.6rem",
+              cursor: feedbackLoading ? "wait" : "pointer",
+              fontSize: "0.95rem",
+              lineHeight: 1,
+              transition: "all 0.15s",
+              opacity: feedbackLoading ? 0.6 : 1,
+            }}
+          >
+            👎
+          </button>
+        </div>
+      )}
 
       {/* Expanded details */}
       {expanded && (
@@ -442,6 +498,15 @@ export default function Plan() {
   const [outcomeSubmitting, setOutcomeSubmitting] = useState(false);
   const [planId, setPlanId] = useState<string | null>(null);
 
+  // Per-modality feedback state
+  const [modalityFeedback, setModalityFeedback] = useState<Record<string, "helpful" | "not_helpful">>({});
+  const [modalityFeedbackLoading, setModalityFeedbackLoading] = useState<Record<string, boolean>>({});
+  const feedbackLoadedRef = useRef(false);
+
+  // Reconfigure modal state
+  const [showReconfigureModal, setShowReconfigureModal] = useState(false);
+  const [reconfigureLoading, setReconfigureLoading] = useState(false);
+
   const handlePlusCheckout = async () => {
     if (!isAuthenticated) {
       navigate("/sign-up?plan=plus");
@@ -565,6 +630,25 @@ export default function Plan() {
       .then((data) => { if (data) setIsPlus(!!data.isPlus); })
       .catch(() => {});
   }, [authLoading, isAuthenticated]);
+
+  // Load existing modality feedback from API once planId is known
+  useEffect(() => {
+    if (!planId || !isAuthenticated || feedbackLoadedRef.current) return;
+    feedbackLoadedRef.current = true;
+    fetch(`${BASE}/api/plans/${planId}/modality-feedback`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!Array.isArray(data?.feedback)) return;
+        const map: Record<string, "helpful" | "not_helpful"> = {};
+        for (const row of data.feedback) {
+          if (row.modalityId && (row.feedback === "helpful" || row.feedback === "not_helpful")) {
+            map[row.modalityId] = row.feedback;
+          }
+        }
+        setModalityFeedback(map);
+      })
+      .catch(() => {});
+  }, [planId, isAuthenticated]);
 
   // Task 2: Persist session-storage plan to DB for users who completed onboarding
   // anonymously and then signed up (the common "try first, then sign up" flow).
@@ -857,6 +941,87 @@ export default function Plan() {
       setOutcomeSubmitting(false);
     }
   }
+
+  async function handleFeedback(modalityId: string, fb: "helpful" | "not_helpful") {
+    if (!planId || !isAuthenticated) return;
+    // Optimistic update
+    setModalityFeedback((prev) => ({ ...prev, [modalityId]: fb }));
+    setModalityFeedbackLoading((prev) => ({ ...prev, [modalityId]: true }));
+    try {
+      await fetch(`${BASE}/api/plans/${planId}/modality-feedback`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modalityId, feedback: fb }),
+      });
+    } catch {
+      // silently fail — optimistic state already set
+    } finally {
+      setModalityFeedbackLoading((prev) => ({ ...prev, [modalityId]: false }));
+    }
+  }
+
+  async function handleReconfigure() {
+    if (!planId || reconfigureLoading) return;
+    setReconfigureLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/plans/${planId}/reconfigure`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Reconfigure failed");
+      const data = await res.json();
+
+      // Rebuild local plan from the API response
+      const toLocalPlanItem = (dbItem: { modalityId?: string | null; score?: number | null; frequency?: string | null; estimatedMonthlyCost?: number | null; rationale?: string | null; nearbyProviderCount?: number | null }): import("@/lib/planEngine").PlanItem | null => {
+        const modality = MODALITIES.find((m) => m.id === dbItem.modalityId);
+        if (!modality) return null;
+        return {
+          modality,
+          score: dbItem.score ?? 0,
+          frequency: dbItem.frequency ?? "",
+          estimatedMonthlyCost: dbItem.estimatedMonthlyCost ?? 0,
+          rationale: dbItem.rationale ?? "",
+          nearbyProviderCount: dbItem.nearbyProviderCount ?? null,
+        };
+      };
+
+      if (data.plan && Array.isArray(data.items)) {
+        const included = (data.items as Array<{ isDeprioritized?: boolean | null } & Record<string, unknown>>)
+          .filter((i) => !i.isDeprioritized)
+          .map(toLocalPlanItem)
+          .filter((x): x is import("@/lib/planEngine").PlanItem => x !== null);
+        const deprioritized = (data.items as Array<{ isDeprioritized?: boolean | null } & Record<string, unknown>>)
+          .filter((i) => i.isDeprioritized)
+          .map(toLocalPlanItem)
+          .filter((x): x is import("@/lib/planEngine").PlanItem => x !== null);
+
+        setPlan({
+          included,
+          deprioritized,
+          totalMonthlyCost: data.plan.totalMonthlyCost ?? 0,
+          budgetUtilization: data.plan.budgetUtilization ?? 0,
+        });
+        setPlanId(data.plan.id);
+        // Reset feedback for the new plan
+        setModalityFeedback({});
+        feedbackLoadedRef.current = false;
+        // Update session storage with new plan
+        sessionStorage.setItem("hpf_plan_id", data.plan.id);
+      }
+
+      setShowReconfigureModal(false);
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setReconfigureLoading(false);
+    }
+  }
+
+  const notHelpfulModalities = plan
+    ? plan.included.filter((item) => modalityFeedback[item.modality.id] === "not_helpful")
+    : [];
 
   if (!plan || !intake) {
     // Show skeleton while auth resolves or DB hydration is in flight
@@ -1378,7 +1543,41 @@ export default function Plan() {
                   ),
                 };
               }
-              return <ModalityCard key={item.modality.id} item={item} rank={i + 1} lmnContext={lmnContext} nearbyProviderCount={providerCounts[item.modality.id] ?? null} zipCode={intake?.zipCode} onUpgrade={handlePlusCheckout} />;
+              const fb = modalityFeedback[item.modality.id];
+              return (
+                <div key={item.modality.id}>
+                  <ModalityCard
+                    item={item}
+                    rank={i + 1}
+                    lmnContext={lmnContext}
+                    nearbyProviderCount={providerCounts[item.modality.id] ?? null}
+                    zipCode={intake?.zipCode}
+                    onUpgrade={handlePlusCheckout}
+                    feedback={fb}
+                    onFeedback={handleFeedback}
+                    feedbackLoading={!!modalityFeedbackLoading[item.modality.id]}
+                    isAuthenticated={isAuthenticated}
+                  />
+                  {/* Amber inline message when thumbs-down */}
+                  {fb === "not_helpful" && (
+                    <div style={{
+                      marginTop: "0.4rem",
+                      padding: "0.6rem 0.875rem",
+                      borderRadius: 8,
+                      background: "rgba(245,158,11,0.08)",
+                      border: "1px solid rgba(245,158,11,0.25)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}>
+                      <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>💡</span>
+                      <p style={{ fontSize: "0.75rem", color: "#92400e", fontFamily: "var(--app-font-sans)", lineHeight: 1.55, margin: 0 }}>
+                        If this isn't helping, you can reconfigure your plan to swap it out.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
             })}
           </div>
         </div>
@@ -1715,10 +1914,120 @@ export default function Plan() {
           marginTop: "2rem",
           maxWidth: 480,
           margin: "2rem auto 0",
+          paddingBottom: notHelpfulModalities.length > 0 ? "5rem" : 0,
         }}>
           This plan is generated for wellness optimization purposes only. It is not a medical diagnosis, treatment plan, or healthcare recommendation. Always consult a qualified healthcare provider. In a crisis: 911 · 988 Suicide &amp; Crisis Lifeline · Crisis Text Line 741741.
         </p>
       </main>
+
+      {/* ── Sticky "Reconfigure plan" button — shown when ≥1 modality is 👎 ── */}
+      {isAuthenticated && notHelpfulModalities.length > 0 && (
+        <div style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 40,
+          background: "rgba(255,255,255,0.95)",
+          backdropFilter: "blur(8px)",
+          borderTop: "1px solid rgba(245,158,11,0.2)",
+          padding: "0.875rem 1.25rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1rem",
+        }}>
+          <p style={{ fontSize: "0.8rem", color: "#92400e", fontFamily: "var(--app-font-sans)", lineHeight: 1.4, margin: 0, flex: 1 }}>
+            <strong>{notHelpfulModalities.length} modality</strong> {notHelpfulModalities.length === 1 ? "isn't" : "aren't"} working for you.
+          </p>
+          <button
+            type="button"
+            data-testid="reconfigure-plan-btn"
+            onClick={() => setShowReconfigureModal(true)}
+            style={{
+              padding: "0.65rem 1.25rem",
+              borderRadius: 10,
+              border: "none",
+              background: "rgba(245,158,11,0.85)",
+              color: "white",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              cursor: "pointer",
+              fontFamily: "var(--app-font-sans)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Reconfigure plan →
+          </button>
+        </div>
+      )}
+
+      {/* ── Reconfigure confirmation modal ─────────────────────────────────── */}
+      {showReconfigureModal && (
+        <div
+          data-testid="reconfigure-modal"
+          style={{
+            position: "fixed", inset: 0, zIndex: 60,
+            background: "rgba(44,40,37,0.55)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+          }}
+          onClick={() => !reconfigureLoading && setShowReconfigureModal(false)}
+        >
+          <div
+            style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 440, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.2rem", fontWeight: 700, color: "var(--hpf-deep)", marginBottom: "0.75rem" }}>
+              Reconfigure your plan
+            </h3>
+
+            {/* Doctor disclaimer */}
+            <div style={{ background: "rgba(245,158,11,0.07)", border: "1.5px solid rgba(245,158,11,0.3)", borderRadius: 10, padding: "0.75rem 1rem", marginBottom: "1.25rem" }}>
+              <p style={{ fontSize: "0.75rem", color: "#92400e", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, margin: 0 }}>
+                <strong>Medical reminder:</strong> Health Plan Factory is not a medical provider. Always consult your doctor before starting, changing, or stopping any wellness practice.
+              </p>
+            </div>
+
+            {/* List of flagged modalities */}
+            <p style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Modalities to swap out
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "1.25rem" }}>
+              {notHelpfulModalities.map((item) => (
+                <div key={item.modality.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 0.75rem", borderRadius: 8, background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                  <span style={{ fontSize: "1rem" }}>{item.modality.emoji}</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)" }}>{item.modality.name}</span>
+                  <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "#92400e", fontFamily: "var(--app-font-sans)" }}>👎 not helpful</span>
+                </div>
+              ))}
+            </div>
+
+            <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
+              We'll generate a new plan with these modalities excluded and find better alternatives that fit your budget and goals.
+            </p>
+
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={() => setShowReconfigureModal(false)}
+                disabled={reconfigureLoading}
+                style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(0,0,0,0.1)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                data-testid="reconfigure-confirm-btn"
+                onClick={handleReconfigure}
+                disabled={reconfigureLoading}
+                style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "rgba(245,158,11,0.85)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: reconfigureLoading ? "wait" : "pointer", opacity: reconfigureLoading ? 0.7 : 1, fontFamily: "var(--app-font-sans)" }}
+              >
+                {reconfigureLoading ? "Updating plan…" : "Confirm — Update my plan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

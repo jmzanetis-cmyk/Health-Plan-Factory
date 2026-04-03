@@ -364,6 +364,38 @@ export const insertPlanProgressLogSchema = createInsertSchema(planProgressLogs).
 export type InsertPlanProgressLog = InferInsertModel<typeof planProgressLogs>;
 export type PlanProgressLog = InferSelectModel<typeof planProgressLogs>;
 
+// ── plan_modality_feedback ─────────────────────────────────────────────────────
+// Member thumbs-up / thumbs-down on individual plan modalities.
+// One row per (profileId, planId, modalityId) — upserting replaces prior feedback.
+
+export const planModalityFeedback = pgTable(
+  "plan_modality_feedback",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    planId: text("plan_id")
+      .notNull()
+      .references(() => plans.id, { onDelete: "cascade" }),
+    modalityId: text("modality_id")
+      .notNull()
+      .references(() => modalities.id),
+    feedback: text("feedback").notNull(), // "helpful" | "not_helpful"
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("pmf_profile_plan_modality_idx").on(t.profileId, t.planId, t.modalityId),
+    index("pmf_plan_idx").on(t.planId),
+    check(
+      "pmf_feedback_check",
+      sql`${t.feedback} IN ('helpful','not_helpful')`,
+    ),
+  ],
+);
+
+export type PlanModalityFeedback = InferSelectModel<typeof planModalityFeedback>;
+
 // ── admin_settings ────────────────────────────────────────────────────────────
 
 export const adminSettings = pgTable("admin_settings", {
