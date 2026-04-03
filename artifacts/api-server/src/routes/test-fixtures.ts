@@ -13,6 +13,8 @@ import {
   referrals,
   referralMilestones,
   memberCredits,
+  plans,
+  planProgressLogs,
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
@@ -115,6 +117,79 @@ router.delete("/test/seed-referral-milestone/:userId", async (req, res) => {
     );
     await db.delete(referrals).where(eq(referrals.referrerId, userId));
     await db.delete(profiles).where(eq(profiles.id, referredId));
+    await db.delete(profiles).where(eq(profiles.id, userId));
+    res.json({ deleted: userId });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+/**
+ * POST /api/test/seed-outcome-member
+ *
+ * Creates a fresh Plus-tier profile so Playwright outcome-tracking E2E tests
+ * can sign up (programmatically) and then exercise the real /plan and
+ * /progress flows with X-Test-User-Id auth.
+ *
+ * Body: { userId: string }
+ * Response: { userId, email, planId }
+ */
+router.post("/test/seed-outcome-member", async (req, res) => {
+  const { userId } = req.body as { userId?: string };
+  if (!userId) {
+    res.status(400).json({ error: "userId is required" });
+    return;
+  }
+
+  const email = `${userId}@outcome-e2e.test`;
+  const referralCode = `HPF-OE2E${userId.slice(0, 4).toUpperCase()}`;
+  const planId = `plan-${userId}`;
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(profiles)
+        .values({
+          id: userId,
+          email,
+          role: "member",
+          displayName: "Outcome E2E Tester",
+          referralCode,
+          subscriptionStatus: "plus",
+        })
+        .onConflictDoNothing();
+
+      // Seed a minimal plan so /plans/:userId/latest returns a valid plan row
+      await tx
+        .insert(plans)
+        .values({
+          id: planId,
+          profileId: userId,
+          status: "generated",
+          totalMonthlyCost: 220,
+          budgetUtilization: 73,
+          budget: 300,
+        })
+        .onConflictDoNothing();
+    });
+
+    res.json({ userId, email, planId });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+/**
+ * DELETE /api/test/seed-outcome-member/:userId
+ * Cleans up fixture data after outcome-tracking tests.
+ */
+router.delete("/test/seed-outcome-member/:userId", async (req, res) => {
+  const { userId } = req.params;
+  const planId = `plan-${userId}`;
+
+  try {
+    await db.delete(planProgressLogs).where(eq(planProgressLogs.profileId, userId));
+    await db.delete(plans).where(eq(plans.id, planId));
     await db.delete(profiles).where(eq(profiles.id, userId));
     res.json({ deleted: userId });
   } catch (err) {

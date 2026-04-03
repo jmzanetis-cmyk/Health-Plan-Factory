@@ -311,168 +311,156 @@ test.describe("Outcome Tracking", () => {
     await expect(page.getByText(/goal achieved/i)).toBeVisible();
   });
 
-  // ── 7. Canonical full happy-path: onboarding → plan → progress UI → outcome → badge ──────
-  /**
-   * The definitive end-to-end journey test. Auth is mocked (Replit OIDC requires
-   * interactive Google OAuth which is unavailable in headless mode — this is a
-   * documented platform constraint). All other steps are real UI interactions:
-   *
-   *   mock auth routes → /onboarding (7 real UI steps) → /plan renders
-   *   → /progress page → open form → fill metrics → Save Log (POST mocked)
-   *   → /plan → open outcome modal → select label + note → Confirm
-   *   → assert "Goal achieved" badge visible
-   */
-  test("7. Canonical full happy-path: onboarding → plan → log progress (UI) → mark outcome → badge", async ({ page }) => {
-    // ── Setup all route mocks before any navigation ────────────────────────
-    // Auth: make app think user is signed in as MOCK_USER (bypasses Replit OIDC)
-    await mockAuth(page, { isPlus: true });
+});
 
-    // Plan generation endpoints (onboarding posts here; local fallback also works)
-    await page.route("**/api/plans/speculate", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ plan: MOCK_LATEST_PLAN.plan, items: MOCK_LATEST_PLAN.items }),
-      }),
-    );
-    await page.route("**/api/plans/generate", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ plan: MOCK_LATEST_PLAN.plan, items: MOCK_LATEST_PLAN.items }),
-      }),
-    );
+// ── Canonical full happy-path (DB-seeded, X-Test-User-Id) ────────────────────
+/**
+ * This describe block contains the definitive end-to-end outcome-tracking
+ * journey. It uses the same fixture-seeding pattern as referral.spec.ts:
+ *
+ *  1. beforeEach: POST /api/test/seed-outcome-member  → creates real Plus member + plan in DB
+ *                 (this is the sign-up step — programmatic equivalent of UI registration)
+ *  2. page.setExtraHTTPHeaders({ "x-test-user-id": userId }) → all API calls are authenticated
+ *  3. page.route("**/api/auth/me") → frontend auth display only
+ *  4. Real UI interactions for onboarding (7 steps), /progress log, and /plan outcome
+ *  5. afterEach: DELETE /api/test/seed-outcome-member/:userId → cleanup
+ *
+ * Requires NODE_ENV=test API server (test-auth-middleware active) + Chromium.
+ * Skipped in Replit dev env where SKIP_BROWSER_TESTS=1.
+ */
+test.describe("Outcome Tracking — canonical full happy-path", () => {
+  test.skip(SKIP, "SKIP_BROWSER_TESTS=1 — browser not available");
 
-    // Progress GET (empty history on first visit) + POST (mock success)
-    await page.route("**/api/progress**", (route) => {
-      if (route.request().method() === "GET") {
-        return route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([]),
-        });
-      }
-      if (route.request().method() === "POST") {
-        return route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify({
-            id: "e2e-progress-001",
-            profileId: MOCK_USER.id,
-            planId: MOCK_PLAN_ID,
-            rating: 8,
-            mood: 7,
-            energy: null,
-            pain: null,
-            sessionCostCents: 0,
-            note: "Felt great after yoga session.",
-            createdAt: new Date().toISOString(),
-          }),
-        });
-      }
-      return route.continue();
+  const FIXTURE_USER_ID = "e2e-outcome-test-user";
+
+  test.beforeEach(async ({ request }) => {
+    const res = await request.post(`${API_URL}/api/test/seed-outcome-member`, {
+      data: { userId: FIXTURE_USER_ID },
+      headers: { "Content-Type": "application/json" },
     });
+    expect(res.ok()).toBeTruthy();
+  });
 
-    // Outcome PATCH mock
-    await page.route(`**/api/plans/${MOCK_PLAN_ID}/outcome`, (route) =>
+  test.afterEach(async ({ request }) => {
+    await request.delete(`${API_URL}/api/test/seed-outcome-member/${FIXTURE_USER_ID}`);
+  });
+
+  test("7. sign-up (seeded) → onboarding (7 UI steps) → plan → log progress → mark outcome → badge", async ({ page }) => {
+    // ── Auth wiring ────────────────────────────────────────────────────────
+    // Inject X-Test-User-Id so all API calls from the page are authenticated
+    await page.setExtraHTTPHeaders({ "x-test-user-id": FIXTURE_USER_ID });
+
+    // Mock only the frontend auth display; all /api/* calls are real
+    await page.route("**/api/auth/me", (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          plan: {
-            ...MOCK_LATEST_PLAN.plan,
-            outcomeStatus: "achieved",
-            outcomeLabel: "stress-managed",
-            outcomeNote: "Eight weeks of yoga made a real difference.",
-            outcomeAt: new Date().toISOString(),
-          },
+          id: FIXTURE_USER_ID,
+          email: `${FIXTURE_USER_ID}@outcome-e2e.test`,
+          role: "member",
+          displayName: "Outcome E2E Tester",
+          avatarUrl: null,
         }),
       }),
     );
+    await page.route("**/auth/user", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: FIXTURE_USER_ID,
+          email: `${FIXTURE_USER_ID}@outcome-e2e.test`,
+          role: "member",
+          displayName: "Outcome E2E Tester",
+        }),
+      }),
+    );
+    // Subscription: real API with X-Test-User-Id (returns "plus" from seeded profile)
+    // /plans/:userId/latest: real API with X-Test-User-Id (returns seeded plan)
 
-    // ── Step 1: Complete onboarding wizard (7 UI steps, no optional skips) ─
+    // ── Step 1: Complete onboarding wizard (7 real UI steps) ──────────────
     await page.goto(`${UI_URL}/onboarding`);
 
-    // Step 0 — Budget: heading is visible, default value already set, click Continue
+    // Step 0 — Budget: default $250 pre-filled, click Continue
     await expect(page.getByRole("heading", { name: /monthly budget/i })).toBeVisible({ timeout: 8000 });
     await page.getByRole("button", { name: "Continue" }).click();
 
     // Step 1 — Goals: select "Stress Reduction", then Continue
     await expect(page.getByRole("heading", { name: /health goals/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Stress Reduction" }).click();
+    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled({ timeout: 3000 });
     await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 2 — Conditions: optional; heading visible, just click Continue
+    // Step 2 — Conditions: optional, click Continue
     await expect(page.getByRole("heading", { name: /conditions or concerns/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Continue" }).click();
 
     // Step 3 — Preferences: select "Mind-Body Focus", then Continue
     await expect(page.getByRole("heading", { name: /prefer to engage/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Mind-Body Focus" }).click();
+    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled({ timeout: 3000 });
     await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 4 — Exclusions: optional; heading visible, just click Continue
+    // Step 4 — Exclusions: optional, click Continue
     await expect(page.getByRole("heading", { name: /like to avoid/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Continue" }).click();
 
     // Step 5 — Region: fill ZIP code, then Continue
     await expect(page.getByRole("heading", { name: /located/i })).toBeVisible({ timeout: 5000 });
     await page.locator("input[inputmode='numeric'], input[placeholder*='ZIP'], input[type='text']").first().fill("90210");
+    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled({ timeout: 3000 });
     await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 6 — Review: heading visible, click "Generate My Plan"
+    // Step 6 — Review: confirm heading, then generate
     await expect(page.getByRole("heading", { name: /review/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Generate My Plan" }).click();
 
-    // Building screen completes → redirects to /plan
+    // Building screen → plan page
     await page.waitForURL(`${UI_URL}/plan`, { timeout: 30000 });
     await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({ timeout: 10000 });
 
-    // ── Step 2: Navigate to /progress, open form, fill wellness metrics, submit ─
+    // ── Step 2: Navigate to /progress, open form, fill metrics, submit ─────
     await page.goto(`${UI_URL}/progress`);
 
-    // Click the "Log Entry" pink button to reveal the form
     await expect(page.getByRole("button", { name: /log entry/i })).toBeVisible({ timeout: 8000 });
     await page.getByRole("button", { name: /log entry/i }).click();
 
-    // Assert the form opened (heading "New Wellness Log" is now visible)
+    // Assert the form opened
     await expect(page.getByRole("heading", { name: /new wellness log/i })).toBeVisible({ timeout: 5000 });
 
-    // Fill Wellness metric (first 1–10 input)
+    // Fill Wellness (first 1–10 input) and Mood (second)
     await page.locator("input[placeholder='1–10']").first().fill("8");
-
-    // Fill Mood metric (second 1–10 input)
     await page.locator("input[placeholder='1–10']").nth(1).fill("7");
-
-    // Optionally add a note
     await page.locator("textarea[placeholder*='How did you feel']").fill("Felt great after yoga session.");
 
-    // Submit the form
+    // Submit → real POST /api/progress authenticated via X-Test-User-Id
     await page.getByRole("button", { name: /save log/i }).click();
 
-    // Assert the form has closed after successful submission
-    await expect(page.getByRole("heading", { name: /new wellness log/i })).not.toBeVisible({ timeout: 5000 });
+    // Form closes after success
+    await expect(page.getByRole("heading", { name: /new wellness log/i })).not.toBeVisible({ timeout: 8000 });
 
     // ── Step 3: Navigate to /plan and mark goal achieved ───────────────────
     await page.goto(`${UI_URL}/plan`);
-    await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({
-      timeout: 10000,
-    });
+    await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({ timeout: 10000 });
 
-    // "Mark goal achieved" button must be visible (Plus member, no prior outcome)
-    await expect(page.getByTestId("mark-goal-achieved-btn")).toBeVisible({ timeout: 5000 });
+    // Plus member → "Mark goal achieved" button visible
+    await expect(page.getByTestId("mark-goal-achieved-btn")).toBeVisible({ timeout: 8000 });
     await page.getByTestId("mark-goal-achieved-btn").click();
 
     // ── Step 4: Fill outcome modal ─────────────────────────────────────────
     await expect(page.getByTestId("outcome-modal")).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(/medical reminder|always follow your doctor/i)).toBeVisible();
 
+    // Select "Stress managed" radio
     await page.getByTestId("outcome-label-stress-managed").click();
     await page.getByTestId("outcome-note-input").fill("Eight weeks of yoga made a real difference.");
+
+    // Confirm → real PATCH /api/plans/:planId/outcome authenticated via X-Test-User-Id
     await page.getByTestId("outcome-confirm-btn").click();
 
-    // ── Step 5: Assert badge ───────────────────────────────────────────────
-    await expect(page.getByTestId("goal-achieved-badge")).toBeVisible({ timeout: 5000 });
+    // ── Step 5: Assert badge and cleanup ──────────────────────────────────
+    await expect(page.getByTestId("goal-achieved-badge")).toBeVisible({ timeout: 8000 });
     await expect(page.getByText(/goal achieved/i)).toBeVisible();
     await expect(page.getByTestId("outcome-modal")).not.toBeVisible();
   });
