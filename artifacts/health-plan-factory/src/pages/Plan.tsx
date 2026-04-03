@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
+import { toast } from "sonner";
 import { type Plan, type PlanItem, planSchema, deserializePlan } from "@/lib/planEngine";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
 import { type EvidenceLevel, MODALITIES } from "@/data/modalities";
@@ -1012,8 +1013,9 @@ export default function Plan() {
       }
 
       setShowReconfigureModal(false);
+      toast.success("Your plan has been updated.");
     } catch {
-      // silently fail — user can retry
+      toast.error("Couldn't update your plan. Please try again.");
     } finally {
       setReconfigureLoading(false);
     }

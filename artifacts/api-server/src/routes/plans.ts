@@ -684,7 +684,8 @@ router.post("/plans/:id/reconfigure", async (req, res) => {
       nearbyProviderCount: item.nearbyProviderCount ?? null,
     }));
 
-    // Save new plan + items in a transaction
+    // Save new plan + items in a transaction, and persist merged exclusions
+    // back to the intake so future reconfigurations don't re-introduce them.
     const { plan: newPlan, savedItems } = await db.transaction(async (tx) => {
       const [newPlan] = await tx
         .insert(plans)
@@ -704,6 +705,15 @@ router.post("/plans/:id/reconfigure", async (req, res) => {
       const savedItems = itemValues.length > 0
         ? await tx.insert(planItems).values(itemValues).returning()
         : [];
+
+      // Persist merged exclusions back to the intake so re-running reconfigure
+      // later will still exclude previously flagged modalities.
+      if (existingPlan.intakeId) {
+        await tx
+          .update(memberIntakes)
+          .set({ exclusions: mergedExclusions })
+          .where(eq(memberIntakes.id, existingPlan.intakeId));
+      }
 
       return { plan: newPlan, savedItems };
     });
