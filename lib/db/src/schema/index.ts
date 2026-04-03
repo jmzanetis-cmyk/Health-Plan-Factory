@@ -12,8 +12,10 @@ import {
   uniqueIndex,
   jsonb,
   uuid,
+  check,
 } from "drizzle-orm/pg-core";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
 // ── Enums ────────────────────────────────────────────────────────────────────
@@ -265,6 +267,10 @@ export const plans = pgTable(
   (t) => [
     index("plans_profile_idx").on(t.profileId),
     uniqueIndex("plans_share_token_idx").on(t.shareToken),
+    check(
+      "plans_outcome_status_check",
+      sql`${t.outcomeStatus} IS NULL OR ${t.outcomeStatus} IN ('achieved','partially_achieved','not_achieved')`,
+    ),
   ],
 );
 
