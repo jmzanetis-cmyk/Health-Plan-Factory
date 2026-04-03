@@ -29,33 +29,30 @@ eas secret:create --scope project --name EXPO_PUBLIC_SENTRY_DSN --value "https:/
 
 ---
 
-## 3. Add the Sentry Expo plugin (required for native crash reporting)
+## 3. Configure the Sentry Expo plugin (already in app.config.js)
 
-For full native crash capture (not just JS errors), add the Sentry plugin to `app.config.js`
-**before running `eas build`**:
+The `@sentry/react-native/expo` plugin is already declared in `app.config.js` and configures
+native SDKs (Sentry Cocoa on iOS, Sentry Android) for native crash capture. It reads two
+environment variables for source map uploading:
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `SENTRY_ORG` | Sentry organization slug | `"healthplanfactory"` (placeholder) |
+| `SENTRY_PROJECT` | Sentry project slug | `"health-plan-mobile"` (placeholder) |
+
+**Before running `eas build --platform ios --profile production`:**
 
 1. Find your Sentry **organization slug** and **project slug** in your Sentry dashboard URL:
    `https://sentry.io/organizations/<org-slug>/projects/<project-slug>/`
 
-2. Add the plugin to `app.config.js`:
+2. Set them as EAS secrets (so they're available during the build):
+   ```bash
+   eas secret:create --scope project --name SENTRY_ORG --value "your-actual-org-slug"
+   eas secret:create --scope project --name SENTRY_PROJECT --value "your-actual-project-slug"
+   ```
+   If you leave the defaults, source map uploads will fail but crash capture still works.
 
-```js
-plugins: [
-  // ... existing plugins ...
-  [
-    "@sentry/react-native/expo",
-    {
-      organization: "your-org-slug",
-      project: "your-project-slug",
-    },
-  ],
-],
-```
-
-3. Rebuild with EAS: `eas build --platform ios --profile production`
-
-> **Note:** The plugin is optional for JS-only error tracking (ErrorBoundary, unhandled
-> promise rejections). It is required for native crash reports (C++/ObjC crashes).
+3. Rebuild: `eas build --platform ios --profile production`
 
 ---
 

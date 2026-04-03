@@ -74,6 +74,13 @@ module.exports = {
     "react-native-health",
     "expo-background-fetch",
     "expo-task-manager",
+    [
+      "@sentry/react-native/expo",
+      {
+        organization: process.env.SENTRY_ORG ?? "healthplanfactory",
+        project: process.env.SENTRY_PROJECT ?? "health-plan-mobile",
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
