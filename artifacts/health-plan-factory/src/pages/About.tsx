@@ -1,44 +1,47 @@
 import { Link } from "react-router-dom";
 import { TestimonialsSection } from "@/components/TestimonialsSection";
-
-const VALUES = [
-  {
-    emoji: "💸",
-    title: "Budget-first, always",
-    body: "Most wellness platforms ignore your wallet. We built every recommendation engine around your budget — not the other way around.",
-    color: "var(--hpf-pink)",
-    pale: "rgba(212,34,126,0.06)",
-  },
-  {
-    emoji: "🔬",
-    title: "Evidence, not trends",
-    body: "Every modality in our library is scored against clinical and peer-reviewed literature — no pseudoscience, no affiliate-driven hype.",
-    color: "var(--hpf-crimson)",
-    pale: "var(--crimson-pale)",
-  },
-  {
-    emoji: "🤝",
-    title: "Transparency over upsells",
-    body: "You see the full plan for free. You pay only to unlock individual provider contact details — never for the plan itself.",
-    color: "var(--sage)",
-    pale: "var(--sage-pale)",
-  },
-  {
-    emoji: "🏙️",
-    title: "Local providers, real people",
-    body: "We surface vetted practitioners in your area — massage therapists, acupuncturists, coaches, and more — not faceless apps or generic referrals.",
-    color: "#5b9bd5",
-    pale: "rgba(91,155,213,0.1)",
-  },
-];
-
-const STATS = [
-  { num: "5 min", label: "Average time to build your first plan" },
-  { num: "12+", label: "Evidence-rated wellness modalities" },
-  { num: "$0", label: "To see your complete personalized plan" },
-];
+import { useTranslation } from "react-i18next";
 
 export default function About() {
+  const { t } = useTranslation();
+
+  const VALUES = [
+    {
+      emoji: "💸",
+      title: t("about.values.value1Title"),
+      body: t("about.values.value1Body"),
+      color: "var(--hpf-pink)",
+      pale: "rgba(212,34,126,0.06)",
+    },
+    {
+      emoji: "🔬",
+      title: t("about.values.value2Title"),
+      body: t("about.values.value2Body"),
+      color: "var(--hpf-crimson)",
+      pale: "var(--crimson-pale)",
+    },
+    {
+      emoji: "🤝",
+      title: t("about.values.value3Title"),
+      body: t("about.values.value3Body"),
+      color: "var(--sage)",
+      pale: "var(--sage-pale)",
+    },
+    {
+      emoji: "🏙️",
+      title: t("about.values.value4Title"),
+      body: t("about.values.value4Body"),
+      color: "#5b9bd5",
+      pale: "rgba(91,155,213,0.1)",
+    },
+  ];
+
+  const STATS = [
+    { num: t("about.stats.stat1Num"), label: t("about.stats.stat1Label") },
+    { num: t("about.stats.stat2Num"), label: t("about.stats.stat2Label") },
+    { num: t("about.stats.stat3Num"), label: t("about.stats.stat3Label") },
+  ];
+
   return (
     <div className="min-h-screen" style={{ background: "var(--warm-white)" }}>
 
@@ -58,7 +61,7 @@ export default function About() {
           }}
         />
         <div className="max-w-2xl mx-auto relative">
-          <div className="section-tag">Founder</div>
+          <div className="section-tag">{t("about.founder.tag")}</div>
           <h1
             className="mb-6 leading-tight"
             style={{
@@ -69,25 +72,25 @@ export default function About() {
               color: "var(--hpf-deep)",
             }}
           >
-            Built from a personal frustration.
+            {t("about.founder.headline")}
           </h1>
           <p
             className="text-base font-light leading-relaxed mb-5"
             style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
-            A few years ago I woke up and couldn't move my left leg. Sciatica — overnight, no warning. What followed was months of trying everything one at a time: chiropractors, massage therapy, steroid injections, inversion therapy, decompression therapy, acupuncture. Each one helped a little, or not at all, or for a week before the pain came back.
+            {t("about.founder.p1")}
           </p>
           <p
             className="text-base font-light leading-relaxed mb-5"
             style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
-            I spent thousands of dollars with no roadmap — just a pile of appointments and a lot of hope. It eventually resolved. But I always wondered: what if I'd had a more calculated approach from the start? What if someone had looked at my specific situation and said — start here, in this order, at this frequency?
+            I spent thousands of dollars with no roadmap — just a pile of appointments and a lot of hope. It eventually resolved. But I always wondered: what if I'd had a more calculated approach from the start?
           </p>
           <p
             className="text-base font-light leading-relaxed mb-8"
             style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
-            That question is why HealthPlanFactory exists. A plan built around you — evidence-ranked, budget-fitted, and connected to real providers you can actually book.
+            {t("about.founder.p3")}
           </p>
           <div
             className="flex items-center gap-3 pt-5"
@@ -121,73 +124,6 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── MISSION ── */}
-      <section className="px-6 md:px-12 py-20">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="section-tag">Mission</div>
-            <h2
-              className="mb-5 leading-tight"
-              style={{
-                fontFamily: "var(--app-font-serif)",
-                fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
-                fontWeight: 700,
-                letterSpacing: "-0.015em",
-                color: "var(--hpf-pink)",
-              }}
-            >
-              Make personalized wellness accessible to everyone.
-            </h2>
-            <p
-              className="text-sm font-light leading-relaxed mb-4"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-            >
-              Premium wellness guidance shouldn't require a premium income. We built an AI-powered plan engine that takes your real budget, your actual health goals, and your unique situation — and assembles a practical, costed plan you can act on today.
-            </p>
-            <p
-              className="text-sm font-light leading-relaxed"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-            >
-              We then surface vetted local providers for every modality in your plan, so the gap between "knowing what to do" and "actually doing it" shrinks to a single click.
-            </p>
-          </div>
-
-          <div
-            className="rounded-2xl p-8"
-            style={{
-              background: "white",
-              border: "1px solid rgba(212,34,126,0.08)",
-              boxShadow: "0 2px 12px rgba(212,34,126,0.04)",
-            }}
-          >
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-6"
-              style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}
-            >
-              How we started
-            </p>
-            <p
-              className="text-sm font-light leading-relaxed mb-4"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-            >
-              The idea came from a simple frustration: every wellness app assumes you have unlimited money, unlimited time, or both. Generic recommendations, affiliate-padded lists, and no real understanding of budget constraints.
-            </p>
-            <p
-              className="text-sm font-light leading-relaxed mb-4"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-            >
-              So we asked: what if a platform worked like a financial planner — but for wellness? Allocate your budget across the highest-impact modalities, flag HSA/FSA-eligible items automatically, and connect you to real local providers — all without charging you for the plan itself.
-            </p>
-            <p
-              className="text-sm font-light leading-relaxed"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-            >
-              HealthPlanFactory is the answer to that question.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* ── STATS ── */}
       <section
         className="px-6 md:px-12 py-14"
@@ -213,7 +149,7 @@ export default function About() {
       {/* ── VALUES ── */}
       <section className="px-6 md:px-12 py-20">
         <div className="max-w-4xl mx-auto">
-          <div className="section-tag">What we stand for</div>
+          <div className="section-tag">{t("about.values.tag")}</div>
           <h2
             className="mb-14"
             style={{
@@ -225,7 +161,7 @@ export default function About() {
               maxWidth: 480,
             }}
           >
-            Our values, in plain English
+            {t("about.values.headline")}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -284,7 +220,6 @@ export default function About() {
           }}
         />
         <div className="max-w-3xl mx-auto relative z-10">
-          <div className="section-tag">Our story</div>
           <h2
             className="mb-5 leading-tight"
             style={{
@@ -295,17 +230,8 @@ export default function About() {
               color: "var(--hpf-deep)",
             }}
           >
-            Wellness that fits{" "}
-            <em style={{ color: "var(--hpf-crimson)" }}>your budget</em>,
-            <br />
-            not someone else's.
+            {t("about.cta.headline")}
           </h2>
-          <p
-            className="mb-8 max-w-xl mx-auto leading-relaxed"
-            style={{ fontSize: "1.05rem", fontWeight: 300, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
-          >
-            HealthPlanFactory was built for people who care about their health but live in the real world — where money is finite, time is short, and one-size-fits-all advice doesn't cut it.
-          </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
               to="/survey"
@@ -317,7 +243,7 @@ export default function About() {
                 letterSpacing: "0.01em",
               }}
             >
-              Build my plan free →
+              {t("about.cta.button")}
             </Link>
             <Link
               to="/how-it-works"
@@ -329,7 +255,7 @@ export default function About() {
                 letterSpacing: "0.01em",
               }}
             >
-              How it works
+              {t("nav.howItWorks")}
             </Link>
           </div>
         </div>

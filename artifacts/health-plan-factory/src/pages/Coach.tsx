@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Bot, Send, RefreshCw, Zap } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -11,13 +12,6 @@ interface Message {
   content: string;
   isStreaming?: boolean;
 }
-
-const SUGGESTION_CHIPS = [
-  "How am I doing this week?",
-  "Tips to stay consistent",
-  "Explain my plan items",
-  "Help me build a morning routine",
-];
 
 const OPENING_MESSAGE: Message = {
   id: "opening",
@@ -96,7 +90,9 @@ function MessageBubble({ message }: { message: Message }) {
 }
 
 export default function Coach() {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
+  const SUGGESTION_CHIPS = t("coach.suggestions", { returnObjects: true }) as string[];
   const [messages, setMessages] = useState<Message[]>([OPENING_MESSAGE]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -374,10 +370,10 @@ export default function Coach() {
               className="text-base font-semibold leading-tight"
               style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}
             >
-              AI Coach
+              {t("coach.title")}
             </h1>
             <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Powered by Claude
+              {t("coach.poweredBy")}
             </p>
           </div>
         </div>
@@ -389,7 +385,7 @@ export default function Coach() {
               style={{ background: "rgba(212,34,126,0.08)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               <Zap size={11} />
-              Memory active · {memorySessionCount} session{memorySessionCount !== 1 ? "s" : ""}
+              {t("coach.memoryActive", { count: memorySessionCount })}
             </div>
           )}
           {hasHistory && !isLoadingHistory && (
@@ -400,7 +396,7 @@ export default function Coach() {
               style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(212,34,126,0.1)" }}
             >
               <RefreshCw size={12} />
-              New chat
+              {t("coach.newChat")}
             </button>
           )}
           <div className="w-2 h-2 rounded-full" style={{ background: "#22c55e" }} />
@@ -412,7 +408,7 @@ export default function Coach() {
         className="px-4 py-2 text-xs text-center flex-shrink-0"
         style={{ background: "rgba(224,32,64,0.04)", borderBottom: "1px solid rgba(224,32,64,0.1)", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}
       >
-        Wellness coaching only — not a substitute for medical advice. Crisis? Call <strong>911</strong> or text <strong>988</strong>.
+        {t("coach.disclaimer")}
       </div>
 
       {/* Messages */}
@@ -420,7 +416,7 @@ export default function Coach() {
         {isLoadingHistory ? (
           <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: "var(--text-muted)" }}>
             <Loader2 className="animate-spin" size={20} style={{ color: "var(--hpf-pink)" }} />
-            <p className="text-sm" style={{ fontFamily: "var(--app-font-sans)" }}>Restoring your conversation…</p>
+            <p className="text-sm" style={{ fontFamily: "var(--app-font-sans)" }}>{t("coach.restoring")}</p>
           </div>
         ) : (
           <div className="max-w-2xl mx-auto">

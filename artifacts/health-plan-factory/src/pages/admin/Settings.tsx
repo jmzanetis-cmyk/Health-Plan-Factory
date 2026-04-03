@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AdminNav } from "./Dashboard";
 import { Loader2, Save, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -19,6 +20,7 @@ interface FaqItem {
 const DEFAULT_DISCLAIMER = "HealthPlanFactory is a wellness optimization platform — not a medical provider, diagnostic tool, or substitute for professional medical care. This is not medical advice. For emergencies call 911. For mental health crisis call 988.";
 
 export default function AdminSettings() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);

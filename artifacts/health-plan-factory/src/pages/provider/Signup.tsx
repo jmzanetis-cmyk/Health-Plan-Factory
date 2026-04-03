@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { useAuth } from "@workspace/replit-auth-web";
 import { ChevronRight, ChevronLeft, Check, Loader2, Upload, CreditCard, CheckCircle, ExternalLink, FileCheck } from "lucide-react";
 import { useUpload } from "@workspace/object-storage-web";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -66,6 +67,7 @@ const labelStyle = { color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)
 const errorStyle = { color: "#c0392b", fontFamily: "var(--app-font-sans)" };
 
 export default function ProviderSignup() {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading, login } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);

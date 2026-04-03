@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Building2, Loader2, CheckCircle2, AlertCircle, Bell, Phone, Mail, CalendarDays } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -419,6 +420,7 @@ function NotificationPrefsSection() {
 }
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -432,9 +434,9 @@ export default function Profile() {
   return (
     <div style={{ background: "var(--warm-white)", minHeight: "100vh", padding: "40px 24px" }}>
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: navy, marginBottom: 6 }}>My Profile</h1>
+        <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: navy, marginBottom: 6 }}>{t("profile.title")}</h1>
         <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", marginBottom: 32 }}>
-          Manage your account and wellness benefit settings.
+          {t("profile.manageSub")}
         </p>
 
         {/* Account info */}
@@ -442,9 +444,9 @@ export default function Profile() {
           <h2 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 700, color: navy, marginBottom: 20 }}>Account</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              { label: "Name", value: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "—" },
-              { label: "Email", value: user?.email ?? "—" },
-              { label: "Role", value: user?.role ?? "member" },
+              { label: t("profile.firstName"), value: [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "—" },
+              { label: t("profile.email"), value: user?.email ?? "—" },
+              { label: t("profile.role"), value: user?.role ?? "member" },
             ].map((f) => (
               <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, borderBottom: "1px solid rgba(212,34,126,0.06)" }}>
                 <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</span>
@@ -468,14 +470,14 @@ export default function Profile() {
         {user?.role === "employer" && (
           <div style={{ background: `linear-gradient(120deg, ${navy} 0%, #243d68 100%)`, borderRadius: 12, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ color: "white" }}>
-              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Employer Portal</div>
-              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, opacity: 0.8 }}>Manage your company's wellness stipend program</div>
+              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{t("profile.employerPortal")}</div>
+              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, opacity: 0.8 }}>{t("profile.employerPortalDesc")}</div>
             </div>
             <a
               href="/employer/dashboard"
               style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 18px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
             >
-              Go to Dashboard →
+              {t("profile.goToDashboard")}
             </a>
           </div>
         )}

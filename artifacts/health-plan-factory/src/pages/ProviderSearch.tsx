@@ -4,6 +4,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { NPI_CATEGORIES, type NpiCategory } from "@/data/npiCategories";
 import { fetchNPIProviders, type NPIProvider } from "@/lib/npiClient";
 import { ProviderMap } from "@/components/ProviderMap";
+import { useTranslation } from "react-i18next";
 
 type GeoPoint = { lat: number; lng: number };
 type ViewMode = "list" | "map";
@@ -336,6 +337,7 @@ function locationLabel(state: string, city: string): string {
 }
 
 export default function ProviderSearch() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -634,7 +636,7 @@ export default function ProviderSearch() {
               onChange={(e) => setSelectedState(e.target.value)}
               style={{ ...inputStyle, marginBottom: "0.75rem", appearance: "auto" }}
             >
-              <option value="">All States — Nationwide</option>
+              <option value="">{t("providerSearch.allStates")}</option>
               {US_STATES.map(([code, name]) => (
                 <option key={code} value={code}>{name}</option>
               ))}

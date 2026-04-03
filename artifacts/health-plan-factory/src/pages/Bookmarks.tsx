@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { BookmarkCheck, Loader2, Trash2, Globe, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -25,6 +26,7 @@ interface Provider {
 }
 
 export default function Bookmarks() {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);

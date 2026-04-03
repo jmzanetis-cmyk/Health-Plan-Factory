@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Users, Star, Calendar, TrendingUp, ChevronRight, ExternalLink, Clock, MapPin, Video, Eye } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Review {
   id: string;
@@ -78,6 +79,7 @@ function computeCompleteness(p: Provider): number {
 }
 
 export default function ProviderDashboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [provider, setProvider] = useState<Provider | null>(null);
   const [loading, setLoading] = useState(true);

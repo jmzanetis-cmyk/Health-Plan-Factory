@@ -7,6 +7,7 @@ import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { FounderLetterSection } from "@/components/FounderLetterSection";
 import type { SurveyData } from "@/pages/Survey";
 import { GOALS } from "@/types/onboarding";
+import { useTranslation } from "react-i18next";
 
 const MODALITIES = [
   { emoji: "🧘", name: "Yoga / Mind-Body", badge: "Moderate", badgeType: "moderate" },
@@ -227,6 +228,7 @@ function PersonalizedBanner({ survey, onDismiss }: { survey: SurveyData; onDismi
 }
 
 export default function Landing() {
+  const { t } = useTranslation();
   const [survey, setSurvey] = useState<SurveyData | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
@@ -300,7 +302,7 @@ export default function Landing() {
             className="inline-flex items-center gap-2 mb-6 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"
             style={{ background: "var(--crimson-pale)", border: "1px solid rgba(224,32,64,0.12)", color: "var(--hpf-crimson)" }}
           >
-            ✦ Your personalized wellness plan
+            {t("landing.hero.tag")}
           </div>
 
           <h1
@@ -313,23 +315,14 @@ export default function Landing() {
               color: "var(--hpf-deep)",
             }}
           >
-            A health plan
-            <br />
-            built around
-            <br />
-            <em style={{ color: "var(--hpf-crimson)" }}>your life.</em>
+            {t("landing.hero.headline")}
           </h1>
 
           <p
             className="mb-8 leading-relaxed max-w-md"
             style={{ fontSize: "1.05rem", fontWeight: 300, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
-            Tell us your budget, your conditions, and your goals.
-            HealthPlanFactory assembles a{" "}
-            <strong style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>prioritized, costed wellness plan</strong>
-            {" "}— then matches it to{" "}
-            <strong style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>vetted providers near you</strong>
-            {" "}so your plan is ready to book, not just to browse.
+            {t("landing.hero.sub")}
           </p>
 
           <div className="flex flex-wrap gap-3 mb-8">
@@ -343,7 +336,7 @@ export default function Landing() {
                 letterSpacing: "0.01em",
               }}
             >
-              Build my plan free →
+              {t("landing.hero.cta")}
             </Link>
             <Link
               to="/provider/signup"
@@ -355,7 +348,7 @@ export default function Landing() {
                 fontFamily: "var(--app-font-sans)",
               }}
             >
-              Join as a provider
+              {t("landing.hero.providerLink")}
             </Link>
           </div>
 

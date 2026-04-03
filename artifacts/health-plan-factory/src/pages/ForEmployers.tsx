@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 const navy = "#2C2825";
@@ -20,6 +21,7 @@ interface DemoFormState {
 }
 
 export default function ForEmployers() {
+  const { t } = useTranslation();
   const [form, setForm] = useState<DemoFormState>({
     name: "",
     company: "",

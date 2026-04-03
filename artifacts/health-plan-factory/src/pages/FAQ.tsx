@@ -1,16 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-
-const FAQS = [
-  { q: "Is this medical advice?", a: "No. HealthPlanFactory is a wellness optimization platform — not a medical provider, diagnostic tool, or substitute for licensed healthcare. Always consult a qualified healthcare professional before beginning any wellness program." },
-  { q: "How much does it cost to get started?", a: "Building your initial plan is completely free. You pay small unlock fees ($1–$3) only when you want to view a specific provider's contact information. A Plus membership ($9.99/month) unlocks unlimited reveals, journaling, routine building, and the AI accountability coach." },
-  { q: "Can I use my HSA or FSA?", a: "Many services in your plan — including massage, acupuncture, physical therapy, and nutrition counseling — may qualify for HSA/FSA reimbursement. Eligibility is determined by your plan administrator. Our platform includes an HSA/FSA log to help you track spending." },
-  { q: "How are providers vetted?", a: "Providers apply to be listed and agree to our provider standards. We collect credential information and license numbers. However, HealthPlanFactory does not independently verify credentials or guarantee outcomes. Always do your own due diligence before booking." },
-  { q: "What's the difference between wellness and physician providers?", a: "Wellness providers include massage therapists, yoga instructors, nutritionists, personal trainers, and similar practitioners. Physician providers are licensed MDs, DOs, and NPs — often Direct Primary Care physicians who can order labs, prescribe, and write Letters of Medical Necessity." },
-  { q: "What is the Founding Provider program?", a: "Founding Providers who join during our early access period pay zero platform commission on bookings for their first 90 days. After that, a small commission applies to bookings made through the platform." },
-  { q: "What is the AI accountability coach?", a: "The AI coach is powered by Claude (Anthropic) and helps you stay on track with your wellness plan. It provides personalized encouragement, answers questions about your modalities, and helps you build habits. It is not a therapist or medical provider. All conversations include an emergency keyword interceptor that surfaces crisis resources if needed." },
-  { q: "Is my health data private?", a: "We take privacy seriously. Your intake data, journal entries, and health information are used only to build and improve your plan. We do not sell personal health data to third parties. See our Privacy Policy for full details." },
-];
+import { useTranslation } from "react-i18next";
 
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
@@ -26,12 +16,25 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function FAQ() {
+  const { t } = useTranslation();
+
+  const FAQS = [
+    { q: t("faq.q1"), a: t("faq.a1") },
+    { q: t("faq.q2"), a: t("faq.a2") },
+    { q: t("faq.q3"), a: t("faq.a3") },
+    { q: t("faq.q4"), a: t("faq.a4") },
+    { q: t("faq.q5"), a: t("faq.a5") },
+    { q: t("faq.q6"), a: t("faq.a6") },
+    { q: t("faq.q7"), a: t("faq.a7") },
+    { q: t("faq.q8"), a: t("faq.a8") },
+  ];
+
   return (
     <div className="min-h-screen px-6 md:px-12 py-20" style={{ background: "var(--off-white)" }}>
       <div className="max-w-2xl mx-auto">
-        <div className="section-tag">FAQ</div>
+        <div className="section-tag">{t("faq.tag")}</div>
         <h1 className="mb-10" style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.5rem,5vw,4rem)", fontWeight: 700, color: "var(--hpf-deep)", letterSpacing: "-0.02em" }}>
-          Frequently Asked Questions
+          {t("faq.headline")}
         </h1>
         {FAQS.map((faq) => <FAQItem key={faq.q} q={faq.q} a={faq.a} />)}
 

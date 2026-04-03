@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronDown, ChevronUp, Mail, Loader2, AlertCircle } from "lucide-react";
 import { AdminNav } from "./Dashboard";
+import { useTranslation } from "react-i18next";
 
 const DEMO_LEAD_REFRESH_EVENT = "demo-leads-status-changed";
 
@@ -247,6 +248,7 @@ function MessageCell({ message }: { message: string | null }) {
 }
 
 export default function DemoLeads() {
+  const { t } = useTranslation();
   const [leads, setLeads] = useState<DemoLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("");

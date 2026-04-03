@@ -2,64 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
-
-const TIERS = [
-  {
-    tier: "Explorer",
-    price: "Free",
-    per: "forever",
-    desc: "Build your plan free. Get your personalized wellness roadmap with estimated costs.",
-    features: [
-      "Full AI plan generation",
-      "Personalized modality recommendations",
-      "Estimated monthly cost breakdown",
-      "Modality evidence library access",
-      "Provider directory browsing",
-      "Save & share your plan",
-    ],
-    cta: "Get started free",
-    ctaHref: "/sign-up",
-    featured: false,
-    isPlus: false,
-  },
-  {
-    tier: "Plus",
-    price: "$9.99",
-    per: "per month",
-    desc: "Connect with real providers. Turn your plan into action with matched local providers.",
-    features: [
-      "Everything in Explorer",
-      "Real matched local providers for every modality",
-      "Full contact info — phone, website, booking",
-      "AI accountability coach",
-      "Routine & journal builder",
-      "HSA/FSA spending log",
-      "Progress tracking & insights",
-    ],
-    cta: "Start Plus",
-    ctaHref: "/sign-up?plan=plus",
-    featured: true,
-    isPlus: true,
-  },
-  {
-    tier: "Provider",
-    price: "$29",
-    per: "per month",
-    desc: "Get discovered by members whose plans match your specialty.",
-    features: [
-      "Listing in provider directory",
-      "Lead alerts for your modalities",
-      "Booking calendar integration",
-      "0% commission for first 90 days · 2% after",
-    ],
-    cta: "Apply as a provider",
-    ctaHref: "/provider/signup",
-    featured: false,
-    isPlus: false,
-  },
-];
 
 interface CheckoutResult {
   checkout_url?: string;
@@ -71,7 +16,44 @@ interface CheckoutResult {
 }
 
 export default function Pricing() {
+  const { t } = useTranslation();
   const { user } = useAuth();
+
+  const TIERS = [
+    {
+      tier: t("pricing.exploreTier"),
+      price: t("pricing.free"),
+      per: t("pricing.forever"),
+      desc: t("pricing.explorerDesc"),
+      features: t("pricing.explorerFeatures", { returnObjects: true }) as string[],
+      cta: t("pricing.explorerCta"),
+      ctaHref: "/sign-up",
+      featured: false,
+      isPlus: false,
+    },
+    {
+      tier: t("pricing.plusTier"),
+      price: "$9.99",
+      per: t("pricing.perMonth"),
+      desc: t("pricing.plusDesc"),
+      features: t("pricing.plusFeatures", { returnObjects: true }) as string[],
+      cta: t("pricing.plusCta"),
+      ctaHref: "/sign-up?plan=plus",
+      featured: true,
+      isPlus: true,
+    },
+    {
+      tier: t("pricing.providerTier"),
+      price: "$29",
+      per: t("pricing.perMonth"),
+      desc: t("pricing.providerDesc"),
+      features: t("pricing.providerFeatures", { returnObjects: true }) as string[],
+      cta: t("pricing.providerCta"),
+      ctaHref: "/provider/signup",
+      featured: false,
+      isPlus: false,
+    },
+  ];
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -141,34 +123,34 @@ export default function Pricing() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--hpf-deep)", marginBottom: "1rem" }}>
-              Upgrade to Plus
+              {t("pricing.upgradeToPlusTitle")}
             </h3>
 
             <div style={{ background: "rgba(212,34,126,0.03)", borderRadius: 10, padding: "1rem", marginBottom: "1rem", border: "1px solid rgba(212,34,126,0.08)" }}>
               <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
-                <span style={{ color: "var(--text-secondary)" }}>Monthly subscription</span>
+                <span style={{ color: "var(--text-secondary)" }}>{t("pricing.monthlySubscription")}</span>
                 <span style={{ color: "var(--hpf-pink)", fontWeight: 600 }}>
                   ${(checkoutModal.subscription_price_cents / 100).toFixed(2)}/mo
                 </span>
               </div>
               {checkoutModal.credit_applied_cents > 0 && (
                 <div className="flex justify-between text-sm mb-1" style={{ fontFamily: "var(--app-font-sans)" }}>
-                  <span style={{ color: "var(--hpf-crimson)", fontWeight: 600 }}>🎁 Referral credit applied</span>
+                  <span style={{ color: "var(--hpf-crimson)", fontWeight: 600 }}>{t("pricing.referralCreditApplied")}</span>
                   <span style={{ color: "var(--hpf-crimson)", fontWeight: 700 }}>
                     −${(checkoutModal.credit_applied_cents / 100).toFixed(2)}
                   </span>
                 </div>
               )}
               <div className="flex justify-between text-sm pt-2 mt-1" style={{ borderTop: "1px solid rgba(212,34,126,0.08)", fontFamily: "var(--app-font-sans)" }}>
-                <span style={{ color: "var(--hpf-pink)", fontWeight: 700 }}>Due today</span>
+                <span style={{ color: "var(--hpf-pink)", fontWeight: 700 }}>{t("pricing.dueToday")}</span>
                 <span style={{ color: checkoutModal.amount_charged_cents === 0 ? "var(--sage)" : "var(--hpf-pink)", fontWeight: 700 }}>
-                  {checkoutModal.amount_charged_cents === 0 ? "Free" : checkoutModal.amount_charged_formatted}
+                  {checkoutModal.amount_charged_cents === 0 ? t("pricing.free") : checkoutModal.amount_charged_formatted}
                 </span>
               </div>
             </div>
 
             <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
-              Cancel anytime. Referral credit is applied as a discount on your first month.
+              {t("pricing.cancelAnytime")}
             </p>
 
             <div className="flex gap-2">
@@ -176,13 +158,13 @@ export default function Pricing() {
                 onClick={() => setCheckoutModal(null)}
                 style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleConfirmCheckout}
                 style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-crimson)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
-                Proceed to payment →
+                {t("pricing.proceedToPayment")}
               </button>
             </div>
           </div>
@@ -192,16 +174,15 @@ export default function Pricing() {
       <div className="px-6 md:px-12 py-10 md:py-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <div className="section-tag justify-center">Pricing</div>
+            <div className="section-tag justify-center">{t("pricing.tag")}</div>
             <h1
               className="mb-4"
               style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.5rem,5vw,4rem)", fontWeight: 700, color: "var(--hpf-deep)", letterSpacing: "-0.02em" }}
             >
-              Build your plan free.{" "}
-              <em style={{ color: "var(--hpf-crimson)" }}>Connect with providers with Plus.</em>
+              {t("pricing.headline")}
             </h1>
             <p className="text-sm font-light max-w-md mx-auto leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Explorer members get a full personalized plan with cost estimates — free. Plus members get real, matched local providers for every modality in their plan.
+              {t("pricing.sub")}
             </p>
           </div>
 
@@ -214,7 +195,7 @@ export default function Pricing() {
               >
                 {tier.featured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest text-white whitespace-nowrap" style={{ background: "var(--hpf-crimson)" }}>
-                    Most Popular
+                    {t("pricing.mostPopular")}
                   </div>
                 )}
                 <p className="text-xs font-bold uppercase tracking-widest mb-5" style={{ color: tier.featured ? "rgba(255,255,255,0.4)" : "var(--text-muted)" }}>{tier.tier}</p>
@@ -238,7 +219,7 @@ export default function Pricing() {
                       className="block w-full text-center py-3.5 rounded-lg text-sm font-semibold text-white"
                       style={{ background: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)", border: "none", cursor: checkoutLoading ? "wait" : "pointer", opacity: checkoutLoading ? 0.7 : 1 }}
                     >
-                      {checkoutLoading ? "Loading…" : tier.cta}
+                      {checkoutLoading ? t("pricing.loading") : tier.cta}
                     </button>
                     {user && creditsCents > 0 && (
                       <p className="text-center mt-2 text-xs font-semibold" style={{ color: "var(--hpf-crimson)" }}>
@@ -258,19 +239,19 @@ export default function Pricing() {
           {/* Comparison callout */}
           <div className="rounded-xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <h3 className="font-semibold mb-4 text-sm text-center" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-sans)" }}>
-              Explorer vs. Plus — what's different?
+              {t("pricing.comparisonTitle")}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div style={{ padding: "1rem", borderRadius: 10, background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
-                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Explorer (Free)</p>
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{t("pricing.explorerFreeLabel")}</p>
                 <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
-                  Full AI plan generation with personalized modality recommendations and estimated monthly costs. The plan is real and valuable — you see exactly which modalities fit your goals and budget. Provider cards are shown but contact details are not revealed.
+                  {t("pricing.explorerFreeDesc")}
                 </p>
               </div>
               <div style={{ padding: "1rem", borderRadius: 10, background: "rgba(212,34,126,0.04)", border: "1.5px solid rgba(212,34,126,0.18)" }}>
-                <p className="text-xs font-bold mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Plus ($9.99/mo)</p>
+                <p className="text-xs font-bold mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{t("pricing.plusPaidLabel")}</p>
                 <p className="text-sm" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6 }}>
-                  Your plan is fully assembled with real, matched local providers for every modality. See phone numbers, websites, and book sessions directly — no per-provider fees, ever. Referral credits apply as a discount on your first month.
+                  {t("pricing.plusPaidDesc")}
                 </p>
               </div>
             </div>

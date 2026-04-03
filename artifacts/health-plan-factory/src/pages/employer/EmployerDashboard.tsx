@@ -6,6 +6,7 @@ import {
 import {
   Building2, Users, DollarSign, TrendingUp, Download, RefreshCw, Loader2, Copy, CheckCheck, CreditCard, Shield,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -96,6 +97,7 @@ function monthLabel(ym: string) {
 }
 
 export default function EmployerDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -200,18 +202,18 @@ export default function EmployerDashboard() {
               </span>
             </div>
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>
-              Employer Wellness Dashboard
+              {t("employer.dashboard.title")}
             </p>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button onClick={load} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
-              <RefreshCw size={14} /> Refresh
+              <RefreshCw size={14} /> {t("common.refresh")}
             </button>
             <button onClick={exportCsv} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
-              <Download size={14} /> Export CSV
+              <Download size={14} /> {t("common.exportCsv")}
             </button>
             <button onClick={exportPdf} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
-              <Download size={14} /> Export Report
+              <Download size={14} /> {t("common.exportReport")}
             </button>
             <button
               onClick={setupBilling}
@@ -219,7 +221,7 @@ export default function EmployerDashboard() {
               style={{ background: amber, color: "white", border: "none", borderRadius: 8, padding: "8px 14px", cursor: billingLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, opacity: billingLoading ? 0.7 : 1 }}
             >
               {billingLoading ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-              Setup Billing
+              {t("employer.setupBilling")}
             </button>
           </div>
         </div>
@@ -237,12 +239,12 @@ export default function EmployerDashboard() {
           flexWrap: "wrap",
         }}>
           <div style={{ flex: 1, minWidth: 180 }}>
-            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>Employee Invite Code</span>
+            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{t("employer.inviteCode")}</span>
             <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 22, fontWeight: 800, color: navy, letterSpacing: "0.12em" }}>{data.employer.inviteCode}</div>
           </div>
           <button onClick={copyCode} style={{ background: copied ? "rgba(125,181,92,0.1)" : "rgba(212,34,126,0.06)", border: "1px solid rgba(212,34,126,0.1)", borderRadius: 8, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: copied ? sage : navy, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
             {copied ? <CheckCheck size={14} /> : <Copy size={14} />}
-            {copied ? "Copied!" : "Copy Code"}
+            {copied ? t("common.copied") : t("common.copy")}
           </button>
           <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)" }}>
             Share with employees to enroll them in the benefit
@@ -286,8 +288,8 @@ export default function EmployerDashboard() {
 
         {/* Stats grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 28 }}>
-          <StatCard icon={<Users size={18} />} label="Enrolled" value={String(data.stats.totalEnrolled)} sub={`of ${data.employer.numberOfEmployees} employees`} />
-          <StatCard icon={<DollarSign size={18} />} label="Monthly Budget" value={fmt(data.stats.totalBudgetCents)} sub="total stipend pool" />
+          <StatCard icon={<Users size={18} />} label={t("employer.dashboard.enrolled")} value={String(data.stats.totalEnrolled)} sub={`of ${data.employer.numberOfEmployees} employees`} />
+          <StatCard icon={<DollarSign size={18} />} label={t("employer.dashboard.budget")} value={fmt(data.stats.totalBudgetCents)} sub="total stipend pool" />
           <StatCard icon={<TrendingUp size={18} />} label="Utilization"
             value={data.stats.utilizationPct != null ? `${data.stats.utilizationPct}%` : "—"}
             sub={data.stats.totalSpentCents != null ? `${fmt(data.stats.totalSpentCents)} spent` : "Suppressed (<5 members)"} />

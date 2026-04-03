@@ -18,43 +18,16 @@ import { Logo } from "@/components/Logo";
 import { getApiBase } from "@/lib/apiBase";
 import { useState } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useTranslation } from "react-i18next";
 
-const STEPS = [
-  {
-    title: "What's your monthly budget?",
-    subtitle: "We'll optimize your plan to this amount — no surprise costs.",
-    fields: [] as (keyof IntakeData)[],
-  },
-  {
-    title: "What are your health goals?",
-    subtitle: "Choose all that apply. We'll rank modalities by fit.",
-    fields: ["goals"] as (keyof IntakeData)[],
-  },
-  {
-    title: "Any conditions or concerns?",
-    subtitle: "This helps us personalize — not a medical intake.",
-    fields: [] as (keyof IntakeData)[],
-  },
-  {
-    title: "How do you prefer to engage?",
-    subtitle: "We'll filter for modalities that match your style.",
-    fields: ["preferences"] as (keyof IntakeData)[],
-  },
-  {
-    title: "Anything you'd like to avoid?",
-    subtitle: "Optional — skip if there are no restrictions.",
-    fields: [] as (keyof IntakeData)[],
-  },
-  {
-    title: "Where are you located?",
-    subtitle: "We'll surface providers in your area.",
-    fields: ["zipCode"] as (keyof IntakeData)[],
-  },
-  {
-    title: "Review your preferences",
-    subtitle: "Make sure everything looks right before we build your plan.",
-    fields: [] as (keyof IntakeData)[],
-  },
+const STEP_FIELDS: (keyof IntakeData)[][] = [
+  [],
+  ["goals"],
+  [],
+  ["preferences"],
+  [],
+  ["zipCode"],
+  [],
 ];
 
 const DEFAULT_INTAKE: IntakeData = {
@@ -117,12 +90,23 @@ const slideVariants = {
 };
 
 export default function Onboarding() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(0);
   const [building, setBuilding] = useState(false);
   const dirRef = useRef(1);
+
+  const STEPS = useMemo(() => [
+    { title: t("onboarding.step1Title"), subtitle: t("onboarding.step1Sub"), fields: STEP_FIELDS[0] },
+    { title: t("onboarding.step2Title"), subtitle: t("onboarding.step2Sub"), fields: STEP_FIELDS[1] },
+    { title: t("onboarding.step3Title"), subtitle: t("onboarding.step3Sub"), fields: STEP_FIELDS[2] },
+    { title: t("onboarding.step4Title"), subtitle: t("onboarding.step4Sub"), fields: STEP_FIELDS[3] },
+    { title: t("onboarding.step5Title"), subtitle: t("onboarding.step5Sub"), fields: STEP_FIELDS[4] },
+    { title: t("onboarding.step6Title"), subtitle: t("onboarding.step6Sub"), fields: STEP_FIELDS[5] },
+    { title: t("onboarding.step7Title"), subtitle: t("onboarding.step7Sub"), fields: STEP_FIELDS[6] },
+  ], [t]);
 
   const prefill = useMemo(() => parseIntakeFromParams(searchParams), [searchParams]);
 
@@ -331,7 +315,7 @@ export default function Onboarding() {
             fontFamily: "var(--app-font-sans)",
           }}
         >
-          Save &amp; Exit
+          {t("onboarding.saveExit")}
         </button>
       </header>
 
@@ -354,7 +338,7 @@ export default function Onboarding() {
           color: "var(--text-muted)",
           letterSpacing: "0.05em",
         }}>
-          Step {step + 1} of {totalSteps}
+          {t("onboarding.stepCounter", { current: step + 1, total: totalSteps })}
         </span>
       </div>
 

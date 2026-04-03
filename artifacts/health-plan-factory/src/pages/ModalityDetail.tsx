@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Info,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -126,6 +127,7 @@ const PROVIDER_TIPS: Record<string, string[]> = {
 };
 
 export default function ModalityDetail() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [modality, setModality] = useState<ModalityRow | null>(null);
@@ -170,7 +172,7 @@ export default function ModalityDetail() {
   if (notFound || !modality) {
     return (
       <div style={{ maxWidth: 560, margin: "80px auto", padding: "0 24px", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 28, color: navy }}>Modality not found</h2>
+        <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 28, color: navy }}>t("modalityDetail.notFound")</h2>
         <p style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-secondary)", marginBottom: 24 }}>
           We couldn't find that modality. Browse our full evidence library below.
         </p>
@@ -227,7 +229,7 @@ export default function ModalityDetail() {
       },
       {
         "@type": "MedicalWebPage",
-        "name": `${modality.name} — Evidence Summary`,
+        "name": `${modality.name} — t("modalityDetail.evidenceSummary")`,
         "description": ogDescription,
         "url": pageUrl,
         "inLanguage": "en-US",
@@ -252,9 +254,9 @@ export default function ModalityDetail() {
   return (
     <>
       <Helmet>
-        <title>{modality.name} — Evidence Summary | Health Plan Factory</title>
+        <title>{modality.name} — t("modalityDetail.evidenceSummary") | Health Plan Factory</title>
         <meta name="description" content={ogDescription} />
-        <meta property="og:title" content={`${modality.name} — Evidence Summary | Health Plan Factory`} />
+        <meta property="og:title" content={`${modality.name} — t("modalityDetail.evidenceSummary") | Health Plan Factory`} />
         <meta property="og:description" content={ogDescription} />
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary" />
@@ -315,7 +317,7 @@ export default function ModalityDetail() {
           <div className="print-section" style={{ display: "none" }} ref={printRef}>
             <div style={{ borderBottom: "2px solid #D4227E", paddingBottom: 16, marginBottom: 24 }}>
               <h1 style={{ fontFamily: "serif", fontSize: 28, margin: "0 0 4px", color: "#D4227E" }}>{modality.emoji} {modality.name}</h1>
-              <p style={{ margin: 0, fontSize: 13, color: "#666" }}>Evidence Summary — Health Plan Factory | healthplanfactory.com</p>
+              <p style={{ margin: 0, fontSize: 13, color: "#666" }}>t("modalityDetail.evidenceSummary") — Health Plan Factory | healthplanfactory.com</p>
             </div>
           </div>
 
@@ -349,7 +351,7 @@ export default function ModalityDetail() {
 
           {/* Evidence summary */}
           <section className="print-section" style={{ marginBottom: 40 }}>
-            <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: navy, margin: "0 0 16px" }}>Evidence Summary</h2>
+            <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: navy, margin: "0 0 16px" }}>t("modalityDetail.evidenceSummary")</h2>
             {modality.evidenceSummary ? (
               <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.75 }}>
                 {modality.evidenceSummary.split("\n\n").map((paragraph, i) => (
@@ -366,7 +368,7 @@ export default function ModalityDetail() {
           {/* Conditions chip list */}
           {modality.conditions?.length > 0 && (
             <section className="print-section" style={{ marginBottom: 40 }}>
-              <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: navy, margin: "0 0 16px" }}>Conditions This May Help</h2>
+              <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: navy, margin: "0 0 16px" }}>t("modalityDetail.conditionsHelp")</h2>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {modality.conditions.map((c) => (
                   <span
@@ -416,7 +418,7 @@ export default function ModalityDetail() {
 
           {/* What to look for in a provider */}
           <section className="print-section" style={{ marginBottom: 40 }}>
-            <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: navy, margin: "0 0 16px" }}>What to Look for in a Provider</h2>
+            <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 22, color: navy, margin: "0 0 16px" }}>t("modalityDetail.providerTips")</h2>
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
               {providerTips.map((tip) => (
                 <li key={tip} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.55 }}>

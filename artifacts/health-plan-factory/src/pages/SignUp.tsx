@@ -2,27 +2,20 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useTranslation } from "react-i18next";
 
 type Role = "member" | "provider";
 
-const MEMBER_FEATURES = [
-  "AI-powered personalized health plan",
-  "Budget-aware provider matching",
-  "Progress tracking & accountability coach",
-];
-
-const PROVIDER_FEATURES = [
-  "Get discovered by health-motivated members",
-  "Receive qualified leads in your specialty",
-  "0% commission for founding providers (90 days)",
-];
-
 export default function SignUp() {
   const { login, isAuthenticated, isLoading, user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedRole, setSelectedRole] = useState<Role>("member");
   const [employerCode, setEmployerCode] = useState("");
+
+  const MEMBER_FEATURES = t("signUp.memberFeatures", { returnObjects: true }) as string[];
+  const PROVIDER_FEATURES = t("signUp.providerFeatures", { returnObjects: true }) as string[];
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -37,11 +30,9 @@ export default function SignUp() {
     if (selectedRole === "provider") {
       login("/provider/signup");
     } else {
-      // Persist invite code so it can be redeemed after OAuth completes
       if (employerCode.trim()) {
         sessionStorage.setItem("hpf_employer_code", employerCode.trim().toUpperCase());
       }
-      // Persist speculator prefill params so they survive the OAuth redirect
       const budget = searchParams.get("budget");
       const conditions = searchParams.get("conditions");
       const goals = searchParams.get("goals");
@@ -66,10 +57,10 @@ export default function SignUp() {
             <Logo variant="auth" />
           </div>
           <h1 className="mb-2" style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-            Get started free
+            {t("signUp.title")}
           </h1>
           <p className="text-sm font-light" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-            Choose how you'd like to use Health Plan Factory
+            {t("signUp.sub")}
           </p>
         </div>
 
@@ -102,9 +93,8 @@ export default function SignUp() {
                     </svg>
                   )}
                 </div>
-                <span className="text-sm font-semibold capitalize" style={{ color: "var(--hpf-pink)" }}>{role}</span>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  {role === "member" ? "Get a health plan" : "List my practice"}
+                <span className="text-sm font-semibold capitalize" style={{ color: "var(--hpf-pink)" }}>
+                  {role === "member" ? t("signUp.memberTab") : t("signUp.providerTab")}
                 </span>
                 {selectedRole === role && (
                   <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "var(--hpf-pink)" }}>
@@ -137,7 +127,7 @@ export default function SignUp() {
                 className="block text-xs font-semibold mb-1.5"
                 style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
               >
-                Employer invite code <span className="font-normal" style={{ color: "var(--text-muted)" }}>(optional)</span>
+                {t("signUp.employerCodeLabel")}
               </label>
               <div className="relative">
                 <input
@@ -145,7 +135,7 @@ export default function SignUp() {
                   type="text"
                   value={employerCode}
                   onChange={(e) => setEmployerCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. ACME-4B2Z"
+                  placeholder={t("signUp.employerCodePlaceholder")}
                   maxLength={20}
                   spellCheck={false}
                   autoComplete="off"
@@ -164,9 +154,6 @@ export default function SignUp() {
                   </div>
                 )}
               </div>
-              <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                Your employer covers wellness sessions up to your monthly stipend limit.
-              </p>
             </div>
           )}
 
@@ -184,18 +171,18 @@ export default function SignUp() {
             {isLoading ? (
               <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
             ) : null}
-            Create my free account →
+            {t("signUp.continueWithGitHub")} →
           </button>
 
           <p className="text-center text-xs mt-4 leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
             By continuing you agree to our{" "}
-            <a href="/terms" className="no-underline" style={{ color: "var(--hpf-crimson)" }}>Terms</a> and{" "}
+            <a href="/terms" className="no-underline" style={{ color: "var(--hpf-crimson)" }}>Terms</a> {t("common.and")}{" "}
             <a href="/privacy" className="no-underline" style={{ color: "var(--hpf-crimson)" }}>Privacy Policy</a>.
           </p>
 
           <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-            Already have an account?{" "}
-            <Link to="/sign-in" className="font-semibold no-underline" style={{ color: "var(--hpf-crimson)" }}>Sign in</Link>
+            {t("signUp.haveAccount")}{" "}
+            <Link to="/sign-in" className="font-semibold no-underline" style={{ color: "var(--hpf-crimson)" }}>{t("signUp.signIn")}</Link>
           </p>
         </div>
       </div>

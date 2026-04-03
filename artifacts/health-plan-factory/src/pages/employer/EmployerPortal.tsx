@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Building2, Users, DollarSign, ShieldCheck, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -285,6 +286,7 @@ function SuccessPanel({ employer }: { employer: Employer }) {
 }
 
 export default function EmployerPortal() {
+  const { t } = useTranslation();
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [existingEmployer, setExistingEmployer] = useState<Employer | null>(null);

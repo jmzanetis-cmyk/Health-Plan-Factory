@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { Logo } from "@/components/Logo";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -152,6 +153,7 @@ function ShareCard({ data, signupUrl }: { data: SharedPlanData; signupUrl: strin
 }
 
 export default function SharedPlan() {
+  const { t } = useTranslation();
   const { shareToken } = useParams<{ shareToken: string }>();
   const [searchParams] = useSearchParams();
   const ref = searchParams.get("ref");
@@ -180,7 +182,7 @@ export default function SharedPlan() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--warm-white)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Loading...</p>
+        <p style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{t("common.loading")}</p>
       </div>
     );
   }

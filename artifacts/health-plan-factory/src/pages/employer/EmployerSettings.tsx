@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShieldCheck, Loader2, Save } from "lucide-react";
 import { EmployerNav } from "./EmployerDashboard";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -31,6 +32,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function EmployerSettings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [rules, setRules] = useState<Record<string, boolean>>({});

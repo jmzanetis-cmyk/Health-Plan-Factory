@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import { Loader2, TrendingUp, BarChart2, Info } from "lucide-react";
 import { EmployerNav } from "./EmployerDashboard";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -357,6 +358,7 @@ function RoiCalculator({ defaultStipendCents }: { defaultStipendCents: number })
 }
 
 export default function EmployerROI() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [trendSuppressed, setTrendSuppressed] = useState(false);

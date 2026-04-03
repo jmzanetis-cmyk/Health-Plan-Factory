@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Video, Phone, Globe, Star, CheckCircle, ArrowLeft, Edit2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -23,6 +24,7 @@ interface Provider {
 }
 
 export default function ProviderPreview() {
+  const { t } = useTranslation();
   const [provider, setProvider] = useState<Provider | null>(null);
   const [loading, setLoading] = useState(true);
 

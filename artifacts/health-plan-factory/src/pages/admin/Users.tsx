@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AdminNav } from "./Dashboard";
 import { Loader2, ChevronUp, ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -15,6 +16,7 @@ interface UserProfile {
 type SortKey = "displayName" | "role" | "createdAt";
 
 export default function AdminUsers() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");

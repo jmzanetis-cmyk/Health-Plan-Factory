@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, Loader2, TrendingUp, Download, BarChart2, Lock } from "lucide-react";
 import { EmployerNav } from "./EmployerDashboard";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -42,6 +43,7 @@ function bucketColor(barMin: number) {
 }
 
 export default function EmployerMembers() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [stats, setStats] = useState<CohortStats | null>(null);
   const [loading, setLoading] = useState(true);

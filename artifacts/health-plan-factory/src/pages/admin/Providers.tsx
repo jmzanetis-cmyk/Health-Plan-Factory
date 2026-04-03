@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AdminNav } from "./Dashboard";
 import { Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -18,6 +19,7 @@ interface Provider {
 }
 
 export default function AdminProviders() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,7 +210,7 @@ export default function AdminProviders() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }}>
             <div className="w-full max-w-md p-6 rounded-2xl" style={{ background: "white" }}>
               <h3 className="text-base font-semibold mb-3" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
-                Reject Provider Application
+                {t("admin.providers.reject")} Application
               </h3>
               <p className="text-sm mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
                 Optionally provide a reason for rejection.

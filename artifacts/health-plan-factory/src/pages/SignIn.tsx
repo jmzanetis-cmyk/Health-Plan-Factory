@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useTranslation } from "react-i18next";
 
 const BASE_URL = import.meta.env.BASE_URL ?? "/";
 
@@ -11,6 +12,7 @@ function getApiUrl(path: string): string {
 
 export default function SignIn() {
   const { login, isAuthenticated, isLoading, user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/dashboard";
@@ -39,10 +41,10 @@ export default function SignIn() {
             <Logo variant="auth" />
           </div>
           <h1 className="mb-2" style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-            Welcome back
+            {t("signIn.title")}
           </h1>
           <p className="text-sm font-light" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-            Sign in to your Health Plan Factory account
+            {t("signIn.sub")}
           </p>
         </div>
 
@@ -50,10 +52,10 @@ export default function SignIn() {
           {error && (
             <div className="mb-4 rounded-lg px-4 py-3 text-sm" style={{ background: "rgba(220,38,38,0.06)", color: "#b91c1c", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(220,38,38,0.15)" }}>
               {error === "github_oauth_failed"
-                ? "GitHub sign-in failed. Please try again."
+                ? t("signIn.githubError")
                 : error === "github_not_configured"
-                ? "GitHub sign-in is not available right now."
-                : "Something went wrong. Please try again."}
+                ? t("signIn.githubNotConfigured")
+                : t("signIn.genericError")}
             </div>
           )}
 
@@ -71,7 +73,7 @@ export default function SignIn() {
             {isLoading ? (
               <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
             ) : null}
-            Sign in to Health Plan Factory →
+            {t("signIn.title")} →
           </button>
 
           <div className="relative my-4">
@@ -80,7 +82,7 @@ export default function SignIn() {
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 text-xs" style={{ background: "white", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                or
+                {t("common.or")}
               </span>
             </div>
           </div>
@@ -100,7 +102,7 @@ export default function SignIn() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2Z" />
             </svg>
-            Continue with GitHub
+            {t("signIn.continueWithGitHub")}
           </button>
 
           <div className="relative my-6">
@@ -109,19 +111,18 @@ export default function SignIn() {
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 text-xs" style={{ background: "white", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                New here?
+                {t("signIn.noAccount")}
               </span>
             </div>
           </div>
 
           <p className="text-center text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-            No account needed —{" "}
             <button
               onClick={() => login()}
               className="font-semibold"
               style={{ color: "var(--hpf-crimson)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
             >
-              create one for free →
+              {t("signIn.signUp")} →
             </button>
           </p>
         </div>
@@ -129,7 +130,7 @@ export default function SignIn() {
         <p className="text-center text-xs mt-6" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
           By continuing, you agree to our{" "}
           <a href="/terms" className="no-underline" style={{ color: "var(--hpf-crimson)" }}>Terms</a>
-          {" "}and{" "}
+          {" "}{t("common.and")}{" "}
           <a href="/privacy" className="no-underline" style={{ color: "var(--hpf-crimson)" }}>Privacy Policy</a>
         </p>
       </div>

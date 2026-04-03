@@ -8,6 +8,7 @@ import { type EvidenceLevel, MODALITIES } from "@/data/modalities";
 import { NPI_CATEGORIES } from "@/data/npiCategories";
 import { Logo } from "@/components/Logo";
 import { getApiBase } from "@/lib/apiBase";
+import { useTranslation } from "react-i18next";
 
 function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; isTelehealth?: boolean }) {
   if (isTelehealth) {
@@ -24,7 +25,7 @@ function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; is
         color: "var(--sage)",
         fontFamily: "var(--app-font-sans)",
       }}>
-        🌐 Available via telehealth
+        🌐 {t("plan.availableVia")}
       </span>
     );
   }
@@ -43,7 +44,7 @@ function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; is
         color: "var(--text-muted)",
         fontFamily: "var(--app-font-sans)",
       }}>
-        📍 No local providers found
+        📍 {t("plan.noProvidersNear")}
       </span>
     );
   }
@@ -456,6 +457,7 @@ function DeprioritizedCard({ item, nearbyProviderCount }: { item: PlanItem; near
 }
 
 export default function Plan() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -1151,7 +1153,7 @@ export default function Plan() {
               fontFamily: "var(--app-font-sans)",
             }}
           >
-            Edit Inputs
+            {t("plan.editInputs")}
           </button>
           <button
             type="button"
@@ -1173,7 +1175,7 @@ export default function Plan() {
               opacity: pdfLoading ? 0.65 : 1,
             }}
           >
-            <span>{pdfLoading ? "⏳" : "⬇️"}</span> {pdfLoading ? "Generating…" : "Download PDF"}
+            <span>{pdfLoading ? "⏳" : "⬇️"}</span> {pdfLoading ? t("plan.generating") : t("plan.downloadPdf")}
           </button>
           <button
             type="button"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Building2, Plus, ChevronDown, ChevronUp, Loader2, X, Check, Pencil, Trash2 } from "lucide-react";
 import { AdminNav } from "./Dashboard";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -174,6 +175,7 @@ function EmployerForm({
 }
 
 export default function AdminEmployers() {
+  const { t } = useTranslation();
   const [employers, setEmployers] = useState<Employer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

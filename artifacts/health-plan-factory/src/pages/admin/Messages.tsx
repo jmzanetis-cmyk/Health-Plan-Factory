@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AdminNav } from "./Dashboard";
 import { Mail, MessageSquare, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -66,6 +67,7 @@ function fmtDate(d: string | null): string {
 }
 
 export default function AdminMessages() {
+  const { t } = useTranslation();
   const [data, setData] = useState<NotificationLogResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

@@ -3,20 +3,46 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, ChevronDown, LogOut, LayoutDashboard, User, Bot } from "lucide-react";
 import { Logo } from "./Logo";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
-const navLinks = [
-  { href: "/how-it-works", label: "How It Works" },
-  { href: "/modalities", label: "Modalities" },
-  { href: "/providers", label: "Find Providers" },
-  { href: "/savings-calculator", label: "HSA/FSA Calculator" },
-  { href: "/list-your-practice", label: "List Your Practice" },
-  { href: "/for-employers", label: "For Employers" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/about", label: "About" },
-];
+function LanguageSwitcher({ className = "" }: { className?: string }) {
+  const currentLang = i18n.language?.startsWith("es") ? "es" : "en";
+
+  const toggle = (lang: "en" | "es") => {
+    i18n.changeLanguage(lang);
+  };
+
+  return (
+    <div
+      className={`flex items-center gap-0.5 rounded-md overflow-hidden ${className}`}
+      style={{
+        border: "1px solid rgba(212,34,126,0.2)",
+        fontFamily: "var(--app-font-sans)",
+      }}
+    >
+      {(["en", "es"] as const).map((lang) => (
+        <button
+          key={lang}
+          onClick={() => toggle(lang)}
+          className="px-2.5 py-1 text-xs font-semibold uppercase transition-colors cursor-pointer"
+          style={{
+            background: currentLang === lang ? "var(--hpf-pink)" : "transparent",
+            color: currentLang === lang ? "white" : "var(--text-muted)",
+            border: "none",
+            letterSpacing: "0.04em",
+          }}
+        >
+          {lang}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function UserMenu({ onClose }: { onClose?: () => void }) {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -81,7 +107,7 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
               style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               <LayoutDashboard size={15} />
-              Dashboard
+              {t("nav.dashboard")}
             </button>
             <button
               onClick={() => { setOpen(false); onClose?.(); navigate("/coach"); }}
@@ -89,7 +115,7 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
               style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               <Bot size={15} />
-              Coach
+              {t("nav.coach")}
             </button>
             <button
               onClick={() => { setOpen(false); onClose?.(); navigate("/profile"); }}
@@ -97,7 +123,7 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
               style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
               <User size={15} />
-              Profile
+              {t("nav.profile")}
             </button>
             <div className="border-t mt-1" style={{ borderColor: "rgba(212,34,126,0.06)" }} />
             <button
@@ -106,7 +132,7 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
               style={{ color: "#c0392b", fontFamily: "var(--app-font-sans)" }}
             >
               <LogOut size={15} />
-              Sign out
+              {t("nav.signOut")}
             </button>
           </div>
         </>
@@ -119,6 +145,18 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { isAuthenticated, isLoading, login } = useAuth();
+  const { t } = useTranslation();
+
+  const navLinks = [
+    { href: "/how-it-works", label: t("nav.howItWorks") },
+    { href: "/modalities", label: t("nav.modalities") },
+    { href: "/providers", label: t("nav.findProviders") },
+    { href: "/savings-calculator", label: t("nav.hsaCalculator") },
+    { href: "/list-your-practice", label: t("nav.listPractice") },
+    { href: "/for-employers", label: t("nav.forEmployers") },
+    { href: "/pricing", label: t("nav.pricing") },
+    { href: "/about", label: t("nav.about") },
+  ];
 
   return (
     <>
@@ -149,8 +187,9 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* Desktop CTA */}
+        {/* Desktop CTA + Language switcher */}
         <div className="hidden md:flex items-center gap-3">
+          <LanguageSwitcher />
           {!isLoading && !isAuthenticated ? (
             <>
               <Link
@@ -158,7 +197,7 @@ export function Navbar() {
                 className="text-sm font-medium no-underline transition-colors"
                 style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
               >
-                Sign In
+                {t("nav.signIn")}
               </Link>
               <Link
                 to="/survey"
@@ -169,7 +208,7 @@ export function Navbar() {
                   boxShadow: "0 2px 8px rgba(212,34,126,0.2)",
                 }}
               >
-                Get Started →
+                {t("nav.getStarted")}
               </Link>
             </>
           ) : !isLoading ? (
@@ -215,9 +254,9 @@ export function Navbar() {
                 <button
                   onClick={() => { setMobileOpen(false); login(); }}
                   className="text-lg font-medium py-3 border-b text-left"
-                  style={{ color: "var(--text-secondary)", borderColor: "rgba(212,34,126,0.08)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}
+                  style={{ color: "var(--text-secondary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}
                 >
-                  Sign In
+                  {t("nav.signIn")}
                 </button>
                 <div className="pt-6">
                   <Link
@@ -226,7 +265,7 @@ export function Navbar() {
                     className="block w-full text-center px-6 py-3.5 rounded-lg text-base font-semibold text-white no-underline"
                     style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
                   >
-                    Get Started →
+                    {t("nav.getStarted")}
                   </Link>
                 </div>
               </>
@@ -236,6 +275,9 @@ export function Navbar() {
                 <UserMenu onClose={() => setMobileOpen(false)} />
               </div>
             )}
+            <div className="pt-4">
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
       )}

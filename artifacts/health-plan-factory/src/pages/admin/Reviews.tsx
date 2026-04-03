@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AdminNav } from "./Dashboard";
 import { Loader2, Star, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -34,6 +35,7 @@ function StarDisplay({ rating }: { rating: number }) {
 }
 
 export default function AdminReviews() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);

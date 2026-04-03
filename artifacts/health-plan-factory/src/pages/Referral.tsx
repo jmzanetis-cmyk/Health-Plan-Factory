@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Copy, Check, Gift, Users, Star, ArrowRight, Send, Trophy, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 const navy = "#2C2825";
@@ -137,6 +138,7 @@ function MilestoneBadge({
 }
 
 export default function Referral() {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -262,11 +264,11 @@ export default function Referral() {
         <div className="flex items-center gap-2 mb-1">
           <Gift size={20} style={{ color: amber }} />
           <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: navy }}>
-            Refer &amp; Earn
+            {t("referral.title")}
           </h1>
         </div>
         <p className="text-sm" style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-secondary)" }}>
-          Share HealthPlanFactory with friends and earn a referral credit for every person who joins and builds their first plan. Credits are applied as a discount on your first month of Plus.
+          {t("referral.sub")}
         </p>
       </div>
 
@@ -301,10 +303,10 @@ export default function Referral() {
           <Star size={28} style={{ color: sage, flexShrink: 0 }} />
           <div className="flex-1">
             <p className="text-sm font-semibold" style={{ color: navy, fontFamily: "var(--app-font-sans)" }}>
-              You have {data?.creditSummary.unusedCreditsFormatted} in referral credits
+              {t("referral.creditBalanceAmount", { amount: data?.creditSummary.unusedCreditsFormatted })}
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Credits are automatically applied as a discount on your first month of Plus.
+              {t("referral.creditsAppliedDesc")}
             </p>
           </div>
         </div>
@@ -313,7 +315,7 @@ export default function Referral() {
       {/* ── How It Works ───────────────────────────────────────────────────── */}
       <div className="p-6 flex flex-col gap-4" style={cardStyle}>
         <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: navy }}>
-          How it works
+          {t("referral.howItWorks")}
         </h2>
         <div className="flex flex-col gap-3">
           {[

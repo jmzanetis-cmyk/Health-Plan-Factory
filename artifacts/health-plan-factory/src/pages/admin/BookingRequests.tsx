@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Loader2, CalendarPlus, Mail, ExternalLink, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AdminNav } from "./Dashboard";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -35,6 +36,7 @@ const STATUS_COLORS: Record<BookingStatus, { bg: string; color: string }> = {
 };
 
 export default function BookingRequests() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);

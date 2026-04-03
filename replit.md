@@ -28,6 +28,7 @@ The project is structured as a pnpm monorepo, separating deployable applications
 - **Authentication:** Replit Auth via `@workspace/replit-auth-web`
 - **Styling:** Custom brand tokens (Navy, HPF Amber, Sage, Warm White), specific fonts (Cormorant Garamond, Outfit, DM Mono).
 - **Routing:** React Router v7
+- **Internationalization (i18n):** `i18next` + `react-i18next`; language key `hpf_lang` in localStorage; EN|ES toggle in Navbar. Translation files at `src/locales/en.json` + `src/locales/es.json` (1100+ keys each). All 42+ pages have `useTranslation` hook. Key namespaces: `nav`, `footer`, `landing`, `dashboard`, `coach`, `progress`, `plan`, `pricing`, `referral`, `profile`, `howItWorks`, `admin`, `employer`, `provider`, `onboarding`, `survey`, `hsaUnlock`, `savingsCalculator`, `modalityDetail`, `providerSearch`, `sharedPlan`, `common`.
 - **Key Features:**
     - **Onboarding Wizard:** A 7-step public intake process for budget, goals, conditions, preferences, exclusions, and region.
     - **Plan Engine:** A pure rules-based scorer (`src/lib/planEngine.ts`) that generates personalized wellness plans based on user input, considering budget and prioritizing modalities.

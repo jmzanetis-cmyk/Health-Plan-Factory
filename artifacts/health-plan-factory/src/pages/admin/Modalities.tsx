@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AdminNav } from "./Dashboard";
 import { Loader2, Save, X, Pencil, BookOpen, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -32,6 +33,7 @@ interface EvidenceEditState {
 }
 
 export default function AdminModalities() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);

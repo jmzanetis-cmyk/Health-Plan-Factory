@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function ForProviders() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen" style={{ background: "var(--warm-white)" }}>
       <div className="px-6 md:px-12 py-10 md:py-20" style={{ background: "var(--off-white)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}>

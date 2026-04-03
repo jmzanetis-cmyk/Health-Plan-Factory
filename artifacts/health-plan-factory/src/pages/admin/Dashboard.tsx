@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Users, Stethoscope, FileText, Clock, TrendingUp, Loader2, Gift, Percent, CreditCard, Mail, CheckCircle2, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -64,24 +65,25 @@ function ReferralStatTile({ label, value, icon, sub }: { label: string; value: s
   );
 }
 
-const navLinks = [
-  { to: "/admin/dashboard", label: "Overview" },
-  { to: "/admin/users", label: "Users" },
-  { to: "/admin/providers", label: "Providers" },
-  { to: "/admin/reviews", label: "Reviews" },
-  { to: "/admin/modalities", label: "Modalities" },
-  { to: "/admin/testimonials", label: "Testimonials" },
-  { to: "/admin/employers", label: "Employers" },
-  { to: "/admin/messages", label: "Messages" },
-  { to: "/admin/booking-requests", label: "Bookings" },
-  { to: "/admin/demo-requests", label: "Demo Leads" },
-  { to: "/admin/settings", label: "Settings" },
-];
-
 const DEMO_LEAD_REFRESH_EVENT = "demo-leads-status-changed";
 
 export function AdminNav({ active }: { active: string }) {
+  const { t } = useTranslation();
   const [demoNewCount, setDemoNewCount] = useState<number>(0);
+
+  const navLinks = [
+    { to: "/admin/dashboard", label: t("admin.nav.overview") },
+    { to: "/admin/users", label: t("admin.nav.users") },
+    { to: "/admin/providers", label: t("admin.nav.providers") },
+    { to: "/admin/reviews", label: t("admin.nav.reviews") },
+    { to: "/admin/modalities", label: t("admin.nav.modalities") },
+    { to: "/admin/testimonials", label: t("admin.nav.testimonials") },
+    { to: "/admin/employers", label: t("admin.nav.employers") },
+    { to: "/admin/messages", label: t("admin.nav.messages") },
+    { to: "/admin/booking-requests", label: t("admin.nav.bookings") },
+    { to: "/admin/demo-requests", label: t("admin.nav.demoLeads") },
+    { to: "/admin/settings", label: t("admin.nav.settings") },
+  ];
 
   const refreshDemoCount = () => {
     fetch(`${BASE}/api/admin/demo-requests?status=new`, { credentials: "include" })
@@ -535,6 +537,7 @@ function ReEngagementSection() {
 }
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<Stats | null>(null);
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
@@ -567,7 +570,7 @@ export default function AdminDashboard() {
             Admin Dashboard
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-            Platform overview and management
+            t("admin.dashboard.sub" || "{t("admin.dashboard.sub")}")
           </p>
         </div>
 
@@ -576,11 +579,11 @@ export default function AdminDashboard() {
         {/* Stat cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <StatCard label="Members" value={stats?.totalMembers ?? 0} icon={<Users size={18} />} loading={loading} to="/admin/users" />
-          <StatCard label="Providers" value={stats?.totalProviders ?? 0} icon={<Stethoscope size={18} />} loading={loading} to="/admin/providers" />
+          <StatCard label={t("admin.dashboard.totalProviders")} value={stats?.totalProviders ?? 0} icon={<Stethoscope size={18} />} loading={loading} to="/admin/providers" />
           <StatCard label="Plans" value={stats?.totalPlans ?? 0} icon={<FileText size={18} />} loading={loading} />
           <StatCard label="Pending" value={stats?.pendingProviders ?? 0} icon={<Clock size={18} />} loading={loading} to="/admin/providers" />
           <StatCard label="30d Signups" value={stats?.recentSignups ?? 0} icon={<TrendingUp size={18} />} loading={loading} />
-          <StatCard label="Modalities" value={stats?.activeModalities ?? 0} icon={<Loader2 size={18} />} loading={loading} to="/admin/modalities" />
+          <StatCard label={t("admin.dashboard.activeModalities")} value={stats?.activeModalities ?? 0} icon={<Loader2 size={18} />} loading={loading} to="/admin/modalities" />
         </div>
 
         {/* Referral program stats */}

@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Save, Loader2, Check, MapPin, Video, Phone, Globe, DollarSign, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -75,6 +76,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function ProviderProfile() {
+  const { t } = useTranslation();
   const [provider, setProvider] = useState<Provider | null>(null);
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);

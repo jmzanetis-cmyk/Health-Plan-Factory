@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { DollarSign, TrendingUp, CheckCircle, XCircle, Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const TAX_BRACKETS = [
   { label: "10%", value: 10 },
@@ -212,6 +213,7 @@ function normalizeParams(rawBudget: string | null, rawBracket: string | null) {
 }
 
 export default function SavingsCalculator() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -503,7 +505,7 @@ export default function SavingsCalculator() {
         style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-5xl mx-auto">
-          <div className="section-tag">Eligibility Breakdown</div>
+          <div className="section-tag">t("savingsCalculator.eligibilityBreakdown")</div>
           <h2
             className="mb-3"
             style={{

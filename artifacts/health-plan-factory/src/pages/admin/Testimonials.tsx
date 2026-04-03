@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AdminNav } from "./Dashboard";
 import { Loader2, Plus, Save, X, Pencil, Eye, EyeOff, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -51,6 +52,7 @@ const labelStyle = {
 };
 
 export default function AdminTestimonials() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);

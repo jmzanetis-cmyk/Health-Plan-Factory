@@ -2,88 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { TestimonialsSection } from "@/components/TestimonialsSection";
+import { useTranslation } from "react-i18next";
 
-const STAGES = [
-  {
-    num: "01",
-    emoji: "📝",
-    title: "Tell us about yourself",
-    tagline: "5 minutes · no credit card",
-    bullets: [
-      "Set your monthly wellness budget — we optimize every recommendation to it.",
-      "Choose your health goals (fitness, stress relief, sleep, chronic pain, and more).",
-      "Flag any conditions or concerns so the AI can prioritize the right modalities.",
-      "Share your location and how you prefer to engage — in-person, virtual, or both.",
-    ],
-    color: "var(--hpf-crimson)",
-    pale: "var(--crimson-pale)",
-  },
-  {
-    num: "02",
-    emoji: "⚙️",
-    title: "Your plan is assembled",
-    tagline: "AI-ranked · budget-aware",
-    bullets: [
-      "Every modality in our evidence library is scored against your goals and conditions.",
-      "The engine allocates your budget across the highest-scoring modalities — like a financial planner, but for wellness.",
-      "Modalities that don't fit your budget this cycle are kept in a 'next cycle' queue so nothing is lost.",
-      "HSA/FSA eligibility is flagged automatically for every item in your plan.",
-    ],
-    color: "var(--sage)",
-    pale: "var(--sage-pale)",
-  },
-  {
-    num: "03",
-    emoji: "🗺️",
-    title: "Discover matched providers",
-    tagline: "Local · vetted · high-intent",
-    bullets: [
-      "Local providers who match each modality in your plan are surfaced — you'll never see irrelevant listings.",
-      "Each provider card shows their specialty, session rate, HSA/FSA acceptance, and rating.",
-      "You can browse provider names, modalities, and ratings for free — contact details are locked.",
-      "Plus members see everything unlocked; Explorer members pay a small à la carte fee per reveal.",
-    ],
-    color: "#5b9bd5",
-    pale: "rgba(91,155,213,0.1)",
-  },
-  {
-    num: "04",
-    emoji: "📅",
-    title: "Unlock, book & track",
-    tagline: "Pay only for what you want",
-    bullets: [
-      "Unlock a provider's contact info with a single click — app-based $3 · wellness $5 · physician $8.",
-      "Referral credits (earned when you invite friends) can cover the unlock fee entirely.",
-      "Log sessions directly on your plan page and watch your wellness score climb over time.",
-      "Your AI accountability coach (Plus) sends nudges and helps you stay on track between sessions.",
-    ],
-    color: "var(--hpf-pink)",
-    pale: "rgba(212,34,126,0.06)",
-  },
-];
-
-const FAQS = [
-  {
-    q: "How long does the intake take?",
-    a: "About 5 minutes. There are 7 short screens: budget, goals, conditions, preferences, exclusions, location, and a final review. You can go back and change any answer before generating your plan.",
-  },
-  {
-    q: "Can I edit my plan after it's generated?",
-    a: "Yes. You can re-run the intake at any time with updated inputs — your new plan replaces the previous one. Plus members also have access to a manual routine builder where they can adjust modality frequency and budgets directly.",
-  },
-  {
-    q: "Do I need to pay anything to see my plan?",
-    a: "No. Your full personalized wellness plan — with every modality, cost estimate, and HSA/FSA flag — is completely free. You only pay when you choose to unlock a specific provider's contact information.",
-  },
-  {
-    q: "What happens when I unlock a provider?",
-    a: "You immediately see the provider's full contact details, website, and booking link. Explorer members pay a small à la carte fee per unlock ($3–$8 depending on provider type). Plus members get unlimited unlocks at no extra cost.",
-  },
-  {
-    q: "What if there are no providers near me?",
-    a: "Many modalities include telehealth or app-based options that work anywhere. If local in-person providers are sparse in your area, the plan will surface remote-friendly alternatives and flag them clearly.",
-  },
-];
+// STAGES and FAQS defined inside component for i18n
 
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
@@ -113,6 +34,55 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function HowItWorks() {
+  const { t } = useTranslation();
+
+  const STAGES = [
+    {
+      num: "01",
+      emoji: "📝",
+      title: t("howItWorks.step1.title"),
+      tagline: t("howItWorks.step1.tagline"),
+      bullets: t("howItWorks.step1.bullets", { returnObjects: true }) as string[],
+      color: "var(--hpf-crimson)",
+      pale: "var(--crimson-pale)",
+    },
+    {
+      num: "02",
+      emoji: "⚙️",
+      title: t("howItWorks.step2.title"),
+      tagline: t("howItWorks.step2.tagline"),
+      bullets: t("howItWorks.step2.bullets", { returnObjects: true }) as string[],
+      color: "var(--sage)",
+      pale: "var(--sage-pale)",
+    },
+    {
+      num: "03",
+      emoji: "🗺️",
+      title: t("howItWorks.step3.title"),
+      tagline: t("howItWorks.step3.tagline"),
+      bullets: t("howItWorks.step3.bullets", { returnObjects: true }) as string[],
+      color: "#5b9bd5",
+      pale: "rgba(91,155,213,0.1)",
+    },
+    {
+      num: "04",
+      emoji: "📅",
+      title: t("howItWorks.step4.title"),
+      tagline: t("howItWorks.step4.tagline"),
+      bullets: t("howItWorks.step4.bullets", { returnObjects: true }) as string[],
+      color: "var(--hpf-pink)",
+      pale: "rgba(212,34,126,0.06)",
+    },
+  ];
+
+  const FAQS = [
+    { q: t("howItWorks.faq.q1"), a: t("howItWorks.faq.a1") },
+    { q: t("howItWorks.faq.q2"), a: t("howItWorks.faq.a2") },
+    { q: t("howItWorks.faq.q3"), a: t("howItWorks.faq.a3") },
+    { q: t("howItWorks.faq.q4"), a: t("howItWorks.faq.a4") },
+    { q: t("howItWorks.faq.q5"), a: t("howItWorks.faq.a5") },
+  ];
+
   return (
     <div className="min-h-screen" style={{ background: "var(--warm-white)" }}>
 
@@ -132,7 +102,7 @@ export default function HowItWorks() {
           }}
         />
         <div className="max-w-3xl mx-auto relative z-10">
-          <div className="section-tag">Process</div>
+          <div className="section-tag">{t("howItWorks.hero.tag")}</div>
           <h1
             className="mb-5 leading-tight"
             style={{
@@ -143,17 +113,13 @@ export default function HowItWorks() {
               color: "var(--hpf-deep)",
             }}
           >
-            From intake to{" "}
-            <em style={{ color: "var(--hpf-crimson)" }}>wellness plan</em>
-            <br />
-            in 5 minutes.
+            {t("howItWorks.hero.headline")}
           </h1>
           <p
             className="mb-8 max-w-xl leading-relaxed"
             style={{ fontSize: "1.05rem", fontWeight: 300, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
-            HealthPlanFactory turns your budget, goals, and health conditions into a prioritized,
-            costed wellness plan — matched to vetted local providers — with no medical expertise required.
+            {t("howItWorks.hero.sub")}
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -161,14 +127,14 @@ export default function HowItWorks() {
               className="inline-flex items-center px-7 py-3.5 rounded-md text-sm font-semibold text-white no-underline"
               style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", boxShadow: "0 4px 16px rgba(212,34,126,0.2)" }}
             >
-              Build my plan free →
+              {t("howItWorks.cta.button")}
             </Link>
             <Link
               to="/modalities"
               className="inline-flex items-center px-6 py-3.5 rounded-md text-sm font-medium no-underline"
               style={{ border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
-              Browse modalities
+              {t("nav.modalities")}
             </Link>
           </div>
         </div>

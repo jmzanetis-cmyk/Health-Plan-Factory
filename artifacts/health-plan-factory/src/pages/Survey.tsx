@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
 import { GOALS } from "@/types/onboarding";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /* ── Types ── */
 export interface SurveyData {
@@ -196,6 +197,7 @@ function MultiTile({
 
 /* ── Main Survey component ── */
 export default function Survey() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);

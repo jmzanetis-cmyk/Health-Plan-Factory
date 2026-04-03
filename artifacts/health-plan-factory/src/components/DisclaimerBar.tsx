@@ -1,25 +1,26 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
-const DEFAULT_TEXT =
-  "HealthPlanFactory is a wellness optimization platform — not a medical provider, diagnostic tool, or substitute for professional medical care. This is not medical advice. For emergencies call 911. For mental health crisis call 988.";
-
 export function DisclaimerBar() {
+  const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(false);
-  const [text, setText] = useState(DEFAULT_TEXT);
+  const [customText, setCustomText] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${BASE}/api/settings/disclaimer`)
       .then((r) => r.json())
       .then((data) => {
-        if (data?.disclaimer) setText(data.disclaimer);
+        if (data?.disclaimer) setCustomText(data.disclaimer);
       })
       .catch(() => {});
   }, []);
 
   if (dismissed) return null;
+
+  const text = customText ?? t("disclaimer.defaultText");
 
   return (
     <div
@@ -32,10 +33,10 @@ export function DisclaimerBar() {
       }}
     >
       <p className="flex-1">
-        <strong className="text-white/90 font-semibold">Important:</strong>{" "}
+        <strong className="text-white/90 font-semibold">{t("disclaimer.important")}</strong>{" "}
         {text}{" "}
         <Link to="/legal" className="text-[#e84d65] underline underline-offset-2 hover:text-[#E02040] transition-colors whitespace-nowrap">
-          Full disclaimer ↓
+          {t("disclaimer.fullDisclaimer")}
         </Link>
       </p>
       <button
@@ -55,9 +56,9 @@ export function DisclaimerBar() {
           (e.target as HTMLButtonElement).style.color = "rgba(255,255,255,0.5)";
           (e.target as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)";
         }}
-        aria-label="Dismiss disclaimer"
+        aria-label={t("disclaimer.dismiss")}
       >
-        Dismiss
+        {t("disclaimer.dismiss")}
       </button>
     </div>
   );

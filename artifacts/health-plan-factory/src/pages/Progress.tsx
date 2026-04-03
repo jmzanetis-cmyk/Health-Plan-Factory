@@ -10,6 +10,7 @@ import {
 import { Loader2, Plus, CheckCircle, BadgeCheck, Sparkles, AlertTriangle, Printer, RefreshCw, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -222,6 +223,7 @@ interface UnreviewedProvider {
 }
 
 export default function Progress() {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [logs, setLogs] = useState<ProgressLog[]>([]);
@@ -370,10 +372,10 @@ export default function Progress() {
         <div className="flex items-center justify-between">
           <div>
             <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-              Progress Tracker
+              {t("progress.title")}
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Track mood, energy, pain, and overall wellness over time
+              {t("progress.trackingSub")}
             </p>
           </div>
           <button
@@ -381,7 +383,7 @@ export default function Progress() {
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white"
             style={{ background: "var(--hpf-pink)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
           >
-            <Plus size={15} /> Log Entry
+            <Plus size={15} /> {t("progress.logSession")}
           </button>
         </div>
 
@@ -420,10 +422,10 @@ export default function Progress() {
         {showForm && (
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 flex flex-col gap-5" style={cardStyle}>
             <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
-              New Wellness Log
+              {t("progress.newLogTitle")}
             </h2>
             <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Fill in one or more metrics. Use 1–10 where higher is better (except Pain, where higher = more pain).
+              {t("progress.logHint")}
             </p>
 
             <div className="flex flex-wrap items-end gap-6">
@@ -440,7 +442,7 @@ export default function Progress() {
 
             <div>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-                Notes (optional)
+                {t("progress.logNote")}
               </label>
               <textarea
                 {...register("note")}
@@ -479,7 +481,7 @@ export default function Progress() {
                 className="px-4 py-2 rounded-lg text-sm font-medium"
                 style={{ background: "none", border: "1.5px solid rgba(212,34,126,0.15)", color: "var(--hpf-pink)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
@@ -488,7 +490,7 @@ export default function Progress() {
                 style={{ background: submitting ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
               >
                 {submitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                {submitting ? "Saving..." : "Save Log"}
+                {submitting ? t("progress.loggingSession") : t("progress.submitLog")}
               </button>
             </div>
           </form>
@@ -518,7 +520,7 @@ export default function Progress() {
         {/* Chart */}
         <div className="p-6" style={cardStyle}>
           <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
-            Trends Over Time
+            {t("progress.trendsTitle")}
           </h2>
           {loading ? (
             <SkeletonBlock h={220} />
@@ -561,7 +563,7 @@ export default function Progress() {
         {/* Recent logs */}
         <div className="p-6" style={cardStyle}>
           <h2 className="text-base font-semibold mb-4" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
-            Recent Entries
+            {t("progress.recentEntries")}
           </h2>
           {loading ? (
             <div className="flex flex-col gap-2">
@@ -569,7 +571,7 @@ export default function Progress() {
             </div>
           ) : logs.length === 0 ? (
             <p className="text-sm py-6 text-center" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              No logs yet. Click "Log Entry" to start tracking.
+              {t("progress.noLogs")}
             </p>
           ) : (
             <div className="flex flex-col gap-2">
@@ -619,17 +621,17 @@ export default function Progress() {
           )}
         </div>
 
-        {/* ── Longitudinal Outcome Insights Panel ─────────────────────────── */}
+        {/* ── Longitudinal {t("progress.outcomeInsights")} Panel ─────────────────────────── */}
         <div className="p-6 flex flex-col gap-5" style={cardStyle}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <Sparkles size={18} style={{ color: "var(--sage)" }} />
               <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-deep)" }}>
-                Outcome Insights
+                {t("progress.outcomeInsights")}
               </h2>
               {insightsData?.wellnessScore != null && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(125,181,92,0.1)", color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
-                  Wellness Score: {insightsData.wellnessScore}/100
+                  {t("progress.wellnessScoreLabel", { score: insightsData.wellnessScore })}
                 </span>
               )}
             </div>

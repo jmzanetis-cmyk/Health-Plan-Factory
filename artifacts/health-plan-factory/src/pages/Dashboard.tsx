@@ -4,6 +4,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { LayoutDashboard, MapPin, TrendingUp, Plus, ArrowRight, Loader2, DollarSign, Sparkles, AlertTriangle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -84,6 +85,7 @@ function SkeletonBlock({ h = 16, w = "100%" }: { h?: number; w?: string }) {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -237,10 +239,10 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-              Good day, {firstName}.
+              {t("dashboard.welcomeBack", { name: firstName })}
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Your wellness dashboard
+              {t("dashboard.sub")}
             </p>
           </div>
           <Link
@@ -248,7 +250,7 @@ export default function Dashboard() {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white no-underline"
             style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
           >
-            <Plus size={15} /> Build New Plan
+            <Plus size={15} /> {t("dashboard.buildPlan")}
           </Link>
         </div>
 
