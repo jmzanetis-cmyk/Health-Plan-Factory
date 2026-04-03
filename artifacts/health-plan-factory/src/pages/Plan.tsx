@@ -1008,7 +1008,9 @@ export default function Plan() {
         // Reset feedback for the new plan
         setModalityFeedback({});
         feedbackLoadedRef.current = false;
-        // Update session storage with new plan
+        // Clear cached plan so a page refresh hydrates from DB (not stale session)
+        sessionStorage.removeItem("hpf_plan");
+        sessionStorage.removeItem("hpf_plan_saved");
         sessionStorage.setItem("hpf_plan_id", data.plan.id);
       }
 
