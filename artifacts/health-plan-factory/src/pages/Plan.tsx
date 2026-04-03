@@ -632,6 +632,14 @@ export default function Plan() {
       .catch(() => {});
   }, [authLoading, isAuthenticated]);
 
+  // Reset feedback-load gate whenever planId changes from external navigation,
+  // ensuring hydration always runs for the currently displayed plan.
+  const prevPlanIdRef = useRef<string | null>(null);
+  if (planId && planId !== prevPlanIdRef.current) {
+    prevPlanIdRef.current = planId;
+    feedbackLoadedRef.current = false;
+  }
+
   // Load existing modality feedback from API once planId is known
   useEffect(() => {
     if (!planId || !isAuthenticated || feedbackLoadedRef.current) return;
