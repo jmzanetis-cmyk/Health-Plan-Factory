@@ -1541,7 +1541,19 @@
       "subscribeBtn": "Suscribirse — $29/mes →",
       "stripeNote": "Protegido por Stripe. Tu publicación se activa después de la aprobación del administrador — no se te cobrará hasta entonces.",
       "foundingBadge": "Programa de Proveedor Fundador:",
-      "foundingDesc": "Los proveedores que se unan durante nuestro período de acceso anticipado pagan 0% de comisión en reservas durante 90 días. Después se aplica una pequeña tarifa de plataforma. Cupos limitados."
+      "foundingDesc": "Los proveedores que se unan durante nuestro período de acceso anticipado pagan 0% de comisión en reservas durante 90 días. Después se aplica una pequeña tarifa de plataforma. Cupos limitados.",
+      "errors": {
+        "nameRequired": "Se requiere nombre del consultorio o proveedor",
+        "urlInvalid": "Ingresa una URL válida",
+        "cityRequired": "Ciudad requerida",
+        "stateRequired": "Estado requerido",
+        "zipRequired": "Código postal de 5 dígitos requerido",
+        "serviceFormatRequired": "Selecciona al menos un formato de servicio",
+        "bioLength": "Por favor escribe al menos 30 caracteres",
+        "modalityRequired": "Selecciona al menos una modalidad",
+        "submissionFailed": "Error al enviar",
+        "paymentSetupFailed": "Error al configurar el pago"
+      }
     },
     "leads": {
       "title": "Mis Leads",

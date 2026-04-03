@@ -11,43 +11,36 @@ import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
-const step1Schema = z.object({
-  name: z.string().min(2, "Practice or provider name required"),
-  phone: z.string().optional(),
-  website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
-  credentials: z.string().optional(),
-  licenseNumber: z.string().optional(),
-  licenseState: z.string().optional(),
-});
-
-const step2Schema = z.object({
-  city: z.string().min(1, "City required"),
-  state: z.string().min(2, "State required"),
-  zipCode: z.string().regex(/^\d{5}$/, "5-digit ZIP required"),
-  serviceRadiusMiles: z.coerce.number().min(0).max(500).optional(),
-  offersTelehealth: z.boolean(),
-  offersInPerson: z.boolean(),
-  availabilityNotes: z.string().max(300).optional(),
-}).refine((d) => d.offersTelehealth || d.offersInPerson, {
-  message: "Select at least one service format",
-  path: ["offersTelehealth"],
-});
-
 const modalityPricingSchema = z.object({
   costMin: z.coerce.number().min(0).max(10000).optional(),
   costMax: z.coerce.number().min(0).max(10000).optional(),
 });
 
-const step3Schema = z.object({
-  bio: z.string().min(30, "Please write at least 30 characters").max(800),
-  modalityIds: z.array(z.string()).min(1, "Select at least one modality"),
-  modalityPricing: z.record(z.string(), modalityPricingSchema).optional(),
-  acceptsInsurance: z.boolean(),
-});
+interface Step1 {
+  name: string;
+  phone?: string;
+  website?: string;
+  credentials?: string;
+  licenseNumber?: string;
+  licenseState?: string;
+}
 
-type Step1 = z.infer<typeof step1Schema>;
-type Step2 = z.infer<typeof step2Schema>;
-type Step3 = z.infer<typeof step3Schema>;
+interface Step2 {
+  city: string;
+  state: string;
+  zipCode: string;
+  serviceRadiusMiles?: number;
+  offersTelehealth: boolean;
+  offersInPerson: boolean;
+  availabilityNotes?: string;
+}
+
+interface Step3 {
+  bio: string;
+  modalityIds: string[];
+  modalityPricing?: Record<string, { costMin?: number; costMax?: number }>;
+  acceptsInsurance: boolean;
+}
 
 interface Modality {
   id: string;
@@ -102,6 +95,35 @@ export default function ProviderSignup() {
       .catch(() => {});
   }, []);
 
+  const step1Schema = z.object({
+    name: z.string().min(2, t("provider.signup.errors.nameRequired")),
+    phone: z.string().optional(),
+    website: z.string().url(t("provider.signup.errors.urlInvalid")).optional().or(z.literal("")),
+    credentials: z.string().optional(),
+    licenseNumber: z.string().optional(),
+    licenseState: z.string().optional(),
+  });
+
+  const step2Schema = z.object({
+    city: z.string().min(1, t("provider.signup.errors.cityRequired")),
+    state: z.string().min(2, t("provider.signup.errors.stateRequired")),
+    zipCode: z.string().regex(/^\d{5}$/, t("provider.signup.errors.zipRequired")),
+    serviceRadiusMiles: z.coerce.number().min(0).max(500).optional(),
+    offersTelehealth: z.boolean(),
+    offersInPerson: z.boolean(),
+    availabilityNotes: z.string().max(300).optional(),
+  }).refine((d) => d.offersTelehealth || d.offersInPerson, {
+    message: t("provider.signup.errors.serviceFormatRequired"),
+    path: ["offersTelehealth"],
+  });
+
+  const step3Schema = z.object({
+    bio: z.string().min(30, t("provider.signup.errors.bioLength")).max(800),
+    modalityIds: z.array(z.string()).min(1, t("provider.signup.errors.modalityRequired")),
+    modalityPricing: z.record(z.string(), modalityPricingSchema).optional(),
+    acceptsInsurance: z.boolean(),
+  });
+
   const form1 = useForm<Step1>({ resolver: zodResolver(step1Schema), defaultValues: formData });
   const form2 = useForm<Step2>({ resolver: zodResolver(step2Schema), defaultValues: { offersTelehealth: false, offersInPerson: true, serviceRadiusMiles: 25, ...formData } });
   const form3 = useForm<Step3>({ resolver: zodResolver(step3Schema), defaultValues: { acceptsInsurance: false, modalityIds: [], ...formData } });
@@ -145,7 +167,7 @@ export default function ProviderSignup() {
       setStep(3);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: unknown) {
-      setSubmitError(e instanceof Error ? e.message : "Submission failed");
+      setSubmitError(e instanceof Error ? e.message : t("provider.signup.errors.submissionFailed"));
       setSubmitting(false);
     }
   };
@@ -168,7 +190,7 @@ export default function ProviderSignup() {
         throw new Error(data.error ?? "Unexpected response from payment server");
       }
     } catch (e: unknown) {
-      setSubmitError(e instanceof Error ? e.message : "Payment setup failed");
+      setSubmitError(e instanceof Error ? e.message : t("provider.signup.errors.paymentSetupFailed"));
     } finally {
       setCheckoutLoading(false);
     }

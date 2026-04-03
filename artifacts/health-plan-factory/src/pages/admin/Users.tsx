@@ -16,7 +16,7 @@ interface UserProfile {
 type SortKey = "displayName" | "role" | "createdAt";
 
 export default function AdminUsers() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
@@ -148,7 +148,7 @@ export default function AdminUsers() {
                           </span>
                         </td>
                         <td className="px-3 py-3 text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                          {new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          {new Date(u.createdAt).toLocaleDateString(i18n.language === "es" ? "es-ES" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </td>
                       </tr>
                     ))

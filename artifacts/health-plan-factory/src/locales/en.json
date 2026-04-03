@@ -1541,7 +1541,19 @@
       "subscribeBtn": "Subscribe — $29/month →",
       "stripeNote": "Secured by Stripe. Your listing activates after admin approval — you won't be charged until then.",
       "foundingBadge": "Founding Provider Program:",
-      "foundingDesc": "Providers who join during our early access period pay 0% commission on bookings for 90 days. After that, a small platform fee applies. Limited spots available."
+      "foundingDesc": "Providers who join during our early access period pay 0% commission on bookings for 90 days. After that, a small platform fee applies. Limited spots available.",
+      "errors": {
+        "nameRequired": "Practice or provider name required",
+        "urlInvalid": "Enter a valid URL",
+        "cityRequired": "City required",
+        "stateRequired": "State required",
+        "zipRequired": "5-digit ZIP required",
+        "serviceFormatRequired": "Select at least one service format",
+        "bioLength": "Please write at least 30 characters",
+        "modalityRequired": "Select at least one modality",
+        "submissionFailed": "Submission failed",
+        "paymentSetupFailed": "Payment setup failed"
+      }
     },
     "leads": {
       "title": "My Leads",
