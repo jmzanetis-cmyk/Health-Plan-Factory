@@ -116,7 +116,7 @@ export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseM
           ) : offeringsError ? (
             <View style={styles.errorWrap}>
               <Feather name="alert-circle" size={18} color={COLORS.amber} />
-              <Text style={styles.errorText}>Could not load plans. Check your connection.</Text>
+              <Text style={styles.errorText}>Could not load plans. Check your connection and try again.</Text>
               <TouchableOpacity style={styles.retryBtn} onPress={() => refetchOfferings()} activeOpacity={0.8}>
                 <Text style={styles.retryBtnText}>Try Again</Text>
               </TouchableOpacity>
@@ -129,9 +129,9 @@ export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseM
           ) : (
             <View style={styles.errorWrap}>
               <Feather name="alert-circle" size={18} color={COLORS.textMuted} />
-              <Text style={styles.errorText}>No plans available. Try again later or upgrade on the web.</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={handleWebFallback} activeOpacity={0.8}>
-                <Text style={styles.retryBtnText}>Open Web →</Text>
+              <Text style={styles.errorText}>No plans available at this time. Please try again later.</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => refetchOfferings()} activeOpacity={0.8}>
+                <Text style={styles.retryBtnText}>Retry</Text>
               </TouchableOpacity>
             </View>
           )}
