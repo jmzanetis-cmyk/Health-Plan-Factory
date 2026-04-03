@@ -152,6 +152,7 @@ interface DigestPreview {
 }
 
 function TestDigestSection() {
+  const { t } = useTranslation();
   const [memberId, setMemberId] = useState("");
   const [sending, setSending] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -210,16 +211,16 @@ function TestDigestSection() {
         <div className="flex items-center gap-2 mb-4">
           <Mail size={18} style={{ color: "var(--hpf-crimson)" }} />
           <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
-            Weekly Digest — Preview &amp; Test
+            {t("admin.digest.title")}
           </h2>
         </div>
         <p className="text-sm mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-          Preview the digest for any member before sending. Leave the Member ID blank to use your own account.
+          {t("admin.digest.sub")}
         </p>
         <div className="flex gap-3 flex-wrap items-center mb-3">
           <input
             type="text"
-            placeholder="Member ID (optional — leave blank for self)"
+            placeholder={t("admin.digest.memberIdPlaceholder")}
             value={memberId}
             onChange={(e) => setMemberId(e.target.value)}
             style={{
@@ -256,7 +257,7 @@ function TestDigestSection() {
             }}
           >
             {previewing && <Loader2 size={14} className="animate-spin" />}
-            Preview Digest
+            {t("admin.digest.previewButton")}
           </button>
           <button
             onClick={sendTest}
@@ -278,7 +279,7 @@ function TestDigestSection() {
             }}
           >
             {sending && <Loader2 size={14} className="animate-spin" />}
-            Send Test Email
+            {t("admin.digest.sendTestButton")}
           </button>
         </div>
         {previewError && (
@@ -288,7 +289,7 @@ function TestDigestSection() {
         )}
         {sendResult?.ok && (
           <div className="flex items-center gap-2 text-sm mt-1" style={{ color: "#16a34a", fontFamily: "var(--app-font-sans)" }}>
-            <CheckCircle2 size={15} /> Test digest sent to <strong>{sendResult.sentTo}</strong>
+            <CheckCircle2 size={15} /> {t("admin.digest.sentTo", { email: sendResult.sentTo })}
           </div>
         )}
         {sendResult?.ok === false && (
@@ -372,6 +373,7 @@ type BulkResult = { sent: number; failed: number; skipped: number; errors: numbe
 type SingleResult = { result: "sent" | "failed" | "skipped" | "no-plan" | "no-email" | "member-not-found"; memberId: string; day: number } | null;
 
 function ReEngagementSection() {
+  const { t } = useTranslation();
   const [memberId, setMemberId] = useState("");
   const [singleDay, setSingleDay] = useState<3 | 7>(3);
   const [sendingSingle, setSendingSingle] = useState(false);
@@ -404,7 +406,7 @@ function ReEngagementSection() {
   };
 
   const runBulk = async (day: 3 | 7) => {
-    if (!window.confirm(`Send day-${day} re-engagement emails to ALL eligible non-Plus members. Continue?`)) return;
+    if (!window.confirm(t("admin.reEngagement.bulkConfirm", { day }))) return;
     setRunningBulk(day);
     setBulkResult(null);
     setBulkError(null);
@@ -439,23 +441,22 @@ function ReEngagementSection() {
       <div className="flex items-center gap-2 mb-4">
         <Mail size={18} style={{ color: "var(--hpf-crimson)" }} />
         <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
-          Re-engagement Drip Emails
+          {t("admin.reEngagement.title")}
         </h2>
       </div>
       <p className="text-sm mb-5" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-        Send plan-summary (Day 3) or provider-nudge (Day 7) emails to members who haven't converted to Plus.
-        One-time send per member per type — duplicates are automatically skipped.
+        {t("admin.reEngagement.sub")}
       </p>
 
       {/* Single member send */}
       <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
         <p className="text-xs font-semibold mb-3" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Test — Single Member
+          {t("admin.reEngagement.testTitle")}
         </p>
         <div className="flex gap-3 flex-wrap items-center">
           <input
             type="text"
-            placeholder="Member ID (required)"
+            placeholder={t("admin.reEngagement.memberIdPlaceholder")}
             value={memberId}
             onChange={(e) => setMemberId(e.target.value)}
             style={{ flex: 1, minWidth: 220, border: "1.5px solid rgba(212,34,126,0.18)", borderRadius: 8, padding: "9px 14px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-primary)", outline: "none" }}
@@ -465,8 +466,8 @@ function ReEngagementSection() {
             onChange={(e) => setSingleDay(Number(e.target.value) as 3 | 7)}
             style={{ border: "1.5px solid rgba(212,34,126,0.18)", borderRadius: 8, padding: "9px 12px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-primary)", background: "white", cursor: "pointer" }}
           >
-            <option value={3}>Day 3 — Plan Summary</option>
-            <option value={7}>Day 7 — Provider Nudge</option>
+            <option value={3}>{t("admin.reEngagement.day3Option")}</option>
+            <option value={7}>{t("admin.reEngagement.day7Option")}</option>
           </select>
           <button
             onClick={sendSingle}
@@ -474,7 +475,7 @@ function ReEngagementSection() {
             style={{ background: "var(--hpf-pink)", color: "white", border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: sendingSingle || !memberId.trim() ? "not-allowed" : "pointer", opacity: sendingSingle || !memberId.trim() ? 0.6 : 1, display: "flex", alignItems: "center", gap: 6 }}
           >
             {sendingSingle ? <Loader2 size={14} className="animate-spin" /> : null}
-            Send Test
+            {t("admin.reEngagement.sendTestButton")}
           </button>
         </div>
         {singleResult && (
@@ -493,10 +494,10 @@ function ReEngagementSection() {
       {/* Bulk send */}
       <div className="p-4 rounded-xl" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
         <p className="text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Bulk Send — All Eligible Non-Plus Members
+          {t("admin.reEngagement.bulkTitle")}
         </p>
         <p className="text-xs mb-3" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-          Targets members whose latest plan was created ≥ N days ago with no prior send of that type.
+          {t("admin.reEngagement.bulkSub")}
         </p>
         <div className="flex gap-3 flex-wrap items-center">
           <button
@@ -505,7 +506,7 @@ function ReEngagementSection() {
             style={{ background: "#1a2a3a", color: "white", border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: runningBulk !== null ? "not-allowed" : "pointer", opacity: runningBulk !== null ? 0.6 : 1, display: "flex", alignItems: "center", gap: 6 }}
           >
             {runningBulk === 3 ? <Loader2 size={14} className="animate-spin" /> : null}
-            Run day-3 drip
+            {t("admin.reEngagement.runDay3")}
           </button>
           <button
             onClick={() => runBulk(7)}
@@ -513,13 +514,13 @@ function ReEngagementSection() {
             style={{ background: "#1a2a3a", color: "white", border: "none", borderRadius: 8, padding: "9px 20px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: runningBulk !== null ? "not-allowed" : "pointer", opacity: runningBulk !== null ? 0.6 : 1, display: "flex", alignItems: "center", gap: 6 }}
           >
             {runningBulk === 7 ? <Loader2 size={14} className="animate-spin" /> : null}
-            Run day-7 drip
+            {t("admin.reEngagement.runDay7")}
           </button>
         </div>
         {bulkResult && (
           <div className="mt-3 p-3 rounded-lg" style={{ background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-primary)" }}>
             <div className="flex items-center gap-2 mb-1" style={{ color: "#16a34a", fontWeight: 600 }}>
-              <CheckCircle2 size={14} /> Bulk run complete — Day {bulkResult.day}
+              <CheckCircle2 size={14} /> {t("admin.reEngagement.bulkComplete", { day: bulkResult.day })}
             </div>
             <div style={{ color: "var(--text-secondary)" }}>
               {bulkResult.sent} sent · {bulkResult.failed > 0 ? `${bulkResult.failed} provider errors · ` : ""}{bulkResult.skipped} skipped · {bulkResult.errors} errors · {bulkResult.total} eligible

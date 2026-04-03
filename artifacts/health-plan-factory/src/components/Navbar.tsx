@@ -4,41 +4,7 @@ import { Menu, X, ChevronDown, LogOut, LayoutDashboard, User, Bot } from "lucide
 import { Logo } from "./Logo";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n";
-
-function LanguageSwitcher({ className = "" }: { className?: string }) {
-  const currentLang = i18n.language?.startsWith("es") ? "es" : "en";
-
-  const toggle = (lang: "en" | "es") => {
-    i18n.changeLanguage(lang);
-  };
-
-  return (
-    <div
-      className={`flex items-center gap-0.5 rounded-md overflow-hidden ${className}`}
-      style={{
-        border: "1px solid rgba(212,34,126,0.2)",
-        fontFamily: "var(--app-font-sans)",
-      }}
-    >
-      {(["en", "es"] as const).map((lang) => (
-        <button
-          key={lang}
-          onClick={() => toggle(lang)}
-          className="px-2.5 py-1 text-xs font-semibold uppercase transition-colors cursor-pointer"
-          style={{
-            background: currentLang === lang ? "var(--hpf-pink)" : "transparent",
-            color: currentLang === lang ? "white" : "var(--text-muted)",
-            border: "none",
-            letterSpacing: "0.04em",
-          }}
-        >
-          {lang}
-        </button>
-      ))}
-    </div>
-  );
-}
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 function UserMenu({ onClose }: { onClose?: () => void }) {
   const { user, logout } = useAuth();

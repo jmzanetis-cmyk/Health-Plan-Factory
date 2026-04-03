@@ -297,7 +297,8 @@
     "cta": {
       "headline": "Start your wellness plan.",
       "button": "Build My Plan — Free →"
-    }
+    },
+    "testimonialTag": "What members say"
   },
   "faq": {
     "tag": "FAQ",
@@ -446,7 +447,8 @@
     "buildingPlan": "Building your plan…",
     "planReady": "Your plan is ready!",
     "saveExit": "Save & Exit",
-    "stepCounter": "Step {{current}} of {{total}}"
+    "stepCounter": "Step {{current}} of {{total}}",
+    "disclaimer": "Health Plan Factory is a wellness optimization tool — not a medical provider. In a crisis, call 911 or 988."
   },
   "dashboard": {
     "title": "My Dashboard",
@@ -776,7 +778,8 @@
       "employer-hr": "Employer / HR",
       "referral": "Referral from a provider",
       "other": "Other"
-    }
+    },
+    "skip": "Skip survey"
   },
   "profile": {
     "title": "My Profile",
@@ -976,6 +979,29 @@
       "email": "Email",
       "date": "Date",
       "noLeads": "No demo leads found."
+    },
+    "digest": {
+      "title": "Weekly Digest — Preview & Test",
+      "sub": "Preview the digest for any member before sending. Leave the Member ID blank to use your own account.",
+      "memberIdPlaceholder": "Member ID (optional — leave blank for self)",
+      "previewButton": "Preview Digest",
+      "sendTestButton": "Send Test",
+      "sentTo": "Test digest sent to {{email}}"
+    },
+    "reEngagement": {
+      "title": "Re-engagement Drip Emails",
+      "sub": "Send plan-summary (Day 3) or provider-nudge (Day 7) emails to members who have not converted to Plus. One-time send per member per type — duplicates are automatically skipped.",
+      "testTitle": "Test — Single Member",
+      "memberIdPlaceholder": "Member ID (required)",
+      "day3Option": "Day 3 — Plan Summary",
+      "day7Option": "Day 7 — Provider Nudge",
+      "sendTestButton": "Send Test",
+      "bulkTitle": "Bulk Send — All Eligible Non-Plus Members",
+      "bulkSub": "Targets members whose latest plan was created ≥ N days ago with no prior send of that type.",
+      "runDay3": "Run day-3 drip",
+      "runDay7": "Run day-7 drip",
+      "bulkComplete": "Bulk run complete — Day {{day}}",
+      "bulkConfirm": "Send day-{{day}} re-engagement emails to ALL eligible non-Plus members. Continue?"
     }
   },
   "employer": {
@@ -995,34 +1021,87 @@
       "viewROI": "View ROI Report →"
     },
     "members": {
-      "title": "Team Members",
-      "searchPlaceholder": "Search members…",
-      "name": "Name",
-      "email": "Email",
-      "planStatus": "Plan Status",
-      "budget": "Budget",
-      "joined": "Joined",
-      "noMembers": "No members enrolled yet."
+      "title": "Coverage Analytics",
+      "sub": "Aggregate utilization insights across your enrolled cohort",
+      "exportBtn": "Export Summary",
+      "privacyNotice": "All data is aggregate-only. No individual employee identifiers or personal health information are disclosed.",
+      "privacySuppressed": "Utilization metrics are suppressed until at least 5 employees have enrolled (privacy protection).",
+      "kpi": {
+        "enrollmentRate": "Enrollment Rate",
+        "enrollmentSub": "{{enrolled}} of {{contracted}} contracted",
+        "avgUtilization": "Avg Utilization",
+        "utilizationSub": "of monthly stipend used",
+        "suppressed": "Suppressed (<5 members)",
+        "avgBudget": "Avg Monthly Budget",
+        "avgSpend": "Avg Monthly Spend",
+        "perEmployee": "per enrolled employee"
+      },
+      "emptyTitle": "No enrolled members yet",
+      "emptySub": "Share the invite code from your dashboard to enroll employees.",
+      "utilizationDist": "Utilization Distribution",
+      "monthlyEnrollment": "Monthly Enrollment",
+      "employeeOne": "employee",
+      "employeeOther": "employees",
+      "cohortNote": "Cohort of {{count}} enrolled employees (min. 5 required to display individual buckets)",
+      "enrollmentNote": "New enrollments per calendar month (last 6 months)",
+      "noTrendData": "No trend data yet."
     },
     "roi": {
-      "title": "ROI Report",
-      "sub": "Track the health and financial impact of your wellness benefit.",
-      "enrollmentRate": "Enrollment Rate",
-      "planAdoption": "Plan Adoption",
-      "avgBudgetUsed": "Avg Budget Used",
-      "estimatedSavings": "Estimated Savings",
-      "printReport": "Print Report",
-      "noData": "Not enough data to generate an ROI report yet."
+      "title": "ROI & Benchmarks",
+      "wellnessTrend": {
+        "heading": "Wellness Score Trend",
+        "sub": "Average employee wellness rating month-over-month (scale 1–10)",
+        "suppressedMsg": "Data available once 5+ employees enroll",
+        "noDataMsg": "No wellness ratings logged yet. Encourage employees to log sessions!",
+        "avgScore": "Avg Score",
+        "target7": "Target 7"
+      },
+      "benchmark": {
+        "heading": "Industry Benchmark",
+        "sub": "Your company vs. anonymized platform-wide averages",
+        "sampleNote": "(n = {{n}} employees)",
+        "suppressedMsg": "Available once 5+ employees enroll",
+        "vsPlatform": "vs platform",
+        "yourCompany": "Your Company",
+        "platformAvg": "Platform Avg",
+        "avgWellness": "Avg Wellness Score",
+        "utilRate": "Stipend Utilization Rate",
+        "privacyNote": "Platform averages are anonymized aggregate data from employers with 5+ enrolled members. No individual or company-level data is shared."
+      },
+      "calculator": {
+        "heading": "ROI Calculator",
+        "sub": "Estimate your program's financial return using industry research averages. Edit inputs to match your organization.",
+        "enrolledEmployees": "Enrolled Employees",
+        "avgSalary": "Avg Annual Salary",
+        "sickDaysReduced": "Sick Days Reduced / Year",
+        "sickDaysHint": "RAND 2013: ~2 days avg",
+        "productivityPct": "Productivity Gain %",
+        "productivityHint": "HBR 2010: ~2.5% avg",
+        "annualStipend": "Annual Stipend Spend",
+        "annualStipendSuffix": "(total)",
+        "sickDaySavings": "Sick-Day Savings",
+        "sickDaySub": "{{days}} days × {{employees}} employees",
+        "productivityGain": "Productivity Gain",
+        "productivitySub": "{{pct}}% of payroll recovered",
+        "totalValue": "Total Annual Value",
+        "totalValueSub": "combined program benefit",
+        "netROI": "Net ROI",
+        "netROISub": "vs. stipend investment",
+        "disclaimer": "Disclaimer: All inputs are editable to reflect your organization's actual data. Research-based defaults: Sick-day reduction default (2.0 days/yr): RAND Corporation, Wellness Programs in the Workplace (2013). Productivity gain default (2.5%): Berry, Mirabito & Baun (2010), Harvard Business Review. Estimates are illustrative — actual results vary by organization, demographics, and program engagement."
+      },
+      "sub": "Measure the return on your wellness investment with trend data, benchmarks, and research-backed estimates."
     },
     "settings": {
-      "title": "Employer Settings",
-      "companyName": "Company Name",
-      "monthlyBudget": "Monthly Budget Per Member",
-      "inviteCode": "Invite Code",
-      "status": "Program Status",
-      "save": "Save Settings",
-      "saving": "Saving…",
-      "saved": "Settings saved!"
+      "title": "Coverage Rules",
+      "sub": "Choose which wellness modalities your stipend covers. {{covered}}/{{total}} covered.",
+      "allOn": "All On",
+      "allOff": "All Off",
+      "save": "Save Rules",
+      "saved": "Saved!",
+      "covered": "covered",
+      "hsaEligible": "HSA eligible",
+      "footer": "Coverage rules apply to new stipend reimbursements. Existing claims are not affected. Changes take effect immediately.",
+      "saveFail": "Failed to save — please try again"
     },
     "setupBilling": "Setup Billing",
     "inviteCode": "Employee Invite Code",
@@ -1193,7 +1272,26 @@
       "sub": "Per-seat. No usage fees. No per-approval admin overhead.",
       "perEmployee": "per employee/month · annual billing",
       "contactPricing": "contact us for pricing",
-      "pricingNote": "Pricing shown is indicative. Final pricing confirmed during demo call. Annual billing required. Minimum 10 seats."
+      "pricingNote": "Pricing shown is indicative. Final pricing confirmed during demo call. Annual billing required. Minimum 10 seats.",
+      "tiers": {
+        "starter": {
+          "name": "Starter",
+          "seats": "10–49 employees",
+          "cta": "Request demo"
+        },
+        "growth": {
+          "name": "Growth",
+          "seats": "50–199 employees",
+          "cta": "Request demo"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "price": "Custom",
+          "seats": "200+ employees",
+          "cta": "Contact us",
+          "pricingNote": "contact us for pricing"
+        }
+      }
     },
     "demo": {
       "title": "Request a demo",

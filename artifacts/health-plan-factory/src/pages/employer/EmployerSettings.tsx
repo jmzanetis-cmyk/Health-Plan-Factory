@@ -57,7 +57,6 @@ export default function EmployerSettings() {
             ruleMap[r.modalityId] = r.covered;
           }
         }
-        // Default: all covered
         if (Array.isArray(mods)) {
           for (const m of mods as Modality[]) {
             if (!(m.id in ruleMap)) ruleMap[m.id] = true;
@@ -92,7 +91,7 @@ export default function EmployerSettings() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
-      setError("Failed to save — please try again");
+      setError(t("employer.settings.saveFail"));
     } finally {
       setSaving(false);
     }
@@ -106,17 +105,19 @@ export default function EmployerSettings() {
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 8 }}>
           <div>
-            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.8rem", fontWeight: 700, color: navy, margin: 0 }}>Coverage Rules</h1>
+            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.8rem", fontWeight: 700, color: navy, margin: 0 }}>
+              {t("employer.settings.title")}
+            </h1>
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", margin: 0, marginTop: 4 }}>
-              Choose which wellness modalities your stipend covers. {coveredCount}/{modalities.length} covered.
+              {t("employer.settings.sub", { covered: coveredCount, total: modalities.length })}
             </p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button onClick={() => toggleAll(true)} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy }}>
-              All On
+              {t("employer.settings.allOn")}
             </button>
             <button onClick={() => toggleAll(false)} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy }}>
-              All Off
+              {t("employer.settings.allOff")}
             </button>
             <button
               onClick={save}
@@ -139,7 +140,7 @@ export default function EmployerSettings() {
               }}
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              {saved ? "Saved!" : "Save Rules"}
+              {saved ? t("employer.settings.saved") : t("employer.settings.save")}
             </button>
           </div>
         </div>
@@ -167,7 +168,7 @@ export default function EmployerSettings() {
                       {cat}
                     </h3>
                     <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-muted)" }}>
-                      {catMods.filter((m) => rules[m.id] !== false).length}/{catMods.length} covered
+                      {catMods.filter((m) => rules[m.id] !== false).length}/{catMods.length} {t("employer.settings.covered")}
                     </span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
@@ -198,7 +199,7 @@ export default function EmployerSettings() {
                             <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, color: navy }}>{m.name}</div>
                             {m.hsaEligible && (
                               <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, color: sage, fontWeight: 600, marginTop: 2 }}>
-                                HSA eligible
+                                {t("employer.settings.hsaEligible")}
                               </div>
                             )}
                           </div>
@@ -231,7 +232,7 @@ export default function EmployerSettings() {
 
         <div style={{ marginTop: 28, background: "rgba(125,181,92,0.06)", border: "1px solid rgba(125,181,92,0.2)", borderRadius: 10, padding: "14px 18px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, display: "flex", alignItems: "center", gap: 10 }}>
           <ShieldCheck size={16} />
-          Coverage rules apply to new stipend reimbursements. Existing claims are not affected. Changes take effect immediately.
+          {t("employer.settings.footer")}
         </div>
       </div>
     </div>

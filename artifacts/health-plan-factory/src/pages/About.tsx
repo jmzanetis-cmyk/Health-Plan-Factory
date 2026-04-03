@@ -202,7 +202,7 @@ export default function About() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <TestimonialsSection sectionTag="What members say" />
+      <TestimonialsSection sectionTag={t("about.testimonialTag")} />
 
       {/* ── INVITE (bottom) ── */}
       <section

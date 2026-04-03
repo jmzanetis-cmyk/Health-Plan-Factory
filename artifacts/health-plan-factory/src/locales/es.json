@@ -297,7 +297,8 @@
     "cta": {
       "headline": "Comienza tu plan de bienestar.",
       "button": "Crear Mi Plan — Gratis →"
-    }
+    },
+    "testimonialTag": "Lo que dicen los miembros"
   },
   "faq": {
     "tag": "Preguntas Frecuentes",
@@ -446,7 +447,8 @@
     "buildingPlan": "Creando tu plan…",
     "planReady": "¡Tu plan está listo!",
     "saveExit": "Guardar y Salir",
-    "stepCounter": "Paso {{current}} de {{total}}"
+    "stepCounter": "Paso {{current}} de {{total}}",
+    "disclaimer": "Health Plan Factory es una herramienta de optimización de bienestar — no un proveedor médico. En caso de crisis, llama al 911 o al 988."
   },
   "dashboard": {
     "title": "Mi Panel",
@@ -776,7 +778,8 @@
       "employer-hr": "Empleador / Recursos Humanos",
       "referral": "Referido de un proveedor",
       "other": "Otro"
-    }
+    },
+    "skip": "Omitir encuesta"
   },
   "profile": {
     "title": "Mi Perfil",
@@ -976,6 +979,29 @@
       "email": "Correo",
       "date": "Fecha",
       "noLeads": "No se encontraron solicitudes de demo."
+    },
+    "digest": {
+      "title": "Digest Semanal — Vista Previa y Prueba",
+      "sub": "Previsualiza el digest para cualquier miembro antes de enviarlo. Deja el ID de miembro en blanco para usar tu propia cuenta.",
+      "memberIdPlaceholder": "ID de miembro (opcional — vacío para ti mismo)",
+      "previewButton": "Vista Previa",
+      "sendTestButton": "Enviar Prueba",
+      "sentTo": "Digest de prueba enviado a {{email}}"
+    },
+    "reEngagement": {
+      "title": "Correos de Reenganche",
+      "sub": "Envía correos de resumen de plan (Día 3) o empuje de proveedor (Día 7) a miembros que no se han convertido a Plus.",
+      "testTitle": "Prueba — Miembro Individual",
+      "memberIdPlaceholder": "ID de miembro (obligatorio)",
+      "day3Option": "Día 3 — Resumen de Plan",
+      "day7Option": "Día 7 — Empuje de Proveedor",
+      "sendTestButton": "Enviar Prueba",
+      "bulkTitle": "Envío Masivo — No Plus Elegibles",
+      "bulkSub": "Dirige a miembros cuyo plan más reciente fue creado hace ≥ N días sin envío previo.",
+      "runDay3": "Ejecutar reenganche día 3",
+      "runDay7": "Ejecutar reenganche día 7",
+      "bulkComplete": "Ejecución masiva completa — Día {{day}}",
+      "bulkConfirm": "Enviar correos de reenganche del Día {{day}} a TODOS los miembros no Plus elegibles. ¿Continuar?"
     }
   },
   "employer": {
@@ -995,34 +1021,87 @@
       "viewROI": "Ver Informe ROI →"
     },
     "members": {
-      "title": "Miembros del Equipo",
-      "searchPlaceholder": "Buscar miembros…",
-      "name": "Nombre",
-      "email": "Correo",
-      "planStatus": "Estado del Plan",
-      "budget": "Presupuesto",
-      "joined": "Se unió",
-      "noMembers": "Aún no hay miembros inscritos."
+      "title": "Análisis de Cobertura",
+      "sub": "Perspectivas de utilización agregadas de tu cohorte inscrita",
+      "exportBtn": "Exportar Resumen",
+      "privacyNotice": "Todos los datos son solo agregados. No se divulgan identificadores individuales de empleados ni información de salud personal.",
+      "privacySuppressed": "Las métricas de utilización están suprimidas hasta que al menos 5 empleados se hayan inscrito (protección de privacidad).",
+      "kpi": {
+        "enrollmentRate": "Tasa de Inscripción",
+        "enrollmentSub": "{{enrolled}} de {{contracted}} contratados",
+        "avgUtilization": "Utilización Promedio",
+        "utilizationSub": "del estipendio mensual usado",
+        "suppressed": "Suprimido (<5 miembros)",
+        "avgBudget": "Presupuesto Mensual Prom.",
+        "avgSpend": "Gasto Mensual Prom.",
+        "perEmployee": "por empleado inscrito"
+      },
+      "emptyTitle": "Aún no hay miembros inscritos",
+      "emptySub": "Comparte el código de invitación desde tu panel para inscribir empleados.",
+      "utilizationDist": "Distribución de Utilización",
+      "monthlyEnrollment": "Inscripciones Mensuales",
+      "employeeOne": "empleado",
+      "employeeOther": "empleados",
+      "cohortNote": "Cohorte de {{count}} empleados inscritos (mín. 5 requeridos para mostrar barras individuales)",
+      "enrollmentNote": "Nuevas inscripciones por mes calendario (últimos 6 meses)",
+      "noTrendData": "Aún no hay datos de tendencia."
     },
     "roi": {
-      "title": "Informe ROI",
-      "sub": "Rastrea el impacto en salud y financiero de tu beneficio de bienestar.",
-      "enrollmentRate": "Tasa de Inscripción",
-      "planAdoption": "Adopción del Plan",
-      "avgBudgetUsed": "Presupuesto Promedio Usado",
-      "estimatedSavings": "Ahorros Estimados",
-      "printReport": "Imprimir Informe",
-      "noData": "Aún no hay suficientes datos para generar un informe ROI."
+      "title": "ROI y Benchmarks",
+      "wellnessTrend": {
+        "heading": "Tendencia de Puntuación de Bienestar",
+        "sub": "Calificación promedio de bienestar mes a mes (escala 1–10)",
+        "suppressedMsg": "Datos disponibles cuando 5+ empleados se inscriban",
+        "noDataMsg": "¡Aún no se han registrado calificaciones de bienestar. ¡Anima a los empleados a registrar sesiones!",
+        "avgScore": "Prom. Puntuación",
+        "target7": "Meta 7"
+      },
+      "benchmark": {
+        "heading": "Benchmark de la Industria",
+        "sub": "Tu empresa vs. promedios anónimos de toda la plataforma",
+        "sampleNote": "(n = {{n}} empleados)",
+        "suppressedMsg": "Disponible cuando 5+ empleados se inscriban",
+        "vsPlatform": "vs plataforma",
+        "yourCompany": "Tu Empresa",
+        "platformAvg": "Prom. Plataforma",
+        "avgWellness": "Puntuación Prom. de Bienestar",
+        "utilRate": "Tasa de Utilización del Estipendio",
+        "privacyNote": "Los promedios de la plataforma son datos agregados anónimos de empleadores con 5+ miembros inscritos. No se comparten datos individuales ni de ninguna empresa."
+      },
+      "calculator": {
+        "heading": "Calculadora de ROI",
+        "sub": "Estima el retorno financiero de tu programa usando promedios de investigación de la industria. Edita los datos según tu organización.",
+        "enrolledEmployees": "Empleados Inscritos",
+        "avgSalary": "Salario Anual Prom.",
+        "sickDaysReduced": "Días de Baja Reducidos / Año",
+        "sickDaysHint": "RAND 2013: ~2 días prom.",
+        "productivityPct": "% de Ganancia en Productividad",
+        "productivityHint": "HBR 2010: ~2.5% prom.",
+        "annualStipend": "Gasto Anual en Estipendio",
+        "annualStipendSuffix": "(total)",
+        "sickDaySavings": "Ahorro en Días de Baja",
+        "sickDaySub": "{{days}} días × {{employees}} empleados",
+        "productivityGain": "Ganancia en Productividad",
+        "productivitySub": "{{pct}}% de nómina recuperada",
+        "totalValue": "Valor Anual Total",
+        "totalValueSub": "beneficio combinado del programa",
+        "netROI": "ROI Neto",
+        "netROISub": "vs. inversión en estipendio",
+        "disclaimer": "Aviso Legal: Todos los datos son editables para reflejar los datos reales de tu organización. Valores predeterminados basados en investigación: Reducción de días de baja (2.0 días/año): RAND Corporation, Wellness Programs in the Workplace (2013). Ganancia en productividad (2.5%): Berry, Mirabito & Baun (2010), Harvard Business Review. Las estimaciones son ilustrativas — los resultados reales varían según la organización, la demografía y el nivel de participación."
+      },
+      "sub": "Mide el retorno de tu inversión en bienestar con datos de tendencias, benchmarks y estimaciones respaldadas por investigación."
     },
     "settings": {
-      "title": "Configuración del Empleador",
-      "companyName": "Nombre de la Empresa",
-      "monthlyBudget": "Presupuesto Mensual por Miembro",
-      "inviteCode": "Código de Invitación",
-      "status": "Estado del Programa",
-      "save": "Guardar Configuración",
-      "saving": "Guardando…",
-      "saved": "¡Configuración guardada!"
+      "title": "Reglas de Cobertura",
+      "sub": "Elige qué modalidades de bienestar cubre tu estipendio. {{covered}}/{{total}} cubiertas.",
+      "allOn": "Todo Activo",
+      "allOff": "Todo Inactivo",
+      "save": "Guardar Reglas",
+      "saved": "¡Guardado!",
+      "covered": "cubiertas",
+      "hsaEligible": "Elegible HSA",
+      "footer": "Las reglas de cobertura se aplican a nuevos reembolsos de estipendio. Las reclamaciones existentes no se ven afectadas. Los cambios tienen efecto inmediato.",
+      "saveFail": "No se pudo guardar — por favor intenta de nuevo"
     },
     "setupBilling": "Configurar Facturación",
     "inviteCode": "Código de Invitación para Empleados",
@@ -1193,7 +1272,26 @@
       "sub": "Por sede. Sin cargos por uso. Sin gastos administrativos de aprobación.",
       "perEmployee": "por empleado/mes · facturación anual",
       "contactPricing": "contáctanos para precios",
-      "pricingNote": "Los precios mostrados son indicativos. Los precios finales se confirman durante la llamada de demo. Se requiere facturación anual. Mínimo 10 plazas."
+      "pricingNote": "Los precios mostrados son indicativos. Los precios finales se confirman durante la llamada de demo. Se requiere facturación anual. Mínimo 10 plazas.",
+      "tiers": {
+        "starter": {
+          "name": "Básico",
+          "seats": "10–49 empleados",
+          "cta": "Solicitar demo"
+        },
+        "growth": {
+          "name": "Crecimiento",
+          "seats": "50–199 empleados",
+          "cta": "Solicitar demo"
+        },
+        "enterprise": {
+          "name": "Empresa",
+          "price": "Personalizado",
+          "seats": "200+ empleados",
+          "cta": "Contáctanos",
+          "pricingNote": "contáctanos para precios"
+        }
+      }
     },
     "demo": {
       "title": "Solicitar una demo",

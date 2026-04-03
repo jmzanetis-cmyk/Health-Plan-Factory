@@ -5,6 +5,7 @@ import { Logo } from "@/components/Logo";
 import { GOALS } from "@/types/onboarding";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 /* ── Types ── */
 export interface SurveyData {
@@ -503,24 +504,27 @@ export default function Survey() {
         }}
       >
         <Logo />
-        <button
-          type="button"
-          onClick={handleSkip}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--text-muted)",
-            cursor: "pointer",
-            fontSize: "0.8rem",
-            fontFamily: "var(--app-font-sans)",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-          }}
-        >
-          <X size={14} />
-          Skip survey
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <LanguageSwitcher />
+          <button
+            type="button"
+            onClick={handleSkip}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-muted)",
+              cursor: "pointer",
+              fontSize: "0.8rem",
+              fontFamily: "var(--app-font-sans)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.25rem",
+            }}
+          >
+            <X size={14} />
+            {t("survey.skip")}
+          </button>
+        </div>
       </header>
 
       {/* Progress bar with dual-section label */}

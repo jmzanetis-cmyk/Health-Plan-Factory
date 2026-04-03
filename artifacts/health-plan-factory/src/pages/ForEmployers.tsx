@@ -200,25 +200,25 @@ export default function ForEmployers() {
               {
                 icon: "📋",
                 title: t("forEmployers.cards.customPlans.title"),
-                desc: "Every team member answers a short health intake. The engine builds a prioritized, costed plan — their conditions, their budget, their goals.",
+                desc: t("forEmployers.cards.customPlans.desc"),
                 color: navy,
               },
               {
                 icon: "💳",
                 title: t("forEmployers.cards.hsaGuidance.title"),
-                desc: "Each plan flags which modalities are HSA/FSA-eligible and surfaces LMN guidance where applicable — turning benefits dollars into real spending.",
+                desc: t("forEmployers.cards.hsaGuidance.desc"),
                 color: sage,
               },
               {
                 icon: "📊",
                 title: t("forEmployers.cards.dashboard.title"),
-                desc: "Aggregate engagement data, team wellness score trends, and modality adoption rates — without individual privacy exposure.",
+                desc: t("forEmployers.cards.dashboard.desc"),
                 color: amber,
               },
               {
                 icon: "⚙️",
                 title: t("forEmployers.cards.zeroAdmin.title"),
-                desc: "No per-use approvals. No reimbursement paperwork. Employees manage their own plans; you get a monthly usage report.",
+                desc: t("forEmployers.cards.zeroAdmin.desc"),
                 color: "#5b9bd5",
               },
             ].map((card) => (
@@ -337,10 +337,10 @@ export default function ForEmployers() {
 
               <div className="flex flex-col gap-4">
                 {[
-                  { num: "01", title: t("forEmployers.employee.steps.s1.title"), desc: "5-minute health questionnaire → AI-assembled plan with ranked modalities." },
-                  { num: "02", title: t("forEmployers.employee.steps.s2.title"), desc: "Members browse vetted, in-network providers near them — pre-filtered by their plan." },
-                  { num: "03", title: t("forEmployers.employee.steps.s3.title"), desc: "The platform flags eligible services and generates LMN documentation where applicable." },
-                  { num: "04", title: t("forEmployers.employee.steps.s4.title"), desc: "You receive aggregate participation data and wellness score trends — no individual data." },
+                  { num: "01", title: t("forEmployers.employee.steps.s1.title"), desc: t("forEmployers.employee.steps.s1.desc") },
+                  { num: "02", title: t("forEmployers.employee.steps.s2.title"), desc: t("forEmployers.employee.steps.s2.desc") },
+                  { num: "03", title: t("forEmployers.employee.steps.s3.title"), desc: t("forEmployers.employee.steps.s3.desc") },
+                  { num: "04", title: t("forEmployers.employee.steps.s4.title"), desc: t("forEmployers.employee.steps.s4.desc") },
                 ].map((step) => (
                   <div key={step.num} className="flex items-start gap-4">
                     <div

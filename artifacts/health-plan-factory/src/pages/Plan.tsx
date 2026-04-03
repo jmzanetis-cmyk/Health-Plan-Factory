@@ -9,6 +9,7 @@ import { NPI_CATEGORIES } from "@/data/npiCategories";
 import { Logo } from "@/components/Logo";
 import { getApiBase } from "@/lib/apiBase";
 import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; isTelehealth?: boolean }) {
   if (isTelehealth) {
@@ -1138,6 +1139,7 @@ export default function Plan() {
       }}>
         <Logo />
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <LanguageSwitcher />
           <button
             type="button"
             onClick={() => navigate("/onboarding")}

@@ -57,8 +57,8 @@ export default function EmployerMembers() {
         return r.json();
       })
       .then((d) => { if (d) setStats(d); setLoading(false); })
-      .catch(() => { setError("Failed to load coverage analytics"); setLoading(false); });
-  }, [navigate]);
+      .catch(() => { setError(t("employer.members.title")); setLoading(false); });
+  }, [navigate, t]);
 
   const exportCsv = () => window.open(`${BASE}/api/employer/export-csv`, "_blank");
 
@@ -78,17 +78,17 @@ export default function EmployerMembers() {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
           <div>
             <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.8rem", fontWeight: 700, color: navy, margin: 0 }}>
-              Coverage Analytics
+              {t("employer.members.title")}
             </h1>
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-              Aggregate utilization insights across your enrolled cohort
+              {t("employer.members.sub")}
             </p>
           </div>
           <button
             onClick={exportCsv}
             style={{ background: navy, color: "white", border: "none", borderRadius: 8, padding: "9px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}
           >
-            <Download size={14} /> Export Summary
+            <Download size={14} /> {t("employer.members.exportBtn")}
           </button>
         </div>
 
@@ -98,7 +98,7 @@ export default function EmployerMembers() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(125,181,92,0.07)", border: "1px solid rgba(125,181,92,0.2)", borderRadius: 8, padding: "10px 14px", marginBottom: 24 }}>
           <Lock size={14} color={sage} />
           <p style={{ margin: 0, fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage }}>
-            All data is aggregate-only. No individual employee identifiers or personal health information are disclosed.
+            {t("employer.members.privacyNotice")}
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export default function EmployerMembers() {
             {/* Privacy suppression notice */}
             {stats.privacySuppressed && (
               <div style={{ background: "rgba(224,32,64,0.08)", border: "1.5px solid rgba(224,32,64,0.3)", borderRadius: 10, padding: "12px 18px", marginBottom: 20, fontFamily: "var(--app-font-sans)", fontSize: 13, color: amber }}>
-                Utilization metrics are suppressed until at least 5 employees have enrolled (privacy protection).
+                {t("employer.members.privacySuppressed")}
               </div>
             )}
 
@@ -121,27 +121,27 @@ export default function EmployerMembers() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
               {[
                 {
-                  label: "Enrollment Rate",
+                  label: t("employer.members.kpi.enrollmentRate"),
                   value: `${enrollmentPct}%`,
-                  sub: `${stats.totalEnrolled} of ${stats.contractedHeadcount} contracted`,
+                  sub: t("employer.members.kpi.enrollmentSub", { enrolled: stats.totalEnrolled, contracted: stats.contractedHeadcount }),
                   icon: <Users size={16} />,
                 },
                 {
-                  label: "Avg Utilization",
+                  label: t("employer.members.kpi.avgUtilization"),
                   value: stats.utilizationRate != null ? `${stats.utilizationRate}%` : "—",
-                  sub: stats.privacySuppressed ? "Suppressed (<5 members)" : "of monthly stipend used",
+                  sub: stats.privacySuppressed ? t("employer.members.kpi.suppressed") : t("employer.members.kpi.utilizationSub"),
                   icon: <TrendingUp size={16} />,
                 },
                 {
-                  label: "Avg Monthly Budget",
+                  label: t("employer.members.kpi.avgBudget"),
                   value: stats.averageMonthlyBudgetCents != null ? fmt(stats.averageMonthlyBudgetCents) : "—",
-                  sub: "per enrolled employee",
+                  sub: t("employer.members.kpi.perEmployee"),
                   icon: <BarChart2 size={16} />,
                 },
                 {
-                  label: "Avg Monthly Spend",
+                  label: t("employer.members.kpi.avgSpend"),
                   value: stats.averageMonthlySpentCents != null ? fmt(stats.averageMonthlySpentCents) : "—",
-                  sub: stats.privacySuppressed ? "Suppressed (<5 members)" : "per enrolled employee",
+                  sub: stats.privacySuppressed ? t("employer.members.kpi.suppressed") : t("employer.members.kpi.perEmployee"),
                   icon: <TrendingUp size={16} />,
                 },
               ].map((s) => (
@@ -160,9 +160,9 @@ export default function EmployerMembers() {
             {stats.totalEnrolled === 0 ? (
               <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: 60, textAlign: "center" }}>
                 <Users size={40} color="rgba(212,34,126,0.15)" style={{ marginBottom: 16 }} />
-                <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 600, color: navy, marginBottom: 8 }}>No enrolled members yet</h3>
+                <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 600, color: navy, marginBottom: 8 }}>{t("employer.members.emptyTitle")}</h3>
                 <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>
-                  Share the invite code from your dashboard to enroll employees.
+                  {t("employer.members.emptySub")}
                 </p>
               </div>
             ) : (
@@ -171,7 +171,7 @@ export default function EmployerMembers() {
                 {/* Utilization distribution */}
                 <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: "20px 24px" }}>
                   <h2 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, margin: "0 0 18px", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>
-                    Utilization Distribution
+                    {t("employer.members.utilizationDist")}
                   </h2>
                   <div style={{ display: "flex", flexDirection: "column" as const, gap: 12 }}>
                     {stats.utilizationBuckets.map((b) => (
@@ -179,7 +179,7 @@ export default function EmployerMembers() {
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                           <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: navy, fontWeight: 500 }}>{b.label}</span>
                           <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)" }}>
-                            {b.count} {b.count === 1 ? "employee" : "employees"} ({b.pct}%)
+                            {b.count} {b.count === 1 ? t("employer.members.employeeOne") : t("employer.members.employeeOther")} ({b.pct}%)
                           </span>
                         </div>
                         <div style={{ height: 8, background: "rgba(212,34,126,0.06)", borderRadius: 4, overflow: "hidden" }}>
@@ -197,17 +197,17 @@ export default function EmployerMembers() {
                     ))}
                   </div>
                   <p style={{ margin: "16px 0 0", fontFamily: "var(--app-font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
-                    Cohort of {stats.totalEnrolled} enrolled employees (min. 5 required to display individual buckets)
+                    {t("employer.members.cohortNote", { count: stats.totalEnrolled })}
                   </p>
                 </div>
 
                 {/* Enrollment trend */}
                 <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: "20px 24px" }}>
                   <h2 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, margin: "0 0 18px", textTransform: "uppercase" as const, letterSpacing: "0.07em" }}>
-                    Monthly Enrollment
+                    {t("employer.members.monthlyEnrollment")}
                   </h2>
                   {stats.enrollmentTrend.length === 0 ? (
-                    <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>No trend data yet.</p>
+                    <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>{t("employer.members.noTrendData")}</p>
                   ) : (() => {
                     const maxCount = Math.max(...stats.enrollmentTrend.map((p) => p.count), 1);
                     return (
@@ -233,7 +233,7 @@ export default function EmployerMembers() {
                     );
                   })()}
                   <p style={{ margin: "16px 0 0", fontFamily: "var(--app-font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
-                    New enrollments per calendar month (last 6 months)
+                    {t("employer.members.enrollmentNote")}
                   </p>
                 </div>
 

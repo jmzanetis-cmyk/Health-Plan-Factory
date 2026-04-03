@@ -15,6 +15,7 @@ import { StepRegion } from "@/components/onboarding/StepRegion";
 import { StepReview } from "@/components/onboarding/StepReview";
 import { BuildingScreen } from "@/components/onboarding/BuildingScreen";
 import { Logo } from "@/components/Logo";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { getApiBase } from "@/lib/apiBase";
 import { useState } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -303,20 +304,23 @@ export default function Onboarding() {
         borderBottom: "1px solid rgba(212,34,126,0.06)",
       }}>
         <Logo />
-        <button
-          type="button"
-          onClick={() => navigate("/")}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--text-muted)",
-            cursor: "pointer",
-            fontSize: "0.8rem",
-            fontFamily: "var(--app-font-sans)",
-          }}
-        >
-          {t("onboarding.saveExit")}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <LanguageSwitcher />
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-muted)",
+              cursor: "pointer",
+              fontSize: "0.8rem",
+              fontFamily: "var(--app-font-sans)",
+            }}
+          >
+            {t("onboarding.saveExit")}
+          </button>
+        </div>
       </header>
 
       {/* Progress bar */}
@@ -421,7 +425,7 @@ export default function Onboarding() {
                   fontFamily: "var(--app-font-sans)",
                 }}
               >
-                Back
+                {t("onboarding.back")}
               </button>
             )}
             <button
@@ -442,7 +446,7 @@ export default function Onboarding() {
                 transition: "background 0.2s",
               }}
             >
-              {step === totalSteps - 1 ? "Generate My Plan" : "Continue"}
+              {step === totalSteps - 1 ? t("onboarding.generatePlan") : t("onboarding.continue")}
             </button>
           </div>
         </div>
@@ -458,7 +462,7 @@ export default function Onboarding() {
           maxWidth: 480,
           margin: "0 auto",
         }}>
-          Health Plan Factory is a wellness optimization tool — not a medical provider. In a crisis, call 911 or 988.
+          {t("onboarding.disclaimer")}
         </p>
       </footer>
     </div>
