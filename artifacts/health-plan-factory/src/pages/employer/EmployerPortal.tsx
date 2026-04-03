@@ -49,6 +49,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     companyName: "",
     adminContactName: "",
@@ -87,7 +88,7 @@ function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) 
         onSuccess(data);
       }
     } catch {
-      setError("Network error — please try again");
+      setError(t("employerPortal.networkError"));
     } finally {
       setLoading(false);
     }
@@ -124,30 +125,30 @@ function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) 
       )}
       <div style={{ display: "grid", gap: 18 }}>
         <div>
-          <label style={labelStyle}>Company Name *</label>
+          <label style={labelStyle}>{t("employerPortal.companyNameLabel")} *</label>
           <input style={inputStyle} value={form.companyName} onChange={(e) => set("companyName", e.target.value)} required placeholder="Acme Corp" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
-            <label style={labelStyle}>Admin Contact Name *</label>
+            <label style={labelStyle}>{t("employerPortal.adminNameLabel")} *</label>
             <input style={inputStyle} value={form.adminContactName} onChange={(e) => set("adminContactName", e.target.value)} required placeholder="Jane Smith" />
           </div>
           <div>
-            <label style={labelStyle}>Admin Email *</label>
+            <label style={labelStyle}>{t("employerPortal.adminEmailLabel")} *</label>
             <input style={inputStyle} type="email" value={form.adminContactEmail} onChange={(e) => set("adminContactEmail", e.target.value)} required placeholder="jane@acmecorp.com" />
           </div>
         </div>
         <div>
-          <label style={labelStyle}>Billing Email (optional)</label>
+          <label style={labelStyle}>{t("employerPortal.billingEmailLabel")}</label>
           <input style={inputStyle} type="email" value={form.billingContactEmail} onChange={(e) => set("billingContactEmail", e.target.value)} placeholder="billing@acmecorp.com" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
-            <label style={labelStyle}>Number of Employees *</label>
+            <label style={labelStyle}>{t("employerPortal.numEmployeesLabel")} *</label>
             <input style={inputStyle} type="number" min={1} value={form.numberOfEmployees} onChange={(e) => set("numberOfEmployees", e.target.value)} required placeholder="50" />
           </div>
           <div>
-            <label style={labelStyle}>Monthly Stipend per Employee *</label>
+            <label style={labelStyle}>{t("employerPortal.stipendLabel")} *</label>
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>$</span>
               <input style={{ ...inputStyle, paddingLeft: 24 }} type="number" min={10} step={1} value={form.stipendPerEmployee} onChange={(e) => set("stipendPerEmployee", e.target.value)} required placeholder="75" />
@@ -155,7 +156,7 @@ function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) 
           </div>
         </div>
         <div style={{ background: "rgba(125,181,92,0.06)", border: "1px solid rgba(125,181,92,0.2)", borderRadius: 8, padding: "12px 16px", fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage }}>
-          <strong>Platform fee:</strong> 8% per invoice. Total monthly billed = employees × stipend × 1.08. Cancel any time.
+          {t("employerPortal.platformFee")}
         </div>
         <button
           type="submit"
@@ -178,7 +179,7 @@ function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) 
           }}
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          Create Employer Account
+          {t("employerPortal.createBtn")}
         </button>
       </div>
     </form>
@@ -186,6 +187,7 @@ function SignupForm({ onSuccess }: { onSuccess: (employer: Employer) => void }) 
 }
 
 function SuccessPanel({ employer }: { employer: Employer }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -207,13 +209,13 @@ function SuccessPanel({ employer }: { employer: Employer }) {
         if (json.url) {
           window.location.href = json.url;
         } else {
-          setCheckoutError(json.error ?? "Unable to create billing session. Please try again.");
+          setCheckoutError(json.error ?? t("employerPortal.checkoutError"));
         }
       })
       .catch(() => {
         if (!cancelled) {
           setCheckoutLoading(false);
-          setCheckoutError("Could not initiate billing setup — you can complete it from the dashboard.");
+          setCheckoutError(t("employerPortal.checkoutSetupError"));
         }
       });
     return () => { cancelled = true; };
@@ -225,10 +227,10 @@ function SuccessPanel({ employer }: { employer: Employer }) {
         <CheckCircle2 size={32} color={sage} />
       </div>
       <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.6rem", fontWeight: 700, color: navy, marginBottom: 8 }}>
-        Welcome, {employer.companyName}!
+        {t("employerPortal.successH2", { company: employer.companyName })}
       </h2>
       <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, color: "var(--text-secondary)", marginBottom: 28 }}>
-        Your employer account is live. Share the invite code below with your team.
+        {t("employerPortal.successP")}
       </p>
       <div style={{
         background: "rgba(212,34,126,0.05)",
@@ -237,12 +239,12 @@ function SuccessPanel({ employer }: { employer: Employer }) {
         padding: "20px 32px",
         marginBottom: 28,
       }}>
-        <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Employee Invite Code</div>
+        <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{t("employerPortal.inviteCodeLabel")}</div>
         <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 32, fontWeight: 800, color: navy, letterSpacing: "0.15em" }}>
           {employer.inviteCode}
         </div>
         <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-muted)", marginTop: 6 }}>
-          Employees enter this at sign-up or in their profile settings
+          {t("employerPortal.inviteCodeHint")}
         </div>
       </div>
 
@@ -250,7 +252,7 @@ function SuccessPanel({ employer }: { employer: Employer }) {
       {checkoutLoading && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20, fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>
           <Loader2 size={16} className="animate-spin" />
-          Setting up billing…
+          {t("employerPortal.settingUpBilling")}
         </div>
       )}
       {checkoutError && (
@@ -258,7 +260,7 @@ function SuccessPanel({ employer }: { employer: Employer }) {
       )}
       {checkoutDone && (
         <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, marginBottom: 20 }}>
-          Billing configured in test mode. You can update payment details from the dashboard.
+          {t("employerPortal.billingConfigured")}
         </p>
       )}
 
@@ -279,7 +281,7 @@ function SuccessPanel({ employer }: { employer: Employer }) {
           gap: 8,
         }}
       >
-        Go to Dashboard <ChevronRight size={16} />
+        {t("employerPortal.dashboardBtn")} <ChevronRight size={16} />
       </button>
     </div>
   );
@@ -327,19 +329,19 @@ export default function EmployerPortal() {
         <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.1)", borderRadius: 20, padding: "6px 14px", marginBottom: 20 }}>
             <Building2 size={14} />
-            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>Employer Wellness Stipends</span>
+            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>{t("employerPortal.badge")}</span>
           </div>
           <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 700, lineHeight: 1.15, marginBottom: 18 }}>
-            Give your team a personalized<br />wellness benefit they'll actually use
+            {t("employerPortal.heroH1")}
           </h1>
           <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, opacity: 0.8, lineHeight: 1.7, maxWidth: 560, margin: "0 auto 32px" }}>
-            Health Plan Factory delivers AI-curated wellness plans. Fund a monthly stipend and employees choose the therapies that work for them — from massage to physical therapy to mindfulness.
+            {t("employerPortal.heroP")}
           </p>
           <div style={{ display: "flex", gap: 24, justifyContent: "center", flexWrap: "wrap" }}>
             {[
-              { icon: <Users size={16} />, text: "Anonymized aggregate data" },
-              { icon: <DollarSign size={16} />, text: "Usage-based invoicing" },
-              { icon: <ShieldCheck size={16} />, text: "HIPAA-aware design" },
+              { icon: <Users size={16} />, text: t("employerPortal.feat0") },
+              { icon: <DollarSign size={16} />, text: t("employerPortal.feat1") },
+              { icon: <ShieldCheck size={16} />, text: t("employerPortal.feat2") },
             ].map((item) => (
               <div key={item.text} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "var(--app-font-sans)", fontSize: 14, opacity: 0.85 }}>
                 {item.icon} {item.text}
@@ -352,9 +354,9 @@ export default function EmployerPortal() {
       {/* Stats */}
       <div style={{ maxWidth: 900, margin: "-36px auto 0", padding: "0 24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-          <StatCard icon={<Users size={20} />} label="Avg. utilization" value="68%" />
-          <StatCard icon={<DollarSign size={20} />} label="Avg. stipend" value="$75/mo" />
-          <StatCard icon={<ShieldCheck size={20} />} label="Employee NPS" value="4.8 / 5" />
+          <StatCard icon={<Users size={20} />} label={t("employerPortal.statUtil")} value="68%" />
+          <StatCard icon={<DollarSign size={20} />} label={t("employerPortal.statStipend")} value="$75/mo" />
+          <StatCard icon={<ShieldCheck size={20} />} label={t("employerPortal.statNps")} value="4.8 / 5" />
         </div>
       </div>
 
@@ -366,11 +368,11 @@ export default function EmployerPortal() {
           </div>
         ) : (
           <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 16, padding: 40 }}>
-            <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.5rem", fontWeight: 700, color: navy, marginBottom: 6 }}>Create an Employer Account</h2>
+            <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.5rem", fontWeight: 700, color: navy, marginBottom: 6 }}>{t("employerPortal.formH2")}</h2>
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", marginBottom: 28 }}>
               {user
-                ? "Set up your company's wellness stipend program."
-                : <>You need to be signed in. <Link to="/sign-in" style={{ color: amber }}>Sign in here</Link></>}
+                ? t("employerPortal.formP")
+                : <>{t("employerPortal.signInRequired")} <Link to="/sign-in" style={{ color: amber }}>{t("employerPortal.signInLink")}</Link></>}
             </p>
             {user ? (
               <SignupForm onSuccess={setNewEmployer} />
@@ -389,7 +391,7 @@ export default function EmployerPortal() {
                     fontSize: 15,
                   }}
                 >
-                  Sign In to Continue
+                  {t("employerPortal.signInBtn")}
                 </Link>
               </div>
             )}
