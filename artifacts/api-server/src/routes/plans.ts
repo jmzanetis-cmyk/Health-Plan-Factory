@@ -418,7 +418,7 @@ router.patch("/plans/:id/outcome", async (req, res) => {
       res.status(404).json({ error: "Plan not found" });
       return;
     }
-    if (plan.profileId && plan.profileId !== req.user!.id && req.user!.role !== "admin") {
+    if (!plan.profileId || (plan.profileId !== req.user!.id && req.user!.role !== "admin")) {
       res.status(403).json({ error: "Forbidden" });
       return;
     }

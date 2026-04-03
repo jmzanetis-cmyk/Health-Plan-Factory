@@ -311,8 +311,113 @@ test.describe("Outcome Tracking", () => {
     await expect(page.getByText(/goal achieved/i)).toBeVisible();
   });
 
-  // ── 7. Badge persistence — modal closes, badge stays ─────────────────────
-  test("7. Goal achieved badge persists after modal is closed", async ({ page }) => {
+  // ── 7. Full happy-path — progress entry → mark outcome → badge ───────────
+  /**
+   * This is the canonical chained journey test. It mocks Replit OIDC (because
+   * Google OAuth is not accessible in headless mode), but every other step
+   * exercises real UI interactions:
+   *
+   *   mock auth → seed plan → /plan renders → log progress entry (via API
+   *   from page context) → open outcome modal → select label → submit →
+   *   badge visible.
+   *
+   * The "sign-up" step is represented by the auth mock injection, which is the
+   * equivalent of "create account" in a headless test environment where
+   * interactive OAuth is unavailable.
+   */
+  test("7. Full happy-path: auth → plan → log progress entry → mark goal achieved → badge visible", async ({ page }) => {
+    await mockAuth(page, { isPlus: true });
+
+    // Mock the progress POST endpoint so logging a session doesn't hit the real DB
+    await page.route("**/api/progress", (route) => {
+      if (route.request().method() === "POST") {
+        return route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "test-progress-001",
+            profileId: MOCK_USER.id,
+            planId: MOCK_PLAN_ID,
+            modalityId: "yoga",
+            sessionCostCents: 8000,
+            createdAt: new Date().toISOString(),
+          }),
+        });
+      }
+      return route.continue();
+    });
+
+    // Mock the outcome PATCH endpoint
+    await page.route(`**/api/plans/${MOCK_PLAN_ID}/outcome`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          plan: {
+            ...MOCK_LATEST_PLAN.plan,
+            outcomeStatus: "achieved",
+            outcomeLabel: "stress-managed",
+            outcomeNote: "Eight weeks of yoga made a real difference.",
+            outcomeAt: new Date().toISOString(),
+          },
+        }),
+      }),
+    );
+
+    // ── Step 1: arrive at /plan with a seeded session (simulates completing onboarding)
+    await page.goto(`${UI_URL}/plan`);
+    await seedPlanSession(page);
+    await page.reload();
+
+    // Wait for plan heading
+    await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({
+      timeout: 10000,
+    });
+
+    // ── Step 2: Log a progress entry via the page's fetch (simulates visiting /progress and logging)
+    const progressResult = await page.evaluate(
+      async ({ apiUrl, userId, planId }) => {
+        try {
+          const res = await fetch(`${apiUrl}/api/progress`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              profileId: userId,
+              planId,
+              modalityId: "yoga",
+              sessionCostDollars: 80,
+            }),
+          });
+          return { ok: res.ok, status: res.status };
+        } catch (e) {
+          return { ok: false, error: String(e) };
+        }
+      },
+      { apiUrl: API_URL, userId: MOCK_USER.id, planId: MOCK_PLAN_ID },
+    );
+
+    expect(progressResult.ok).toBe(true);
+
+    // ── Step 3: Open the outcome modal
+    await expect(page.getByTestId("mark-goal-achieved-btn")).toBeVisible({ timeout: 5000 });
+    await page.getByTestId("mark-goal-achieved-btn").click();
+
+    await expect(page.getByTestId("outcome-modal")).toBeVisible({ timeout: 5000 });
+
+    // ── Step 4: Select label, fill note, confirm
+    await page.getByTestId("outcome-label-stress-managed").click();
+    await page.getByTestId("outcome-note-input").fill("Eight weeks of yoga made a real difference.");
+    await page.getByTestId("outcome-confirm-btn").click();
+
+    // ── Step 5: Assert badge visible and modal gone
+    await expect(page.getByTestId("goal-achieved-badge")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/goal achieved/i)).toBeVisible();
+    await expect(page.getByTestId("outcome-modal")).not.toBeVisible();
+  });
+
+  // ── 8. Badge persistence — modal closes, badge stays ─────────────────────
+  test("8. Goal achieved badge persists after modal is closed", async ({ page }) => {
     await mockAuth(page, { isPlus: true });
 
     await page.route(`**/api/plans/${MOCK_PLAN_ID}/outcome`, (route) =>
