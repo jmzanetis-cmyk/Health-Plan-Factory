@@ -255,6 +255,10 @@ export const plans = pgTable(
     shareToken: text("share_token"),          // unique token for public share link
     shareGoal: text("share_goal"),            // anonymized primary goal for share card
     shareModalities: jsonb("share_modalities").$type<Array<{ name: string; emoji: string }>>(), // top 3 modalities for share card
+    outcomeStatus: text("outcome_status"),    // achieved | partially_achieved | not_achieved
+    outcomeLabel: text("outcome_label"),      // e.g. "pain-reduced", "energy-improved"
+    outcomeNote: text("outcome_note"),        // optional free-text from member
+    outcomeAt: timestamp("outcome_at"),       // when the member marked the outcome
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

@@ -389,6 +389,76 @@ router.patch("/plans/:id", async (req, res) => {
 });
 
 /**
+ * PATCH /api/plans/:id/outcome
+ * Records the member's self-reported outcome for this plan.
+ * Requires Plus or Employer subscription.
+ */
+const OutcomeBody = z.object({
+  outcomeStatus: z.enum(["achieved", "partially_achieved", "not_achieved"]),
+  outcomeLabel: z.string().max(100).optional(),
+  outcomeNote: z.string().max(500).optional(),
+});
+
+router.patch("/plans/:id/outcome", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const planId = req.params.id;
+  const body = OutcomeBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Validation error", details: body.error.flatten() });
+    return;
+  }
+
+  try {
+    const [plan] = await db.select({ profileId: plans.profileId }).from(plans).where(eq(plans.id, planId)).limit(1);
+    if (!plan) {
+      res.status(404).json({ error: "Plan not found" });
+      return;
+    }
+    if (plan.profileId && plan.profileId !== req.user!.id && req.user!.role !== "admin") {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    // Require Plus or Employer subscription
+    const [profile] = await db
+      .select({ subscriptionStatus: profiles.subscriptionStatus })
+      .from(profiles)
+      .where(eq(profiles.id, req.user!.id))
+      .limit(1);
+
+    const isPlus =
+      profile?.subscriptionStatus === "plus" ||
+      profile?.subscriptionStatus === "employer";
+
+    if (!isPlus) {
+      res.status(403).json({ error: "A Plus subscription is required to record outcomes" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(plans)
+      .set({
+        outcomeStatus: body.data.outcomeStatus,
+        outcomeLabel: body.data.outcomeLabel ?? null,
+        outcomeNote: body.data.outcomeNote ?? null,
+        outcomeAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(plans.id, planId))
+      .returning();
+
+    res.json({ plan: updated });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
  * POST /api/plans/:id/share
  * Generates (or returns existing) a share token for the plan.
  * Embeds the member's referral code in the returned share URL.

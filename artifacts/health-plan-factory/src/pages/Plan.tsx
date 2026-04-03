@@ -428,6 +428,20 @@ export default function Plan() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutModal, setCheckoutModal] = useState<{ checkout_url?: string } | null>(null);
 
+  // Subscription status (fetched once on auth)
+  const [isPlus, setIsPlus] = useState(false);
+
+  // Outcome tracking state
+  const [outcomeStatus, setOutcomeStatus] = useState<string | null>(null);
+  const [outcomeLabel, setOutcomeLabel] = useState<string | null>(null);
+  const [outcomeNote, setOutcomeNote] = useState<string | null>(null);
+  const [outcomeAt, setOutcomeAt] = useState<string | null>(null);
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [outcomeFormLabel, setOutcomeFormLabel] = useState("pain-reduced");
+  const [outcomeFormNote, setOutcomeFormNote] = useState("");
+  const [outcomeSubmitting, setOutcomeSubmitting] = useState(false);
+  const [planId, setPlanId] = useState<string | null>(null);
+
   const handlePlusCheckout = async () => {
     if (!isAuthenticated) {
       navigate("/sign-up?plan=plus");
@@ -543,6 +557,15 @@ export default function Plan() {
     }
   }, []);
 
+  // Fetch subscription status once auth resolves
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+    fetch(`${BASE}/api/members/subscription`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data) setIsPlus(!!data.isPlus); })
+      .catch(() => {});
+  }, [authLoading, isAuthenticated]);
+
   // Task 2: Persist session-storage plan to DB for users who completed onboarding
   // anonymously and then signed up (the common "try first, then sign up" flow).
   // The hpf_plan_saved flag prevents duplicate inserts on refresh.
@@ -614,6 +637,15 @@ export default function Plan() {
             }
           }
           setProviderCounts(counts);
+        }
+
+        // Capture plan ID + outcome state from the DB record (always, regardless of hydration)
+        if (data.plan?.id) {
+          setPlanId(data.plan.id);
+          setOutcomeStatus(data.plan.outcomeStatus ?? null);
+          setOutcomeLabel(data.plan.outcomeLabel ?? null);
+          setOutcomeNote(data.plan.outcomeNote ?? null);
+          setOutcomeAt(data.plan.outcomeAt ?? null);
         }
 
         // Task 3: Hydrate plan+intake for return visits (new device / cleared storage)
@@ -795,6 +827,34 @@ export default function Plan() {
       console.error("PDF download error:", err);
     } finally {
       setPdfLoading(false);
+    }
+  }
+
+  async function handleOutcomeSubmit() {
+    if (!planId || outcomeSubmitting) return;
+    setOutcomeSubmitting(true);
+    try {
+      const res = await fetch(`${BASE}/api/plans/${planId}/outcome`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          outcomeStatus: "achieved",
+          outcomeLabel: outcomeFormLabel,
+          outcomeNote: outcomeFormNote.trim() || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to record outcome");
+      const data = await res.json();
+      setOutcomeStatus(data.plan?.outcomeStatus ?? "achieved");
+      setOutcomeLabel(data.plan?.outcomeLabel ?? outcomeFormLabel);
+      setOutcomeNote(data.plan?.outcomeNote ?? (outcomeFormNote.trim() || null));
+      setOutcomeAt(data.plan?.outcomeAt ?? new Date().toISOString());
+      setShowOutcomeModal(false);
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setOutcomeSubmitting(false);
     }
   }
 
@@ -1154,6 +1214,79 @@ export default function Plan() {
             Based on your goals and <strong style={{ fontFamily: "var(--app-font-mono)", color: "var(--hpf-pink)" }}>${intake.budget}/mo</strong> budget, we've identified{" "}
             <strong>{plan.included.length} high-fit modalities</strong> for your wellness plan.
           </p>
+
+          {/* Goal achieved badge */}
+          {outcomeStatus && (
+            <div
+              data-testid="goal-achieved-badge"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                marginTop: "1rem",
+                padding: "0.5rem 1rem",
+                borderRadius: 100,
+                background: "rgba(22,163,74,0.1)",
+                border: "1.5px solid rgba(22,163,74,0.3)",
+              }}
+            >
+              <span style={{ fontSize: "1rem" }}>✅</span>
+              <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#15803d", fontFamily: "var(--app-font-sans)" }}>
+                Goal {outcomeStatus === "achieved" ? "achieved" : "partially achieved"}
+                {outcomeAt ? ` · ${new Date(outcomeAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
+              </span>
+            </div>
+          )}
+          {outcomeNote && (
+            <p style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", fontStyle: "italic" }}>
+              "{outcomeNote}"
+            </p>
+          )}
+
+          {/* Outcome CTA */}
+          {isAuthenticated && !outcomeStatus && (
+            <div style={{ marginTop: "1.25rem" }}>
+              {isPlus ? (
+                <button
+                  type="button"
+                  data-testid="mark-goal-achieved-btn"
+                  onClick={() => setShowOutcomeModal(true)}
+                  style={{
+                    padding: "0.6rem 1.25rem",
+                    borderRadius: 100,
+                    border: "1.5px solid rgba(22,163,74,0.4)",
+                    background: "rgba(22,163,74,0.07)",
+                    color: "#15803d",
+                    fontWeight: 600,
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                    fontFamily: "var(--app-font-sans)",
+                    transition: "background 0.15s",
+                  }}
+                >
+                  ✓ Mark goal achieved
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handlePlusCheckout}
+                  style={{
+                    padding: "0.6rem 1.25rem",
+                    borderRadius: 100,
+                    border: "1.5px solid rgba(212,34,126,0.25)",
+                    background: "transparent",
+                    color: "var(--hpf-pink)",
+                    fontWeight: 600,
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                    fontFamily: "var(--app-font-sans)",
+                  }}
+                >
+                  Upgrade to track outcomes →
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ZIP coverage warning — shown when provider lookup returns 0 results for all modalities */}
@@ -1408,7 +1541,115 @@ export default function Plan() {
               Save Plan
             </Link>
           </div>
-          {/* Checkout confirmation modal */}
+          {/* Outcome modal */}
+          {showOutcomeModal && (
+            <div
+              data-testid="outcome-modal"
+              style={{
+                position: "fixed", inset: 0, zIndex: 60,
+                background: "rgba(44,40,37,0.55)", backdropFilter: "blur(4px)",
+                display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem",
+              }}
+              onClick={() => setShowOutcomeModal(false)}
+            >
+              <div
+                style={{ background: "white", borderRadius: 16, padding: "1.75rem", maxWidth: 440, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.2rem", fontWeight: 700, color: "var(--hpf-deep)", marginBottom: "0.75rem" }}>
+                  Mark goal as achieved
+                </h3>
+
+                {/* Medical disclaimer */}
+                <div style={{ background: "rgba(245,158,11,0.07)", border: "1.5px solid rgba(245,158,11,0.3)", borderRadius: 10, padding: "0.75rem 1rem", marginBottom: "1.25rem" }}>
+                  <p style={{ fontSize: "0.75rem", color: "#92400e", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, margin: 0 }}>
+                    <strong>Medical reminder:</strong> Health Plan Factory is not a medical provider. Always follow your doctor's guidance before starting, changing, or stopping any wellness practice.
+                  </p>
+                </div>
+
+                {/* Label selection */}
+                <p style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  What improved most?
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
+                  {[
+                    { value: "pain-reduced", label: "Pain reduced" },
+                    { value: "energy-improved", label: "Energy improved" },
+                    { value: "stress-managed", label: "Stress managed" },
+                    { value: "sleep-better", label: "Sleep better" },
+                    { value: "fitness-improved", label: "Fitness improved" },
+                    { value: "other", label: "Other" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      data-testid={`outcome-label-${opt.value}`}
+                      onClick={() => setOutcomeFormLabel(opt.value)}
+                      style={{
+                        padding: "0.4rem 0.875rem",
+                        borderRadius: 100,
+                        border: outcomeFormLabel === opt.value ? "1.5px solid #15803d" : "1.5px solid rgba(0,0,0,0.12)",
+                        background: outcomeFormLabel === opt.value ? "rgba(22,163,74,0.1)" : "white",
+                        color: outcomeFormLabel === opt.value ? "#15803d" : "var(--text-secondary)",
+                        fontWeight: outcomeFormLabel === opt.value ? 600 : 400,
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                        fontFamily: "var(--app-font-sans)",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Optional note */}
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.4rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Note (optional)
+                </label>
+                <textarea
+                  data-testid="outcome-note-input"
+                  value={outcomeFormNote}
+                  onChange={(e) => setOutcomeFormNote(e.target.value.slice(0, 500))}
+                  placeholder="Anything you'd like to remember about your progress…"
+                  rows={3}
+                  style={{
+                    width: "100%",
+                    padding: "0.7rem 0.875rem",
+                    borderRadius: 10,
+                    border: "1.5px solid rgba(0,0,0,0.12)",
+                    fontFamily: "var(--app-font-sans)",
+                    fontSize: "0.85rem",
+                    color: "var(--hpf-deep)",
+                    resize: "vertical",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    marginBottom: "1.25rem",
+                  }}
+                />
+
+                <div style={{ display: "flex", gap: "0.75rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowOutcomeModal(false)}
+                    style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(0,0,0,0.12)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="outcome-confirm-btn"
+                    onClick={handleOutcomeSubmit}
+                    disabled={outcomeSubmitting}
+                    style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "#15803d", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: outcomeSubmitting ? "default" : "pointer", opacity: outcomeSubmitting ? 0.7 : 1, fontFamily: "var(--app-font-sans)" }}
+                  >
+                    {outcomeSubmitting ? "Saving…" : "Confirm ✓"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {checkoutModal && (
             <div
               style={{
