@@ -487,10 +487,12 @@ router.get("/plans/:id/modality-feedback", async (req, res) => {
       return;
     }
 
+    // Always use the plan owner's profileId so admin reads return the owner's feedback
+    const ownerProfileId = plan.profileId;
     const rows = await db
       .select({ modalityId: planModalityFeedback.modalityId, feedback: planModalityFeedback.feedback })
       .from(planModalityFeedback)
-      .where(and(eq(planModalityFeedback.planId, planId), eq(planModalityFeedback.profileId, req.user!.id)));
+      .where(and(eq(planModalityFeedback.planId, planId), eq(planModalityFeedback.profileId, ownerProfileId)));
 
     res.json({ feedback: rows });
   } catch (err: unknown) {
@@ -540,14 +542,34 @@ router.post("/plans/:id/modality-feedback", async (req, res) => {
     }
 
     const { modalityId, feedback } = body.data;
-    const profileId = req.user!.id;
+
+    // Validate the modalityId belongs to an included (non-deprioritized) item in this plan
+    const [planItem] = await db
+      .select({ id: planItems.id })
+      .from(planItems)
+      .where(
+        and(
+          eq(planItems.planId, planId),
+          eq(planItems.modalityId, modalityId),
+          eq(planItems.isDeprioritized, false),
+        ),
+      )
+      .limit(1);
+
+    if (!planItem) {
+      res.status(400).json({ error: "Modality is not an included item in this plan" });
+      return;
+    }
+
+    // Always use the plan owner's profileId so feedback is tied to the owner
+    const ownerProfileId = plan.profileId;
 
     // Upsert: insert or update on unique (profileId, planId, modalityId)
     await db
       .insert(planModalityFeedback)
       .values({
         id: crypto.randomUUID(),
-        profileId,
+        profileId: ownerProfileId,
         planId,
         modalityId,
         feedback,
@@ -597,6 +619,9 @@ router.post("/plans/:id/reconfigure", async (req, res) => {
       return;
     }
 
+    // Always use the plan owner's profileId for feedback lookups (admin-safe)
+    const ownerProfileId = existingPlan.profileId!;
+
     // Collect not_helpful modality IDs for this plan
     const notHelpfulRows = await db
       .select({ modalityId: planModalityFeedback.modalityId })
@@ -604,7 +629,7 @@ router.post("/plans/:id/reconfigure", async (req, res) => {
       .where(
         and(
           eq(planModalityFeedback.planId, planId),
-          eq(planModalityFeedback.profileId, req.user!.id),
+          eq(planModalityFeedback.profileId, ownerProfileId),
           eq(planModalityFeedback.feedback, "not_helpful"),
         ),
       );
