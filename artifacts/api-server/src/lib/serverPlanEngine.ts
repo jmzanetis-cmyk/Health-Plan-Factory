@@ -131,6 +131,7 @@ function scoreModality(modality: Modality, intake: IntakeInput, evidenceLookup: 
   if (intake.telehealth && (modality.preferenceMatch as string[]).includes("virtual")) score += 2;
   if (intake.telehealth && intake.preferences.includes("virtual") && ["telehealth", "meditation", "nutrition-coach"].includes(modality.id)) score += 4;
 
+  // Modality-level tiebreaker (overall quality signal, distinct from per-target corpus scores)
   if (modality.evidenceLevel === "Strong") score += 2;
   else if (modality.evidenceLevel === "Moderate") score += 1;
 
@@ -178,7 +179,10 @@ function buildRationale(modality: Modality, intake: IntakeInput, evidenceLookup:
     parts.push(`Matched to your goal${matchedGoals.length > 1 ? "s" : ""}: ${matchedGoals.map(slugToLabel).join(", ")}.`);
     for (const goal of matchedGoals) {
       const ev = getEvidence(evidenceLookup, modality.id, "goal", goal);
-      if (ev) parts.push(evidenceSentence(ev, slugToLabel(goal).toLowerCase()));
+      if (ev) {
+        parts.push(evidenceSentence(ev, slugToLabel(goal).toLowerCase()));
+        if (ev.clinicalNotes) parts.push(ev.clinicalNotes);
+      }
     }
   }
 
