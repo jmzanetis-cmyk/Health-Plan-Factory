@@ -271,7 +271,7 @@
       "tag": "Fundador",
       "headline": "Construido a partir de una frustración personal.",
       "p1": "Hace unos años me desperté y no podía mover mi pierna izquierda. Ciática — de la noche a la mañana, sin previo aviso. Lo que siguió fueron meses de probar todo de a uno: quiroprácticos, masajes terapéuticos, inyecciones de esteroides, terapia de inversión, terapia de descompresión, acupuntura. Cada uno ayudaba un poco, o no en absoluto, o por una semana antes de que el dolor regresara.",
-      "p2": "No tenía un plan. Tenía una lista de cosas que la gente me decía que probara, una cuenta bancaria menguante y ninguna forma de saber si estaba progresando o solo gastando dinero. Cuando comencé a recuperarme — a través de una combinación de ejercicios específicos, masajes dirigidos y acupuntura regular — me di cuenta de que el problema no eran las modalidades en sí. Era la ausencia de un enfoque estructurado, consciente del presupuesto e informado por la evidencia para combinarlas.",
+      "p2": "Gasté miles de dólares sin una hoja de ruta — solo una pila de citas y mucha esperanza. Eventualmente se resolvió. Pero siempre me pregunté: ¿y si hubiera tenido un enfoque más calculado desde el principio?",
       "p3": "HealthPlanFactory es lo que desearía que hubiera existido. Una plataforma que toma en serio tus objetivos, tu presupuesto y tu situación específica — y te da una hoja de ruta real en lugar de una recomendación genérica o una consulta cara."
     },
     "values": {
@@ -986,7 +986,15 @@
       "memberIdPlaceholder": "ID de miembro (opcional — vacío para ti mismo)",
       "previewButton": "Vista Previa",
       "sendTestButton": "Enviar Prueba",
-      "sentTo": "Digest de prueba enviado a {{email}}"
+      "sentTo": "Digest de prueba enviado a {{email}}",
+      "modalTitle": "Vista Previa de Correo",
+      "previewSubject": "Asunto",
+      "previewScore": "Puntuación",
+      "previewHabits": "Hábitos",
+      "previewUpcoming": "Próximas",
+      "previewSessions": "{{n}} sesiones",
+      "closePreview": "Cerrar Vista Previa",
+      "previewGoal": "Meta"
     },
     "reEngagement": {
       "title": "Correos de Reenganche",
@@ -1001,8 +1009,17 @@
       "runDay3": "Ejecutar reenganche día 3",
       "runDay7": "Ejecutar reenganche día 7",
       "bulkComplete": "Ejecución masiva completa — Día {{day}}",
-      "bulkConfirm": "Enviar correos de reenganche del Día {{day}} a TODOS los miembros no Plus elegibles. ¿Continuar?"
-    }
+      "bulkConfirm": "Enviar correos de reenganche del Día {{day}} a TODOS los miembros no Plus elegibles. ¿Continuar?",
+      "result": {
+        "sent": "Correo enviado exitosamente.",
+        "failed": "Fallo en la entrega del proveedor — revisa el registro de notificaciones.",
+        "skipped": "Omitido — ya enviado o cancelado.",
+        "noPlan": "Omitido — el miembro no tiene plan.",
+        "noEmail": "Omitido — el perfil no tiene dirección de correo.",
+        "notFound": "Error — ID de miembro no encontrado."
+      }
+    },
+    "viewDetails": "Ver detalles →"
   },
   "employer": {
     "nav": {
@@ -1312,5 +1329,23 @@
       "alreadyCustomer": "¿Ya eres cliente?",
       "signIn": "Accede a tu portal de empleador →"
     }
+  },
+  "bookmarks": {
+    "title": "Proveedores Guardados",
+    "sub": "Proveedores que has marcado para tu plan",
+    "browseMore": "Ver más →",
+    "emptyTitle": "Aún no hay proveedores guardados",
+    "emptySub": "Explora el directorio de proveedores y guarda los que se adaptan a tu plan.",
+    "browseBtn": "Explorar proveedores",
+    "removeTitle": "Eliminar de guardados",
+    "removeSuccess": "Eliminado",
+    "removeSuccessSub": "Proveedor eliminado de tu lista guardada.",
+    "removeError": "Error",
+    "removeErrorSub": "No se pudo eliminar el proveedor.",
+    "telehealth": "Telesalud",
+    "inPerson": "En persona",
+    "insurance": "Seguro",
+    "perSession": "/sesión",
+    "website": "Sitio web"
   }
 }

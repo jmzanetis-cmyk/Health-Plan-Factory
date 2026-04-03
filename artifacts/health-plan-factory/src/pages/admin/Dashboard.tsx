@@ -32,6 +32,7 @@ interface WeeklyData {
 }
 
 function StatCard({ label, value, icon, loading, to }: { label: string; value: number; icon: React.ReactNode; loading: boolean; to?: string }) {
+  const { t } = useTranslation();
   return (
     <div className="p-5 rounded-2xl flex flex-col gap-3" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
       <div className="flex items-center justify-between">
@@ -45,7 +46,7 @@ function StatCard({ label, value, icon, loading, to }: { label: string; value: n
       )}
       {to && (
         <Link to={to} className="text-xs no-underline font-medium" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
-          View details →
+          {t("admin.viewDetails")}
         </Link>
       )}
     </div>
@@ -329,17 +330,17 @@ function TestDigestSection() {
             <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(212,34,126,0.1)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
               <div>
                 <div style={{ fontFamily: "var(--app-font-serif)", fontWeight: 700, fontSize: 16, color: "var(--hpf-pink)", marginBottom: 4 }}>
-                  Email Preview — {preview.memberEmail}
+                  {t("admin.digest.modalTitle")} — {preview.memberEmail}
                 </div>
                 <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)" }}>
-                  Subject: <strong>{preview.subject}</strong>
+                  {t("admin.digest.previewSubject")}: <strong>{preview.subject}</strong>
                 </div>
                 <div className="flex flex-wrap gap-3 mt-3">
                   {[
-                    { label: "Score", value: preview.stats.wellnessScoreThisWeek != null ? `${preview.stats.wellnessScoreThisWeek}/10` : "—" },
-                    { label: "Habits", value: `${preview.stats.habitsCompleted}/${preview.stats.habitsPlanned}` },
-                    { label: "Upcoming", value: `${preview.stats.upcomingSessionCount} sessions` },
-                    ...(preview.stats.topGoal ? [{ label: "Goal", value: preview.stats.topGoal }] : []),
+                    { label: t("admin.digest.previewScore"), value: preview.stats.wellnessScoreThisWeek != null ? `${preview.stats.wellnessScoreThisWeek}/10` : "—" },
+                    { label: t("admin.digest.previewHabits"), value: `${preview.stats.habitsCompleted}/${preview.stats.habitsPlanned}` },
+                    { label: t("admin.digest.previewUpcoming"), value: t("admin.digest.previewSessions", { n: preview.stats.upcomingSessionCount }) },
+                    ...(preview.stats.topGoal ? [{ label: t("admin.digest.previewGoal"), value: preview.stats.topGoal }] : []),
                   ].map((s) => (
                     <span key={s.label} style={{ background: "rgba(212,34,126,0.06)", borderRadius: 6, padding: "3px 10px", fontFamily: "var(--app-font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>
                       <strong style={{ color: "var(--hpf-pink)" }}>{s.label}:</strong> {s.value}
@@ -428,12 +429,12 @@ function ReEngagementSection() {
   };
 
   const singleResultLabel: Record<string, string> = {
-    sent: "Email sent successfully.",
-    failed: "Provider delivery failed — check notification log.",
-    skipped: "Skipped — already sent or opted out.",
-    "no-plan": "Skipped — member has no plan.",
-    "no-email": "Skipped — profile has no email address.",
-    "member-not-found": "Error — member ID not found.",
+    sent: t("admin.reEngagement.result.sent"),
+    failed: t("admin.reEngagement.result.failed"),
+    skipped: t("admin.reEngagement.result.skipped"),
+    "no-plan": t("admin.reEngagement.result.noPlan"),
+    "no-email": t("admin.reEngagement.result.noEmail"),
+    "member-not-found": t("admin.reEngagement.result.notFound"),
   };
 
   return (

@@ -271,7 +271,7 @@
       "tag": "Founder",
       "headline": "Built from a personal frustration.",
       "p1": "A few years ago I woke up and couldn't move my left leg. Sciatica — overnight, no warning. What followed was months of trying everything one at a time: chiropractors, massage therapy, steroid injections, inversion therapy, decompression therapy, acupuncture. Each one helped a little, or not at all, or for a week before the pain came back.",
-      "p2": "I didn't have a plan. I had a list of things people told me to try, a shrinking bank account, and no way to know whether I was making progress or just spending money. When I started to recover — through a combination of specific exercises, targeted massage, and regular acupuncture — I realized the problem wasn't the modalities themselves. It was the absence of a structured, budget-aware, evidence-informed approach to combining them.",
+      "p2": "I spent thousands of dollars with no roadmap — just a pile of appointments and a lot of hope. It eventually resolved. But I always wondered: what if I’d had a more calculated approach from the start?",
       "p3": "HealthPlanFactory is what I wish had existed. A platform that takes your goals, your budget, and your specific situation seriously — and gives you a real roadmap instead of a generic recommendation or an expensive consult."
     },
     "values": {
@@ -986,7 +986,15 @@
       "memberIdPlaceholder": "Member ID (optional — leave blank for self)",
       "previewButton": "Preview Digest",
       "sendTestButton": "Send Test",
-      "sentTo": "Test digest sent to {{email}}"
+      "sentTo": "Test digest sent to {{email}}",
+      "modalTitle": "Email Preview",
+      "previewSubject": "Subject",
+      "previewScore": "Score",
+      "previewHabits": "Habits",
+      "previewUpcoming": "Upcoming",
+      "previewSessions": "{{n}} sessions",
+      "closePreview": "Close Preview",
+      "previewGoal": "Goal"
     },
     "reEngagement": {
       "title": "Re-engagement Drip Emails",
@@ -1001,8 +1009,17 @@
       "runDay3": "Run day-3 drip",
       "runDay7": "Run day-7 drip",
       "bulkComplete": "Bulk run complete — Day {{day}}",
-      "bulkConfirm": "Send day-{{day}} re-engagement emails to ALL eligible non-Plus members. Continue?"
-    }
+      "bulkConfirm": "Send day-{{day}} re-engagement emails to ALL eligible non-Plus members. Continue?",
+      "result": {
+        "sent": "Email sent successfully.",
+        "failed": "Provider delivery failed — check notification log.",
+        "skipped": "Skipped — already sent or opted out.",
+        "noPlan": "Skipped — member has no plan.",
+        "noEmail": "Skipped — profile has no email address.",
+        "notFound": "Error — member ID not found."
+      }
+    },
+    "viewDetails": "View details →"
   },
   "employer": {
     "nav": {
@@ -1312,5 +1329,23 @@
       "alreadyCustomer": "Already a customer?",
       "signIn": "Sign in to your employer portal →"
     }
+  },
+  "bookmarks": {
+    "title": "Saved Providers",
+    "sub": "Providers you’ve bookmarked for your plan",
+    "browseMore": "Browse more →",
+    "emptyTitle": "No saved providers yet",
+    "emptySub": "Browse the provider directory and save providers that match your plan.",
+    "browseBtn": "Browse providers",
+    "removeTitle": "Remove from saved",
+    "removeSuccess": "Removed",
+    "removeSuccessSub": "Provider removed from your saved list.",
+    "removeError": "Error",
+    "removeErrorSub": "Could not remove provider.",
+    "telehealth": "Telehealth",
+    "inPerson": "In-person",
+    "insurance": "Insurance",
+    "perSession": "/session",
+    "website": "Website"
   }
 }

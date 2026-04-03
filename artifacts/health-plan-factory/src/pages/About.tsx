@@ -84,7 +84,7 @@ export default function About() {
             className="text-base font-light leading-relaxed mb-5"
             style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}
           >
-            I spent thousands of dollars with no roadmap — just a pile of appointments and a lot of hope. It eventually resolved. But I always wondered: what if I'd had a more calculated approach from the start?
+            {t("about.founder.p2")}
           </p>
           <p
             className="text-base font-light leading-relaxed mb-8"

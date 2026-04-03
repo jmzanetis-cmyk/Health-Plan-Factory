@@ -46,7 +46,6 @@ export default function Bookmarks() {
         const ids = data.map((f) => f.providerId);
         setFavoriteIds(ids);
 
-        // Fetch provider details for each saved ID
         const allProviders = await fetch(`${BASE}/api/providers?limit=200`, { credentials: "include" })
           .then((r) => r.json())
           .then((rows) => (Array.isArray(rows) ? rows : (rows?.providers ?? [])))
@@ -69,9 +68,9 @@ export default function Bookmarks() {
       });
       setFavoriteIds((prev) => prev.filter((id) => id !== providerId));
       setProviders((prev) => prev.filter((p) => p.id !== providerId));
-      toast({ title: "Removed", description: "Provider removed from your saved list." });
+      toast({ title: t("bookmarks.removeSuccess"), description: t("bookmarks.removeSuccessSub") });
     } catch {
-      toast({ title: "Error", description: "Could not remove provider.", variant: "destructive" });
+      toast({ title: t("bookmarks.removeError"), description: t("bookmarks.removeErrorSub"), variant: "destructive" });
     } finally {
       setRemovingId(null);
     }
@@ -92,10 +91,10 @@ export default function Bookmarks() {
         <div className="flex items-center justify-between">
           <div>
             <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-              Saved Providers
+              {t("bookmarks.title")}
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Providers you've bookmarked for your plan
+              {t("bookmarks.sub")}
             </p>
           </div>
           <Link
@@ -103,7 +102,7 @@ export default function Bookmarks() {
             className="px-4 py-2.5 rounded-lg text-sm font-semibold no-underline"
             style={{ background: "var(--hpf-pink)", color: "white", fontFamily: "var(--app-font-sans)" }}
           >
-            Browse more →
+            {t("bookmarks.browseMore")}
           </Link>
         </div>
 
@@ -116,16 +115,16 @@ export default function Bookmarks() {
         ) : providers.length === 0 ? (
           <div className="py-20 text-center rounded-2xl" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <div className="text-4xl mb-4">🔖</div>
-            <p className="text-base mb-2" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-serif)" }}>No saved providers yet</p>
+            <p className="text-base mb-2" style={{ color: "var(--hpf-deep)", fontFamily: "var(--app-font-serif)" }}>{t("bookmarks.emptyTitle")}</p>
             <p className="text-sm mb-6" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Browse the provider directory and save providers that match your plan.
+              {t("bookmarks.emptySub")}
             </p>
             <Link
               to="/providers"
               className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white no-underline"
               style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
-              Browse providers
+              {t("bookmarks.browseBtn")}
             </Link>
           </div>
         ) : (
@@ -142,7 +141,7 @@ export default function Bookmarks() {
                   disabled={removingId === p.id}
                   className="absolute top-3 right-3 p-1.5 rounded-lg transition-colors"
                   style={{ background: "rgba(192,57,43,0.06)", border: "none", cursor: "pointer", color: "#c0392b" }}
-                  title="Remove from saved"
+                  title={t("bookmarks.removeTitle")}
                 >
                   {removingId === p.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                 </button>
@@ -172,16 +171,16 @@ export default function Bookmarks() {
 
                 <div className="flex flex-wrap gap-1.5">
                   {p.offersTelehealth && (
-                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Telehealth</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{t("bookmarks.telehealth")}</span>
                   )}
                   {p.offersInPerson && (
-                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>In-person</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(212,34,126,0.06)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{t("bookmarks.inPerson")}</span>
                   )}
                   {p.acceptsInsurance && (
-                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(224,32,64,0.1)", color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>Insurance</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(224,32,64,0.1)", color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>{t("bookmarks.insurance")}</span>
                   )}
                   {p.costPerSession != null && (
-                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(125,181,92,0.08)", color: "var(--sage)", fontFamily: "var(--app-font-mono)" }}>${p.costPerSession}/session</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(125,181,92,0.08)", color: "var(--sage)", fontFamily: "var(--app-font-mono)" }}>${p.costPerSession}{t("bookmarks.perSession")}</span>
                   )}
                 </div>
 
@@ -194,7 +193,7 @@ export default function Bookmarks() {
                     )}
                     {p.website && (
                       <a href={p.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs no-underline" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
-                        <Globe size={11} /> Website
+                        <Globe size={11} /> {t("bookmarks.website")}
                       </a>
                     )}
                   </div>
