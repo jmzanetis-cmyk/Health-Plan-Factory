@@ -38,13 +38,6 @@ const DAILY_COMMITMENTS = [
   { id: "c5", label: "2 min breathing exercise", icon: "wind" as FeatherIconName },
 ];
 
-type BuddyMessage = {
-  id: string;
-  sender: "buddy" | "me";
-  text: string;
-  time: string;
-};
-
 const TRIAL_DAYS = 30;
 
 function getDaysLeftInTrial(createdAt?: string | null): number {
@@ -54,14 +47,6 @@ function getDaysLeftInTrial(createdAt?: string | null): number {
   return Math.max(0, diff);
 }
 
-function getBuddyMessages(streak: number): BuddyMessage[] {
-  return [
-    { id: "1", sender: "buddy", text: "How did your last wellness session go?", time: "Mon 9:12 AM" },
-    { id: "2", sender: "me", text: "Really good! My symptoms have improved. Did you try the breathwork?", time: "Mon 10:30 AM" },
-    { id: "3", sender: "buddy", text: `Loved it! ${Math.max(streak - 1, 3)} days consistent now. Feeling clearer in the mornings.`, time: "Mon 11:05 AM" },
-    { id: "4", sender: "buddy", text: `Don't forget your check-in tonight — you're on a ${streak}-day streak! 🔥`, time: "Today 8:00 AM" },
-  ];
-}
 
 function GoalProgress({ label, icon, current, target }: GoalItem) {
   const pct = Math.min(1, target > 0 ? current / target : 0);
@@ -127,52 +112,20 @@ function DailyCommitmentList() {
   );
 }
 
-function BuddyChat({ streak }: { streak: number }) {
-  const buddyMessages = getBuddyMessages(streak);
+function BuddyCheckInComingSoon() {
   return (
-    <View style={styles.buddyChatCard}>
-      <View style={styles.buddyHeader}>
-        <View style={styles.buddyAvatar}>
-          <Text style={styles.buddyAvatarText}>A</Text>
-        </View>
-        <View>
-          <Text style={styles.buddyName}>Alex — Accountability Buddy</Text>
-          <Text style={styles.buddyStatus}>Active · {streak > 0 ? `${streak}-day streak` : "just starting"}</Text>
-        </View>
+    <View style={styles.buddyComingSoonCard}>
+      <View style={styles.buddyComingSoonIconWrap}>
+        <Feather name="users" size={28} color={COLORS.navy} />
       </View>
-      <View style={styles.messageList}>
-        {buddyMessages.map((msg) => (
-          <View
-            key={msg.id}
-            style={[
-              styles.messageBubble,
-              msg.sender === "me" ? styles.bubbleMe : styles.bubbleBuddy,
-            ]}
-          >
-            <Text
-              style={[
-                styles.messageText,
-                msg.sender === "me" ? styles.messageTextMe : styles.messageTextBuddy,
-              ]}
-            >
-              {msg.text}
-            </Text>
-            <Text
-              style={[
-                styles.messageTime,
-                msg.sender === "me" && { textAlign: "right" },
-              ]}
-            >
-              {msg.time}
-            </Text>
-          </View>
-        ))}
-      </View>
-      <View style={styles.buddyFooter}>
-        <Feather name="lock" size={12} color={COLORS.textMuted} />
-        <Text style={styles.buddyFooterText}>
-          Full buddy chat available with Plus subscription
-        </Text>
+      <Text style={styles.buddyComingSoonTitle}>Wellness Buddy Matching</Text>
+      <Text style={styles.buddyComingSoonBody}>
+        Get paired with an accountability buddy who shares your wellness goals.
+        Check in together, celebrate streaks, and stay motivated as a team.
+      </Text>
+      <View style={styles.buddyComingSoonPill}>
+        <Feather name="clock" size={12} color={COLORS.amber} />
+        <Text style={styles.buddyComingSoonPillText}>Coming soon</Text>
       </View>
     </View>
   );
@@ -432,7 +385,7 @@ export default function AccountabilityScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Buddy Check-In</Text>
-            <BuddyChat streak={streak} />
+            <BuddyCheckInComingSoon />
           </View>
 
           <View style={styles.section}>
@@ -648,66 +601,52 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   progressFill: { borderRadius: RADIUS.full },
-  buddyChatCard: {
+  buddyComingSoonCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    overflow: "hidden",
-  },
-  buddyHeader: {
-    flexDirection: "row",
+    padding: SPACING.xl,
     alignItems: "center",
     gap: SPACING.md,
-    padding: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.navy,
   },
-  buddyAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.amber,
+  buddyComingSoonIconWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.navy10,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: SPACING.xs,
   },
-  buddyAvatarText: {
-    fontFamily: FONTS.body,
+  buddyComingSoonTitle: {
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 16,
-    fontWeight: "700" as const,
-    color: COLORS.white,
+    color: COLORS.navy,
+    textAlign: "center",
   },
-  buddyName: {
+  buddyComingSoonBody: {
     fontFamily: FONTS.body,
     fontSize: 14,
-    fontWeight: "600" as const,
-    color: COLORS.white,
+    color: COLORS.textMuted,
+    textAlign: "center",
+    lineHeight: 21,
   },
-  buddyStatus: { fontFamily: FONTS.body, fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 },
-  messageList: { padding: SPACING.md, gap: SPACING.sm },
-  messageBubble: {
-    maxWidth: "80%",
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    gap: 4,
-  },
-  bubbleBuddy: { alignSelf: "flex-start", backgroundColor: COLORS.off },
-  bubbleMe: { alignSelf: "flex-end", backgroundColor: COLORS.navy },
-  messageText: { fontFamily: FONTS.body, fontSize: 14, lineHeight: 19 },
-  messageTextBuddy: { color: COLORS.navy },
-  messageTextMe: { color: COLORS.white },
-  messageTime: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted },
-  buddyFooter: {
+  buddyComingSoonPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: SPACING.xs,
-    padding: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.off,
+    backgroundColor: COLORS.amberPale,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    marginTop: SPACING.xs,
   },
-  buddyFooterText: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted },
+  buddyComingSoonPillText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 12,
+    color: COLORS.amber,
+  },
   reminderCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,

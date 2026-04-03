@@ -60,6 +60,7 @@
     "@expo-google-fonts/dm-mono": "^0.4.2",
     "@expo-google-fonts/outfit": "^0.4.3",
     "@react-native-community/slider": "^5.1.2",
+    "@sentry/react-native": "^8.7.0",
     "@supabase/supabase-js": "^2.101.0",
     "expo-auth-session": "^7.0.10",
     "expo-background-fetch": "^55.0.10",

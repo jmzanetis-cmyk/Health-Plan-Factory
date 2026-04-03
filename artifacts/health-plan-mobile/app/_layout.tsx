@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react-native";
 import {
   CormorantGaramond_400Regular,
   CormorantGaramond_600SemiBold,
@@ -30,6 +31,13 @@ import "@/lib/backgroundHealthSync";
 import { registerBackgroundHealthSync } from "@/lib/backgroundHealthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { initializeRevenueCat, loginRevenueCat, logoutRevenueCat, SubscriptionProvider, useSubscription } from "@/lib/revenuecat";
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? "",
+  environment: __DEV__ ? "development" : "production",
+  enabled: !__DEV__ && !!process.env.EXPO_PUBLIC_SENTRY_DSN,
+  debug: false,
+});
 
 const apiBase = getApiBaseUrl();
 if (apiBase) {
