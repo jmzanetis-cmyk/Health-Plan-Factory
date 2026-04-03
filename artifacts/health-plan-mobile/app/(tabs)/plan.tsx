@@ -18,13 +18,7 @@ import * as SecureStore from "expo-secure-store";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListModalities } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
-
-function getApiBaseUrl(): string {
-  if (process.env.EXPO_PUBLIC_DOMAIN) {
-    return `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
-  }
-  return "";
-}
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 async function getToken() {
   if (Platform.OS === "web") return null;

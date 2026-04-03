@@ -18,6 +18,7 @@ import type { ProgressLogRecord } from "@workspace/api-client-react";
 import { setupNotifications } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
 import { MilestoneShareModal, type MilestoneType } from "@/components/MilestoneShareModal";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
 
@@ -272,7 +273,7 @@ export default function AccountabilityScreen() {
   // Fetch referral code for share card attribution
   useEffect(() => {
     if (!profileId) return;
-    const base = process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : "";
+    const base = getApiBaseUrl();
     import("expo-secure-store").then(async (SecureStore) => {
       const token = await SecureStore.getItemAsync("auth_session_token");
       const res = await fetch(`${base}/api/referrals/mine`, {

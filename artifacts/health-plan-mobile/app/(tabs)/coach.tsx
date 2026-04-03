@@ -20,6 +20,7 @@ import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import { interceptEmergencyText } from "@/lib/emergencyCheck";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Message {
   id: string;
@@ -44,13 +45,6 @@ const OPENING_MESSAGE: Message = {
 
 const STORAGE_KEY = "hpf_coach_messages_v2";
 const MAX_STORED_MESSAGES = 30;
-
-function getApiBaseUrl(): string {
-  if (process.env.EXPO_PUBLIC_DOMAIN) {
-    return `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
-  }
-  return "";
-}
 
 function formatSessionDate(dateStr: string): string {
   const date = new Date(dateStr);

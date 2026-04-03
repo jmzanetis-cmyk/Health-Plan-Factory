@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export type HealthSource = "apple_health" | "google_fit";
 
@@ -16,13 +17,6 @@ export interface DailyHealthMetrics {
   activeMinutes: number | null;
   mindfulnessMinutes: number | null;
   source: HealthSource;
-}
-
-function getMobileApiBase(): string {
-  if (process.env.EXPO_PUBLIC_DOMAIN) {
-    return `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
-  }
-  return "";
 }
 
 function connectionKey(profileId?: string): string {
@@ -268,7 +262,7 @@ async function pushHealthMetricsToApi(profileId: string, metrics: DailyHealthMet
   try {
     const token = await SecureStore.getItemAsync("auth_session_token");
     if (!token) return false;
-    const apiBase = getMobileApiBase();
+    const apiBase = getApiBaseUrl();
     const res = await fetch(`${apiBase}/api/health-sync`, {
       method: "POST",
       headers: {
@@ -287,7 +281,7 @@ export async function fetchLatestHealthMetrics(profileId: string): Promise<Daily
   try {
     const token = await SecureStore.getItemAsync("auth_session_token");
     if (!token) return null;
-    const apiBase = getMobileApiBase();
+    const apiBase = getApiBaseUrl();
     const res = await fetch(`${apiBase}/api/health-sync?profileId=${profileId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });

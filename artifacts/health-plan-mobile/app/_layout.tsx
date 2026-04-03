@@ -27,9 +27,11 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import "@/lib/backgroundHealthSync";
 import { registerBackgroundHealthSync } from "@/lib/backgroundHealthSync";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-if (process.env.EXPO_PUBLIC_DOMAIN) {
-  setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
+const apiBase = getApiBaseUrl();
+if (apiBase) {
+  setBaseUrl(apiBase);
 }
 setAuthTokenGetter(() => SecureStore.getItemAsync("auth_session_token"));
 

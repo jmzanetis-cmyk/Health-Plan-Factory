@@ -22,16 +22,10 @@ import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
 import { loadConnectionState, type HealthConnectionState } from "@/lib/healthSync";
-
-function getMobileApiBase(): string {
-  if (process.env.EXPO_PUBLIC_DOMAIN) {
-    return `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
-  }
-  return "";
-}
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptionStatus: string }> {
-  const base = getMobileApiBase();
+  const base = getApiBaseUrl();
   try {
     let token: string | null = null;
     if (Platform.OS !== "web") {
@@ -65,7 +59,7 @@ function NotificationPrefsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const apiBase = getMobileApiBase();
+  const apiBase = getApiBaseUrl();
 
   useEffect(() => {
     (async () => {
