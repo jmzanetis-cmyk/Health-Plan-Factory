@@ -46,15 +46,18 @@ function getRevenueCatApiKey(): string {
 
 export function initializeRevenueCat() {
   const apiKey = getRevenueCatApiKey();
-  Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+  if (__DEV__) {
+    Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+  }
   Purchases.configure({ apiKey });
-  console.log("[RevenueCat] Configured with key prefix:", apiKey.slice(0, 8) + "...");
 }
 
 export async function loginRevenueCat(appUserId: string): Promise<void> {
   try {
     await Purchases.logIn(appUserId);
-    console.log("[RevenueCat] Logged in user:", appUserId);
+    if (__DEV__) {
+      console.log("[RevenueCat] User logged in");
+    }
   } catch (e) {
     console.warn("[RevenueCat] logIn failed:", e);
   }
@@ -63,7 +66,9 @@ export async function loginRevenueCat(appUserId: string): Promise<void> {
 export async function logoutRevenueCat(): Promise<void> {
   try {
     await Purchases.logOut();
-    console.log("[RevenueCat] Logged out");
+    if (__DEV__) {
+      console.log("[RevenueCat] Logged out");
+    }
   } catch (e) {
     console.warn("[RevenueCat] logOut failed:", e);
   }
