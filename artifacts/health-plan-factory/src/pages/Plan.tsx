@@ -1567,41 +1567,55 @@ export default function Plan() {
                   </p>
                 </div>
 
-                {/* Label selection */}
-                <p style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  What improved most?
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
-                  {[
-                    { value: "pain-reduced", label: "Pain reduced" },
-                    { value: "energy-improved", label: "Energy improved" },
-                    { value: "stress-managed", label: "Stress managed" },
-                    { value: "sleep-better", label: "Sleep better" },
-                    { value: "fitness-improved", label: "Fitness improved" },
-                    { value: "other", label: "Other" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      data-testid={`outcome-label-${opt.value}`}
-                      onClick={() => setOutcomeFormLabel(opt.value)}
-                      style={{
-                        padding: "0.4rem 0.875rem",
-                        borderRadius: 100,
-                        border: outcomeFormLabel === opt.value ? "1.5px solid #15803d" : "1.5px solid rgba(0,0,0,0.12)",
-                        background: outcomeFormLabel === opt.value ? "rgba(22,163,74,0.1)" : "white",
-                        color: outcomeFormLabel === opt.value ? "#15803d" : "var(--text-secondary)",
-                        fontWeight: outcomeFormLabel === opt.value ? 600 : 400,
-                        fontSize: "0.8rem",
-                        cursor: "pointer",
-                        fontFamily: "var(--app-font-sans)",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                {/* Label selection — radio group */}
+                <fieldset style={{ border: "none", padding: 0, margin: 0, marginBottom: "1.25rem" }}>
+                  <legend style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    What improved most?
+                  </legend>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                    {[
+                      { value: "pain-reduced", label: "Pain reduced" },
+                      { value: "energy-improved", label: "Energy improved" },
+                      { value: "stress-managed", label: "Stress managed" },
+                      { value: "sleep-better", label: "Sleep better" },
+                      { value: "fitness-improved", label: "Fitness improved" },
+                      { value: "other", label: "Other" },
+                    ].map((opt) => {
+                      const checked = outcomeFormLabel === opt.value;
+                      return (
+                        <label
+                          key={opt.value}
+                          data-testid={`outcome-label-${opt.value}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.4rem",
+                            padding: "0.4rem 0.875rem",
+                            borderRadius: 100,
+                            border: checked ? "1.5px solid #15803d" : "1.5px solid rgba(0,0,0,0.12)",
+                            background: checked ? "rgba(22,163,74,0.1)" : "white",
+                            color: checked ? "#15803d" : "var(--text-secondary)",
+                            fontWeight: checked ? 600 : 400,
+                            fontSize: "0.8rem",
+                            cursor: "pointer",
+                            fontFamily: "var(--app-font-sans)",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="outcomeLabel"
+                            value={opt.value}
+                            checked={checked}
+                            onChange={() => setOutcomeFormLabel(opt.value)}
+                            style={{ accentColor: "#15803d", width: 14, height: 14, margin: 0 }}
+                          />
+                          {opt.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
 
                 {/* Optional note */}
                 <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.4rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>

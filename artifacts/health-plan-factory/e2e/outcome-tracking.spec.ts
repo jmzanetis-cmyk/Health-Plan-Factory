@@ -390,74 +390,68 @@ test.describe("Outcome Tracking", () => {
       }),
     );
 
-    // ── Step 1: Complete onboarding wizard (7 UI steps) ────────────────────
+    // ── Step 1: Complete onboarding wizard (7 UI steps, no optional skips) ─
     await page.goto(`${UI_URL}/onboarding`);
 
-    // Step 0 — Budget: pick or accept default, then Next
-    const nextBtn0 = page.getByRole("button", { name: /next/i });
-    if (await nextBtn0.isVisible({ timeout: 3000 }).catch(() => false)) await nextBtn0.click();
+    // Step 0 — Budget: heading is visible, default value already set, click Continue
+    await expect(page.getByRole("heading", { name: /monthly budget/i })).toBeVisible({ timeout: 8000 });
+    await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 1 — Goals: pick at least one
-    const goalChip = page.locator("button").filter({ hasText: /stress|sleep|energy|fitness/i }).first();
-    if (await goalChip.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await goalChip.click();
-      await page.getByRole("button", { name: /next/i }).click();
-    }
+    // Step 1 — Goals: select "Stress Reduction", then Continue
+    await expect(page.getByRole("heading", { name: /health goals/i })).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Stress Reduction" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 2 — Conditions: optional; click Next if visible
-    const nextBtn2 = page.getByRole("button", { name: /next/i });
-    if (await nextBtn2.isVisible({ timeout: 2000 }).catch(() => false)) await nextBtn2.click();
+    // Step 2 — Conditions: optional; heading visible, just click Continue
+    await expect(page.getByRole("heading", { name: /conditions or concerns/i })).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 3 — Preferences: pick at least one if visible
-    const prefChip = page.locator("button").filter({ hasText: /mind-body|in-person|virtual/i }).first();
-    if (await prefChip.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await prefChip.click();
-      await page.getByRole("button", { name: /next/i }).click();
-    }
+    // Step 3 — Preferences: select "Mind-Body Focus", then Continue
+    await expect(page.getByRole("heading", { name: /prefer to engage/i })).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Mind-Body Focus" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 4 — Exclusions: optional; Next if visible
-    const nextBtn4 = page.getByRole("button", { name: /next/i });
-    if (await nextBtn4.isVisible({ timeout: 2000 }).catch(() => false)) await nextBtn4.click();
+    // Step 4 — Exclusions: optional; heading visible, just click Continue
+    await expect(page.getByRole("heading", { name: /like to avoid/i })).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 5 — ZIP code
-    const zipInput = page.locator("input[inputmode='numeric'], input[type='text'][placeholder*='ZIP']").first();
-    if (await zipInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await zipInput.fill("90210");
-      await page.getByRole("button", { name: /next/i }).click();
-    }
+    // Step 5 — Region: fill ZIP code, then Continue
+    await expect(page.getByRole("heading", { name: /located/i })).toBeVisible({ timeout: 5000 });
+    await page.locator("input[inputmode='numeric'], input[placeholder*='ZIP'], input[type='text']").first().fill("90210");
+    await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 6 — Review: submit
-    const submitBtn = page.getByRole("button", { name: /build my plan|generate|submit|finish/i }).first();
-    if (await submitBtn.isVisible({ timeout: 3000 }).catch(() => false)) await submitBtn.click();
+    // Step 6 — Review: heading visible, click "Generate My Plan"
+    await expect(page.getByRole("heading", { name: /review/i })).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Generate My Plan" }).click();
 
-    // Wait for /plan redirect (building screen → plan page)
-    await page.waitForURL(`${UI_URL}/plan`, { timeout: 25000 });
-    await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({
-      timeout: 10000,
-    });
+    // Building screen completes → redirects to /plan
+    await page.waitForURL(`${UI_URL}/plan`, { timeout: 30000 });
+    await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({ timeout: 10000 });
 
-    // ── Step 2: Navigate to /progress and log a session via UI ─────────────
+    // ── Step 2: Navigate to /progress, open form, fill wellness metrics, submit ─
     await page.goto(`${UI_URL}/progress`);
 
-    // Open the log form by clicking "Log Entry" button
+    // Click the "Log Entry" pink button to reveal the form
+    await expect(page.getByRole("button", { name: /log entry/i })).toBeVisible({ timeout: 8000 });
     await page.getByRole("button", { name: /log entry/i }).click();
 
-    // Fill Wellness metric (input labeled "Wellness", placeholder "1–10")
-    const wellnessInput = page.locator("input[placeholder='1–10']").first();
-    await wellnessInput.fill("8");
+    // Assert the form opened (heading "New Wellness Log" is now visible)
+    await expect(page.getByRole("heading", { name: /new wellness log/i })).toBeVisible({ timeout: 5000 });
 
-    // Fill Mood metric
-    const moodInput = page.locator("input[placeholder='1–10']").nth(1);
-    await moodInput.fill("7");
+    // Fill Wellness metric (first 1–10 input)
+    await page.locator("input[placeholder='1–10']").first().fill("8");
 
-    // Optionally fill the note
+    // Fill Mood metric (second 1–10 input)
+    await page.locator("input[placeholder='1–10']").nth(1).fill("7");
+
+    // Optionally add a note
     await page.locator("textarea[placeholder*='How did you feel']").fill("Felt great after yoga session.");
 
     // Submit the form
     await page.getByRole("button", { name: /save log/i }).click();
 
-    // Form should close (toast or form hidden) — wait briefly
-    await page.waitForTimeout(800);
+    // Assert the form has closed after successful submission
+    await expect(page.getByRole("heading", { name: /new wellness log/i })).not.toBeVisible({ timeout: 5000 });
 
     // ── Step 3: Navigate to /plan and mark goal achieved ───────────────────
     await page.goto(`${UI_URL}/plan`);
