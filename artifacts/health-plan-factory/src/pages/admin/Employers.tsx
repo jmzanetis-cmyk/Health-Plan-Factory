@@ -61,6 +61,7 @@ function EmployerForm({
   onSave: (data: EmployerFormData) => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     companyName: initial?.companyName ?? "",
     adminContactName: initial?.adminContactName ?? "",
@@ -129,45 +130,45 @@ function EmployerForm({
       )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 16px" }}>
         <div>
-          <label style={labelStyle}>Company Name</label>
+          <label style={labelStyle}>{t("admin.employers.companyNameLabel")}</label>
           <input style={inputStyle} value={form.companyName} onChange={(e) => set("companyName", e.target.value)} required />
         </div>
         <div>
-          <label style={labelStyle}>Admin Name</label>
+          <label style={labelStyle}>{t("admin.employers.adminNameLabel")}</label>
           <input style={inputStyle} value={form.adminContactName} onChange={(e) => set("adminContactName", e.target.value)} required />
         </div>
         <div>
-          <label style={labelStyle}>Admin Email</label>
+          <label style={labelStyle}>{t("admin.employers.adminEmailLabel")}</label>
           <input style={inputStyle} type="email" value={form.adminContactEmail} onChange={(e) => set("adminContactEmail", e.target.value)} required />
         </div>
         <div>
-          <label style={labelStyle}>Billing Email</label>
+          <label style={labelStyle}>{t("admin.employers.billingEmailLabel")}</label>
           <input style={inputStyle} type="email" value={form.billingContactEmail} onChange={(e) => set("billingContactEmail", e.target.value)} />
         </div>
         <div>
-          <label style={labelStyle}>Num Employees</label>
+          <label style={labelStyle}>{t("admin.employers.numEmployeesLabel")}</label>
           <input style={inputStyle} type="number" min={1} value={form.numberOfEmployees} onChange={(e) => set("numberOfEmployees", e.target.value)} required />
         </div>
         <div>
-          <label style={labelStyle}>Stipend/Employee ($)</label>
+          <label style={labelStyle}>{t("admin.employers.stipendLabel")}</label>
           <input style={inputStyle} type="number" min={10} step={1} value={form.stipendPerEmployee} onChange={(e) => set("stipendPerEmployee", e.target.value)} required placeholder="75" />
         </div>
         <div>
-          <label style={labelStyle}>Status</label>
+          <label style={labelStyle}>{t("admin.employers.status")}</label>
           <select style={{ ...inputStyle, cursor: "pointer" }} value={form.status} onChange={(e) => set("status", e.target.value)}>
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="canceled">Canceled</option>
+            <option value="active">{t("admin.employers.statusActive")}</option>
+            <option value="pending">{t("admin.employers.statusPending")}</option>
+            <option value="canceled">{t("admin.employers.statusCanceled")}</option>
           </select>
         </div>
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
         <button type="submit" disabled={loading} style={{ background: navy, color: "white", border: "none", borderRadius: 7, padding: "9px 18px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: loading ? 0.7 : 1 }}>
           {loading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-          {initial?.id ? "Update" : "Create"} Employer
+          {initial?.id ? t("admin.employers.updateBtn") : t("admin.employers.createBtn")}
         </button>
         <button type="button" onClick={onCancel} style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.15)", borderRadius: 7, padding: "9px 14px", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-          <X size={13} /> Cancel
+          <X size={13} /> {t("admin.employers.cancelBtn")}
         </button>
       </div>
     </form>
@@ -267,16 +268,16 @@ export default function AdminEmployers() {
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 8 }}>
           <div>
-            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: navy, margin: 0 }}>Employer Accounts</h1>
+            <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: navy, margin: 0 }}>{t("admin.employers.title")}</h1>
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", margin: 0, marginTop: 4 }}>
-              Manage B2B wellness stipend programs
+              {t("admin.employers.subtitle")}
             </p>
           </div>
           <button
             onClick={() => { setShowCreate(true); setEditId(null); }}
             style={{ background: navy, color: "white", border: "none", borderRadius: 8, padding: "10px 18px", fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}
           >
-            <Plus size={15} /> New Employer
+            <Plus size={15} /> {t("admin.employers.newBtn")}
           </button>
         </div>
 
@@ -286,7 +287,7 @@ export default function AdminEmployers() {
         {showCreate && (
           <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, marginBottom: 24, overflow: "hidden" }}>
             <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(212,34,126,0.08)", fontFamily: "var(--app-font-sans)", fontSize: 15, fontWeight: 700, color: navy }}>
-              New Employer Account
+              {t("admin.employers.newFormTitle")}
             </div>
             <EmployerForm onSave={createEmployer} onCancel={() => setShowCreate(false)} />
           </div>
@@ -321,21 +322,21 @@ export default function AdminEmployers() {
         ) : employers.length === 0 ? (
           <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: 60, textAlign: "center" }}>
             <Building2 size={40} color="rgba(212,34,126,0.15)" style={{ marginBottom: 16 }} />
-            <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 600, color: navy }}>No employer accounts yet</h3>
-            <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>Click "New Employer" to create the first one.</p>
+            <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 16, fontWeight: 600, color: navy }}>{t("admin.employers.noEmployersH3")}</h3>
+            <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>{t("admin.employers.noEmployersP")}</p>
           </div>
         ) : (
           <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "rgba(212,34,126,0.02)" }}>
-                  <th style={thStyle} onClick={() => toggleSort("companyName")}>Company <SortIcon k="companyName" /></th>
-                  <th style={thStyle}>Contact</th>
-                  <th style={thStyle}>Invite Code</th>
-                  <th style={{ ...thStyle, textAlign: "right" as const }}>Stipend</th>
-                  <th style={{ ...thStyle, textAlign: "center" as const }} onClick={() => toggleSort("memberCount")}>Enrolled <SortIcon k="memberCount" /></th>
-                  <th style={thStyle}>Status</th>
-                  <th style={thStyle} onClick={() => toggleSort("createdAt")}>Created <SortIcon k="createdAt" /></th>
+                  <th style={thStyle} onClick={() => toggleSort("companyName")}>{t("admin.employers.companyName")} <SortIcon k="companyName" /></th>
+                  <th style={thStyle}>{t("admin.employers.colContact")}</th>
+                  <th style={thStyle}>{t("admin.employers.inviteCode")}</th>
+                  <th style={{ ...thStyle, textAlign: "right" as const }}>{t("admin.employers.colStipend")}</th>
+                  <th style={{ ...thStyle, textAlign: "center" as const }} onClick={() => toggleSort("memberCount")}>{t("admin.employers.colEnrolled")} <SortIcon k="memberCount" /></th>
+                  <th style={thStyle}>{t("admin.employers.status")}</th>
+                  <th style={thStyle} onClick={() => toggleSort("createdAt")}>{t("admin.employers.colCreated")} <SortIcon k="createdAt" /></th>
                   <th style={{ ...thStyle, width: 80 }}></th>
                 </tr>
               </thead>

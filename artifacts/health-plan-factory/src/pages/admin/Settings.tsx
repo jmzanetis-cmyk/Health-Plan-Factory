@@ -92,7 +92,7 @@ export default function AdminSettings() {
       style={{ background: saving === k ? "rgba(212,34,126,0.4)" : "var(--hpf-pink)", border: "none", cursor: saving === k ? "not-allowed" : "pointer", fontFamily: "var(--app-font-sans)" }}
     >
       {saving === k ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-      Save
+      {t("admin.settings.save")}
     </button>
   );
 
@@ -109,10 +109,10 @@ export default function AdminSettings() {
       <div className="max-w-4xl mx-auto flex flex-col gap-8">
         <div>
           <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
-            Platform Settings
+            {t("admin.settings.title")}
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-            Manage site-wide content and configuration
+            {t("admin.settings.subtitle")}
           </p>
         </div>
 
@@ -121,9 +121,9 @@ export default function AdminSettings() {
         {/* Disclaimer */}
         <div className="p-6 flex flex-col gap-4" style={sectionCard}>
           <div>
-            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>Disclaimer Text</h2>
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>{t("admin.settings.disclaimerH2")}</h2>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Shown in the sticky bar at the bottom of all member-facing pages
+              {t("admin.settings.disclaimerDesc")}
             </p>
           </div>
           <textarea
@@ -141,9 +141,9 @@ export default function AdminSettings() {
         {/* Pricing tier labels */}
         <div className="p-6 flex flex-col gap-4" style={sectionCard}>
           <div>
-            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>Pricing Tier Labels</h2>
+            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>{t("admin.settings.pricingH2")}</h2>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Labels displayed on the public pricing page
+              {t("admin.settings.pricingDesc")}
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -171,9 +171,9 @@ export default function AdminSettings() {
         <div className="p-6 flex flex-col gap-4" style={sectionCard}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>FAQ Entries</h2>
+              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>{t("admin.settings.faqH2")}</h2>
               <p className="text-xs mt-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                Manage the questions shown on the public FAQ page
+                {t("admin.settings.faqDesc")}
               </p>
             </div>
             <button
@@ -181,14 +181,14 @@ export default function AdminSettings() {
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium"
               style={{ background: "rgba(212,34,126,0.06)", border: "none", cursor: "pointer", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
-              <Plus size={14} /> Add Question
+              <Plus size={14} /> {t("admin.settings.addFaqBtn")}
             </button>
           </div>
 
           <div className="flex flex-col gap-4">
             {faqs.length === 0 && (
               <p className="text-sm py-4 text-center" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                No FAQ entries yet. Click "Add Question" to create one.
+                {t("admin.settings.noFaqP")}
               </p>
             )}
             {faqs.map((faq, i) => (

@@ -27,24 +27,26 @@ interface NotificationLogResponse {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   if (status === "sent") return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(125,181,92,0.1)", color: "#7DB55C", borderRadius: 999, padding: "2px 10px", fontSize: 12, fontWeight: 600, fontFamily: "var(--app-font-sans)" }}>
-      <CheckCircle2 size={11} /> Sent
+      <CheckCircle2 size={11} /> {t("admin.messages.statusSent")}
     </span>
   );
   if (status === "failed") return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(192,57,43,0.1)", color: "#c0392b", borderRadius: 999, padding: "2px 10px", fontSize: 12, fontWeight: 600, fontFamily: "var(--app-font-sans)" }}>
-      <XCircle size={11} /> Failed
+      <XCircle size={11} /> {t("admin.messages.statusFailed")}
     </span>
   );
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(224,32,64,0.1)", color: "#E02040", borderRadius: 999, padding: "2px 10px", fontSize: 12, fontWeight: 600, fontFamily: "var(--app-font-sans)" }}>
-      <Clock size={11} /> Queued
+      <Clock size={11} /> {t("admin.messages.statusQueued")}
     </span>
   );
 }
 
 function ChannelBadge({ channel }: { channel: string }) {
+  const { t } = useTranslation();
   if (channel === "sms") return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(212,34,126,0.07)", color: navy, borderRadius: 999, padding: "2px 10px", fontSize: 12, fontWeight: 600, fontFamily: "var(--app-font-sans)" }}>
       <MessageSquare size={11} /> SMS
@@ -52,7 +54,7 @@ function ChannelBadge({ channel }: { channel: string }) {
   );
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(212,34,126,0.07)", color: navy, borderRadius: 999, padding: "2px 10px", fontSize: 12, fontWeight: 600, fontFamily: "var(--app-font-sans)" }}>
-      <Mail size={11} /> Email
+      <Mail size={11} /> {t("admin.messages.channelEmail")}
     </span>
   );
 }
@@ -103,8 +105,8 @@ export default function AdminMessages() {
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, gap: 12, flexWrap: "wrap" }}>
           <div>
-            <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.4rem", fontWeight: 700, color: navy, margin: 0 }}>Message History</h2>
-            {data && <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>{data.total.toLocaleString()} total messages</p>}
+            <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.4rem", fontWeight: 700, color: navy, margin: 0 }}>{t("admin.messages.title")}</h2>
+            {data && <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>{data.total.toLocaleString()} {t("admin.messages.totalMessages")}</p>}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <select
@@ -112,18 +114,18 @@ export default function AdminMessages() {
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
               style={{ padding: "7px 12px", borderRadius: 8, border: "1.5px solid rgba(212,34,126,0.15)", fontFamily: "var(--app-font-sans)", fontSize: 13, color: navy, background: "white" }}
             >
-              <option value="">All statuses</option>
-              <option value="sent">Sent</option>
-              <option value="failed">Failed</option>
-              <option value="queued">Queued</option>
+              <option value="">{t("admin.messages.allStatuses")}</option>
+              <option value="sent">{t("admin.messages.statusSent")}</option>
+              <option value="failed">{t("admin.messages.statusFailed")}</option>
+              <option value="queued">{t("admin.messages.statusQueued")}</option>
             </select>
             <select
               value={channelFilter}
               onChange={(e) => { setChannelFilter(e.target.value); setPage(1); }}
               style={{ padding: "7px 12px", borderRadius: 8, border: "1.5px solid rgba(212,34,126,0.15)", fontFamily: "var(--app-font-sans)", fontSize: 13, color: navy, background: "white" }}
             >
-              <option value="">All channels</option>
-              <option value="email">Email</option>
+              <option value="">{t("admin.messages.allChannels")}</option>
+              <option value="email">{t("admin.messages.channelEmail")}</option>
               <option value="sms">SMS</option>
             </select>
           </div>
@@ -136,7 +138,7 @@ export default function AdminMessages() {
         ) : !data || data.entries.length === 0 ? (
           <div style={{ background: "white", borderRadius: 12, padding: 48, textAlign: "center", border: "1px solid rgba(212,34,126,0.08)" }}>
             <Mail size={32} style={{ color: "var(--text-muted)", marginBottom: 12 }} />
-            <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, color: "var(--text-secondary)" }}>No messages sent yet.</p>
+            <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, color: "var(--text-secondary)" }}>{t("admin.messages.noMessages")}</p>
           </div>
         ) : (
           <>
@@ -144,7 +146,7 @@ export default function AdminMessages() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(212,34,126,0.08)" }}>
-                    {["Member", "Channel", "Type", "Status", "Sent At"].map((h) => (
+                    {[t("admin.messages.colMember"), t("admin.messages.colChannel"), t("admin.messages.colType"), t("admin.messages.colStatus"), t("admin.messages.colSentAt")].map((h) => (
                       <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{h}</th>
                     ))}
                   </tr>
@@ -175,17 +177,17 @@ export default function AdminMessages() {
                   disabled={page <= 1}
                   style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid rgba(212,34,126,0.15)", background: "white", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy, cursor: page <= 1 ? "not-allowed" : "pointer", opacity: page <= 1 ? 0.4 : 1 }}
                 >
-                  ← Previous
+                  ← {t("admin.messages.prevBtn")}
                 </button>
                 <span style={{ display: "flex", alignItems: "center", fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)" }}>
-                  Page {page} of {pages}
+                  {t("admin.messages.pageOf", { page, pages })}
                 </span>
                 <button
                   onClick={() => { if (page < pages) setPage(page + 1); }}
                   disabled={page >= pages}
                   style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid rgba(212,34,126,0.15)", background: "white", fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600, color: navy, cursor: page >= pages ? "not-allowed" : "pointer", opacity: page >= pages ? 0.4 : 1 }}
                 >
-                  Next →
+                  {t("admin.messages.nextBtn")} →
                 </button>
               </div>
             )}

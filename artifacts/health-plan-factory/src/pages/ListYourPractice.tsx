@@ -1,72 +1,52 @@
 import { Link } from "react-router-dom";
 import { CheckCircle, Star, Users, TrendingUp, Shield, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const LISTING_PRICE = "$29/month";
 
-const benefits = [
-  {
-    icon: <Users size={20} />,
-    title: "High-intent members",
-    desc: "Members find you after building a plan that already includes your modality — the highest intent possible.",
-  },
-  {
-    icon: <TrendingUp size={20} />,
-    title: "Grow your practice",
-    desc: "Get discovered by wellness-focused members actively looking for providers like you. No cold outreach needed.",
-  },
-  {
-    icon: <Star size={20} />,
-    title: "Founding Provider Program",
-    desc: "Early providers get 0% commission on all platform bookings for the first 90 days. Limited spots available.",
-  },
-  {
-    icon: <Shield size={20} />,
-    title: "Verified listing",
-    desc: "Your credentials are reviewed by our team, building trust with members before they even reach out.",
-  },
-  {
-    icon: <Clock size={20} />,
-    title: "Easy to manage",
-    desc: "Update your availability, pricing, and specialties any time from your provider dashboard.",
-  },
-  {
-    icon: <CheckCircle size={20} />,
-    title: "HSA/FSA visibility",
-    desc: "Members can filter for providers who accept HSA and FSA payments — get found by those who need you most.",
-  },
-];
-
-const steps = [
-  { num: "01", title: "Create your profile", desc: "Tell us about your practice, modalities, location, and credentials." },
-  { num: "02", title: "Pay the listing fee", desc: `A simple ${LISTING_PRICE} subscription keeps your profile active and your leads flowing.` },
-  { num: "03", title: "Pending review", desc: "Our team reviews your credentials and activates your listing within 1–2 business days." },
-  { num: "04", title: "Start receiving leads", desc: "Members with matching wellness plans can view your profile and reach out directly." },
-];
-
-const faqs = [
-  {
-    q: "How much does it cost to list my practice?",
-    a: `The listing fee is ${LISTING_PRICE}. This covers your active profile, lead visibility, and dashboard access. There is no commission on bookings for the first 90 days as part of our Founding Provider Program.`,
-  },
-  {
-    q: "How long does approval take?",
-    a: "Our team reviews submitted profiles within 1–2 business days. You'll receive an email confirmation when your listing goes live.",
-  },
-  {
-    q: "What happens if my application is rejected?",
-    a: "If we can't approve your application, we'll let you know why. Common reasons include incomplete credentials or a mismatch with our current modality catalog. You're always welcome to reapply.",
-  },
-  {
-    q: "Can I cancel anytime?",
-    a: "Yes. You can cancel your listing subscription at any time from your provider dashboard. Your profile will remain active until the end of the billing period.",
-  },
-  {
-    q: "What modalities are supported?",
-    a: "We support a wide range of evidence-based wellness modalities including massage therapy, acupuncture, chiropractic care, yoga, nutrition counseling, functional medicine, and more. Browse our Modalities catalog to see the full list.",
-  },
-];
-
 export default function ListYourPractice() {
+  const { t } = useTranslation();
+
+  const benefits = [
+    { icon: <Users size={20} />, title: t("listYourPractice.benefit0Title"), desc: t("listYourPractice.benefit0Desc") },
+    { icon: <TrendingUp size={20} />, title: t("listYourPractice.benefit1Title"), desc: t("listYourPractice.benefit1Desc") },
+    { icon: <Star size={20} />, title: t("listYourPractice.benefit2Title"), desc: t("listYourPractice.benefit2Desc") },
+    { icon: <Shield size={20} />, title: t("listYourPractice.benefit3Title"), desc: t("listYourPractice.benefit3Desc") },
+    { icon: <Clock size={20} />, title: t("listYourPractice.benefit4Title"), desc: t("listYourPractice.benefit4Desc") },
+    { icon: <CheckCircle size={20} />, title: t("listYourPractice.benefit5Title"), desc: t("listYourPractice.benefit5Desc") },
+  ];
+
+  const steps = [
+    { num: "01", title: t("listYourPractice.step0Title"), desc: t("listYourPractice.step0Desc") },
+    { num: "02", title: t("listYourPractice.step1Title"), desc: t("listYourPractice.step1Desc", { price: LISTING_PRICE }) },
+    { num: "03", title: t("listYourPractice.step2Title"), desc: t("listYourPractice.step2Desc") },
+    { num: "04", title: t("listYourPractice.step3Title"), desc: t("listYourPractice.step3Desc") },
+  ];
+
+  const faqs = [
+    { q: t("listYourPractice.faq0Q"), a: t("listYourPractice.faq0A", { price: LISTING_PRICE }) },
+    { q: t("listYourPractice.faq1Q"), a: t("listYourPractice.faq1A") },
+    { q: t("listYourPractice.faq2Q"), a: t("listYourPractice.faq2A") },
+    { q: t("listYourPractice.faq3Q"), a: t("listYourPractice.faq3A") },
+    { q: t("listYourPractice.faq4Q"), a: t("listYourPractice.faq4A") },
+  ];
+
+  const features = [
+    t("listYourPractice.feature0"),
+    t("listYourPractice.feature1"),
+    t("listYourPractice.feature2"),
+    t("listYourPractice.feature3"),
+    t("listYourPractice.feature4"),
+    t("listYourPractice.feature5"),
+  ];
+
+  const stats = [
+    { val: t("listYourPractice.stat1Val"), label: t("listYourPractice.stat1Label") },
+    { val: t("listYourPractice.stat2Val"), label: t("listYourPractice.stat2Label") },
+    { val: t("listYourPractice.stat3Val"), label: t("listYourPractice.stat3Label") },
+    { val: t("listYourPractice.stat4Val"), label: t("listYourPractice.stat4Label") },
+  ];
+
   return (
     <div className="min-h-screen" style={{ background: "var(--warm-white)" }}>
       {/* Hero */}
@@ -77,7 +57,7 @@ export default function ListYourPractice() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-6"
             style={{ background: "rgba(255,255,255,0.15)", color: "white", fontFamily: "var(--app-font-sans)" }}>
-            ✦ Founding Provider Program — 0% commission for 90 days
+            {t("listYourPractice.badge")}
           </div>
           <h1
             className="mb-6"
@@ -88,15 +68,16 @@ export default function ListYourPractice() {
               color: "white",
               lineHeight: 1.1,
               letterSpacing: "-0.02em",
+              whiteSpace: "pre-line",
             }}
           >
-            List your practice.<br />Reach members who want what you offer.
+            {t("listYourPractice.heroH1")}
           </h1>
           <p
             className="text-lg mb-10 mx-auto"
             style={{ color: "rgba(255,255,255,0.85)", fontFamily: "var(--app-font-sans)", maxWidth: "580px", lineHeight: 1.6 }}
           >
-            Health Plan Factory connects wellness providers with high-intent members who have already decided they need your specialty. Start at <strong style={{ color: "white" }}>{LISTING_PRICE}</strong> — cancel anytime.
+            {t("listYourPractice.heroP", { price: LISTING_PRICE })}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
@@ -104,14 +85,14 @@ export default function ListYourPractice() {
               className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-base font-semibold no-underline transition-all"
               style={{ background: "white", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
             >
-              Get Started — {LISTING_PRICE} →
+              {t("listYourPractice.getStartedBtn", { price: LISTING_PRICE })}
             </Link>
             <Link
               to="/modalities"
               className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-base font-medium no-underline transition-all"
               style={{ background: "rgba(255,255,255,0.12)", color: "white", fontFamily: "var(--app-font-sans)", border: "1px solid rgba(255,255,255,0.2)" }}
             >
-              Browse modalities
+              {t("listYourPractice.browseModalities")}
             </Link>
           </div>
         </div>
@@ -120,12 +101,7 @@ export default function ListYourPractice() {
       {/* Social proof bar */}
       <div style={{ background: "white", borderBottom: "1px solid rgba(212,34,126,0.06)" }}>
         <div className="px-6 md:px-12 py-5 max-w-4xl mx-auto flex flex-wrap gap-6 justify-center md:justify-between items-center">
-          {[
-            { val: "500+", label: "Active providers" },
-            { val: "10k+", label: "Members with plans" },
-            { val: "4.9★", label: "Provider satisfaction" },
-            { val: "1–2 days", label: "Approval time" },
-          ].map((s) => (
+          {stats.map((s) => (
             <div key={s.label} className="text-center">
               <p className="text-xl font-bold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>{s.val}</p>
               <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{s.label}</p>
@@ -138,9 +114,9 @@ export default function ListYourPractice() {
       <div className="px-6 md:px-12 py-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <p className="section-tag">How it works</p>
+            <p className="section-tag">{t("listYourPractice.howItWorksTag")}</p>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-              From application to first lead in 2 days
+              {t("listYourPractice.howItWorksH2")}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -168,9 +144,9 @@ export default function ListYourPractice() {
       <div className="px-6 md:px-12 py-16" style={{ background: "white" }}>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <p className="section-tag">Why providers choose us</p>
+            <p className="section-tag">{t("listYourPractice.whyChooseTag")}</p>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-              Everything you need to grow your practice
+              {t("listYourPractice.whyChooseH2")}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -197,9 +173,9 @@ export default function ListYourPractice() {
       <div className="px-6 md:px-12 py-20">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-10">
-            <p className="section-tag">Pricing</p>
+            <p className="section-tag">{t("listYourPractice.pricingTag")}</p>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-              Simple, transparent pricing
+              {t("listYourPractice.pricingH2")}
             </h2>
           </div>
           <div
@@ -208,21 +184,14 @@ export default function ListYourPractice() {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4"
               style={{ background: "rgba(212,34,126,0.08)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-              Founding Provider Offer
+              {t("listYourPractice.foundingOffer")}
             </div>
             <p style={{ fontFamily: "var(--app-font-serif)", fontSize: "3rem", fontWeight: 700, color: "var(--hpf-pink)", lineHeight: 1 }}>
               $29
             </p>
-            <p className="text-sm mb-6" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>/ month · cancel anytime</p>
+            <p className="text-sm mb-6" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{t("listYourPractice.perMonth")}</p>
             <ul className="text-sm text-left flex flex-col gap-3 mb-8">
-              {[
-                "Active provider listing",
-                "Unlimited lead views",
-                "Provider dashboard access",
-                "Credential verification badge",
-                "0% commission for first 90 days",
-                "HSA/FSA provider badge",
-              ].map((item) => (
+              {features.map((item) => (
                 <li key={item} className="flex items-center gap-2" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
                   <CheckCircle size={14} style={{ color: "var(--sage)", flexShrink: 0 }} />
                   {item}
@@ -234,10 +203,10 @@ export default function ListYourPractice() {
               className="block w-full py-4 rounded-xl text-sm font-semibold text-white no-underline text-center"
               style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
-              List My Practice →
+              {t("listYourPractice.listMyPractice")}
             </Link>
             <p className="text-xs mt-3" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Payment collected after your profile is submitted. Listing goes live after admin approval.
+              {t("listYourPractice.pricingNote")}
             </p>
           </div>
         </div>
@@ -247,9 +216,9 @@ export default function ListYourPractice() {
       <div className="px-6 md:px-12 py-16" style={{ background: "white" }}>
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
-            <p className="section-tag">FAQ</p>
+            <p className="section-tag">{t("listYourPractice.faqTag")}</p>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)" }}>
-              Common questions
+              {t("listYourPractice.faqH2")}
             </h2>
           </div>
           <div className="flex flex-col gap-4">
@@ -281,17 +250,17 @@ export default function ListYourPractice() {
             className="mb-4"
             style={{ fontFamily: "var(--app-font-serif)", fontSize: "2.2rem", fontWeight: 700, color: "white" }}
           >
-            Ready to grow your practice?
+            {t("listYourPractice.ctaH2")}
           </h2>
           <p className="mb-8 text-base" style={{ color: "rgba(255,255,255,0.85)", fontFamily: "var(--app-font-sans)" }}>
-            Join hundreds of wellness providers already connecting with motivated members. Start today for just {LISTING_PRICE}.
+            {t("listYourPractice.ctaP", { price: LISTING_PRICE })}
           </p>
           <Link
             to="/provider/signup"
             className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-base font-semibold no-underline"
             style={{ background: "white", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
           >
-            Apply as a Provider →
+            {t("listYourPractice.ctaBtn")}
           </Link>
         </div>
       </div>

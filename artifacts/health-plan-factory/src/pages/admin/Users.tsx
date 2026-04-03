@@ -78,8 +78,8 @@ export default function AdminUsers() {
     <div className="min-h-screen px-4 md:px-10 py-10" style={{ background: "var(--warm-white)" }}>
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>User Management</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>All registered members, providers, and admins</p>
+          <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>{t("admin.users.title")}</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>{t("admin.users.subtitle")}</p>
         </div>
 
         <AdminNav active="/admin/users" />
@@ -90,7 +90,7 @@ export default function AdminUsers() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, or role…"
+            placeholder={t("admin.users.searchPlaceholder")}
             className="w-full max-w-sm px-4 py-2.5 rounded-lg text-sm outline-none"
             style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.12)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
           />
@@ -107,14 +107,14 @@ export default function AdminUsers() {
                 <thead style={{ background: "rgba(212,34,126,0.02)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}>
                   <tr>
                     <th style={thStyle} onClick={() => toggleSort("displayName")}>
-                      <span className="inline-flex items-center gap-1">Name <SortIcon k="displayName" /></span>
+                      <span className="inline-flex items-center gap-1">{t("admin.users.name")} <SortIcon k="displayName" /></span>
                     </th>
-                    <th style={thStyle}>Email</th>
+                    <th style={thStyle}>{t("admin.users.email")}</th>
                     <th style={thStyle} onClick={() => toggleSort("role")}>
-                      <span className="inline-flex items-center gap-1">Role <SortIcon k="role" /></span>
+                      <span className="inline-flex items-center gap-1">{t("admin.users.role")} <SortIcon k="role" /></span>
                     </th>
                     <th style={thStyle} onClick={() => toggleSort("createdAt")}>
-                      <span className="inline-flex items-center gap-1">Joined <SortIcon k="createdAt" /></span>
+                      <span className="inline-flex items-center gap-1">{t("admin.users.joined")} <SortIcon k="createdAt" /></span>
                     </th>
                   </tr>
                 </thead>
@@ -122,7 +122,7 @@ export default function AdminUsers() {
                   {sorted.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="text-center py-12 text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                        {search ? "No users match your search" : "No users yet"}
+                        {search ? t("admin.users.noMatch") : t("admin.users.noUsers")}
                       </td>
                     </tr>
                   ) : (
@@ -159,7 +159,7 @@ export default function AdminUsers() {
           )}
         </div>
         <p className="text-xs mt-3" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-          {sorted.length} of {users.length} users
+          {t("admin.users.ofTotal", { shown: sorted.length, total: users.length })}
         </p>
       </div>
     </div>

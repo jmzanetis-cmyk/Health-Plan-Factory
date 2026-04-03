@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowRight, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
@@ -32,19 +33,20 @@ const EVIDENCE_BADGE: Record<string, { bg: string; color: string }> = {
   Emerging: { bg: "rgba(91,155,213,0.12)", color: "#5b9bd5" },
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  manual: "Manual Therapy",
-  movement: "Movement",
-  "mind-body": "Mind-Body",
-  nutrition: "Nutrition",
-  medical: "Medical",
-  telehealth: "Telehealth",
-};
-
 export default function Modalities() {
+  const { t } = useTranslation();
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+
+  const CATEGORY_LABEL: Record<string, string> = {
+    manual: t("modalities.categoryManual"),
+    movement: t("modalities.categoryMovement"),
+    "mind-body": t("modalities.categoryMindBody"),
+    nutrition: t("modalities.categoryNutrition"),
+    medical: t("modalities.categoryMedical"),
+    telehealth: t("modalities.categoryTelehealth"),
+  };
 
   useEffect(() => {
     fetch(`${BASE}/api/modalities?isActive=true`)
@@ -102,18 +104,18 @@ export default function Modalities() {
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           {/* Breadcrumb */}
           <nav style={{ marginBottom: 20, display: "flex", gap: 6, alignItems: "center", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>
-            <Link to="/" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>Home</Link>
+            <Link to="/" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>{t("modalities.homeLink")}</Link>
             <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
-            <span style={{ color: "rgba(255,255,255,0.9)" }}>Modalities</span>
+            <span style={{ color: "rgba(255,255,255,0.9)" }}>{t("modalities.title")}</span>
           </nav>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(224,32,64,0.15)", border: "1px solid rgba(224,32,64,0.3)", borderRadius: 20, padding: "4px 14px", marginBottom: 16 }}>
-            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#e84d65", textTransform: "uppercase", letterSpacing: "0.07em" }}>Evidence Library</span>
+            <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: "#e84d65", textTransform: "uppercase", letterSpacing: "0.07em" }}>{t("modalities.evidenceLibrary")}</span>
           </div>
           <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2rem,5vw,3.5rem)", fontWeight: 700, color: "white", letterSpacing: "-0.02em", margin: "0 0 16px" }}>
-            {modalities.length > 0 ? modalities.length : 20} Evidence-Led Modalities
+            {t("modalities.evidenceCount", { count: modalities.length > 0 ? modalities.length : 20 })}
           </h1>
           <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 17, color: "rgba(255,255,255,0.65)", maxWidth: 560, lineHeight: 1.6, margin: 0 }}>
-            Every modality rated by research evidence and cross-referenced with your health conditions and budget.
+            {t("modalities.heroP")}
           </p>
         </div>
       </div>
@@ -136,10 +138,9 @@ export default function Modalities() {
                 color: filter === cat ? navy : "var(--text-secondary)",
                 borderBottom: filter === cat ? `2px solid ${navy}` : "2px solid transparent",
                 whiteSpace: "nowrap",
-                textTransform: cat === "all" ? "none" : "none",
               }}
             >
-              {cat === "all" ? "All" : CATEGORY_LABEL[cat] ?? cat}
+              {cat === "all" ? t("modalities.filterAll") : CATEGORY_LABEL[cat] ?? cat}
             </button>
           ))}
         </div>
@@ -212,7 +213,7 @@ export default function Modalities() {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 4, color: amber, fontFamily: "var(--app-font-sans)", fontSize: 13, fontWeight: 600 }}>
-                      Read evidence summary <ArrowRight size={13} />
+                      {t("modalities.readEvidence")} <ArrowRight size={13} />
                     </div>
                   </div>
                 </Link>
@@ -224,16 +225,16 @@ export default function Modalities() {
         {/* CTA */}
         <div style={{ marginTop: 60, padding: "40px 32px", background: navy, borderRadius: 16, textAlign: "center" }}>
           <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 26, color: "white", margin: "0 0 12px" }}>
-            Ready to build your personalized plan?
+            {t("modalities.ctaH2")}
           </h2>
           <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 15, color: "rgba(255,255,255,0.65)", marginBottom: 24 }}>
-            Answer a few questions and get a plan from these modalities tailored to your goals and budget.
+            {t("modalities.ctaP")}
           </p>
           <Link
             to="/sign-up"
             style={{ display: "inline-flex", alignItems: "center", gap: 8, background: amber, color: "white", padding: "13px 28px", borderRadius: 10, fontFamily: "var(--app-font-sans)", fontWeight: 700, fontSize: 15, textDecoration: "none" }}
           >
-            Build my plan free <ArrowRight size={16} />
+            {t("modalities.ctaBtn")} <ArrowRight size={16} />
           </Link>
         </div>
       </div>

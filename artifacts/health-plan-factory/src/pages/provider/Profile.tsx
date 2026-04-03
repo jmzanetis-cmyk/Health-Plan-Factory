@@ -57,11 +57,12 @@ const inputStyle = {
 const labelStyle = { color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" };
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   const config: Record<string, { bg: string; color: string; label: string }> = {
-    pending: { bg: "rgba(224,32,64,0.08)", color: "var(--hpf-crimson)", label: "Pending review" },
-    approved: { bg: "rgba(125,181,92,0.08)", color: "var(--sage)", label: "Active listing" },
-    rejected: { bg: "rgba(192,57,43,0.08)", color: "#c0392b", label: "Not approved" },
-    suspended: { bg: "rgba(212,34,126,0.08)", color: "var(--text-muted)", label: "Suspended" },
+    pending: { bg: "rgba(224,32,64,0.08)", color: "var(--hpf-crimson)", label: t("provider.profile.statusPending") },
+    approved: { bg: "rgba(125,181,92,0.08)", color: "var(--sage)", label: t("provider.profile.statusApproved") },
+    rejected: { bg: "rgba(192,57,43,0.08)", color: "#c0392b", label: t("provider.profile.statusRejected") },
+    suspended: { bg: "rgba(212,34,126,0.08)", color: "var(--text-muted)", label: t("provider.profile.statusSuspended") },
   };
   const c = config[status] ?? config.pending;
   return (
@@ -157,12 +158,12 @@ export default function ProviderProfile() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "var(--warm-white)" }}>
         <div className="text-center max-w-sm">
-          <h1 className="mb-3 text-2xl" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)", fontWeight: 700 }}>No profile yet</h1>
+          <h1 className="mb-3 text-2xl" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)", fontWeight: 700 }}>{t("provider.profile.noProfileH1")}</h1>
           <p className="text-sm mb-6" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-            Complete your provider application to create a listing.
+            {t("provider.profile.noProfileP")}
           </p>
           <Link to="/provider/signup" className="px-5 py-3 rounded-lg text-sm font-semibold text-white no-underline" style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-            Apply as a provider →
+            {t("provider.profile.applyBtn")}
           </Link>
         </div>
       </div>
@@ -175,16 +176,16 @@ export default function ProviderProfile() {
         <div className="flex items-start justify-between mb-8 gap-4 flex-wrap">
           <div>
             <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
-              Edit Profile
+              {t("provider.profile.editH1")}
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Your public listing on Health Plan Factory
+              {t("provider.profile.editSubtitle")}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge status={provider.status} />
             <Link to="/provider/dashboard" className="text-sm no-underline font-medium" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              ← Dashboard
+              {t("provider.profile.dashboardLink")}
             </Link>
           </div>
         </div>
@@ -192,23 +193,22 @@ export default function ProviderProfile() {
         {provider.status === "pending" && (
           <div className="mb-6 p-4 rounded-xl" style={{ background: "rgba(224,32,64,0.06)", border: "1px solid rgba(224,32,64,0.15)" }}>
             <p className="text-sm" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-              <strong style={{ color: "var(--hpf-crimson)" }}>Under review</strong> — our team is verifying your application.
-              You can update your profile while you wait. We'll notify you by email when approved.
+              <strong style={{ color: "var(--hpf-crimson)" }}>{t("provider.profile.underReview")}</strong> — {t("provider.profile.underReviewNote")}
             </p>
           </div>
         )}
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
           <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
-            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Practice Info</h2>
+            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{t("provider.profile.practiceInfoH2")}</h2>
             <div className="flex flex-col gap-4">
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Practice name *</label>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>{t("provider.profile.practiceNameLabel")}</label>
                 <input {...form.register("name")} className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
                 {form.formState.errors.name && <p className="text-xs mt-1" style={{ color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>{form.formState.errors.name.message}</p>}
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Bio</label>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>{t("provider.profile.bioLabel")}</label>
                 <textarea {...form.register("bio")} rows={5} className="w-full px-4 py-3 rounded-lg text-sm outline-none resize-none" style={inputStyle} />
                 {form.formState.errors.bio && <p className="text-xs mt-1" style={{ color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>{form.formState.errors.bio.message}</p>}
               </div>
@@ -216,27 +216,27 @@ export default function ProviderProfile() {
           </div>
 
           <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
-            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Contact & Location</h2>
+            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{t("provider.profile.contactH2")}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}><Phone size={11} className="inline mr-1" />Phone</label>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}><Phone size={11} className="inline mr-1" />{t("provider.profile.phoneLabel")}</label>
                 <input {...form.register("phone")} type="tel" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}><Globe size={11} className="inline mr-1" />Website</label>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}><Globe size={11} className="inline mr-1" />{t("provider.profile.websiteLabel")}</label>
                 <input {...form.register("website")} type="url" className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}><MapPin size={11} className="inline mr-1" />City</label>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}><MapPin size={11} className="inline mr-1" />{t("provider.profile.cityLabel")}</label>
                 <input {...form.register("city")} className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>State</label>
+                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>{t("provider.profile.stateLabel")}</label>
                   <input {...form.register("state")} maxLength={2} className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>ZIP</label>
+                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>{t("provider.profile.zipLabel")}</label>
                   <input {...form.register("zipCode")} maxLength={5} className="w-full px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
                   {form.formState.errors.zipCode && <p className="text-xs mt-1" style={{ color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>{form.formState.errors.zipCode.message}</p>}
                 </div>
@@ -245,10 +245,10 @@ export default function ProviderProfile() {
           </div>
 
           <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
-            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Services & Pricing</h2>
+            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{t("provider.profile.servicesH2")}</h2>
             <div className="flex flex-col gap-4">
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}><DollarSign size={11} className="inline mr-1" />Cost per session ($)</label>
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}><DollarSign size={11} className="inline mr-1" />{t("provider.profile.costLabel")}</label>
                 <input {...form.register("costPerSession")} type="number" min={0} className="w-full sm:w-1/2 px-4 py-3 rounded-lg text-sm outline-none" style={inputStyle} />
               </div>
               <div className="flex flex-col gap-3">
@@ -256,7 +256,7 @@ export default function ProviderProfile() {
                   <input type="checkbox" {...form.register("offersTelehealth")} className="w-4 h-4" />
                   <div>
                     <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-                      <Video size={13} /> Offer telehealth / virtual sessions
+                      <Video size={13} /> {t("provider.profile.telehealthLabel")}
                     </p>
                   </div>
                 </label>
@@ -264,7 +264,7 @@ export default function ProviderProfile() {
                   <input type="checkbox" {...form.register("acceptsInsurance")} className="w-4 h-4" />
                   <div>
                     <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-                      <Shield size={13} /> Accepts insurance
+                      <Shield size={13} /> {t("provider.profile.insuranceLabel")}
                     </p>
                   </div>
                 </label>
@@ -273,7 +273,7 @@ export default function ProviderProfile() {
           </div>
 
           <div className="rounded-2xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
-            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Modalities</h2>
+            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wide" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{t("provider.profile.modalitiesH2")}</h2>
             <div className="flex flex-wrap gap-2">
               {modalities.map((m) => {
                 const selected = form.watch("modalityIds")?.includes(m.id);
@@ -309,7 +309,7 @@ export default function ProviderProfile() {
           <div className="flex justify-end gap-3">
             {saved && (
               <div className="flex items-center gap-2 text-sm" style={{ color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
-                <Check size={15} /> Saved
+                <Check size={15} /> {t("provider.profile.saved")}
               </div>
             )}
             <button
@@ -324,7 +324,7 @@ export default function ProviderProfile() {
               }}
             >
               {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-              {saving ? "Saving..." : "Save changes"}
+              {saving ? t("provider.profile.saving") : t("provider.profile.saveBtn")}
             </button>
           </div>
         </form>
