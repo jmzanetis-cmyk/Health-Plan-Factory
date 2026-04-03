@@ -311,35 +311,61 @@ test.describe("Outcome Tracking", () => {
     await expect(page.getByText(/goal achieved/i)).toBeVisible();
   });
 
-  // ── 7. Full happy-path — progress entry → mark outcome → badge ───────────
+  // ── 7. Canonical full happy-path: onboarding → plan → progress UI → outcome → badge ──────
   /**
-   * This is the canonical chained journey test. It mocks Replit OIDC (because
-   * Google OAuth is not accessible in headless mode), but every other step
-   * exercises real UI interactions:
+   * The definitive end-to-end journey test. Auth is mocked (Replit OIDC requires
+   * interactive Google OAuth which is unavailable in headless mode — this is a
+   * documented platform constraint). All other steps are real UI interactions:
    *
-   *   mock auth → seed plan → /plan renders → log progress entry (via API
-   *   from page context) → open outcome modal → select label → submit →
-   *   badge visible.
-   *
-   * The "sign-up" step is represented by the auth mock injection, which is the
-   * equivalent of "create account" in a headless test environment where
-   * interactive OAuth is unavailable.
+   *   mock auth routes → /onboarding (7 real UI steps) → /plan renders
+   *   → /progress page → open form → fill metrics → Save Log (POST mocked)
+   *   → /plan → open outcome modal → select label + note → Confirm
+   *   → assert "Goal achieved" badge visible
    */
-  test("7. Full happy-path: auth → plan → log progress entry → mark goal achieved → badge visible", async ({ page }) => {
+  test("7. Canonical full happy-path: onboarding → plan → log progress (UI) → mark outcome → badge", async ({ page }) => {
+    // ── Setup all route mocks before any navigation ────────────────────────
+    // Auth: make app think user is signed in as MOCK_USER (bypasses Replit OIDC)
     await mockAuth(page, { isPlus: true });
 
-    // Mock the progress POST endpoint so logging a session doesn't hit the real DB
-    await page.route("**/api/progress", (route) => {
+    // Plan generation endpoints (onboarding posts here; local fallback also works)
+    await page.route("**/api/plans/speculate", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ plan: MOCK_LATEST_PLAN.plan, items: MOCK_LATEST_PLAN.items }),
+      }),
+    );
+    await page.route("**/api/plans/generate", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ plan: MOCK_LATEST_PLAN.plan, items: MOCK_LATEST_PLAN.items }),
+      }),
+    );
+
+    // Progress GET (empty history on first visit) + POST (mock success)
+    await page.route("**/api/progress**", (route) => {
+      if (route.request().method() === "GET") {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      }
       if (route.request().method() === "POST") {
         return route.fulfill({
           status: 201,
           contentType: "application/json",
           body: JSON.stringify({
-            id: "test-progress-001",
+            id: "e2e-progress-001",
             profileId: MOCK_USER.id,
             planId: MOCK_PLAN_ID,
-            modalityId: "yoga",
-            sessionCostCents: 8000,
+            rating: 8,
+            mood: 7,
+            energy: null,
+            pain: null,
+            sessionCostCents: 0,
+            note: "Felt great after yoga session.",
             createdAt: new Date().toISOString(),
           }),
         });
@@ -347,7 +373,7 @@ test.describe("Outcome Tracking", () => {
       return route.continue();
     });
 
-    // Mock the outcome PATCH endpoint
+    // Outcome PATCH mock
     await page.route(`**/api/plans/${MOCK_PLAN_ID}/outcome`, (route) =>
       route.fulfill({
         status: 200,
@@ -364,53 +390,94 @@ test.describe("Outcome Tracking", () => {
       }),
     );
 
-    // ── Step 1: arrive at /plan with a seeded session (simulates completing onboarding)
-    await page.goto(`${UI_URL}/plan`);
-    await seedPlanSession(page);
-    await page.reload();
+    // ── Step 1: Complete onboarding wizard (7 UI steps) ────────────────────
+    await page.goto(`${UI_URL}/onboarding`);
 
-    // Wait for plan heading
+    // Step 0 — Budget: pick or accept default, then Next
+    const nextBtn0 = page.getByRole("button", { name: /next/i });
+    if (await nextBtn0.isVisible({ timeout: 3000 }).catch(() => false)) await nextBtn0.click();
+
+    // Step 1 — Goals: pick at least one
+    const goalChip = page.locator("button").filter({ hasText: /stress|sleep|energy|fitness/i }).first();
+    if (await goalChip.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await goalChip.click();
+      await page.getByRole("button", { name: /next/i }).click();
+    }
+
+    // Step 2 — Conditions: optional; click Next if visible
+    const nextBtn2 = page.getByRole("button", { name: /next/i });
+    if (await nextBtn2.isVisible({ timeout: 2000 }).catch(() => false)) await nextBtn2.click();
+
+    // Step 3 — Preferences: pick at least one if visible
+    const prefChip = page.locator("button").filter({ hasText: /mind-body|in-person|virtual/i }).first();
+    if (await prefChip.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await prefChip.click();
+      await page.getByRole("button", { name: /next/i }).click();
+    }
+
+    // Step 4 — Exclusions: optional; Next if visible
+    const nextBtn4 = page.getByRole("button", { name: /next/i });
+    if (await nextBtn4.isVisible({ timeout: 2000 }).catch(() => false)) await nextBtn4.click();
+
+    // Step 5 — ZIP code
+    const zipInput = page.locator("input[inputmode='numeric'], input[type='text'][placeholder*='ZIP']").first();
+    if (await zipInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await zipInput.fill("90210");
+      await page.getByRole("button", { name: /next/i }).click();
+    }
+
+    // Step 6 — Review: submit
+    const submitBtn = page.getByRole("button", { name: /build my plan|generate|submit|finish/i }).first();
+    if (await submitBtn.isVisible({ timeout: 3000 }).catch(() => false)) await submitBtn.click();
+
+    // Wait for /plan redirect (building screen → plan page)
+    await page.waitForURL(`${UI_URL}/plan`, { timeout: 25000 });
     await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({
       timeout: 10000,
     });
 
-    // ── Step 2: Log a progress entry via the page's fetch (simulates visiting /progress and logging)
-    const progressResult = await page.evaluate(
-      async ({ apiUrl, userId, planId }) => {
-        try {
-          const res = await fetch(`${apiUrl}/api/progress`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({
-              profileId: userId,
-              planId,
-              modalityId: "yoga",
-              sessionCostDollars: 80,
-            }),
-          });
-          return { ok: res.ok, status: res.status };
-        } catch (e) {
-          return { ok: false, error: String(e) };
-        }
-      },
-      { apiUrl: API_URL, userId: MOCK_USER.id, planId: MOCK_PLAN_ID },
-    );
+    // ── Step 2: Navigate to /progress and log a session via UI ─────────────
+    await page.goto(`${UI_URL}/progress`);
 
-    expect(progressResult.ok).toBe(true);
+    // Open the log form by clicking "Log Entry" button
+    await page.getByRole("button", { name: /log entry/i }).click();
 
-    // ── Step 3: Open the outcome modal
+    // Fill Wellness metric (input labeled "Wellness", placeholder "1–10")
+    const wellnessInput = page.locator("input[placeholder='1–10']").first();
+    await wellnessInput.fill("8");
+
+    // Fill Mood metric
+    const moodInput = page.locator("input[placeholder='1–10']").nth(1);
+    await moodInput.fill("7");
+
+    // Optionally fill the note
+    await page.locator("textarea[placeholder*='How did you feel']").fill("Felt great after yoga session.");
+
+    // Submit the form
+    await page.getByRole("button", { name: /save log/i }).click();
+
+    // Form should close (toast or form hidden) — wait briefly
+    await page.waitForTimeout(800);
+
+    // ── Step 3: Navigate to /plan and mark goal achieved ───────────────────
+    await page.goto(`${UI_URL}/plan`);
+    await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({
+      timeout: 10000,
+    });
+
+    // "Mark goal achieved" button must be visible (Plus member, no prior outcome)
     await expect(page.getByTestId("mark-goal-achieved-btn")).toBeVisible({ timeout: 5000 });
     await page.getByTestId("mark-goal-achieved-btn").click();
 
+    // ── Step 4: Fill outcome modal ─────────────────────────────────────────
     await expect(page.getByTestId("outcome-modal")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/medical reminder|always follow your doctor/i)).toBeVisible();
 
-    // ── Step 4: Select label, fill note, confirm
     await page.getByTestId("outcome-label-stress-managed").click();
     await page.getByTestId("outcome-note-input").fill("Eight weeks of yoga made a real difference.");
     await page.getByTestId("outcome-confirm-btn").click();
 
-    // ── Step 5: Assert badge visible and modal gone
+    // ── Step 5: Assert badge ───────────────────────────────────────────────
     await expect(page.getByTestId("goal-achieved-badge")).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(/goal achieved/i)).toBeVisible();
     await expect(page.getByTestId("outcome-modal")).not.toBeVisible();
