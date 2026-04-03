@@ -8,12 +8,12 @@ export default function ForProviders() {
       <div className="px-6 md:px-12 py-10 md:py-20" style={{ background: "var(--off-white)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}>
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           <div>
-            <div className="section-tag">For Providers</div>
+            <div className="section-tag">{t("forProviders.tag")}</div>
             <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(2.2rem,4vw,3.5rem)", fontWeight: 700, color: "var(--hpf-deep)", lineHeight: 1.1, letterSpacing: "-0.02em", marginBottom: "1rem" }}>
-              Get discovered by members who already want what you offer.
+              {t("forProviders.hero.headline")}
             </h1>
             <p className="text-sm font-light leading-relaxed mb-6" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Members build their wellness plans before they find you — so when they view your profile, they've already decided they need your modality. No cold outreach. High-intent leads.
+              {t("forProviders.hero.sub")}
             </p>
             <div className="flex gap-3">
               <Link
@@ -21,14 +21,14 @@ export default function ForProviders() {
                 className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-semibold text-white no-underline"
                 style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
               >
-                List your practice →
+                {t("forProviders.hero.cta")}
               </Link>
               <Link
                 to="/provider/signup"
                 className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-medium no-underline"
                 style={{ background: "transparent", border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
               >
-                Apply directly →
+                {t("forProviders.hero.cta2")}
               </Link>
             </div>
           </div>
@@ -71,18 +71,22 @@ export default function ForProviders() {
       <div className="px-6 md:px-12 py-16">
         <div className="max-w-4xl mx-auto">
           <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-deep)", marginBottom: "2rem" }}>
-            Why join HealthPlanFactory?
+            {t("forProviders.benefits.title")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              { icon: "🎯", title: "High-intent leads", desc: "Members view your profile after including your modality in their plan — the highest intent possible." },
-              { icon: "📅", title: "Booking calendar", desc: "Accept bookings directly through the platform with integrated calendar and confirmation flow." },
-              { icon: "🏭", title: "Founding Program", desc: "Early providers get 0% commission on all bookings through the platform for the first 90 days." },
+              { icon: "🎯", key: "highIntent" },
+              { icon: "📅", key: "booking" },
+              { icon: "🏭", key: "founding" },
             ].map((b) => (
-              <div key={b.title} className="rounded-xl p-5" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
+              <div key={b.key} className="rounded-xl p-5" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
                 <div className="text-2xl mb-3">{b.icon}</div>
-                <h3 className="font-semibold text-sm mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{b.title}</h3>
-                <p className="text-xs font-light leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>{b.desc}</p>
+                <h3 className="font-semibold text-sm mb-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
+                  {t(`forProviders.benefits.${b.key}.title`)}
+                </h3>
+                <p className="text-xs font-light leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
+                  {t(`forProviders.benefits.${b.key}.desc`)}
+                </p>
               </div>
             ))}
           </div>
@@ -93,10 +97,10 @@ export default function ForProviders() {
               className="inline-flex items-center px-8 py-3.5 rounded-lg text-sm font-semibold text-white no-underline"
               style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
-              List your practice — $29/mo →
+              {t("forProviders.cta")}
             </Link>
             <p className="text-xs mt-3" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              Applications reviewed within 1–2 business days
+              {t("forProviders.ctaSub")}
             </p>
           </div>
         </div>

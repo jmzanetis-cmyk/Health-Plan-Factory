@@ -189,7 +189,15 @@
         "Marca cualquier condición o preocupación para que la IA priorice las modalidades correctas.",
         "Comparte tu ubicación y cómo prefieres participar — en persona, virtual o ambas."
       ],
-      "sections": ["Presupuesto", "Objetivos", "Condiciones", "Preferencias", "Exclusiones", "Ubicación", "Revisión"]
+      "sections": [
+        "Presupuesto",
+        "Objetivos",
+        "Condiciones",
+        "Preferencias",
+        "Exclusiones",
+        "Ubicación",
+        "Revisión"
+      ]
     },
     "step2": {
       "title": "Tu plan se ensambla",
@@ -1096,6 +1104,115 @@
       "title": "Vista Previa del Listado",
       "sub": "Así es como los miembros ven tu perfil.",
       "editProfile": "Editar Perfil →"
+    }
+  },
+  "forProviders": {
+    "tag": "Para Proveedores",
+    "hero": {
+      "headline": "Sé descubierto por miembros que ya quieren lo que ofreces.",
+      "sub": "Los miembros construyen sus planes de bienestar antes de encontrarte — cuando ven tu perfil, ya han decidido que necesitan tu modalidad. Sin prospección en frío. Prospectos de alta intención.",
+      "cta": "Lista tu práctica →",
+      "cta2": "Aplicar directamente →"
+    },
+    "benefits": {
+      "title": "¿Por qué unirse a HealthPlanFactory?",
+      "highIntent": {
+        "title": "Prospectos de alta intención",
+        "desc": "Los miembros ven tu perfil después de incluir tu modalidad en su plan — la mayor intención posible."
+      },
+      "booking": {
+        "title": "Calendario de reservas",
+        "desc": "Acepta reservas directamente en la plataforma con calendario integrado y flujo de confirmación."
+      },
+      "founding": {
+        "title": "Programa Fundador",
+        "desc": "Los primeros proveedores obtienen 0% de comisión en todas las reservas durante los primeros 90 días."
+      }
+    },
+    "cta": "Lista tu práctica — $29/mes →",
+    "ctaSub": "Solicitudes revisadas en 1–2 días hábiles"
+  },
+  "forEmployers": {
+    "breadcrumb": "Para Empleadores",
+    "tag": "✦ Beneficios para Empleadores",
+    "hero": {
+      "headline": "Un beneficio de bienestar personalizado que tu equipo realmente usará.",
+      "sub": "Deja de pagar membresías genéricas de gimnasio que nadie usa. Health Plan Factory crea a cada empleado un plan de bienestar personalizado según su presupuesto, condiciones y objetivos — con orientación HSA/FSA incluida.",
+      "cta": "Solicitar una demo →",
+      "cta2": "Ver cómo funciona",
+      "roiTitle": "ROI de un vistazo"
+    },
+    "why": {
+      "tag": "Por qué funciona",
+      "title": "Un beneficio que tus empleados realmente usarán",
+      "sub": "Los programas de bienestar genéricos tienen 5–15% de participación. Health Plan Factory es personalizado desde el primer día — cada empleado crea su propio plan basado en sus metas de salud."
+    },
+    "cards": {
+      "customPlans": {
+        "title": "Planes personalizados por empleado",
+        "desc": "Cada miembro del equipo responde un breve cuestionario de salud. El motor crea un plan priorizado con costos — sus condiciones, su presupuesto, sus metas."
+      },
+      "hsaGuidance": {
+        "title": "Orientación HSA/FSA incluida",
+        "desc": "Cada plan señala qué modalidades son elegibles para HSA/FSA y ofrece orientación sobre LMN donde aplica — convirtiendo los dólares de beneficios en gasto real."
+      },
+      "dashboard": {
+        "title": "Panel de bienestar para empleadores",
+        "desc": "Datos agregados de participación, tendencias de puntuación de bienestar del equipo y tasas de adopción de modalidades — sin exposición de datos individuales."
+      },
+      "zeroAdmin": {
+        "title": "Cero carga administrativa",
+        "desc": "Sin aprobaciones por uso. Sin papeleo de reembolso. Los empleados gestionan sus propios planes; tú recibes un informe mensual de uso."
+      }
+    },
+    "employee": {
+      "tag": "La experiencia del empleado",
+      "title": "Cada empleado crea su propio plan. Tú financias el beneficio.",
+      "sub": "Los miembros del equipo completan una evaluación de salud de 5 minutos — sus metas, presupuesto y condiciones. El motor ensambla un plan de bienestar priorizado y muestra los proveedores cercanos adecuados.",
+      "steps": {
+        "s1": {
+          "title": "Evaluación y generación del plan",
+          "desc": "Cuestionario de salud de 5 minutos → plan ensamblado con modalidades clasificadas."
+        },
+        "s2": {
+          "title": "Emparejamiento con proveedores",
+          "desc": "Los miembros exploran proveedores verificados cercanos, filtrados previamente por su plan."
+        },
+        "s3": {
+          "title": "Orientación de gasto HSA/FSA",
+          "desc": "La plataforma señala servicios elegibles y genera documentación LMN donde aplique."
+        },
+        "s4": {
+          "title": "Informe mensual a RRHH",
+          "desc": "Recibes datos agregados de participación y tendencias de puntuación de bienestar — sin datos individuales."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Precios simples y transparentes",
+      "sub": "Por sede. Sin cargos por uso. Sin gastos administrativos de aprobación.",
+      "perEmployee": "por empleado/mes · facturación anual",
+      "contactPricing": "contáctanos para precios",
+      "pricingNote": "Los precios mostrados son indicativos. Los precios finales se confirman durante la llamada de demo. Se requiere facturación anual. Mínimo 10 plazas."
+    },
+    "demo": {
+      "title": "Solicitar una demo",
+      "sub": "Te guiaremos por el portal del empleador y responderemos tus preguntas. Sin presión de ventas.",
+      "name": "Tu nombre",
+      "company": "Empresa",
+      "email": "Correo de trabajo",
+      "phone": "Teléfono (opcional)",
+      "message": "Mensaje (opcional)",
+      "messagePlaceholder": "Cuéntanos sobre las metas de bienestar de tu equipo o cualquier pregunta…",
+      "teamSize": "Tamaño del equipo",
+      "teamSizePlaceholder": "Selecciona el tamaño del equipo",
+      "submit": "Solicitar demo →",
+      "submitting": "Enviando…",
+      "noSpam": "Sin spam. Responderemos en 1 día hábil.",
+      "successTitle": "Te contactaremos pronto",
+      "successSub": "Revisa tu bandeja de entrada — hemos enviado una confirmación a {{email}}. Nuestro equipo hará seguimiento en 1 día hábil.",
+      "alreadyCustomer": "¿Ya eres cliente?",
+      "signIn": "Accede a tu portal de empleador →"
     }
   }
 }

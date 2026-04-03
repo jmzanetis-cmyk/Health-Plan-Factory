@@ -86,7 +86,6 @@
     "reject": "Reject",
     "activate": "Activate",
     "deactivate": "Deactivate",
-    "viewAll": "View all",
     "actions": "Actions",
     "status": "Status",
     "date": "Date",
@@ -190,7 +189,15 @@
         "Flag any conditions or concerns so the AI can prioritize the right modalities.",
         "Share your location and how you prefer to engage — in-person, virtual, or both."
       ],
-      "sections": ["Budget", "Goals", "Conditions", "Preferences", "Exclusions", "Location", "Review"]
+      "sections": [
+        "Budget",
+        "Goals",
+        "Conditions",
+        "Preferences",
+        "Exclusions",
+        "Location",
+        "Review"
+      ]
     },
     "step2": {
       "title": "Your plan is assembled",
@@ -1097,6 +1104,115 @@
       "title": "Listing Preview",
       "sub": "This is how members see your profile.",
       "editProfile": "Edit Profile →"
+    }
+  },
+  "forProviders": {
+    "tag": "For Providers",
+    "hero": {
+      "headline": "Get discovered by members who already want what you offer.",
+      "sub": "Members build their wellness plans before they find you — so when they view your profile, they've already decided they need your modality. No cold outreach. High-intent leads.",
+      "cta": "List your practice →",
+      "cta2": "Apply directly →"
+    },
+    "benefits": {
+      "title": "Why join HealthPlanFactory?",
+      "highIntent": {
+        "title": "High-intent leads",
+        "desc": "Members view your profile after including your modality in their plan — the highest intent possible."
+      },
+      "booking": {
+        "title": "Booking calendar",
+        "desc": "Accept bookings directly through the platform with integrated calendar and confirmation flow."
+      },
+      "founding": {
+        "title": "Founding Program",
+        "desc": "Early providers get 0% commission on all bookings through the platform for the first 90 days."
+      }
+    },
+    "cta": "List your practice — $29/mo →",
+    "ctaSub": "Applications reviewed within 1–2 business days"
+  },
+  "forEmployers": {
+    "breadcrumb": "For Employers",
+    "tag": "✦ Employer Benefits",
+    "hero": {
+      "headline": "A personalized wellness benefit your team will actually use.",
+      "sub": "Stop paying for generic gym memberships nobody redeems. Health Plan Factory builds each employee a custom wellness plan fitted to their budget, conditions, and goals — with HSA/FSA guidance built in.",
+      "cta": "Request a demo →",
+      "cta2": "See how it works",
+      "roiTitle": "ROI at a glance"
+    },
+    "why": {
+      "tag": "Why it works",
+      "title": "A benefit your employees will actually use",
+      "sub": "Generic wellness programs have 5–15% participation. Health Plan Factory is personalized from day one — each employee builds their own plan based on their own health goals."
+    },
+    "cards": {
+      "customPlans": {
+        "title": "Custom plans per employee",
+        "desc": "Every team member answers a short health intake. The engine builds a prioritized, costed plan — their conditions, their budget, their goals."
+      },
+      "hsaGuidance": {
+        "title": "HSA/FSA guidance built in",
+        "desc": "Each plan flags which modalities are HSA/FSA-eligible and surfaces LMN guidance where applicable — turning benefits dollars into real spending."
+      },
+      "dashboard": {
+        "title": "Employer wellness dashboard",
+        "desc": "Aggregate engagement data, team wellness score trends, and modality adoption rates — without individual privacy exposure."
+      },
+      "zeroAdmin": {
+        "title": "Zero admin burden",
+        "desc": "No per-use approvals. No reimbursement paperwork. Employees manage their own plans; you get a monthly usage report."
+      }
+    },
+    "employee": {
+      "tag": "The employee experience",
+      "title": "Each employee builds their own plan. You fund the benefit.",
+      "sub": "Team members complete a 5-minute health intake — their goals, budget, and conditions. The engine assembles a prioritized wellness plan and surfaces the right providers near them.",
+      "steps": {
+        "s1": {
+          "title": "Intake & plan generation",
+          "desc": "5-minute health questionnaire → AI-assembled plan with ranked modalities."
+        },
+        "s2": {
+          "title": "Provider matching",
+          "desc": "Members browse vetted, in-network providers near them — pre-filtered by their plan."
+        },
+        "s3": {
+          "title": "HSA/FSA spending guidance",
+          "desc": "The platform flags eligible services and generates LMN documentation where applicable."
+        },
+        "s4": {
+          "title": "Monthly reporting to HR",
+          "desc": "You receive aggregate participation data and wellness score trends — no individual data."
+        }
+      }
+    },
+    "pricing": {
+      "title": "Simple, transparent pricing",
+      "sub": "Per-seat. No usage fees. No per-approval admin overhead.",
+      "perEmployee": "per employee/month · annual billing",
+      "contactPricing": "contact us for pricing",
+      "pricingNote": "Pricing shown is indicative. Final pricing confirmed during demo call. Annual billing required. Minimum 10 seats."
+    },
+    "demo": {
+      "title": "Request a demo",
+      "sub": "We'll walk you through the employer portal and answer any questions. No sales pressure.",
+      "name": "Your name",
+      "company": "Company",
+      "email": "Work email",
+      "phone": "Phone (optional)",
+      "message": "Message (optional)",
+      "messagePlaceholder": "Tell us about your team's wellness goals or any questions you have…",
+      "teamSize": "Team size",
+      "teamSizePlaceholder": "Select team size",
+      "submit": "Request demo →",
+      "submitting": "Submitting…",
+      "noSpam": "No spam. We'll respond within 1 business day.",
+      "successTitle": "We'll be in touch shortly",
+      "successSub": "Check your inbox — we've sent a confirmation to {{email}}. Our team will follow up within 1 business day.",
+      "alreadyCustomer": "Already a customer?",
+      "signIn": "Sign in to your employer portal →"
     }
   }
 }

@@ -79,7 +79,7 @@ export default function ForEmployers() {
           <nav style={{ marginBottom: 20, display: "flex", gap: 6, alignItems: "center", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>
             <Link to="/" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>Home</Link>
             <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
-            <span style={{ color: "rgba(255,255,255,0.9)" }}>For Employers</span>
+            <span style={{ color: "rgba(255,255,255,0.9)" }}>{t("forEmployers.breadcrumb")}</span>
           </nav>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
@@ -88,7 +88,7 @@ export default function ForEmployers() {
                 className="inline-flex items-center gap-2 mb-6 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"
                 style={{ background: "rgba(224,32,64,0.15)", border: "1px solid rgba(224,32,64,0.3)", color: "#e84d65" }}
               >
-                ✦ Employer Benefits
+                {t("forEmployers.tag")}
               </div>
               <h1
                 style={{
@@ -101,14 +101,13 @@ export default function ForEmployers() {
                   marginBottom: "1.25rem",
                 }}
               >
-                A personalized wellness benefit your team will actually use.
+                {t("forEmployers.hero.headline")}
               </h1>
               <p
                 className="text-sm font-light leading-relaxed mb-8"
                 style={{ color: "rgba(255,255,255,0.65)", fontFamily: "var(--app-font-sans)", maxWidth: 480 }}
               >
-                Stop paying for generic gym memberships nobody redeems. Health Plan Factory builds each employee a{" "}
-                <strong style={{ color: "white", fontWeight: 600 }}>custom wellness plan</strong> fitted to their budget, conditions, and goals — with HSA/FSA guidance built in.
+                {t("forEmployers.hero.sub")}
               </p>
               <div className="flex flex-wrap gap-3">
                 <a
@@ -122,7 +121,7 @@ export default function ForEmployers() {
                     letterSpacing: "0.01em",
                   }}
                 >
-                  Request a demo →
+                  {t("forEmployers.hero.cta")}
                 </a>
                 <Link
                   to="/how-it-works"
@@ -134,7 +133,7 @@ export default function ForEmployers() {
                     fontFamily: "var(--app-font-sans)",
                   }}
                 >
-                  See how it works
+                  {t("forEmployers.hero.cta2")}
                 </Link>
               </div>
             </div>
@@ -149,7 +148,7 @@ export default function ForEmployers() {
               }}
             >
               <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--app-font-sans)" }}>
-                ROI at a glance
+                {t("forEmployers.hero.roiTitle")}
               </p>
               {[
                 { value: "$1,700", label: "Average annual cost of preventable absenteeism per employee", color: amber },
@@ -186,13 +185,13 @@ export default function ForEmployers() {
               className="inline-flex items-center gap-2 mb-4 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"
               style={{ background: "rgba(224,32,64,0.08)", border: "1px solid rgba(224,32,64,0.12)", color: amber }}
             >
-              Why it works
+              {t("forEmployers.why.tag")}
             </div>
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 700, color: navy, letterSpacing: "-0.02em", margin: "0 0 1rem" }}>
-              A benefit your employees will actually use
+              {t("forEmployers.why.title")}
             </h2>
             <p className="text-sm font-light leading-relaxed max-w-xl mx-auto" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Generic wellness programs have 5–15% participation. Health Plan Factory is personalized from day one — each employee builds their own plan based on their own health goals.
+              {t("forEmployers.why.sub")}
             </p>
           </div>
 
@@ -200,25 +199,25 @@ export default function ForEmployers() {
             {[
               {
                 icon: "📋",
-                title: "Custom plans per employee",
+                title: t("forEmployers.cards.customPlans.title"),
                 desc: "Every team member answers a short health intake. The engine builds a prioritized, costed plan — their conditions, their budget, their goals.",
                 color: navy,
               },
               {
                 icon: "💳",
-                title: "HSA/FSA guidance built in",
+                title: t("forEmployers.cards.hsaGuidance.title"),
                 desc: "Each plan flags which modalities are HSA/FSA-eligible and surfaces LMN guidance where applicable — turning benefits dollars into real spending.",
                 color: sage,
               },
               {
                 icon: "📊",
-                title: "Employer wellness dashboard",
+                title: t("forEmployers.cards.dashboard.title"),
                 desc: "Aggregate engagement data, team wellness score trends, and modality adoption rates — without individual privacy exposure.",
                 color: amber,
               },
               {
                 icon: "⚙️",
-                title: "Zero admin burden",
+                title: t("forEmployers.cards.zeroAdmin.title"),
                 desc: "No per-use approvals. No reimbursement paperwork. Employees manage their own plans; you get a monthly usage report.",
                 color: "#5b9bd5",
               },
@@ -327,21 +326,21 @@ export default function ForEmployers() {
                 className="inline-flex items-center gap-2 mb-4 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"
                 style={{ background: "rgba(212,34,126,0.06)", color: navy, fontFamily: "var(--app-font-sans)" }}
               >
-                The employee experience
+                {t("forEmployers.employee.tag")}
               </div>
               <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(1.6rem,3vw,2.5rem)", fontWeight: 700, color: navy, lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: "1rem" }}>
-                Each employee builds their own plan. You fund the benefit.
+                {t("forEmployers.employee.title")}
               </h2>
               <p className="text-sm font-light leading-relaxed mb-6" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                Team members complete a 5-minute health intake — their goals, budget, and conditions. The engine assembles a prioritized wellness plan and surfaces the right providers near them.
+                {t("forEmployers.employee.sub")}
               </p>
 
               <div className="flex flex-col gap-4">
                 {[
-                  { num: "01", title: "Intake & plan generation", desc: "5-minute health questionnaire → AI-assembled plan with ranked modalities." },
-                  { num: "02", title: "Provider matching", desc: "Members browse vetted, in-network providers near them — pre-filtered by their plan." },
-                  { num: "03", title: "HSA/FSA spending guidance", desc: "The platform flags eligible services and generates LMN documentation where applicable." },
-                  { num: "04", title: "Monthly reporting to HR", desc: "You receive aggregate participation data and wellness score trends — no individual data." },
+                  { num: "01", title: t("forEmployers.employee.steps.s1.title"), desc: "5-minute health questionnaire → AI-assembled plan with ranked modalities." },
+                  { num: "02", title: t("forEmployers.employee.steps.s2.title"), desc: "Members browse vetted, in-network providers near them — pre-filtered by their plan." },
+                  { num: "03", title: t("forEmployers.employee.steps.s3.title"), desc: "The platform flags eligible services and generates LMN documentation where applicable." },
+                  { num: "04", title: t("forEmployers.employee.steps.s4.title"), desc: "You receive aggregate participation data and wellness score trends — no individual data." },
                 ].map((step) => (
                   <div key={step.num} className="flex items-start gap-4">
                     <div
@@ -367,10 +366,10 @@ export default function ForEmployers() {
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <div className="text-center mb-12">
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 700, color: navy, letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>
-              Simple, transparent pricing
+              {t("forEmployers.pricing.title")}
             </h2>
             <p className="text-sm font-light leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Per-seat. No usage fees. No per-approval admin overhead.
+              {t("forEmployers.pricing.sub")}
             </p>
           </div>
 
@@ -468,7 +467,7 @@ export default function ForEmployers() {
           </div>
 
           <p className="text-center text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-            Pricing shown is indicative. Final pricing confirmed during demo call. Annual billing required. Minimum 10 seats.
+            {t("forEmployers.pricing.pricingNote")}
           </p>
         </div>
       </div>
@@ -482,10 +481,10 @@ export default function ForEmployers() {
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <div className="text-center mb-10">
             <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 700, color: "white", letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>
-              Request a demo
+              {t("forEmployers.demo.title")}
             </h2>
             <p className="text-sm font-light leading-relaxed" style={{ color: "rgba(255,255,255,0.55)", fontFamily: "var(--app-font-sans)" }}>
-              We'll walk you through the employer portal and answer any questions. No sales pressure.
+              {t("forEmployers.demo.sub")}
             </p>
           </div>
 
@@ -496,11 +495,10 @@ export default function ForEmployers() {
             >
               <div className="text-4xl mb-4">✅</div>
               <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: "var(--app-font-sans)" }}>
-                We'll be in touch shortly
+                {t("forEmployers.demo.successTitle")}
               </h3>
               <p className="text-sm font-light mb-6" style={{ color: "rgba(255,255,255,0.55)", fontFamily: "var(--app-font-sans)" }}>
-                Check your inbox — we've sent a confirmation to <strong style={{ color: "white" }}>{form.email}</strong>.
-                Our team will follow up within 1 business day.
+                {t("forEmployers.demo.successSub", { email: form.email })}
               </p>
               <Link
                 to="/employer"
@@ -517,10 +515,10 @@ export default function ForEmployers() {
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
             >
               {[
-                { name: "name", label: "Your name", type: "text", placeholder: "Jane Smith", required: true },
-                { name: "company", label: "Company", type: "text", placeholder: "Acme Corp", required: true },
-                { name: "email", label: "Work email", type: "email", placeholder: "jane@acme.com", required: true },
-                { name: "phone", label: "Phone (optional)", type: "tel", placeholder: "+1 (555) 000-0000", required: false },
+                { name: "name", label: t("forEmployers.demo.name"), type: "text", placeholder: "Jane Smith", required: true },
+                { name: "company", label: t("forEmployers.demo.company"), type: "text", placeholder: "Acme Corp", required: true },
+                { name: "email", label: t("forEmployers.demo.email"), type: "email", placeholder: "jane@acme.com", required: true },
+                { name: "phone", label: t("forEmployers.demo.phone"), type: "tel", placeholder: "+1 (555) 000-0000", required: false },
               ].map((field) => (
                 <div key={field.name} className="flex flex-col gap-1.5">
                   <label
@@ -558,7 +556,7 @@ export default function ForEmployers() {
                   className="text-xs font-semibold uppercase tracking-widest"
                   style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--app-font-sans)" }}
                 >
-                  Message (optional)
+                  {t("forEmployers.demo.message")}
                 </label>
                 <textarea
                   id="message"
@@ -587,7 +585,7 @@ export default function ForEmployers() {
                   className="text-xs font-semibold uppercase tracking-widest"
                   style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--app-font-sans)" }}
                 >
-                  Team size
+                  {t("forEmployers.demo.teamSize")}
                 </label>
                 <select
                   id="teamSize"
@@ -606,7 +604,7 @@ export default function ForEmployers() {
                     outline: "none",
                   }}
                 >
-                  <option value="" disabled style={{ background: navy }}>Select team size</option>
+                  <option value="" disabled style={{ background: navy }}>{t("forEmployers.demo.teamSizePlaceholder")}</option>
                   <option value="10–49" style={{ background: navy }}>10–49 employees</option>
                   <option value="50–199" style={{ background: navy }}>50–199 employees</option>
                   <option value="200–999" style={{ background: navy }}>200–999 employees</option>
@@ -633,24 +631,24 @@ export default function ForEmployers() {
                   letterSpacing: "0.01em",
                 }}
               >
-                {form.submitting ? "Submitting…" : "Request demo →"}
+                {form.submitting ? t("forEmployers.demo.submitting") : t("forEmployers.demo.submit")}
               </button>
 
               <p className="text-center text-xs" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--app-font-sans)" }}>
-                No spam. We'll respond within 1 business day.
+                {t("forEmployers.demo.noSpam")}
               </p>
             </form>
           )}
 
           {!form.submitted && (
             <p className="text-center mt-6 text-sm" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "var(--app-font-sans)" }}>
-              Already a customer?{" "}
+              {t("forEmployers.demo.alreadyCustomer")}{" "}
               <Link
                 to="/employer"
                 className="no-underline font-semibold"
                 style={{ color: "rgba(255,255,255,0.65)" }}
               >
-                Sign in to your employer portal →
+                {t("forEmployers.demo.signIn")}
               </Link>
             </p>
           )}

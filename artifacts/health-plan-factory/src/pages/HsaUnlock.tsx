@@ -146,7 +146,7 @@ export default function HsaUnlock() {
   if (!user) {
     return (
       <div style={{ maxWidth: 480, margin: "80px auto", padding: "0 24px", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 26, color: navy, marginBottom: 12 }}>t("hsaUnlock.signInPrompt")</h2>
+        <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 26, color: navy, marginBottom: 12 }}>{t("hsaUnlock.signInPrompt")}</h2>
         <p style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-secondary)", marginBottom: 24 }}>
           Create a free account and build your wellness plan to see your personalized LMN savings estimate.
         </p>
@@ -165,7 +165,7 @@ export default function HsaUnlock() {
       <div style={{ marginBottom: 40 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(224,32,64,0.09)", border: "1px solid rgba(224,32,64,0.25)", borderRadius: 20, padding: "5px 14px", marginBottom: 16 }}>
           <DollarSign size={13} color={amber} />
-          <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: amber, textTransform: "uppercase", letterSpacing: "0.07em" }}>t("hsaUnlock.title")</span>
+          <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fontWeight: 700, color: amber, textTransform: "uppercase", letterSpacing: "0.07em" }}>{t("hsaUnlock.title")}</span>
         </div>
         <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "clamp(22px, 4vw, 32px)", color: navy, margin: "0 0 8px" }}>
           Get HSA/FSA Reimbursement for Your Wellness Plan
@@ -205,7 +205,7 @@ export default function HsaUnlock() {
                 <FileText size={22} color={navy} />
               </div>
               <div>
-                <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, color: navy, margin: "0 0 6px" }}>t("hsaUnlock.whatIsLmn")</h2>
+                <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, color: navy, margin: "0 0 6px" }}>{t("hsaUnlock.whatIsLmn")}</h2>
                 <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
                   An LMN is a signed document from a licensed physician certifying that specific wellness services are medically necessary for your conditions. With an LMN, your HSA/FSA can reimburse services that would otherwise be ineligible.
                 </p>
@@ -216,7 +216,7 @@ export default function HsaUnlock() {
                 <Stethoscope size={22} color={sage} />
               </div>
               <div>
-                <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, color: navy, margin: "0 0 6px" }}>t("hsaUnlock.whatIsDpc")</h2>
+                <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, color: navy, margin: "0 0 6px" }}>{t("hsaUnlock.whatIsDpc")}</h2>
                 <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
                   DPC physicians work outside insurance. For a flat monthly fee, you get unlimited visits and a physician who knows your health deeply — making them ideal for documenting the medical necessity of your wellness services.
                 </p>
@@ -227,7 +227,7 @@ export default function HsaUnlock() {
                 <DollarSign size={22} color={amber} />
               </div>
               <div>
-                <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, color: navy, margin: "0 0 6px" }}>t("hsaUnlock.howMuch")</h2>
+                <h2 style={{ fontFamily: "var(--app-font-serif)", fontSize: 20, color: navy, margin: "0 0 6px" }}>{t("hsaUnlock.howMuch")}</h2>
                 <p style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
                   Members with active plans and HSA/FSA accounts can save hundreds to thousands per year by using pre-tax dollars for LMN-eligible wellness services. Your personalized estimate is on the next screen.
                 </p>

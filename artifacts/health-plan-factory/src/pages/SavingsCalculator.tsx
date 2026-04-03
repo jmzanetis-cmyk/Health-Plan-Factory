@@ -505,7 +505,7 @@ export default function SavingsCalculator() {
         style={{ background: "var(--off-white)", borderTop: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div className="max-w-5xl mx-auto">
-          <div className="section-tag">t("savingsCalculator.eligibilityBreakdown")</div>
+          <div className="section-tag">{t("savingsCalculator.eligibilityBreakdown")}</div>
           <h2
             className="mb-3"
             style={{
