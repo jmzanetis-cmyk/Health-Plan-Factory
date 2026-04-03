@@ -17,6 +17,7 @@ import { BuildingScreen } from "@/components/onboarding/BuildingScreen";
 import { Logo } from "@/components/Logo";
 import { getApiBase } from "@/lib/apiBase";
 import { useState } from "react";
+import { useAuth } from "@workspace/replit-auth-web";
 
 const STEPS = [
   {
@@ -117,6 +118,7 @@ const slideVariants = {
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(0);
   const [building, setBuilding] = useState(false);
@@ -258,8 +260,39 @@ export default function Onboarding() {
 
     sessionStorage.setItem("hpf_intake", JSON.stringify(data));
     sessionStorage.setItem("hpf_plan", JSON.stringify(serializePlan(enriched)));
+
+    // Persist to DB immediately for authenticated users (fire-and-forget).
+    // The Plan page also guards against duplicates via the hpf_plan_saved flag.
+    if (isAuthenticated && user?.id) {
+      sessionStorage.setItem("hpf_plan_saved", "1");
+      const base = getApiBase();
+      fetch(`${base}/api/plans/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          profileId: user.id,
+          budget: data.budget,
+          goals: data.goals ?? [],
+          conditions: data.conditions ?? [],
+          preferences: data.preferences ?? [],
+          exclusions: data.exclusions ?? [],
+          telehealth: data.telehealth ?? false,
+          zipCode: data.zipCode || undefined,
+          radius: data.radius ?? 25,
+        }),
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((saved) => {
+          if (saved?.plan?.id) {
+            sessionStorage.setItem("hpf_plan_id", saved.plan.id);
+          }
+        })
+        .catch(() => {});
+    }
+
     navigate("/plan");
-  }, [getValues, navigate]);
+  }, [getValues, navigate, isAuthenticated, user]);
 
   if (building) {
     return <BuildingScreen onComplete={handleBuildComplete} />;

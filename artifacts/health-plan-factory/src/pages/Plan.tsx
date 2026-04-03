@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@workspace/replit-auth-web";
 import { type Plan, type PlanItem, planSchema, deserializePlan } from "@/lib/planEngine";
 import { intakeSchema, type IntakeData } from "@/types/onboarding";
-import { type EvidenceLevel } from "@/data/modalities";
+import { type EvidenceLevel, MODALITIES } from "@/data/modalities";
 import { NPI_CATEGORIES } from "@/data/npiCategories";
 import { Logo } from "@/components/Logo";
 import { getApiBase } from "@/lib/apiBase";
@@ -400,11 +400,15 @@ function DeprioritizedCard({ item, nearbyProviderCount }: { item: PlanItem; near
 
 export default function Plan() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [intake, setIntake] = useState<IntakeData | null>(null);
   const [lmnEligibleIds, setLmnEligibleIds] = useState<Set<string>>(new Set());
   const [providerCounts, setProviderCounts] = useState<Record<string, number | null>>({});
+
+  // Guards to prevent duplicate DB persist / load attempts
+  const persistAttemptedRef = useRef(false);
+  const dbLoadAttemptedRef = useRef(false);
 
   // Share modal state
   const [showShareModal, setShowShareModal] = useState(false);
@@ -535,23 +539,134 @@ export default function Plan() {
     }
   }, []);
 
-  // Fetch provider counts from the server plan (when authenticated, match by modality ID)
+  // Task 2: Persist session-storage plan to DB for users who completed onboarding
+  // anonymously and then signed up (the common "try first, then sign up" flow).
+  // The hpf_plan_saved flag prevents duplicate inserts on refresh.
   useEffect(() => {
-    if (!isAuthenticated || !user?.id) return;
+    if (authLoading || !isAuthenticated || !user?.id) return;
+    if (persistAttemptedRef.current) return;
+    if (sessionStorage.getItem("hpf_plan_saved")) {
+      persistAttemptedRef.current = true;
+      return;
+    }
+    const storedPlan = sessionStorage.getItem("hpf_plan");
+    const storedIntake = sessionStorage.getItem("hpf_intake");
+    if (!storedPlan || !storedIntake) return;
+
+    persistAttemptedRef.current = true;
+    sessionStorage.setItem("hpf_plan_saved", "1");
+
+    try {
+      const rawIntake = JSON.parse(storedIntake);
+      fetch(`${BASE}/api/plans/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          profileId: user.id,
+          budget: typeof rawIntake.budget === "number" ? rawIntake.budget : 250,
+          goals: Array.isArray(rawIntake.goals) ? rawIntake.goals : [],
+          conditions: Array.isArray(rawIntake.conditions) ? rawIntake.conditions : [],
+          preferences: Array.isArray(rawIntake.preferences) ? rawIntake.preferences : [],
+          exclusions: Array.isArray(rawIntake.exclusions) ? rawIntake.exclusions : [],
+          telehealth: typeof rawIntake.telehealth === "boolean" ? rawIntake.telehealth : false,
+          zipCode: typeof rawIntake.zipCode === "string" ? rawIntake.zipCode || undefined : undefined,
+          radius: typeof rawIntake.radius === "number" ? rawIntake.radius : 25,
+        }),
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((saved) => {
+          if (saved?.plan?.id) {
+            sessionStorage.setItem("hpf_plan_id", saved.plan.id);
+          }
+        })
+        .catch(() => {});
+    } catch {
+      // ignore JSON parse errors
+    }
+  }, [authLoading, isAuthenticated, user?.id]);
+
+  // Fetch provider counts and, for return visits (no session data), hydrate the plan from DB.
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || !user?.id) return;
     fetch(`${BASE}/api/plans/${user.id}/latest`, { credentials: "include" })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
-        if (!data?.items) return;
-        const counts: Record<string, number | null> = {};
-        for (const item of data.items) {
-          if (item.modalityId) {
-            counts[item.modalityId] = item.nearbyProviderCount ?? null;
+        if (!data) return;
+
+        // Update provider counts (always useful, merges with session-storage seed counts)
+        if (Array.isArray(data.items)) {
+          const counts: Record<string, number | null> = {};
+          for (const item of data.items) {
+            if (item.modalityId) {
+              counts[item.modalityId] = item.nearbyProviderCount ?? null;
+            }
           }
+          setProviderCounts(counts);
         }
-        setProviderCounts(counts);
+
+        // Task 3: Hydrate plan+intake for return visits (new device / cleared storage)
+        if (dbLoadAttemptedRef.current) return;
+        dbLoadAttemptedRef.current = true;
+        if (sessionStorage.getItem("hpf_plan")) return; // session data takes priority
+        if (!data.plan || !Array.isArray(data.items)) return;
+
+        const toLocalPlanItem = (dbItem: {
+          modalityId?: string | null;
+          score?: number | null;
+          frequency?: string | null;
+          estimatedMonthlyCost?: number | null;
+          rationale?: string | null;
+          nearbyProviderCount?: number | null;
+        }): PlanItem | null => {
+          const modality = MODALITIES.find((m) => m.id === dbItem.modalityId);
+          if (!modality) return null;
+          return {
+            modality,
+            score: dbItem.score ?? 0,
+            frequency: dbItem.frequency ?? "",
+            estimatedMonthlyCost: dbItem.estimatedMonthlyCost ?? 0,
+            rationale: dbItem.rationale ?? "",
+            nearbyProviderCount: dbItem.nearbyProviderCount ?? null,
+          };
+        };
+
+        const included = (data.items as Array<{ isDeprioritized?: boolean | null; modalityId?: string | null; score?: number | null; frequency?: string | null; estimatedMonthlyCost?: number | null; rationale?: string | null; nearbyProviderCount?: number | null }>)
+          .filter((i) => !i.isDeprioritized)
+          .map(toLocalPlanItem)
+          .filter((x): x is PlanItem => x !== null);
+        const deprioritized = (data.items as Array<{ isDeprioritized?: boolean | null; modalityId?: string | null; score?: number | null; frequency?: string | null; estimatedMonthlyCost?: number | null; rationale?: string | null; nearbyProviderCount?: number | null }>)
+          .filter((i) => i.isDeprioritized)
+          .map(toLocalPlanItem)
+          .filter((x): x is PlanItem => x !== null);
+
+        if (included.length === 0 && deprioritized.length === 0) return;
+
+        const reconstructed: Plan = {
+          included,
+          deprioritized,
+          totalMonthlyCost: data.plan.totalMonthlyCost ?? 0,
+          budgetUtilization: data.plan.budgetUtilization ?? 0,
+        };
+
+        const reconstructedIntake: IntakeData = {
+          budget: typeof data.plan.budget === "number" ? data.plan.budget : 250,
+          goals: [],
+          conditions: [],
+          preferences: [],
+          exclusions: [],
+          zipCode: "",
+          radius: 25,
+          telehealth: false,
+        };
+
+        setPlan(reconstructed);
+        setIntake(reconstructedIntake);
+        // Mark plan as saved since it already exists in DB
+        sessionStorage.setItem("hpf_plan_saved", "1");
       })
       .catch(() => {});
-  }, [isAuthenticated, user?.id]);
+  }, [authLoading, isAuthenticated, user?.id]);
 
   // Share handler — fetches/creates a share token for authenticated users
   async function handleSharePlan() {
