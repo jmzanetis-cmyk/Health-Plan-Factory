@@ -966,13 +966,21 @@ export default function Plan() {
         body: JSON.stringify({ modalityId, feedback: fb }),
       });
       if (!res.ok) {
-        // Revert optimistic update on API error
-        setModalityFeedback((prev) => ({ ...prev, [modalityId]: previousFeedback }));
+        // Revert optimistic update on API error (remove key if there was no prior feedback)
+        setModalityFeedback((prev) => {
+          const updated = { ...prev };
+          if (previousFeedback === undefined) { delete updated[modalityId]; } else { updated[modalityId] = previousFeedback; }
+          return updated;
+        });
         toast.error("Couldn't save your feedback. Please try again.");
       }
     } catch {
       // Revert optimistic update on network error
-      setModalityFeedback((prev) => ({ ...prev, [modalityId]: previousFeedback }));
+      setModalityFeedback((prev) => {
+        const updated = { ...prev };
+        if (previousFeedback === undefined) { delete updated[modalityId]; } else { updated[modalityId] = previousFeedback; }
+        return updated;
+      });
       toast.error("Couldn't save your feedback. Please try again.");
     } finally {
       setModalityFeedbackLoading((prev) => ({ ...prev, [modalityId]: false }));
