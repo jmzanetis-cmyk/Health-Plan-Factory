@@ -125,21 +125,31 @@ declared in `app.config.js → ios.privacyManifests`:
 
 ## 4. Age Rating Recommendation
 
-**Recommended age rating: 4+**
+**Recommended age rating: 12+**
 
-Justification:
-- No violent, sexual, or horror content
-- No social networking or user-generated public content (journals are private, coach messages are private)
-- No unrestricted web access (all external links go to known URLs: `healthplanfactory.com/privacy`, `healthplanfactory.com/terms`, `mailto:support@healthplanfactory.com`)
-- No gambling or simulated gambling
-- No user interaction with strangers
-- Health and wellness content is general and educational, not clinical or diagnostic
-- Mental health crisis resources (911, 988 Suicide & Crisis Lifeline, 741741 Crisis Text Line) are listed as safety information — not content that triggers age gating
+Rationale: Apple classifies health and wellness apps that provide personalized guidance,
+mental health resources, or coaching as requiring a minimum 12+ rating. This app includes:
 
-> **App Review note:** If reviewers classify the AI coach feature as providing personalized
-> health guidance, they may request 12+. The app's disclaimer ("not a substitute for medical
-> advice") and the coach's educational framing should support a 4+ classification. Be prepared
-> to justify during App Review.
+- AI wellness coaching with personalized habit and lifestyle recommendations
+- Mental health crisis resources (988 Suicide & Crisis Lifeline, 741741 Crisis Text Line)
+- Health journal entries that may contain sensitive personal content
+- Wellness score and coaching framed around behaviour change and emotional wellbeing
+
+These factors are consistent with apps Apple rates 12+ for "infrequent or mild mature or
+suggestive themes" under the health/wellness category.
+
+**Arguments for 4+** (if App Review questions 12+):
+- No violent, sexual, or horror content of any kind
+- No social networking or public user-generated content
+- No unrestricted web access
+- Coaching content is educational and informational, not clinical or diagnostic
+- All mental health references are safety-first crisis resources, not content promoting
+  self-harm or crisis scenarios
+
+> **Submission guidance:** Submit with a 12+ selection. If Apple Review suggests raising
+> to 17+ (which would be incorrect for this content profile), respond by clarifying the
+> educational and wellness-only nature of the AI coach. Do not attempt to submit at 4+;
+> reviewers familiar with health apps will likely push back.
 
 ---
 
@@ -192,15 +202,16 @@ app itself.
 
 ## 7. Privacy Policy & Terms of Service URLs
 
-| Document | URL |
-|---|---|
-| Privacy Policy | https://healthplanfactory.com/privacy |
-| Terms of Service | https://healthplanfactory.com/terms |
-| Support | support@healthplanfactory.com |
+| Document | URL | Last Verified | Owner |
+|---|---|---|---|
+| Privacy Policy | https://healthplanfactory.com/privacy | — (not yet live — must publish before submission) | Content / Legal team |
+| Terms of Service | https://healthplanfactory.com/terms | — (not yet live — must publish before submission) | Content / Legal team |
+| Support | support@healthplanfactory.com | — | Engineering / Support team |
 
 > **Pre-submission action required:** Verify that both URLs resolve to live, published pages
 > before submitting to App Review. App Review will visit these URLs. Placeholder or 404 pages
-> will result in rejection.
+> will result in rejection. Update the "Last Verified" column above with the date and the name
+> of the person who confirmed the pages are live.
 
 ---
 
