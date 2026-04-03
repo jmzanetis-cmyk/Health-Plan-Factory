@@ -2725,6 +2725,11 @@ components:
           type: string
           enum: [member, provider, admin, employer]
           nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO 8601 timestamp from the auth provider profile record.
 
     AuthUserEnvelope:
       type: object
