@@ -123,6 +123,57 @@ export const insertModalitySchema = createInsertSchema(modalities).omit({
 export type InsertModality = InferInsertModel<typeof modalities>;
 export type Modality = InferSelectModel<typeof modalities>;
 
+// ── clinical_evidence ─────────────────────────────────────────────────────────
+// Per-(modality × condition/goal) structured evidence corpus consumed by the
+// plan engine to derive evidence-grade-weighted recommendation scores.
+
+export const clinicalEvidenceGradeEnum = pgEnum("clinical_evidence_grade", [
+  "A", // Strong RCTs / systematic reviews
+  "B", // Multiple cohort studies / controlled trials
+  "C", // Limited studies / expert consensus
+  "D", // Emerging / theoretical / anecdotal
+]);
+
+export const effectSizeEnum = pgEnum("effect_size", [
+  "large",
+  "moderate",
+  "small",
+  "minimal",
+]);
+
+export const evidenceTargetTypeEnum = pgEnum("evidence_target_type", [
+  "condition",
+  "goal",
+]);
+
+export const clinicalEvidence = pgTable(
+  "clinical_evidence",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    modalityId: text("modality_id")
+      .notNull()
+      .references(() => modalities.id, { onDelete: "cascade" }),
+    targetType: evidenceTargetTypeEnum("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    evidenceGrade: clinicalEvidenceGradeEnum("evidence_grade").notNull(),
+    effectSize: effectSizeEnum("effect_size").notNull(),
+    studyTypes: jsonb("study_types").notNull().default([]).$type<string[]>(),
+    numStudiesApprox: integer("num_studies_approx").notNull().default(0),
+    clinicalNotes: text("clinical_notes").notNull(),
+    contraindications: jsonb("contraindications").notNull().default([]).$type<string[]>(),
+    weeksToBenefit: integer("weeks_to_benefit").notNull().default(4),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("ce_modality_target_idx").on(t.modalityId, t.targetType, t.targetId),
+    index("ce_modality_idx").on(t.modalityId),
+    index("ce_target_idx").on(t.targetType, t.targetId),
+  ],
+);
+
+export type ClinicalEvidence = InferSelectModel<typeof clinicalEvidence>;
+export type InsertClinicalEvidence = InferInsertModel<typeof clinicalEvidence>;
+
 // ── providers ─────────────────────────────────────────────────────────────────
 
 export const providers = pgTable(

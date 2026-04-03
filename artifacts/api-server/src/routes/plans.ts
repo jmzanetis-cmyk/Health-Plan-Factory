@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
-import { plans, planItems, memberIntakes, modalities, profiles, planModalityFeedback } from "@workspace/db";
+import { plans, planItems, memberIntakes, modalities, profiles, planModalityFeedback, clinicalEvidence } from "@workspace/db";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { maybeRewardReferrer } from "./referrals";
 import {
@@ -22,6 +22,11 @@ import PDFDocument from "pdfkit";
 const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
 const router: IRouter = Router();
+
+/** Fetch the full clinical evidence corpus once per plan generation call. */
+async function fetchClinicalEvidenceCorpus() {
+  return db.select().from(clinicalEvidence);
+}
 
 const ConditionWeightSchema = z.object({
   id: z.string(),
@@ -51,7 +56,10 @@ router.post("/plans/speculate", async (req, res) => {
 
     const { budget, conditions, conditionWeights, goals, zipCode, radius, preferences, exclusions, telehealth } = body.data;
 
-    const allModalities = await db.select().from(modalities).where(eq(modalities.isActive, true));
+    const [allModalities, evidenceCorpus] = await Promise.all([
+      db.select().from(modalities).where(eq(modalities.isActive, true)),
+      fetchClinicalEvidenceCorpus(),
+    ]);
 
     const modalityIds = allModalities.map((m) => m.id);
     const providerAvailability = await queryProviderAvailability(zipCode ?? null, radius ?? 25, modalityIds);
@@ -66,7 +74,7 @@ router.post("/plans/speculate", async (req, res) => {
       telehealth,
       zipCode: zipCode ?? null,
       radius: radius ?? 25,
-    }, providerAvailability);
+    }, providerAvailability, evidenceCorpus);
 
     const mapItem = (item: (typeof generated.items)[number]) => ({
       modalityId: item.modality.id,
@@ -110,14 +118,17 @@ router.post("/plans/generate", async (req, res) => {
 
     const { intakeId, profileId, budget, goals, conditions, preferences, exclusions, telehealth, zipCode, radius } = body.data;
 
-    // Load all active modalities from DB
-    const allModalities = await db.select().from(modalities).where(eq(modalities.isActive, true));
+    // Load all active modalities and clinical evidence corpus from DB
+    const [allModalities, evidenceCorpus] = await Promise.all([
+      db.select().from(modalities).where(eq(modalities.isActive, true)),
+      fetchClinicalEvidenceCorpus(),
+    ]);
 
     // Run provider availability check
     const modalityIds = allModalities.map((m) => m.id);
     const providerAvailability = await queryProviderAvailability(zipCode ?? null, radius ?? 25, modalityIds);
 
-    // Run the plan engine with provider availability
+    // Run the plan engine with provider availability and clinical evidence
     const generated = runPlanEngine(allModalities, {
       budget,
       goals: goals ?? [],
@@ -127,7 +138,7 @@ router.post("/plans/generate", async (req, res) => {
       telehealth: telehealth ?? false,
       zipCode: zipCode ?? null,
       radius: radius ?? 25,
-    }, providerAvailability);
+    }, providerAvailability, evidenceCorpus);
 
     const now = new Date();
     const planId = crypto.randomUUID();
@@ -677,8 +688,11 @@ router.post("/plans/:id/reconfigure", async (req, res) => {
     // Add not_helpful modalities to exclusions (deduplicate)
     const mergedExclusions = Array.from(new Set([...intakeData.exclusions, ...notHelpfulIds]));
 
-    // Run the plan engine with the merged exclusions
-    const allModalities = await db.select().from(modalities).where(eq(modalities.isActive, true));
+    // Run the plan engine with the merged exclusions and clinical evidence corpus
+    const [allModalities, evidenceCorpus] = await Promise.all([
+      db.select().from(modalities).where(eq(modalities.isActive, true)),
+      fetchClinicalEvidenceCorpus(),
+    ]);
     const modalityIds = allModalities.map((m) => m.id);
     const providerAvailability = await queryProviderAvailability(intakeData.zipCode, intakeData.radius, modalityIds);
 
@@ -691,7 +705,7 @@ router.post("/plans/:id/reconfigure", async (req, res) => {
       telehealth: intakeData.telehealth,
       zipCode: intakeData.zipCode,
       radius: intakeData.radius,
-    }, providerAvailability);
+    }, providerAvailability, evidenceCorpus);
 
     const now = new Date();
     const newPlanId = crypto.randomUUID();
