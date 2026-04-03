@@ -183,15 +183,8 @@ export default function SignUp() {
           >
             {isLoading ? (
               <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
-                <rect x="13" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
-                <rect x="3" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
-                <rect x="13" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
-              </svg>
-            )}
-            Continue with Replit →
+            ) : null}
+            Create my free account →
           </button>
 
           <p className="text-center text-xs mt-4 leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
