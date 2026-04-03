@@ -945,18 +945,27 @@ export default function Plan() {
 
   async function handleFeedback(modalityId: string, fb: "helpful" | "not_helpful") {
     if (!planId || !isAuthenticated) return;
+    // Save previous feedback in case we need to revert on failure
+    const previousFeedback = modalityFeedback[modalityId];
     // Optimistic update
     setModalityFeedback((prev) => ({ ...prev, [modalityId]: fb }));
     setModalityFeedbackLoading((prev) => ({ ...prev, [modalityId]: true }));
     try {
-      await fetch(`${BASE}/api/plans/${planId}/modality-feedback`, {
+      const res = await fetch(`${BASE}/api/plans/${planId}/modality-feedback`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ modalityId, feedback: fb }),
       });
+      if (!res.ok) {
+        // Revert optimistic update on API error
+        setModalityFeedback((prev) => ({ ...prev, [modalityId]: previousFeedback }));
+        toast.error("Couldn't save your feedback. Please try again.");
+      }
     } catch {
-      // silently fail — optimistic state already set
+      // Revert optimistic update on network error
+      setModalityFeedback((prev) => ({ ...prev, [modalityId]: previousFeedback }));
+      toast.error("Couldn't save your feedback. Please try again.");
     } finally {
       setModalityFeedbackLoading((prev) => ({ ...prev, [modalityId]: false }));
     }
