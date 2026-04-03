@@ -73,6 +73,7 @@ The project is structured as a pnpm monorepo, separating deployable applications
 - **PostgreSQL:** Primary database.
 - **Supabase:** Used for database hosting, authentication, and potentially other services. Requires `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `SUPABASE_DATABASE_URL` secrets.
 - **GitHub:** Project is mirrored to GitHub for version control.
+- **RevenueCat:** In-app purchase integration for the Expo mobile app. Client-side SDK (`react-native-purchases` v9.15.1) is installed and initialized in `app/_layout.tsx`. Entitlement identifier: `plus`. Test store public API key stored as `EXPO_PUBLIC_REVENUECAT_TEST_API_KEY`. iOS and Android production keys stored as `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` (placeholders — replace with real keys from RevenueCat dashboard after app store apps are configured). **IMPORTANT: The RevenueCat Replit integration (connector:ccfg_revenuecat_01KED80FZSMH99H5FHQWSX7D4M) was NOT connected by the user. To run the seed script and programmatically create products/entitlements, the user must connect this integration OR manually set up in RevenueCat dashboard: (1) create entitlement with key "plus", (2) create monthly product ($9.99), (3) attach to offering.**
 - **Replit Integrations:** Used for GitHub connector and potentially for other services.
 - **Orval:** OpenAPI client code generator.
 - **Drizzle ORM:** TypeScript ORM for PostgreSQL.

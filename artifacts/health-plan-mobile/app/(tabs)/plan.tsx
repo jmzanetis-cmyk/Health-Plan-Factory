@@ -19,6 +19,7 @@ import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListModalities } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { PurchaseModal } from "@/components/PurchaseModal";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
@@ -40,7 +41,7 @@ async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptio
   }
 }
 
-async function handlePlusUpgrade() {
+async function handleWebUpgrade() {
   const token = await getToken();
   const base = getApiBaseUrl();
   try {
@@ -258,6 +259,7 @@ export default function PlanScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [refreshing, setRefreshing] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [paywallVisible, setPaywallVisible] = useState(false);
 
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
@@ -298,8 +300,13 @@ export default function PlanScreen() {
   }
 
   async function onUpgrade() {
+    const isNative = Platform.OS === "ios" || Platform.OS === "android";
+    if (isNative) {
+      setPaywallVisible(true);
+      return;
+    }
     setUpgradeLoading(true);
-    await handlePlusUpgrade();
+    await handleWebUpgrade();
     setUpgradeLoading(false);
   }
 
@@ -328,7 +335,7 @@ export default function PlanScreen() {
         <Feather name="star" size={18} color={COLORS.pink} />
         <View>
           <Text style={styles.upgradeCardTitle}>Unlock providers with Plus</Text>
-          <Text style={styles.upgradeCardSub}>See matched provider contacts — $9.99/mo</Text>
+          <Text style={styles.upgradeCardSub}>See matched provider contacts — upgrade to Plus</Text>
         </View>
       </View>
       {upgradeLoading ? (
@@ -349,6 +356,12 @@ export default function PlanScreen() {
           </View>
         )}
       </View>
+
+      <PurchaseModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        onPurchaseSuccess={() => refetch()}
+      />
 
       {isLoading ? (
         <View style={styles.loadingState}>

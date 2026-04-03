@@ -17,6 +17,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
+import { Alert } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -28,12 +29,22 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import "@/lib/backgroundHealthSync";
 import { registerBackgroundHealthSync } from "@/lib/backgroundHealthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { initializeRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
 
 const apiBase = getApiBaseUrl();
 if (apiBase) {
   setBaseUrl(apiBase);
 }
 setAuthTokenGetter(() => SecureStore.getItemAsync("auth_session_token"));
+
+try {
+  initializeRevenueCat();
+} catch (err: any) {
+  console.warn("[RevenueCat] Init failed:", err?.message ?? "Unknown error");
+  if (__DEV__) {
+    Alert.alert("RevenueCat Unavailable", err?.message ?? "Unknown error");
+  }
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -106,13 +117,15 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <KeyboardProvider>
-              <AuthProvider>
-                <RootLayoutNav />
-              </AuthProvider>
-            </KeyboardProvider>
-          </GestureHandlerRootView>
+          <SubscriptionProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <KeyboardProvider>
+                <AuthProvider>
+                  <RootLayoutNav />
+                </AuthProvider>
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </SubscriptionProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>

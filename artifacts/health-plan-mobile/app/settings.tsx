@@ -23,6 +23,7 @@ import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
 import { loadConnectionState, type HealthConnectionState } from "@/lib/healthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { useSubscription } from "@/lib/revenuecat";
 
 async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptionStatus: string }> {
   const base = getApiBaseUrl();
@@ -319,13 +320,25 @@ export default function SettingsScreen() {
     staleTime: 120_000,
   });
 
+  const { isSubscribed, restore, isRestoring } = useSubscription();
+
   const subscriptionStatus = subscriptionData?.subscriptionStatus ?? "free";
+  const isPlus = isSubscribed || subscriptionStatus === "plus";
   const membershipLabel =
-    subscriptionStatus === "plus"
+    isPlus
       ? "Plus"
       : subscriptionStatus === "employer"
         ? "Employer"
         : "Explorer";
+
+  async function handleRestorePurchases() {
+    try {
+      await restore();
+      Alert.alert("Purchases Restored", "Your purchases have been restored successfully.");
+    } catch {
+      Alert.alert("Restore Failed", "Could not restore purchases. Please try again.");
+    }
+  }
 
   function handleSignOut() {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -428,6 +441,27 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {(Platform.OS === "ios" || Platform.OS === "android") && (
+          <TouchableOpacity
+            style={styles.card}
+            onPress={handleRestorePurchases}
+            disabled={isRestoring}
+            activeOpacity={0.7}
+          >
+            <View style={styles.row}>
+              <View style={styles.rowIcon}>
+                {isRestoring ? (
+                  <ActivityIndicator size="small" color={COLORS.amber} />
+                ) : (
+                  <Feather name="refresh-cw" size={16} color={COLORS.amber} />
+                )}
+              </View>
+              <Text style={styles.rowLabel}>Restore Purchases</Text>
+              <Feather name="chevron-right" size={16} color={COLORS.textLight} />
+            </View>
+          </TouchableOpacity>
+        )}
 
         <Text style={styles.sectionLabel}>Connected Services</Text>
         <ConnectedServicesSection profileId={user?.id} />

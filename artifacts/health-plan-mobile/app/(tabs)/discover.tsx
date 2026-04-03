@@ -20,6 +20,7 @@ import { useListModalities } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
 import { EmergencyTextInput } from "@/components/EmergencyTextInput";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { PurchaseModal } from "@/components/PurchaseModal";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
@@ -71,7 +72,7 @@ async function fetchProviders(params: {
   return data as ProvidersResponse;
 }
 
-async function handlePlusUpgrade() {
+async function handleWebUpgrade() {
   const token = await getToken();
   const base = getApiBaseUrl();
   try {
@@ -98,12 +99,17 @@ async function handlePlusUpgrade() {
   }
 }
 
-function LockedProvidersPlaceholder({ count }: { count: number }) {
+function LockedProvidersPlaceholder({ count, onOpenPaywall }: { count: number; onOpenPaywall: () => void }) {
   const [loading, setLoading] = useState(false);
+  const isNative = Platform.OS === "ios" || Platform.OS === "android";
 
   async function onUpgrade() {
+    if (isNative) {
+      onOpenPaywall();
+      return;
+    }
     setLoading(true);
-    await handlePlusUpgrade();
+    await handleWebUpgrade();
     setLoading(false);
   }
 
@@ -129,7 +135,7 @@ function LockedProvidersPlaceholder({ count }: { count: number }) {
         ) : (
           <>
             <Feather name="star" size={15} color={COLORS.white} />
-            <Text style={lockedStyles.upgradeBtnText}>Upgrade to Plus — $9.99/mo</Text>
+            <Text style={lockedStyles.upgradeBtnText}>Upgrade to Plus</Text>
           </>
         )}
       </TouchableOpacity>
@@ -308,6 +314,7 @@ export default function DiscoverScreen() {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
   const [page] = useState(1);
+  const [paywallVisible, setPaywallVisible] = useState(false);
 
   const { data: modalities } = useListModalities(undefined, {
     query: { staleTime: 300_000 },
@@ -403,7 +410,12 @@ export default function DiscoverScreen() {
               tintColor={COLORS.amber}
             />
           }
-          ListEmptyComponent={<LockedProvidersPlaceholder count={lockedCount} />}
+          ListEmptyComponent={
+            <LockedProvidersPlaceholder
+              count={lockedCount}
+              onOpenPaywall={() => setPaywallVisible(true)}
+            />
+          }
         />
       ) : (
         <FlatList
@@ -432,6 +444,12 @@ export default function DiscoverScreen() {
           }
         />
       )}
+
+      <PurchaseModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        onPurchaseSuccess={() => refetch()}
+      />
     </View>
   );
 }
