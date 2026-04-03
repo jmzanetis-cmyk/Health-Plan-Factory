@@ -313,21 +313,19 @@ test.describe("Outcome Tracking", () => {
 
 });
 
-// ── Canonical full happy-path (DB-seeded, X-Test-User-Id) ────────────────────
-/**
- * This describe block contains the definitive end-to-end outcome-tracking
- * journey. It uses the same fixture-seeding pattern as referral.spec.ts:
- *
- *  1. beforeEach: POST /api/test/seed-outcome-member  → creates real Plus member + plan in DB
- *                 (this is the sign-up step — programmatic equivalent of UI registration)
- *  2. page.setExtraHTTPHeaders({ "x-test-user-id": userId }) → all API calls are authenticated
- *  3. page.route("**/api/auth/me") → frontend auth display only
- *  4. Real UI interactions for onboarding (7 steps), /progress log, and /plan outcome
- *  5. afterEach: DELETE /api/test/seed-outcome-member/:userId → cleanup
- *
- * Requires NODE_ENV=test API server (test-auth-middleware active) + Chromium.
- * Skipped in Replit dev env where SKIP_BROWSER_TESTS=1.
- */
+// Canonical full happy-path (DB-seeded, X-Test-User-Id)
+// This describe block contains the definitive end-to-end outcome-tracking
+// journey. It uses the same fixture-seeding pattern as referral.spec.ts:
+//
+//  1. beforeEach: POST /api/test/seed-outcome-member -> creates real Plus member + plan in DB
+//                 (this is the sign-up step - programmatic equivalent of UI registration)
+//  2. page.setExtraHTTPHeaders with x-test-user-id -> all API calls are authenticated
+//  3. page.route for api/auth/me -> frontend auth display only
+//  4. Real UI interactions for onboarding (7 steps), /progress log, and /plan outcome
+//  5. afterEach: DELETE /api/test/seed-outcome-member/:userId -> cleanup
+//
+// Requires NODE_ENV=test API server (test-auth-middleware active) + Chromium.
+// Skipped in Replit dev env where SKIP_BROWSER_TESTS=1.
 test.describe("Outcome Tracking — canonical full happy-path", () => {
   test.skip(SKIP, "SKIP_BROWSER_TESTS=1 — browser not available");
 
@@ -345,7 +343,7 @@ test.describe("Outcome Tracking — canonical full happy-path", () => {
     await request.delete(`${API_URL}/api/test/seed-outcome-member/${FIXTURE_USER_ID}`);
   });
 
-  test("7. sign-up (seeded) → onboarding (7 UI steps) → plan → log progress → mark outcome → badge", async ({ page }) => {
+  test("7. sign-up (seeded) -> onboarding (7 UI steps) -> plan -> log progress -> mark outcome -> badge", async ({ page }) => {
     // ── Auth wiring ────────────────────────────────────────────────────────
     // Inject X-Test-User-Id so all API calls from the page are authenticated
     await page.setExtraHTTPHeaders({ "x-test-user-id": FIXTURE_USER_ID });
@@ -416,7 +414,7 @@ test.describe("Outcome Tracking — canonical full happy-path", () => {
     await expect(page.getByRole("heading", { name: /review/i })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Generate My Plan" }).click();
 
-    // Building screen → plan page
+    // Building screen -> plan page
     await page.waitForURL(`${UI_URL}/plan`, { timeout: 30000 });
     await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({ timeout: 10000 });
 
@@ -434,7 +432,7 @@ test.describe("Outcome Tracking — canonical full happy-path", () => {
     await page.locator("input[placeholder='1–10']").nth(1).fill("7");
     await page.locator("textarea[placeholder*='How did you feel']").fill("Felt great after yoga session.");
 
-    // Submit → real POST /api/progress authenticated via X-Test-User-Id
+    // Submit -> real POST /api/progress authenticated via X-Test-User-Id
     await page.getByRole("button", { name: /save log/i }).click();
 
     // Form closes after success
@@ -444,7 +442,7 @@ test.describe("Outcome Tracking — canonical full happy-path", () => {
     await page.goto(`${UI_URL}/plan`);
     await expect(page.getByRole("heading", { name: /wellness roadmap/i })).toBeVisible({ timeout: 10000 });
 
-    // Plus member → "Mark goal achieved" button visible
+    // Plus member -> "Mark goal achieved" button visible
     await expect(page.getByTestId("mark-goal-achieved-btn")).toBeVisible({ timeout: 8000 });
     await page.getByTestId("mark-goal-achieved-btn").click();
 
@@ -456,7 +454,7 @@ test.describe("Outcome Tracking — canonical full happy-path", () => {
     await page.getByTestId("outcome-label-stress-managed").click();
     await page.getByTestId("outcome-note-input").fill("Eight weeks of yoga made a real difference.");
 
-    // Confirm → real PATCH /api/plans/:planId/outcome authenticated via X-Test-User-Id
+    // Confirm -> real PATCH /api/plans/:planId/outcome authenticated via X-Test-User-Id
     await page.getByTestId("outcome-confirm-btn").click();
 
     // ── Step 5: Assert badge and cleanup ──────────────────────────────────
