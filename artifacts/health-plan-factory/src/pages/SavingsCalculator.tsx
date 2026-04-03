@@ -247,7 +247,7 @@ export default function SavingsCalculator() {
 
       {/* ── HERO ── */}
       <section
-        className="relative px-6 md:px-12 py-20"
+        className="relative px-6 md:px-12 py-10 md:py-16"
         style={{
           background: "var(--off-white)",
           borderBottom: "1px solid rgba(212,34,126,0.08)",
@@ -266,7 +266,7 @@ export default function SavingsCalculator() {
             className="mb-5 leading-tight"
             style={{
               fontFamily: "var(--app-font-serif)",
-              fontSize: "clamp(2.4rem, 5vw, 3.8rem)",
+              fontSize: "clamp(1.8rem, 5vw, 3.8rem)",
               fontWeight: 700,
               letterSpacing: "-0.02em",
               color: "var(--hpf-deep)",
@@ -293,7 +293,7 @@ export default function SavingsCalculator() {
       </section>
 
       {/* ── CALCULATOR ── */}
-      <section className="px-6 md:px-12 py-14">
+      <section className="px-6 md:px-12 py-8 md:py-14">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
 
           {/* Inputs */}

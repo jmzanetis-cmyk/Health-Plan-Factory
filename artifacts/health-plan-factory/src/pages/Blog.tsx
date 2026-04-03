@@ -25,7 +25,7 @@ export default function Blog() {
 
       {/* ── HERO ── */}
       <section
-        className="relative px-6 md:px-12 py-20"
+        className="relative px-6 md:px-12 py-10 md:py-20"
         style={{ background: "var(--off-white)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}
       >
         <div

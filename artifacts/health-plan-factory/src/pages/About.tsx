@@ -44,7 +44,7 @@ export default function About() {
 
       {/* ── FOUNDER STORY (top) ── */}
       <section
-        className="px-6 md:px-12 py-20"
+        className="px-6 md:px-12 py-10 md:py-20"
         style={{
           background: "var(--off-white)",
           borderBottom: "1px solid rgba(212,34,126,0.08)",

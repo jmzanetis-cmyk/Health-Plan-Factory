@@ -72,7 +72,7 @@ export default function ForEmployers() {
     <div style={{ minHeight: "100vh", background: "var(--warm-white)" }}>
 
       {/* ── HERO ── */}
-      <div style={{ background: navy, padding: "72px 24px 64px" }}>
+      <div style={{ background: navy }} className="px-6 py-10 md:py-[72px]">
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <nav style={{ marginBottom: 20, display: "flex", gap: 6, alignItems: "center", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>
             <Link to="/" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>Home</Link>

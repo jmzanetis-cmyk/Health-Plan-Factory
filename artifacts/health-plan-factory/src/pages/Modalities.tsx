@@ -98,7 +98,7 @@ export default function Modalities() {
       </Helmet>
 
       {/* Hero */}
-      <div style={{ background: navy, padding: "64px 24px 56px" }}>
+      <div style={{ background: navy }} className="px-6 py-10 md:py-16">
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           {/* Breadcrumb */}
           <nav style={{ marginBottom: 20, display: "flex", gap: 6, alignItems: "center", fontFamily: "var(--app-font-sans)", fontSize: 13 }}>

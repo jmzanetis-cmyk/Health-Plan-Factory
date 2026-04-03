@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export default function ForProviders() {
   return (
     <div className="min-h-screen" style={{ background: "var(--warm-white)" }}>
-      <div className="px-6 md:px-12 py-20" style={{ background: "var(--off-white)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}>
+      <div className="px-6 md:px-12 py-10 md:py-20" style={{ background: "var(--off-white)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}>
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           <div>
             <div className="section-tag">For Providers</div>

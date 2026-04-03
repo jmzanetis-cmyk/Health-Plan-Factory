@@ -71,7 +71,7 @@ export default function ListYourPractice() {
     <div className="min-h-screen" style={{ background: "var(--warm-white)" }}>
       {/* Hero */}
       <div
-        className="px-6 md:px-12 py-24 md:py-32"
+        className="px-6 md:px-12 py-12 md:py-20"
         style={{ background: "linear-gradient(135deg, #d4227e 0%, #e02040 100%)" }}
       >
         <div className="max-w-4xl mx-auto text-center">

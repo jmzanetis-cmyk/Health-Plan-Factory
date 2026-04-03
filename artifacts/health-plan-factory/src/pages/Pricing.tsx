@@ -189,7 +189,7 @@ export default function Pricing() {
         </div>
       )}
 
-      <div className="px-6 md:px-12 py-20">
+      <div className="px-6 md:px-12 py-10 md:py-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <div className="section-tag justify-center">Pricing</div>
