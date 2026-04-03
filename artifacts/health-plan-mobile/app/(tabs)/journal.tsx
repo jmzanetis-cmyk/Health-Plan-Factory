@@ -21,6 +21,7 @@ import {
   useCreateProgressLog,
   useGetCurrentAuthUser,
   useListModalities,
+  partialQuery,
 } from "@workspace/api-client-react";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
 import { interceptEmergencyText } from "@/lib/emergencyCheck";
@@ -153,13 +154,11 @@ export default function JournalScreen() {
 
   const { data: progress, isLoading, refetch } = useListProgress(
     { profileId, limit: 50 },
-    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
-    { query: { queryKey: [] as const, enabled: !!profileId } }
+    { query: partialQuery({ enabled: !!profileId }) }
   );
 
   const { data: modalities } = useListModalities(undefined, {
-    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
-    query: { queryKey: [] as const, staleTime: 300_000 },
+    query: partialQuery({ staleTime: 300_000 }),
   });
 
   const { mutate: createLog, isPending } = useCreateProgressLog();

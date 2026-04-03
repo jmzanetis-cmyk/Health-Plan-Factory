@@ -13,7 +13,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
-import { useGetCurrentAuthUser, useListProgress } from "@workspace/api-client-react";
+import { useGetCurrentAuthUser, useListProgress, partialQuery } from "@workspace/api-client-react";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
 import { setupNotifications } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
@@ -241,8 +241,7 @@ export default function AccountabilityScreen() {
 
   const { data: progressData, isLoading, refetch } = useListProgress(
     { profileId, limit: 50 },
-    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
-    { query: { queryKey: [] as const, enabled: !!profileId } }
+    { query: partialQuery({ enabled: !!profileId }) }
   );
 
   const entries = progressData ?? [];
@@ -253,7 +252,6 @@ export default function AccountabilityScreen() {
     setRefreshing(false);
   }
 
-  // @ts-ignore - createdAt exists on the API response at runtime but is not in the generated AuthUser type
   const trialDaysLeft = getDaysLeftInTrial(authData?.user?.createdAt);
 
   async function toggleReminders(val: boolean) {

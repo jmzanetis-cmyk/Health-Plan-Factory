@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
-import { useListModalities } from "@workspace/api-client-react";
+import { useListModalities, partialQuery } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
 import { EmergencyTextInput } from "@/components/EmergencyTextInput";
 import { getApiBaseUrl } from "@/lib/apiBase";
@@ -318,8 +318,7 @@ export default function DiscoverScreen() {
   const [paywallVisible, setPaywallVisible] = useState(false);
 
   const { data: modalities } = useListModalities(undefined, {
-    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
-    query: { queryKey: [] as const, staleTime: 300_000 },
+    query: partialQuery({ staleTime: 300_000 }),
   });
 
   const modalityFilters: string[] = ["All", ...(modalities ?? []).slice(0, 5).map((m) => m.name)];

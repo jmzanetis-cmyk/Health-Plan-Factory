@@ -16,7 +16,7 @@ import Svg, { Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/lib/auth";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
-import { useGetCurrentAuthUser, useListProgress, useListModalities } from "@workspace/api-client-react";
+import { useGetCurrentAuthUser, useListProgress, useListModalities, partialQuery } from "@workspace/api-client-react";
 import type { ProgressLogRecord, ModalityRecord } from "@workspace/api-client-react";
 import { setupNotifications, scheduleSessionReminder } from "@/lib/notifications";
 import { loadConnectionState, syncHealthData, type DailyHealthMetrics } from "@/lib/healthSync";
@@ -140,13 +140,11 @@ export default function HomeScreen() {
 
   const { data: progressData, isLoading: progressLoading, refetch } = useListProgress(
     { profileId, limit: 30 },
-    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
-    { query: { queryKey: [] as const, enabled: !!profileId } }
+    { query: partialQuery({ enabled: !!profileId }) }
   );
 
   const { data: modalitiesData } = useListModalities(undefined, {
-    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
-    query: { queryKey: [] as const, staleTime: 5 * 60 * 1000 },
+    query: partialQuery({ staleTime: 5 * 60 * 1000 }),
   });
 
   const [routines, setRoutines] = useState<RoutineItem[]>(QUICK_ROUTINES);
@@ -158,7 +156,6 @@ export default function HomeScreen() {
   const modalities = modalitiesData ?? [];
   const streak = calculateStreak(entries);
   const wellnessScore = calculateWellnessScore(entries, healthMetrics);
-  // @ts-ignore - createdAt exists on the API response at runtime but is not in the generated AuthUser type
   const trialDaysLeft = getDaysLeftInTrial(authData?.user?.createdAt);
   const todayStr = new Date().toDateString();
   const hasEntryToday = entries.some(

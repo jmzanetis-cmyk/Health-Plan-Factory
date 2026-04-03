@@ -33,7 +33,11 @@ Legend: **agent-verified ✓** = confirmed by code audit | **requires human acti
   ```
   Sentry defaults (`healthplanfactory` / `health-plan-mobile`) are in `app.config.js` as fallbacks — source map uploads will fail without real values, but crash capture still works. See `SENTRY_SETUP.md` for setup instructions.
 
-- **☐ Confirm RevenueCat API key**: `EXPO_PUBLIC_REVENUECAT_TEST_API_KEY` is set as a dev secret. Replace with the **production** iOS API key from the RevenueCat dashboard before the production build.
+- **☐ Confirm RevenueCat API keys**: Three separate env vars are read by `lib/revenuecat.tsx`:
+  - `EXPO_PUBLIC_REVENUECAT_TEST_API_KEY` — sandbox/dev key (already set)
+  - `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` — production iOS key (set this in EAS Secrets)
+  - `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` — production Android key (set this in EAS Secrets)
+  The app automatically uses the test key if the production keys are `REPLACE_WITH_IOS_KEY` placeholders.
 
 - **☐ Run the production build**:
   ```bash
@@ -70,7 +74,7 @@ Legend: **agent-verified ✓** = confirmed by code audit | **requires human acti
 | Entitlement `plus` created in RevenueCat dashboard | **requires human action ☐** | The code gates features on entitlement ID `"plus"` — must match exactly |
 | Monthly product `health_plan_factory_plus_monthly` (or matching ID) configured at $9.99 | **requires human action ☐** | Create in App Store Connect → In-App Purchases first, then link in RevenueCat |
 | Default offering created with the Plus monthly product attached | **requires human action ☐** | RevenueCat dashboard → Offerings → Default offering |
-| iOS production API key set in EAS Secrets as `EXPO_PUBLIC_REVENUECAT_API_KEY` | **requires human action ☐** | Current key is a test/sandbox key; swap before production build |
+| iOS production API key set in EAS Secrets as `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | **requires human action ☐** | Replace the `REPLACE_WITH_IOS_KEY` placeholder; `EXPO_PUBLIC_REVENUECAT_TEST_API_KEY` is the sandbox fallback (see `lib/revenuecat.tsx`) |
 | Sandbox test: purchase `Plus` subscription, verify `isPlus === true` returned by `/api/subscriptions` | **requires human action ☐** | Test on a physical device with a Sandbox Apple ID |
 | Sandbox test: restore purchases, verify subscription state restored | **requires human action ☐** | Test via Settings → Restore Purchases in-app |
 
@@ -151,9 +155,9 @@ Legend: **agent-verified ✓** = confirmed by code audit | **requires human acti
 | Error | File | Fix Applied |
 |-------|------|-------------|
 | `NodeJS.Timeout` not assignable to `Timeout` | `app/(tabs)/coach.tsx:124` | Changed ref type to `ReturnType<typeof setTimeout>` |
-| `Property 'nonce' does not exist on type 'AuthRequest'` | `lib/auth.tsx:123` | Added `// @ts-ignore` — property exists at runtime in expo-auth-session v7 |
-| `Property 'queryKey' is missing` (UseQuery options) | `accountability.tsx`, `discover.tsx`, `index.tsx`, `journal.tsx`, `plan.tsx` | Added `queryKey: [] as const` placeholder (hook overrides with real key internally) |
-| `Property 'createdAt' does not exist on type 'AuthUser'` | `accountability.tsx:259`, `index.tsx:164` | Added `// @ts-ignore` — field exists in API response but not in generated type |
+| `Property 'nonce' does not exist on type 'AuthRequest'` | `lib/auth.tsx` | Added local `AuthRequestWithNonce` type extension; cast `requestRaw` to typed variable — no @ts-ignore needed |
+| `Property 'queryKey' is missing` (UseQuery options) | `accountability.tsx`, `discover.tsx`, `index.tsx`, `journal.tsx`, `plan.tsx` | Added `partialQuery()` helper in `lib/api-client-react/src/index.ts` — callers pass `enabled`/`staleTime` without providing `queryKey`; hook uses its own real cache key |
+| `Property 'createdAt' does not exist on type 'AuthUser'` | `accountability.tsx`, `index.tsx` | Added `createdAt?: string \| null` to `AuthUser` in both `lib/api-zod` and `lib/api-client-react` generated schemas — field is actually returned by the API |
 
 ### Native Module Errors — Left with `// @ts-ignore` (by design)
 

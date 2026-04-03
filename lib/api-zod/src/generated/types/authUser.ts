@@ -14,4 +14,6 @@ export interface AuthUser {
   lastName?: string | null;
   profileImageUrl?: string | null;
   role?: AuthUserRole;
+  /** ISO 8601 timestamp from the auth provider profile record. */
+  createdAt?: string | null;
 }

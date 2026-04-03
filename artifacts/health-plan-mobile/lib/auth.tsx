@@ -11,6 +11,12 @@ import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
+type AuthRequestWithNonce = AuthSession.AuthRequest & {
+  /** nonce is set internally by expo-auth-session for OpenID Connect flows
+   *  but is not exposed in the AuthRequest type definition. */
+  nonce?: string;
+};
+
 WebBrowser.maybeCompleteAuthSession();
 
 const AUTH_TOKEN_KEY = "auth_session_token";
@@ -54,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const discovery = AuthSession.useAutoDiscovery(ISSUER_URL);
   const redirectUri = AuthSession.makeRedirectUri();
 
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+  const [requestRaw, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: getClientId(),
       scopes: ["openid", "email", "profile", "offline_access"],
@@ -63,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     discovery
   );
+  const request = requestRaw as AuthRequestWithNonce | null;
 
   const getToken = useCallback(async () => {
     return SecureStore.getItemAsync(AUTH_TOKEN_KEY);
@@ -117,11 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               code,
-              code_verifier: request.codeVerifier,
+              code_verifier: request?.codeVerifier,
               redirect_uri: redirectUri,
               state,
-              // @ts-ignore - nonce exists on AuthRequest at runtime but is not in expo-auth-session v7 types
-              nonce: request.nonce,
+              nonce: request?.nonce,
             }),
           }
         );

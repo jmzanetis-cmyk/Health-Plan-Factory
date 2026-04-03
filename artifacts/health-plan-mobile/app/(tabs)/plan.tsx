@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
-import { useGetCurrentAuthUser, useListModalities } from "@workspace/api-client-react";
+import { useGetCurrentAuthUser, useListModalities, partialQuery } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { PurchaseModal } from "@/components/PurchaseModal";
@@ -290,8 +290,7 @@ export default function PlanScreen() {
     subscriptionData?.subscriptionStatus === "employer";
 
   const { data: modalities } = useListModalities(undefined, {
-    // queryKey [] is a placeholder; the generated hook overrides it with the real key at runtime
-    query: { queryKey: [] as const, staleTime: 300_000 },
+    query: partialQuery({ staleTime: 300_000 }),
   });
 
   const modalityMap: Record<string, ModalityRecord> = Object.fromEntries(
