@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
-import { useSubscription } from "@/lib/revenuecat";
+import { useSubscription, PURCHASES_ERROR_CODE } from "@/lib/revenuecat";
+import type { PurchasesPackage } from "react-native-purchases";
 
 interface PurchaseModalProps {
   visible: boolean;
@@ -23,9 +24,8 @@ export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseM
   const { offerings, purchase, isPurchasing } = useSubscription();
 
   const currentOffering = offerings?.current;
-  const pkg = currentOffering?.availablePackages[0];
+  const pkg: PurchasesPackage | undefined = currentOffering?.availablePackages[0];
   const priceString = pkg?.product?.priceString ?? "$9.99";
-  const productTitle = pkg?.product?.title ?? "Health Plan Factory Plus";
   const productDescription =
     pkg?.product?.description ??
     "Unlock matched provider contacts, clinical evidence insights, and priority support.";
@@ -36,8 +36,15 @@ export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseM
       await purchase(pkg);
       onPurchaseSuccess?.();
       onClose();
-    } catch (err: any) {
-      if (err?.userCancelled) return;
+    } catch (err: unknown) {
+      if (
+        err !== null &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code: string }).code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR
+      ) {
+        return;
+      }
     }
   }
 
@@ -114,7 +121,8 @@ export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseM
           )}
 
           <Text style={styles.legalText}>
-            Subscription auto-renews monthly. Manage in your {Platform.OS === "ios" ? "App Store" : "Play Store"} settings.
+            Subscription auto-renews monthly. Manage in your{" "}
+            {Platform.OS === "ios" ? "App Store" : "Play Store"} settings.
           </Text>
         </View>
       </View>

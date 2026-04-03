@@ -21,6 +21,7 @@ import type { ModalityRecord } from "@workspace/api-client-react";
 import { EmergencyTextInput } from "@/components/EmergencyTextInput";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { PurchaseModal } from "@/components/PurchaseModal";
+import { useSubscription } from "@/lib/revenuecat";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
@@ -342,7 +343,8 @@ export default function DiscoverScreen() {
     setRefreshing(false);
   }
 
-  const isLocked = providersData?.locked === true;
+  const { isSubscribed } = useSubscription();
+  const isLocked = providersData?.locked === true && !isSubscribed;
   const lockedCount = providersData?.count ?? 0;
   const providerList = (providersData?.providers ?? []).filter(
     (p) => p.status === "active" || p.status === "approved"

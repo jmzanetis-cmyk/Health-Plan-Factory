@@ -20,6 +20,7 @@ import { useGetCurrentAuthUser, useListModalities } from "@workspace/api-client-
 import type { ModalityRecord } from "@workspace/api-client-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { PurchaseModal } from "@/components/PurchaseModal";
+import { useSubscription } from "@/lib/revenuecat";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
@@ -281,7 +282,10 @@ export default function PlanScreen() {
     staleTime: 120_000,
   });
 
+  const { isSubscribed } = useSubscription();
+
   const hasProviderAccess =
+    isSubscribed ||
     (subscriptionData?.isPlus ?? false) ||
     subscriptionData?.subscriptionStatus === "employer";
 

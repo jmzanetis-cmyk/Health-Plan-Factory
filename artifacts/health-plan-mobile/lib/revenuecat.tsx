@@ -1,6 +1,10 @@
 import React, { createContext, useContext } from "react";
 import { Platform } from "react-native";
-import Purchases from "react-native-purchases";
+import Purchases, {
+  type PurchasesPackage,
+  type CustomerInfo,
+  PURCHASES_ERROR_CODE,
+} from "react-native-purchases";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Constants from "expo-constants";
 
@@ -21,11 +25,19 @@ function getRevenueCatApiKey(): string {
     return REVENUECAT_TEST_API_KEY;
   }
 
-  if (Platform.OS === "ios" && REVENUECAT_IOS_API_KEY && REVENUECAT_IOS_API_KEY !== "REPLACE_WITH_IOS_KEY") {
+  if (
+    Platform.OS === "ios" &&
+    REVENUECAT_IOS_API_KEY &&
+    REVENUECAT_IOS_API_KEY !== "REPLACE_WITH_IOS_KEY"
+  ) {
     return REVENUECAT_IOS_API_KEY;
   }
 
-  if (Platform.OS === "android" && REVENUECAT_ANDROID_API_KEY && REVENUECAT_ANDROID_API_KEY !== "REPLACE_WITH_ANDROID_KEY") {
+  if (
+    Platform.OS === "android" &&
+    REVENUECAT_ANDROID_API_KEY &&
+    REVENUECAT_ANDROID_API_KEY !== "REPLACE_WITH_ANDROID_KEY"
+  ) {
     return REVENUECAT_ANDROID_API_KEY;
   }
 
@@ -39,12 +51,29 @@ export function initializeRevenueCat() {
   console.log("[RevenueCat] Configured with key prefix:", apiKey.slice(0, 8) + "...");
 }
 
+export async function loginRevenueCat(appUserId: string): Promise<void> {
+  try {
+    await Purchases.logIn(appUserId);
+    console.log("[RevenueCat] Logged in user:", appUserId);
+  } catch (e) {
+    console.warn("[RevenueCat] logIn failed:", e);
+  }
+}
+
+export async function logoutRevenueCat(): Promise<void> {
+  try {
+    await Purchases.logOut();
+    console.log("[RevenueCat] Logged out");
+  } catch (e) {
+    console.warn("[RevenueCat] logOut failed:", e);
+  }
+}
+
 function useSubscriptionContext() {
   const customerInfoQuery = useQuery({
     queryKey: ["revenuecat", "customer-info"],
-    queryFn: async () => {
-      const info = await Purchases.getCustomerInfo();
-      return info;
+    queryFn: async (): Promise<CustomerInfo> => {
+      return Purchases.getCustomerInfo();
     },
     staleTime: 60 * 1000,
   });
@@ -52,14 +81,13 @@ function useSubscriptionContext() {
   const offeringsQuery = useQuery({
     queryKey: ["revenuecat", "offerings"],
     queryFn: async () => {
-      const offerings = await Purchases.getOfferings();
-      return offerings;
+      return Purchases.getOfferings();
     },
     staleTime: 300 * 1000,
   });
 
   const purchaseMutation = useMutation({
-    mutationFn: async (packageToPurchase: any) => {
+    mutationFn: async (packageToPurchase: PurchasesPackage): Promise<CustomerInfo> => {
       const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
       return customerInfo;
     },
@@ -69,7 +97,7 @@ function useSubscriptionContext() {
   });
 
   const restoreMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<CustomerInfo> => {
       return Purchases.restorePurchases();
     },
     onSuccess: () => {
@@ -94,6 +122,8 @@ function useSubscriptionContext() {
     refetchCustomerInfo: customerInfoQuery.refetch,
   };
 }
+
+export { PURCHASES_ERROR_CODE };
 
 type SubscriptionContextValue = ReturnType<typeof useSubscriptionContext>;
 const Context = createContext<SubscriptionContextValue | null>(null);

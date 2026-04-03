@@ -29,7 +29,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import "@/lib/backgroundHealthSync";
 import { registerBackgroundHealthSync } from "@/lib/backgroundHealthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { initializeRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
+import { initializeRevenueCat, loginRevenueCat, logoutRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
 
 const apiBase = getApiBaseUrl();
 if (apiBase) {
@@ -72,9 +72,16 @@ function AuthGate() {
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
+      loginRevenueCat(user.id);
       registerBackgroundHealthSync(user.id).catch(() => {});
     }
   }, [isAuthenticated, user?.id]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      logoutRevenueCat();
+    }
+  }, [isAuthenticated, isLoading]);
 
   return null;
 }
