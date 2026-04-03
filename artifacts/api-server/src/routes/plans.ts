@@ -132,23 +132,6 @@ router.post("/plans/generate", async (req, res) => {
     const now = new Date();
     const planId = crypto.randomUUID();
 
-    // Persist the plan
-    const [plan] = await db
-      .insert(plans)
-      .values({
-        id: planId,
-        profileId: profileId ?? null,
-        intakeId: intakeId ?? null,
-        status: "generated",
-        totalMonthlyCost: generated.totalMonthlyCost,
-        budgetUtilization: generated.budgetUtilization,
-        budget,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-
-    // Persist plan items
     const itemValues = generated.items.map((item, idx) => ({
       id: crypto.randomUUID(),
       planId,
@@ -162,9 +145,29 @@ router.post("/plans/generate", async (req, res) => {
       nearbyProviderCount: item.nearbyProviderCount ?? null,
     }));
 
-    const savedItems = itemValues.length > 0
-      ? await db.insert(planItems).values(itemValues).returning()
-      : [];
+    // Wrap plan + items in a transaction so a partial failure leaves no orphan plan rows
+    const { plan, savedItems } = await db.transaction(async (tx) => {
+      const [plan] = await tx
+        .insert(plans)
+        .values({
+          id: planId,
+          profileId: profileId ?? null,
+          intakeId: intakeId ?? null,
+          status: "generated",
+          totalMonthlyCost: generated.totalMonthlyCost,
+          budgetUtilization: generated.budgetUtilization,
+          budget,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      const savedItems = itemValues.length > 0
+        ? await tx.insert(planItems).values(itemValues).returning()
+        : [];
+
+      return { plan, savedItems };
+    });
 
     // Trigger referral reward if the member was referred and this is their first plan
     if (body.data.profileId) {
@@ -305,6 +308,10 @@ router.get("/plans/:profileId/latest", async (req, res) => {
 });
 
 router.get("/plans/:id", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
   try {
     const params = GetPlanParams.safeParse(req.params);
     if (!params.success) {
@@ -314,6 +321,12 @@ router.get("/plans/:id", async (req, res) => {
     const [plan] = await db.select().from(plans).where(eq(plans.id, params.data.id));
     if (!plan) {
       res.status(404).json({ error: "Plan not found" });
+      return;
+    }
+
+    // Ownership check — only the plan owner or an admin can read it
+    if (plan.profileId && plan.profileId !== req.user!.id && req.user!.role !== "admin") {
+      res.status(403).json({ error: "Forbidden" });
       return;
     }
 
@@ -327,6 +340,10 @@ router.get("/plans/:id", async (req, res) => {
 });
 
 router.patch("/plans/:id", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
   try {
     const params = UpdatePlanParams.safeParse(req.params);
     if (!params.success) {
@@ -336,6 +353,17 @@ router.patch("/plans/:id", async (req, res) => {
     const body = UpdatePlanBody.safeParse(req.body);
     if (!body.success) {
       res.status(400).json({ error: "Validation error", details: body.error.flatten() });
+      return;
+    }
+
+    // Fetch first to verify ownership
+    const [existing] = await db.select({ profileId: plans.profileId }).from(plans).where(eq(plans.id, params.data.id)).limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Plan not found" });
+      return;
+    }
+    if (existing.profileId && existing.profileId !== req.user!.id && req.user!.role !== "admin") {
+      res.status(403).json({ error: "Forbidden" });
       return;
     }
 

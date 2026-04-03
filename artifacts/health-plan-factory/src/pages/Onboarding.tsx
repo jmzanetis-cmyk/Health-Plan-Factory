@@ -262,8 +262,11 @@ export default function Onboarding() {
     sessionStorage.setItem("hpf_plan", JSON.stringify(serializePlan(enriched)));
 
     // Persist to DB immediately for authenticated users (fire-and-forget).
-    // The Plan page also guards against duplicates via the hpf_plan_saved flag.
+    // We set hpf_plan_saved optimistically BEFORE navigating so Plan.tsx doesn't
+    // fire a second concurrent POST to /api/plans/generate (race condition fix).
+    // If the save fails we clear the flag so Plan.tsx can retry on next mount.
     if (isAuthenticated && user?.id) {
+      sessionStorage.setItem("hpf_plan_saved", "1");
       const base = getApiBase();
       fetch(`${base}/api/plans/generate`, {
         method: "POST",
@@ -284,12 +287,16 @@ export default function Onboarding() {
         .then((r) => r.ok ? r.json() : null)
         .then((saved) => {
           if (saved?.plan?.id) {
-            // Only mark as saved after a confirmed successful DB write
             sessionStorage.setItem("hpf_plan_id", saved.plan.id);
-            sessionStorage.setItem("hpf_plan_saved", "1");
+          } else {
+            // Save failed — clear optimistic flag so Plan.tsx can retry
+            sessionStorage.removeItem("hpf_plan_saved");
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          // Network failure — clear optimistic flag so Plan.tsx can retry
+          sessionStorage.removeItem("hpf_plan_saved");
+        });
     }
 
     navigate("/plan");
