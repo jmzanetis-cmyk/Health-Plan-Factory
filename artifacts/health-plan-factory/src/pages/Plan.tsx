@@ -410,6 +410,10 @@ export default function Plan() {
   const persistAttemptedRef = useRef(false);
   const dbLoadAttemptedRef = useRef(false);
 
+  // True while we are waiting for the DB round-trip to finish.
+  // Prevents flashing "No plan yet" on authenticated return visits.
+  const [dbHydrating, setDbHydrating] = useState(false);
+
   // Share modal state
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -590,9 +594,15 @@ export default function Plan() {
   // Fetch provider counts and, for return visits (no session data), hydrate the plan from DB.
   useEffect(() => {
     if (authLoading || !isAuthenticated || !user?.id) return;
+    // Show skeleton while fetching, but only when sessionStorage is empty
+    // (if session data exists the plan renders synchronously in the other effect).
+    if (!sessionStorage.getItem("hpf_plan")) {
+      setDbHydrating(true);
+    }
     fetch(`${BASE}/api/plans/${user.id}/latest`, { credentials: "include" })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
+        setDbHydrating(false);
         if (!data) return;
 
         // Update provider counts (always useful, merges with session-storage seed counts)
@@ -666,7 +676,7 @@ export default function Plan() {
         // Mark plan as saved since it already exists in DB
         sessionStorage.setItem("hpf_plan_saved", "1");
       })
-      .catch(() => {});
+      .catch(() => { setDbHydrating(false); });
   }, [authLoading, isAuthenticated, user?.id]);
 
   // Share handler — fetches/creates a share token for authenticated users
@@ -789,6 +799,39 @@ export default function Plan() {
   }
 
   if (!plan || !intake) {
+    // Show skeleton while auth resolves or DB hydration is in flight
+    if (authLoading || dbHydrating) {
+      return (
+        <div style={{ minHeight: "100vh", background: "var(--warm-white)" }}>
+          {/* Skeleton header */}
+          <header style={{ background: "white", borderBottom: "1px solid rgba(212,34,126,0.07)", padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ width: 120, height: 28, borderRadius: 6, background: "rgba(212,34,126,0.08)", animation: "hpf-pulse 1.4s ease-in-out infinite" }} />
+            <div style={{ width: 80, height: 32, borderRadius: 8, background: "rgba(212,34,126,0.08)", animation: "hpf-pulse 1.4s ease-in-out infinite" }} />
+          </header>
+          {/* Skeleton hero */}
+          <div style={{ background: "linear-gradient(135deg, var(--hpf-navy) 0%, var(--hpf-deep) 100%)", padding: "3rem 1.5rem 2.5rem", textAlign: "center" }}>
+            <div style={{ width: 260, height: 36, borderRadius: 8, background: "rgba(255,255,255,0.12)", margin: "0 auto 1rem", animation: "hpf-pulse 1.4s ease-in-out infinite" }} />
+            <div style={{ width: 180, height: 20, borderRadius: 6, background: "rgba(255,255,255,0.08)", margin: "0 auto", animation: "hpf-pulse 1.4s ease-in-out infinite" }} />
+          </div>
+          {/* Skeleton cards */}
+          <div style={{ maxWidth: 780, margin: "0 auto", padding: "2rem 1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ background: "white", borderRadius: 14, padding: "1.5rem", border: "1px solid rgba(212,34,126,0.07)", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(212,34,126,0.08)", flexShrink: 0, animation: "hpf-pulse 1.4s ease-in-out infinite" }} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <div style={{ width: "55%", height: 18, borderRadius: 5, background: "rgba(212,34,126,0.08)", animation: "hpf-pulse 1.4s ease-in-out infinite" }} />
+                  <div style={{ width: "80%", height: 14, borderRadius: 5, background: "rgba(212,34,126,0.05)", animation: "hpf-pulse 1.4s ease-in-out infinite" }} />
+                  <div style={{ width: "65%", height: 14, borderRadius: 5, background: "rgba(212,34,126,0.05)", animation: "hpf-pulse 1.4s ease-in-out infinite" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <style>{`@keyframes hpf-pulse { 0%,100%{opacity:1} 50%{opacity:.45} }`}</style>
+        </div>
+      );
+    }
+
+    // Confirmed: no plan in session or DB — prompt user to start
     return (
       <div style={{ minHeight: "100vh", background: "var(--warm-white)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
         <div style={{ textAlign: "center", maxWidth: 440 }}>
@@ -1112,6 +1155,30 @@ export default function Plan() {
             <strong>{plan.included.length} high-fit modalities</strong> for your wellness plan.
           </p>
         </div>
+
+        {/* ZIP coverage warning — shown when provider lookup returns 0 results for all modalities */}
+        {intake.zipCode && plan.included.length === 0 && plan.deprioritized.length > 0 && (
+          <div style={{
+            background: "rgba(245, 158, 11, 0.07)",
+            border: "1.5px solid rgba(245,158,11,0.3)",
+            borderRadius: 12,
+            padding: "1rem 1.25rem",
+            marginBottom: "1.5rem",
+            display: "flex",
+            gap: "0.75rem",
+            alignItems: "flex-start",
+          }}>
+            <span style={{ fontSize: "1.25rem", flexShrink: 0, lineHeight: 1.4 }}>⚠️</span>
+            <div>
+              <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#92400e", fontFamily: "var(--app-font-sans)", marginBottom: "0.25rem" }}>
+                No providers found near {intake.zipCode}
+              </p>
+              <p style={{ fontSize: "0.8rem", color: "#a16207", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, margin: 0 }}>
+                Your plan modalities are listed below under "Deprioritized" because our directory doesn't yet have in-person providers mapped to that ZIP code. Your plan content is still fully personalized — try a nearby ZIP or enable telehealth to see modalities in your active plan.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Budget bar */}
         <div style={{

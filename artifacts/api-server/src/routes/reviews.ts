@@ -97,21 +97,34 @@ router.post("/providers/:providerId/reviews", async (req, res) => {
       return;
     }
 
-    // Check that the member has unlocked this provider
-    const [unlock] = await db
-      .select({ id: providerUnlocks.id })
-      .from(providerUnlocks)
-      .where(
-        and(
-          eq(providerUnlocks.memberId, profileId),
-          eq(providerUnlocks.providerId, providerId),
-        ),
-      )
+    // Check access: Plus/Employer subscribers can review any provider.
+    // Free members need a legacy providerUnlock row (backward compatibility).
+    const [profile] = await db
+      .select({ subscriptionStatus: profiles.subscriptionStatus })
+      .from(profiles)
+      .where(eq(profiles.id, profileId))
       .limit(1);
 
-    if (!unlock) {
-      res.status(403).json({ error: "You must unlock this provider before leaving a review" });
-      return;
+    const isSubscribed =
+      profile?.subscriptionStatus === "plus" ||
+      profile?.subscriptionStatus === "employer";
+
+    if (!isSubscribed) {
+      const [unlock] = await db
+        .select({ id: providerUnlocks.id })
+        .from(providerUnlocks)
+        .where(
+          and(
+            eq(providerUnlocks.memberId, profileId),
+            eq(providerUnlocks.providerId, providerId),
+          ),
+        )
+        .limit(1);
+
+      if (!unlock) {
+        res.status(403).json({ error: "A Plus subscription is required to leave a provider review" });
+        return;
+      }
     }
 
     const now = new Date();
