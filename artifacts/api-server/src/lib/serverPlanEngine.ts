@@ -192,12 +192,12 @@ function buildRationale(
   );
   const parts: string[] = [];
 
-  // ── Goal sentence ────────────────────────────────────────────────────────
+  // ── Goal sentences (one per matched goal) ────────────────────────────────
   if (matchedGoals.length > 0) {
     const labels = matchedGoals.map(slugToLabel);
     parts.push(`Matched to your goal${labels.length > 1 ? "s" : ""}: ${labels.join(", ")}.`);
 
-    // Append clinical evidence for first matched goal that has corpus data
+    // Append clinical evidence sentence for each matched goal that has corpus data
     for (const goal of matchedGoals) {
       const ev = getEvidence(evidenceLookup, modality.id, "goal", goal);
       if (ev) {
@@ -207,22 +207,20 @@ function buildRationale(
         parts.push(
           `${grade} evidence for ${slugToLabel(goal).toLowerCase()} — ${effect} effect, typically noticeable within ${weeks} week${weeks !== 1 ? "s" : ""}.`,
         );
-        break;
       }
     }
   }
 
-  // ── Condition sentence ───────────────────────────────────────────────────
+  // ── Condition sentences (one per matched condition) ──────────────────────
   if (matchedConditions.length > 0) {
     const labels = matchedConditions.map(slugToLabel);
     parts.push(`Particularly beneficial for ${labels.join(" and ")}.`);
 
-    // Append clinical evidence for first matched condition that has corpus data
+    // Append clinical notes for each matched condition that has corpus data
     for (const cond of matchedConditions) {
       const ev = getEvidence(evidenceLookup, modality.id, "condition", cond);
       if (ev && ev.clinicalNotes) {
         parts.push(ev.clinicalNotes);
-        break;
       }
     }
   }

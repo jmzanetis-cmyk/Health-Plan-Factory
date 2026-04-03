@@ -1,7 +1,7 @@
 /**
  * Seed the clinical_evidence table with per-(modality × condition/goal) structured
  * clinical evidence data. Batches all targets per modality into a single Claude call.
- * Safe to re-run — upserts via unique index columns.
+ * Safe to re-run — upserts via ON CONFLICT (modality_id, target_type, target_id).
  *
  * Run with: node scripts/seed-clinical-evidence.mjs
  */
@@ -44,50 +44,71 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * Build a prompt that asks Claude to evaluate evidence for all targets
+ * using exact slug strings (no conversion to display text) so the returned
+ * target_id values can be matched back to the original input.
+ */
 function buildBatchPrompt(modalityName, modalityCategory, targets) {
+  // List targets with their exact slugs so Claude returns them verbatim.
   const targetList = targets.map((t, i) =>
-    `${i + 1}. ${t.type.toUpperCase()}: "${t.id.replace(/-/g, " ")}"`
+    `${i + 1}. type="${t.type}" id="${t.id}"`
   ).join("\n");
 
   return `You are a clinical evidence analyst for Health Plan Factory, a wellness platform.
 
-For the modality "${modalityName}" (category: ${modalityCategory}), assess the clinical evidence for each of the following health conditions and wellness goals:
+For the modality "${modalityName}" (category: ${modalityCategory}), assess the clinical evidence for each of the following targets:
 
 ${targetList}
 
-Return ONLY a valid JSON array where each element corresponds to one target in order. Each element must have exactly these fields:
+Return ONLY a valid JSON array. Each element must correspond to one target in the order listed. Use the EXACT type and id strings from the input — do NOT alter, translate, or reformat the id values.
+
+Each element:
 {
-  "target_type": "condition" | "goal",
+  "target_type": "<exact value from input: condition or goal>",
   "target_id": "<exact slug from input, e.g. back-pain>",
   "evidence_grade": "A" | "B" | "C" | "D",
   "effect_size": "large" | "moderate" | "small" | "minimal",
   "study_types": ["randomized-controlled-trial" | "systematic-review" | "cohort-study" | "case-control" | "pilot-study" | "expert-consensus" | "observational-study"],
   "num_studies_approx": <integer>,
-  "clinical_notes": "<1-2 factual sentences about evidence for this specific pair. Cite study types. No brand names, no first person.>",
-  "contraindications": ["<specific contraindications for this modality with this condition/goal>"],
-  "weeks_to_benefit": <integer, typical weeks to clinically meaningful improvement>
+  "clinical_notes": "<1-2 factual sentences about what the evidence shows for this modality + this condition/goal. Cite study types. No brand names, no first person.>",
+  "contraindications": ["<specific contraindications>"],
+  "weeks_to_benefit": <integer>
 }
 
 Evidence grade guide:
 - A: Multiple high-quality RCTs or systematic reviews with consistent results
 - B: Multiple cohort studies, controlled trials, or at least one RCT
 - C: Limited studies, case series, or strong expert consensus
-- D: Emerging evidence only, theoretical basis, or very limited data
+- D: Emerging evidence, theoretical basis, or very limited data
 
-Be clinically accurate. Use target_id values that exactly match the slugs from the input (e.g. "back-pain", "stress-reduction").
-Return ONLY the JSON array, no other text, no markdown.`;
+Return ONLY the JSON array, no markdown, no extra text.`;
 }
 
 const VALID_GRADES = new Set(["A", "B", "C", "D"]);
 const VALID_EFFECTS = new Set(["large", "moderate", "small", "minimal"]);
+const VALID_TARGET_TYPES = new Set(["condition", "goal"]);
 
-function validateRow(row) {
+/**
+ * Validate a single Claude-returned row and enforce that its (target_type, target_id)
+ * is one of the originally requested pairs to prevent silent slug drift.
+ */
+function validateRow(row, requestedTargetSet) {
+  if (!VALID_TARGET_TYPES.has(row.target_type)) throw new Error(`Invalid target_type: ${row.target_type}`);
   if (!VALID_GRADES.has(row.evidence_grade)) throw new Error(`Invalid grade: ${row.evidence_grade}`);
   if (!VALID_EFFECTS.has(row.effect_size)) throw new Error(`Invalid effect: ${row.effect_size}`);
   if (!Array.isArray(row.study_types)) throw new Error("study_types must be array");
   if (typeof row.clinical_notes !== "string" || !row.clinical_notes.trim()) throw new Error("clinical_notes empty");
   if (!Array.isArray(row.contraindications)) throw new Error("contraindications must be array");
+
+  const key = `${row.target_type}:${row.target_id}`;
+  if (!requestedTargetSet.has(key)) {
+    throw new Error(`Returned target_id "${row.target_id}" (type=${row.target_type}) not in requested set`);
+  }
+
   return {
+    target_type: row.target_type,
+    target_id: row.target_id,
     evidence_grade: row.evidence_grade,
     effect_size: row.effect_size,
     study_types: row.study_types.slice(0, 5),
@@ -95,12 +116,12 @@ function validateRow(row) {
     clinical_notes: String(row.clinical_notes).trim().slice(0, 500),
     contraindications: row.contraindications.slice(0, 6),
     weeks_to_benefit: Math.max(1, parseInt(row.weeks_to_benefit) || 4),
-    target_type: row.target_type,
-    target_id: row.target_id,
   };
 }
 
 async function generateBatch(modalityName, modalityCategory, targets, retries = 3) {
+  const requestedTargetSet = new Set(targets.map((t) => `${t.type}:${t.id}`));
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const raw = await callClaude(buildBatchPrompt(modalityName, modalityCategory, targets));
@@ -110,7 +131,7 @@ async function generateBatch(modalityName, modalityCategory, targets, retries = 
         .replace(/```\s*$/i, "");
       const parsed = JSON.parse(cleaned);
       if (!Array.isArray(parsed)) throw new Error("Expected JSON array");
-      return parsed.map(validateRow);
+      return parsed.map((row) => validateRow(row, requestedTargetSet));
     } catch (err) {
       if (attempt === retries) throw err;
       console.warn(`  Retry ${attempt}/${retries}: ${err.message}`);
@@ -157,13 +178,7 @@ async function main() {
       `SELECT id, name, category, goals, conditions FROM modalities WHERE is_active = true ORDER BY id`
     );
 
-    // Find modalities already fully seeded (skip them for efficiency)
-    const { rows: alreadySeeded } = await client.query(
-      `SELECT modality_id FROM clinical_evidence GROUP BY modality_id`
-    );
-    const seededIds = new Set(alreadySeeded.map((r) => r.modality_id));
-
-    console.log(`\nFound ${modalityRows.length} active modalities. ${seededIds.size} already seeded.\n`);
+    console.log(`\nFound ${modalityRows.length} active modalities.\n`);
 
     let totalPairs = 0;
     let successCount = 0;
@@ -180,14 +195,6 @@ async function main() {
 
       if (targets.length === 0) {
         console.log(`  ${m.name}: no targets, skipping`);
-        continue;
-      }
-
-      // Skip if already fully seeded
-      if (seededIds.has(m.id)) {
-        console.log(`${m.name}: already seeded, skipping`);
-        totalPairs += targets.length;
-        successCount += targets.length;
         continue;
       }
 
@@ -208,7 +215,7 @@ async function main() {
             failCount++;
           }
         }
-        console.log(`✓ ${ok}/${targets.length} seeded`);
+        console.log(`✓ ${ok}/${targets.length} upserted`);
       } catch (err) {
         console.error(`✗ FAILED: ${err.message}`);
         failCount += targets.length;
@@ -218,7 +225,7 @@ async function main() {
     }
 
     console.log(`\n${"─".repeat(60)}`);
-    console.log(`Total pairs: ${totalPairs} | Seeded: ${successCount} | Failed: ${failCount}`);
+    console.log(`Total pairs: ${totalPairs} | Upserted: ${successCount} | Failed: ${failCount}`);
     console.log("Done!");
   } finally {
     client.release();
