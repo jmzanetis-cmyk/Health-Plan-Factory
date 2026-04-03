@@ -15,6 +15,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
+import { useTranslation } from "react-i18next";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useListModalities, partialQuery } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
@@ -73,7 +74,7 @@ async function fetchProviders(params: {
   return data as ProvidersResponse;
 }
 
-async function handleWebUpgrade() {
+async function handleWebUpgrade(upgradeLabel: string, couldNotCheckout: string, noCheckoutUrl: string, couldNotConnect: string) {
   const token = await getToken();
   const base = getApiBaseUrl();
   try {
@@ -86,23 +87,24 @@ async function handleWebUpgrade() {
       body: JSON.stringify({}),
     });
     if (!res.ok) {
-      Alert.alert("Upgrade", "Could not start checkout. Please try again.");
+      Alert.alert(upgradeLabel, couldNotCheckout);
       return;
     }
     const { checkout_url } = await res.json();
     if (checkout_url) {
       await Linking.openURL(checkout_url);
     } else {
-      Alert.alert("Upgrade", "No checkout URL returned. Please try the web app.");
+      Alert.alert(upgradeLabel, noCheckoutUrl);
     }
   } catch {
-    Alert.alert("Upgrade", "Could not connect. Please check your connection.");
+    Alert.alert(upgradeLabel, couldNotConnect);
   }
 }
 
 function LockedProvidersPlaceholder({ count, onOpenPaywall }: { count: number; onOpenPaywall: () => void }) {
   const [loading, setLoading] = useState(false);
   const isNative = Platform.OS === "ios" || Platform.OS === "android";
+  const { t } = useTranslation();
 
   async function onUpgrade() {
     if (isNative) {
@@ -110,7 +112,12 @@ function LockedProvidersPlaceholder({ count, onOpenPaywall }: { count: number; o
       return;
     }
     setLoading(true);
-    await handleWebUpgrade();
+    await handleWebUpgrade(
+      t("discover.upgradeLabel"),
+      t("discover.couldNotCheckout"),
+      t("discover.noCheckoutUrl"),
+      t("discover.couldNotConnect")
+    );
     setLoading(false);
   }
 
@@ -120,11 +127,9 @@ function LockedProvidersPlaceholder({ count, onOpenPaywall }: { count: number; o
         <Feather name="lock" size={32} color={COLORS.pink} />
       </View>
       <Text style={lockedStyles.title}>
-        {count > 0 ? `${count} matched provider${count !== 1 ? "s" : ""}` : "Providers available"}
+        {count > 0 ? t("discover.matchedProviders", { count }) : t("discover.providersAvailable")}
       </Text>
-      <Text style={lockedStyles.subtitle}>
-        Upgrade to Plus to view contact info and connect with vetted wellness providers near you.
-      </Text>
+      <Text style={lockedStyles.subtitle}>{t("discover.upgradeToView")}</Text>
       <TouchableOpacity
         style={lockedStyles.upgradeBtn}
         onPress={onUpgrade}
@@ -136,7 +141,7 @@ function LockedProvidersPlaceholder({ count, onOpenPaywall }: { count: number; o
         ) : (
           <>
             <Feather name="star" size={15} color={COLORS.white} />
-            <Text style={lockedStyles.upgradeBtnText}>Upgrade to Plus</Text>
+            <Text style={lockedStyles.upgradeBtnText}>{t("discover.upgradePlus")}</Text>
           </>
         )}
       </TouchableOpacity>
@@ -169,12 +174,7 @@ const lockedStyles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: SPACING.sm,
   },
-  title: {
-    fontFamily: FONTS.heading,
-    fontSize: 20,
-    color: COLORS.navy,
-    textAlign: "center",
-  },
+  title: { fontFamily: FONTS.heading, fontSize: 20, color: COLORS.navy, textAlign: "center" },
   subtitle: {
     fontFamily: FONTS.body,
     fontSize: 14,
@@ -219,32 +219,30 @@ const lockedStyles = StyleSheet.create({
     backgroundColor: COLORS.navy20 ?? COLORS.border,
   },
   blurLines: { flex: 1, gap: SPACING.sm },
-  blurLine: {
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.border,
-  },
+  blurLine: { height: 12, borderRadius: 6, backgroundColor: COLORS.border },
 });
 
 function ProviderCard({ provider }: { provider: ProviderRecord }) {
+  const { t } = useTranslation();
+
   function handleContact() {
     const options: Array<{ title: string; fn: () => void }> = [];
     if (provider.website)
-      options.push({ title: "Visit Website", fn: () => Linking.openURL(provider.website!) });
+      options.push({ title: t("discover.visitWebsite"), fn: () => Linking.openURL(provider.website!) });
     if (provider.phone)
-      options.push({ title: "Call", fn: () => Linking.openURL(`tel:${provider.phone}`) });
+      options.push({ title: t("discover.call"), fn: () => Linking.openURL(`tel:${provider.phone}`) });
 
     if (!options.length) {
-      Alert.alert("Contact", "No contact info available.");
+      Alert.alert(t("discover.contact"), t("discover.noContactInfo"));
       return;
     }
     if (options.length === 1) {
       options[0].fn();
       return;
     }
-    Alert.alert("Contact " + provider.name, undefined, [
+    Alert.alert(t("discover.contact") + " " + provider.name, undefined, [
       ...options.map((o) => ({ text: o.title, onPress: o.fn })),
-      { text: "Cancel", style: "cancel" },
+      { text: t("common.cancel"), style: "cancel" },
     ]);
   }
 
@@ -252,9 +250,7 @@ function ProviderCard({ provider }: { provider: ProviderRecord }) {
     <View style={styles.card}>
       <View style={styles.cardTop}>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>
-            {provider.name.charAt(0).toUpperCase()}
-          </Text>
+          <Text style={styles.avatarText}>{provider.name.charAt(0).toUpperCase()}</Text>
         </View>
         <View style={styles.providerInfo}>
           <Text style={styles.providerName}>{provider.name}</Text>
@@ -267,19 +263,19 @@ function ProviderCard({ provider }: { provider: ProviderRecord }) {
             {provider.offersTelehealth && (
               <View style={styles.tag}>
                 <Feather name="video" size={10} color={COLORS.sky} />
-                <Text style={[styles.tagText, { color: COLORS.sky }]}>Telehealth</Text>
+                <Text style={[styles.tagText, { color: COLORS.sky }]}>{t("discover.telehealth")}</Text>
               </View>
             )}
             {provider.acceptsInsurance && (
               <View style={[styles.tag, { backgroundColor: COLORS.sagePale }]}>
                 <Feather name="shield" size={10} color={COLORS.sage} />
-                <Text style={[styles.tagText, { color: COLORS.sage }]}>Insurance</Text>
+                <Text style={[styles.tagText, { color: COLORS.sage }]}>{t("discover.insurance")}</Text>
               </View>
             )}
             {provider.costPerSession != null && (
               <View style={[styles.tag, { backgroundColor: COLORS.amberPale }]}>
                 <Text style={[styles.tagText, { color: COLORS.amber }]}>
-                  ${provider.costPerSession}/session
+                  ${provider.costPerSession}/{t("discover.session")}
                 </Text>
               </View>
             )}
@@ -291,20 +287,15 @@ function ProviderCard({ provider }: { provider: ProviderRecord }) {
       ) : null}
       <TouchableOpacity style={styles.contactBtn} onPress={handleContact} activeOpacity={0.85}>
         <Feather name="phone" size={14} color={COLORS.white} />
-        <Text style={styles.contactBtnText}>Contact</Text>
+        <Text style={styles.contactBtnText}>{t("discover.contact")}</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-function getModalityId(
-  modalities: ModalityRecord[],
-  filter: string
-): string | undefined {
+function getModalityId(modalities: ModalityRecord[], filter: string): string | undefined {
   if (filter === "All") return undefined;
-  const found = modalities.find(
-    (m) => m.name.toLowerCase() === filter.toLowerCase()
-  );
+  const found = modalities.find((m) => m.name.toLowerCase() === filter.toLowerCase());
   return found?.id;
 }
 
@@ -316,6 +307,7 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [page] = useState(1);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const { t } = useTranslation();
 
   const { data: modalities } = useListModalities(undefined, {
     query: partialQuery({ staleTime: 300_000 }),
@@ -350,18 +342,21 @@ export default function DiscoverScreen() {
     (p) => p.status === "active" || p.status === "approved"
   );
 
+  const allFilterLabel = t("discover.all");
+  const displayFilters = modalityFilters.map((f) => (f === "All" ? allFilterLabel : f));
+
   return (
     <View style={[styles.screen, { paddingTop: topPad }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Discover</Text>
-        <Text style={styles.subtitle}>Vetted wellness providers</Text>
+        <Text style={styles.title}>{t("discover.title")}</Text>
+        <Text style={styles.subtitle}>{t("discover.subtitle")}</Text>
       </View>
 
       <View style={styles.searchBar}>
         <Feather name="search" size={16} color={COLORS.textMuted} />
         <EmergencyTextInput
           style={styles.searchInput}
-          placeholder="Search providers..."
+          placeholder={t("discover.searchPlaceholder")}
           placeholderTextColor={COLORS.textLight}
           value={search}
           onChangeText={setSearch}
@@ -375,19 +370,19 @@ export default function DiscoverScreen() {
       </View>
 
       <FlatList
-        data={modalityFilters}
+        data={displayFilters}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(f) => f}
         contentContainerStyle={styles.filterContent}
         style={styles.filterList}
-        renderItem={({ item: filter }) => (
+        renderItem={({ item: filter, index }) => (
           <TouchableOpacity
-            style={[styles.filterChip, selectedFilter === filter && styles.filterChipActive]}
-            onPress={() => setSelectedFilter(filter)}
+            style={[styles.filterChip, selectedFilter === modalityFilters[index] && styles.filterChipActive]}
+            onPress={() => setSelectedFilter(modalityFilters[index] ?? "All")}
             activeOpacity={0.7}
           >
-            <Text style={[styles.filterText, selectedFilter === filter && styles.filterTextActive]}>
+            <Text style={[styles.filterText, selectedFilter === modalityFilters[index] && styles.filterTextActive]}>
               {filter}
             </Text>
           </TouchableOpacity>
@@ -397,7 +392,7 @@ export default function DiscoverScreen() {
       {isLoading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator color={COLORS.amber} />
-          <Text style={styles.loadingText}>Loading providers…</Text>
+          <Text style={styles.loadingText}>{t("discover.loading")}</Text>
         </View>
       ) : isLocked ? (
         <FlatList
@@ -406,17 +401,10 @@ export default function DiscoverScreen() {
           keyExtractor={() => ""}
           contentContainerStyle={{ flex: 1 }}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={COLORS.amber}
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
           }
           ListEmptyComponent={
-            <LockedProvidersPlaceholder
-              count={lockedCount}
-              onOpenPaywall={() => setPaywallVisible(true)}
-            />
+            <LockedProvidersPlaceholder count={lockedCount} onOpenPaywall={() => setPaywallVisible(true)} />
           }
         />
       ) : (
@@ -427,20 +415,16 @@ export default function DiscoverScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={COLORS.amber}
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
           }
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Feather name="users" size={36} color={COLORS.textLight} />
-              <Text style={styles.emptyTitle}>No providers found</Text>
+              <Text style={styles.emptyTitle}>{t("discover.noResults")}</Text>
               <Text style={styles.emptyText}>
-                {selectedFilter !== "All"
-                  ? `No ${selectedFilter} providers listed yet.`
-                  : "Try a different search."}
+                {selectedFilter !== "All" && selectedFilter !== allFilterLabel
+                  ? t("discover.noModalityProviders", { modality: selectedFilter })
+                  : t("discover.tryDifferentSearch")}
               </Text>
             </View>
           }
@@ -492,18 +476,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   filterChipActive: { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
-  filterText: {
-    fontFamily: FONTS.body,
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
+  filterText: { fontFamily: FONTS.body, fontSize: 13, color: COLORS.textMuted },
   filterTextActive: { color: COLORS.white, fontWeight: "600" as const },
-  loadingState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.md,
-  },
+  loadingState: { flex: 1, alignItems: "center", justifyContent: "center", gap: SPACING.md },
   loadingText: { fontFamily: FONTS.body, fontSize: 14, color: COLORS.textMuted },
   listContent: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.sm, paddingBottom: 120, gap: SPACING.sm },
   emptyState: {

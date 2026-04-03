@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Svg, { Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListProgress, useListModalities, partialQuery } from "@workspace/api-client-react";
@@ -43,11 +44,11 @@ const MODALITY_EMOJIS: Record<string, string> = {
   osteopath: "⚕️", "sound healing": "🔔", reiki: "✋",
 };
 
-const WEEK_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
 function buildUpcomingSessions(
   modalities: ModalityRecord[],
-  entries: ProgressLogRecord[]
+  entries: ProgressLogRecord[],
+  tomorrowLabel: string,
+  weekDays: string[]
 ): Array<{ id: string; name: string; day: string; time: string; emoji: string }> {
   if (!modalities.length) return [];
 
@@ -67,7 +68,7 @@ function buildUpcomingSessions(
   return top.map((m, i) => {
     const dayOffset = i + 1;
     const d = new Date(today.getTime() + dayOffset * 86400000);
-    const dayName = dayOffset === 1 ? "Tomorrow" : WEEK_DAYS[d.getDay()];
+    const dayName = dayOffset === 1 ? tomorrowLabel : weekDays[d.getDay()];
     const hour = 9 + i * 2;
     const timeStr = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
     const nameLower = m.name?.toLowerCase() ?? "";
@@ -76,7 +77,7 @@ function buildUpcomingSessions(
   });
 }
 
-function WellnessRing({ score }: { score: number }) {
+function WellnessRing({ score, label }: { score: number; label: string }) {
   const pct = Math.max(0, Math.min(100, score)) / 100;
   const dashOffset = RING_CIRC * (1 - pct);
   const color = score >= 75 ? COLORS.sage : score >= 50 ? COLORS.amber : COLORS.rose;
@@ -108,7 +109,7 @@ function WellnessRing({ score }: { score: number }) {
       </Svg>
       <View style={styles.ringInner}>
         <Text style={[styles.ringScore, { color }]}>{score}</Text>
-        <Text style={styles.ringLabel}>Wellness Score</Text>
+        <Text style={styles.ringLabel}>{label}</Text>
       </View>
     </View>
   );
@@ -116,16 +117,16 @@ function WellnessRing({ score }: { score: number }) {
 
 interface RoutineItem {
   id: string;
-  name: string;
+  nameKey: string;
   emoji: string;
   done: boolean;
 }
 
-const QUICK_ROUTINES: RoutineItem[] = [
-  { id: "1", name: "Morning walk (20 min)", emoji: "🚶", done: false },
-  { id: "2", name: "Hydration check", emoji: "💧", done: false },
-  { id: "3", name: "Mindful breathing (5 min)", emoji: "🧘", done: false },
-  { id: "4", name: "Evening wind-down", emoji: "🌙", done: false },
+const BASE_ROUTINES: RoutineItem[] = [
+  { id: "1", nameKey: "home.routines.morningWalk", emoji: "🚶", done: false },
+  { id: "2", nameKey: "home.routines.hydrationCheck", emoji: "💧", done: false },
+  { id: "3", nameKey: "home.routines.mindfulBreathing", emoji: "🧘", done: false },
+  { id: "4", nameKey: "home.routines.eveningWindDown", emoji: "🌙", done: false },
 ];
 
 
@@ -134,6 +135,7 @@ export default function HomeScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const { user } = useAuth();
   const router = useRouter();
+  const { t, i18n } = useTranslation();
 
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
@@ -147,7 +149,7 @@ export default function HomeScreen() {
     query: partialQuery({ staleTime: 5 * 60 * 1000 }),
   });
 
-  const [routines, setRoutines] = useState<RoutineItem[]>(QUICK_ROUTINES);
+  const [routines, setRoutines] = useState<RoutineItem[]>(BASE_ROUTINES);
   const [refreshing, setRefreshing] = useState(false);
   const [healthMetrics, setHealthMetrics] = useState<DailyHealthMetrics | null>(null);
   const [healthConnected, setHealthConnected] = useState(false);
@@ -203,7 +205,18 @@ export default function HomeScreen() {
 
   const firstName = user?.firstName ?? authData?.user?.firstName ?? "there";
   const doneCount = routines.filter((r) => r.done).length;
-  const upcomingSessions = buildUpcomingSessions(modalities, entries);
+
+  const locale = i18n.language === "es" ? "es-MX" : "en-US";
+  const weekDays = [
+    t("home.sunday") || "Sunday",
+    t("home.monday") || "Monday",
+    t("home.tuesday") || "Tuesday",
+    t("home.wednesday") || "Wednesday",
+    t("home.thursday") || "Thursday",
+    t("home.friday") || "Friday",
+    t("home.saturday") || "Saturday",
+  ];
+  const upcomingSessions = buildUpcomingSessions(modalities, entries, t("home.tomorrow"), weekDays);
 
   return (
     <ScrollView
@@ -216,13 +229,13 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Good morning,</Text>
+          <Text style={styles.greeting}>{t("home.greeting")}</Text>
           <Text style={styles.name}>{firstName}</Text>
         </View>
         <View style={styles.badges}>
           {trialDaysLeft > 0 && trialDaysLeft <= 7 && (
             <View style={styles.trialBadge}>
-              <Text style={styles.trialText}>{trialDaysLeft}d trial</Text>
+              <Text style={styles.trialText}>{t("home.trialDays", { count: trialDaysLeft })}</Text>
             </View>
           )}
           <View style={styles.streakBadge}>
@@ -245,21 +258,21 @@ export default function HomeScreen() {
         </View>
       ) : (
         <View style={styles.scoreSection}>
-          <WellnessRing score={wellnessScore} />
+          <WellnessRing score={wellnessScore} label={t("home.wellnessScore")} />
           <View style={styles.scoreMeta}>
             <View style={styles.metaItem}>
               <Text style={styles.metaValue}>{streak}</Text>
-              <Text style={styles.metaLabel}>Day Streak</Text>
+              <Text style={styles.metaLabel}>{t("home.dayStreak")}</Text>
             </View>
             <View style={styles.metaDivider} />
             <View style={styles.metaItem}>
               <Text style={styles.metaValue}>{entries.length}</Text>
-              <Text style={styles.metaLabel}>Journal Entries</Text>
+              <Text style={styles.metaLabel}>{t("home.journalEntries")}</Text>
             </View>
             <View style={styles.metaDivider} />
             <View style={styles.metaItem}>
               <Text style={styles.metaValue}>{doneCount}/{routines.length}</Text>
-              <Text style={styles.metaLabel}>Today</Text>
+              <Text style={styles.metaLabel}>{t("home.today")}</Text>
             </View>
           </View>
         </View>
@@ -275,8 +288,8 @@ export default function HomeScreen() {
             <Feather name="activity" size={18} color={COLORS.amber} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.healthPromptTitle}>Connect your health app</Text>
-            <Text style={styles.healthPromptSub}>Auto-sync steps, sleep & more</Text>
+            <Text style={styles.healthPromptTitle}>{t("home.connectHealthApp")}</Text>
+            <Text style={styles.healthPromptSub}>{t("home.autoSync")}</Text>
           </View>
           <Feather name="chevron-right" size={16} color={COLORS.textLight} />
         </TouchableOpacity>
@@ -286,31 +299,33 @@ export default function HomeScreen() {
         <View style={styles.healthMetricsCard}>
           <View style={styles.healthMetricsHeader}>
             <Feather name="activity" size={14} color={COLORS.sage} />
-            <Text style={styles.healthMetricsTitle}>Today from {healthMetrics.source === "apple_health" ? "Apple Health" : "Google Fit"}</Text>
+            <Text style={styles.healthMetricsTitle}>
+              {t("home.todayFrom", { source: healthMetrics.source === "apple_health" ? "Apple Health" : "Google Fit" })}
+            </Text>
           </View>
           <View style={styles.healthMetricsRow}>
             {healthMetrics.steps != null && (
               <View style={styles.healthMetricItem}>
-                <Text style={styles.healthMetricValue}>{healthMetrics.steps.toLocaleString()}</Text>
-                <Text style={styles.healthMetricLabel}>Steps</Text>
+                <Text style={styles.healthMetricValue}>{healthMetrics.steps.toLocaleString(locale)}</Text>
+                <Text style={styles.healthMetricLabel}>{t("home.steps")}</Text>
               </View>
             )}
             {healthMetrics.sleepMinutes != null && (
               <View style={styles.healthMetricItem}>
                 <Text style={styles.healthMetricValue}>{Math.round(healthMetrics.sleepMinutes / 60 * 10) / 10}h</Text>
-                <Text style={styles.healthMetricLabel}>Sleep</Text>
+                <Text style={styles.healthMetricLabel}>{t("home.sleep")}</Text>
               </View>
             )}
             {healthMetrics.activeMinutes != null && (
               <View style={styles.healthMetricItem}>
                 <Text style={styles.healthMetricValue}>{healthMetrics.activeMinutes}m</Text>
-                <Text style={styles.healthMetricLabel}>Active</Text>
+                <Text style={styles.healthMetricLabel}>{t("home.active")}</Text>
               </View>
             )}
             {healthMetrics.mindfulnessMinutes != null && (
               <View style={styles.healthMetricItem}>
                 <Text style={styles.healthMetricValue}>{healthMetrics.mindfulnessMinutes}m</Text>
-                <Text style={styles.healthMetricLabel}>Mindful</Text>
+                <Text style={styles.healthMetricLabel}>{t("home.mindful")}</Text>
               </View>
             )}
           </View>
@@ -318,19 +333,19 @@ export default function HomeScreen() {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
+        <Text style={styles.sectionTitle}>{t("home.upcomingSessions")}</Text>
         <View style={styles.sessionsCard}>
           {upcomingSessions.length === 0 ? (
             <View style={styles.sessionRow}>
               <Feather name="calendar" size={20} color={COLORS.textMuted} />
               <View style={styles.sessionInfo}>
-                <Text style={styles.sessionName}>No sessions scheduled</Text>
-                <Text style={styles.sessionTime}>Visit your plan to add modalities</Text>
+                <Text style={styles.sessionName}>{t("home.noSessionsScheduled")}</Text>
+                <Text style={styles.sessionTime}>{t("home.visitPlanToAdd")}</Text>
               </View>
             </View>
           ) : upcomingSessions.map((session, idx) => {
             const sessionDate = new Date();
-            const dayOffset = session.day === "Tomorrow" ? 1 : idx + 2;
+            const dayOffset = session.day === t("home.tomorrow") ? 1 : idx + 2;
             sessionDate.setDate(sessionDate.getDate() + dayOffset);
             const [hours, minutes] = session.time.split(/[: ]/);
             const isPM = session.time.includes("PM");
@@ -369,7 +384,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Today's Routine</Text>
+        <Text style={styles.sectionTitle}>{t("home.todaysRoutine")}</Text>
         <View style={styles.routineCard}>
           {routines.map((item, idx) => (
             <TouchableOpacity
@@ -385,7 +400,7 @@ export default function HomeScreen() {
                 {item.done && <Feather name="check" size={12} color={COLORS.white} />}
               </View>
               <Text style={[styles.routineName, item.done && styles.routineNameDone]}>
-                {item.name}
+                {t(item.nameKey as Parameters<typeof t>[0])}
               </Text>
             </TouchableOpacity>
           ))}
@@ -396,8 +411,8 @@ export default function HomeScreen() {
         <View style={styles.streakCard}>
           <Feather name="award" size={20} color={COLORS.amber} />
           <View style={styles.streakCardText}>
-            <Text style={styles.streakCardTitle}>{streak}-Day Streak!</Text>
-            <Text style={styles.streakCardSub}>You're building a real habit. Keep it going.</Text>
+            <Text style={styles.streakCardTitle}>{t("home.streakTitle", { count: streak })}</Text>
+            <Text style={styles.streakCardSub}>{t("home.streakSub")}</Text>
           </View>
         </View>
       )}
@@ -405,14 +420,12 @@ export default function HomeScreen() {
       {doneCount === routines.length && doneCount > 0 && (
         <View style={styles.completedBanner}>
           <Feather name="check-circle" size={16} color={COLORS.sage} />
-          <Text style={styles.completedText}>All routines complete for today!</Text>
+          <Text style={styles.completedText}>{t("home.allRoutinesDone")}</Text>
         </View>
       )}
 
       <View style={styles.disclaimer}>
-        <Text style={styles.disclaimerText}>
-          Content is for general wellness purposes only and not medical advice. Consult your healthcare provider for medical decisions.
-        </Text>
+        <Text style={styles.disclaimerText}>{t("home.disclaimer")}</Text>
       </View>
     </ScrollView>
   );

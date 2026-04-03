@@ -15,6 +15,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
+import { useTranslation } from "react-i18next";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListModalities, partialQuery } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
@@ -42,7 +43,7 @@ async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptio
   }
 }
 
-async function handleWebUpgrade() {
+async function handleWebUpgrade(t: (key: string) => string) {
   const token = await getToken();
   const base = getApiBaseUrl();
   try {
@@ -55,17 +56,17 @@ async function handleWebUpgrade() {
       body: JSON.stringify({}),
     });
     if (!res.ok) {
-      Alert.alert("Upgrade", "Could not start checkout. Please try again.");
+      Alert.alert(t("plan.upgradeAlert"), t("plan.couldNotCheckout"));
       return;
     }
     const { checkout_url } = await res.json();
     if (checkout_url) {
       await Linking.openURL(checkout_url);
     } else {
-      Alert.alert("Upgrade", "No checkout URL returned. Please try the web app.");
+      Alert.alert(t("plan.upgradeAlert"), t("plan.noCheckoutUrl"));
     }
   } catch {
-    Alert.alert("Upgrade", "Could not connect. Please check your connection.");
+    Alert.alert(t("plan.upgradeAlert"), t("plan.couldNotConnect"));
   }
 }
 
@@ -130,29 +131,35 @@ function EvidenceBadge({ level }: { level?: string | null }) {
   );
 }
 
-function SubscriptionBadge({ isPlus }: { isPlus: boolean }) {
+function SubscriptionBadge({ isPlus, plusLabel, explorerLabel }: { isPlus: boolean; plusLabel: string; explorerLabel: string }) {
   if (isPlus) {
     return (
       <View style={[styles.badge, { backgroundColor: COLORS.sagePale, borderColor: COLORS.sage + "30" }]}>
         <Feather name="star" size={10} color={COLORS.sage} />
-        <Text style={[styles.badgeText, { color: COLORS.sage }]}>Plus</Text>
+        <Text style={[styles.badgeText, { color: COLORS.sage }]}>{plusLabel}</Text>
       </View>
     );
   }
   return (
     <View style={[styles.badge, { backgroundColor: COLORS.amberPale, borderColor: COLORS.amber + "30" }]}>
       <Feather name="lock" size={10} color={COLORS.amber} />
-      <Text style={[styles.badgeText, { color: COLORS.amber }]}>Explorer</Text>
+      <Text style={[styles.badgeText, { color: COLORS.amber }]}>{explorerLabel}</Text>
     </View>
   );
 }
 
-function ProviderCountChip({ count, isTelehealth }: { count?: number | null; isTelehealth?: boolean }) {
+function ProviderCountChip({ count, isTelehealth, telehealthLabel, noLocalLabel, nearYouLabel }: {
+  count?: number | null;
+  isTelehealth?: boolean;
+  telehealthLabel: string;
+  noLocalLabel: string;
+  nearYouLabel: (count: number) => string;
+}) {
   if (isTelehealth) {
     return (
       <View style={[styles.badge, { backgroundColor: COLORS.sagePale, borderColor: COLORS.sage + "30" }]}>
         <Feather name="globe" size={10} color={COLORS.sage} />
-        <Text style={[styles.badgeText, { color: COLORS.sage }]}>Telehealth</Text>
+        <Text style={[styles.badgeText, { color: COLORS.sage }]}>{telehealthLabel}</Text>
       </View>
     );
   }
@@ -161,14 +168,14 @@ function ProviderCountChip({ count, isTelehealth }: { count?: number | null; isT
     return (
       <View style={[styles.badge, { backgroundColor: COLORS.off, borderColor: COLORS.border }]}>
         <Feather name="map-pin" size={10} color={COLORS.textMuted} />
-        <Text style={[styles.badgeText, { color: COLORS.textMuted }]}>No local providers</Text>
+        <Text style={[styles.badgeText, { color: COLORS.textMuted }]}>{noLocalLabel}</Text>
       </View>
     );
   }
   return (
     <View style={[styles.badge, { backgroundColor: COLORS.sagePale, borderColor: COLORS.sage + "30" }]}>
       <Feather name="map-pin" size={10} color={COLORS.sage} />
-      <Text style={[styles.badgeText, { color: COLORS.sage }]}>{count} near you</Text>
+      <Text style={[styles.badgeText, { color: COLORS.sage }]}>{nearYouLabel(count)}</Text>
     </View>
   );
 }
@@ -183,6 +190,7 @@ function PlanItemCard({
   isPlus: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation();
   const name = item.modality?.name ?? modalityMap[item.modalityId ?? ""]?.name ?? "Modality";
   const emoji = item.modality?.emoji ?? modalityMap[item.modalityId ?? ""]?.emoji ?? "🌿";
   const evidenceLevel = modalityMap[item.modalityId ?? ""]?.evidenceLevel;
@@ -223,8 +231,20 @@ function PlanItemCard({
 
       <View style={styles.badgeRow}>
         <EvidenceBadge level={evidenceLevel} />
-        <SubscriptionBadge isPlus={isPlus} />
-        {isPlus && <ProviderCountChip count={item.nearbyProviderCount} isTelehealth={isTelehealth} />}
+        <SubscriptionBadge
+          isPlus={isPlus}
+          plusLabel={t("settings.plus")}
+          explorerLabel={t("settings.explorer")}
+        />
+        {isPlus && (
+          <ProviderCountChip
+            count={item.nearbyProviderCount}
+            isTelehealth={isTelehealth}
+            telehealthLabel={t("plan.telehealth")}
+            noLocalLabel={t("plan.noLocalProvidersChip")}
+            nearYouLabel={(c) => t("plan.nearYou", { count: c })}
+          />
+        )}
       </View>
 
       {expanded && (
@@ -234,9 +254,7 @@ function PlanItemCard({
           ) : (
             <View style={styles.lockedRationale}>
               <Feather name="lock" size={14} color={COLORS.amber} />
-              <Text style={styles.lockedText}>
-                Unlock the full rationale on the HealthPlanFactory web app.
-              </Text>
+              <Text style={styles.lockedText}>{t("plan.lockedRationale")}</Text>
             </View>
           )}
           {item.isDeprioritized && (
@@ -244,8 +262,8 @@ function PlanItemCard({
               <Feather name="info" size={12} color={COLORS.textMuted} />
               <Text style={styles.deprioText}>
                 {noLocalProviders
-                  ? "No in-person providers found in your area"
-                  : "Deprioritized based on your preferences"}
+                  ? t("plan.noLocalProviders")
+                  : t("plan.deprioritized")}
               </Text>
             </View>
           )}
@@ -261,6 +279,7 @@ export default function PlanScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const { t } = useTranslation();
 
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
@@ -310,7 +329,7 @@ export default function PlanScreen() {
       return;
     }
     setUpgradeLoading(true);
-    await handleWebUpgrade();
+    await handleWebUpgrade(t);
     setUpgradeLoading(false);
   }
 
@@ -338,8 +357,8 @@ export default function PlanScreen() {
       <View style={styles.upgradeCardLeft}>
         <Feather name="star" size={18} color={COLORS.pink} />
         <View>
-          <Text style={styles.upgradeCardTitle}>Unlock providers with Plus</Text>
-          <Text style={styles.upgradeCardSub}>See matched provider contacts — upgrade to Plus</Text>
+          <Text style={styles.upgradeCardTitle}>{t("plan.unlockProviders")}</Text>
+          <Text style={styles.upgradeCardSub}>{t("plan.unlockProvidersSub")}</Text>
         </View>
       </View>
       {upgradeLoading ? (
@@ -353,7 +372,7 @@ export default function PlanScreen() {
   return (
     <View style={[styles.screen, { paddingTop: topPad }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>My Plan</Text>
+        <Text style={styles.title}>{t("plan.title")}</Text>
         {planData && (
           <View style={styles.planBadge}>
             <Text style={styles.planBadgeText}>{planData.plan.status}</Text>
@@ -370,15 +389,13 @@ export default function PlanScreen() {
       {isLoading ? (
         <View style={styles.loadingState}>
           <ActivityIndicator color={COLORS.amber} />
-          <Text style={styles.loadingText}>Loading your plan…</Text>
+          <Text style={styles.loadingText}>{t("plan.loadingYourPlan")}</Text>
         </View>
       ) : !planData ? (
         <View style={styles.emptyState}>
           <Feather name="clipboard" size={40} color={COLORS.textLight} />
-          <Text style={styles.emptyTitle}>No plan yet</Text>
-          <Text style={styles.emptyText}>
-            Complete the questionnaire in the web app to generate your personalized wellness plan.
-          </Text>
+          <Text style={styles.emptyTitle}>{t("plan.noPlanYet")}</Text>
+          <Text style={styles.emptyText}>{t("plan.noPlanText")}</Text>
         </View>
       ) : (
         <FlatList
@@ -395,17 +412,17 @@ export default function PlanScreen() {
               <View style={styles.summaryCard}>
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryValue}>{priorityItems.length}</Text>
-                  <Text style={styles.summaryLabel}>Modalities</Text>
+                  <Text style={styles.summaryLabel}>{t("plan.modalities")}</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryValue}>${planData.plan.budget}</Text>
-                  <Text style={styles.summaryLabel}>Budget/mo</Text>
+                  <Text style={styles.summaryLabel}>{t("plan.budgetPerMonth")}</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryValue}>${totalCost}</Text>
-                  <Text style={styles.summaryLabel}>Est. Cost</Text>
+                  <Text style={styles.summaryLabel}>{t("plan.estCost")}</Text>
                 </View>
               </View>
               {upgradeCard}
@@ -415,15 +432,13 @@ export default function PlanScreen() {
             <>
               {deprioItems.length > 0 && (
                 <View style={styles.deprioSection}>
-                  <Text style={styles.deprioSectionTitle}>Also Considered</Text>
+                  <Text style={styles.deprioSectionTitle}>{t("plan.alsoConsidered")}</Text>
                   {deprioItems.map((item) => (
                     <PlanItemCard key={item.id} item={item} modalityMap={modalityMap} isPlus={hasProviderAccess} />
                   ))}
                 </View>
               )}
-              <Text style={styles.footerText}>
-                Tap any item for details. Not medical advice — discuss with your provider.
-              </Text>
+              <Text style={styles.footerText}>{t("plan.footerText")}</Text>
             </>
           }
         />

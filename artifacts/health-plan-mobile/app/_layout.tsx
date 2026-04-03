@@ -19,6 +19,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { Alert } from "react-native";
+import { applyStoredLanguage } from "@/lib/i18n";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -125,6 +126,10 @@ export default function RootLayout() {
     DMMono_400Regular,
     DMMono_500Medium,
   });
+
+  useEffect(() => {
+    applyStoredLanguage();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

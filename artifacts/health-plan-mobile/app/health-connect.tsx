@@ -12,6 +12,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import {
@@ -29,6 +30,9 @@ function HealthSourceCard({
   iconName,
   connected,
   loading,
+  connectedLabel,
+  connectLabel,
+  disconnectLabel,
   onConnect,
   onDisconnect,
 }: {
@@ -37,9 +41,13 @@ function HealthSourceCard({
   iconName: React.ComponentProps<typeof Feather>["name"];
   connected: boolean;
   loading: boolean;
+  connectedLabel: string;
+  connectLabel: string;
+  disconnectLabel: string;
   onConnect: () => void;
   onDisconnect: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={cardStyles.container}>
       <View style={cardStyles.header}>
@@ -53,36 +61,27 @@ function HealthSourceCard({
         {connected && (
           <View style={cardStyles.badge}>
             <Feather name="check-circle" size={14} color={COLORS.sage} />
-            <Text style={cardStyles.badgeText}>Connected</Text>
+            <Text style={cardStyles.badgeText}>{connectedLabel}</Text>
           </View>
         )}
       </View>
       <View style={cardStyles.dataTypes}>
-        {["Steps", "Sleep", "Active Minutes", "Mindfulness"].map((d) => (
+        {[t("healthConnect.steps"), t("healthConnect.sleep"), t("healthConnect.activeMinutes"), t("healthConnect.mindfulness")].map((d) => (
           <View key={d} style={cardStyles.dataChip}>
             <Text style={cardStyles.dataChipText}>{d}</Text>
           </View>
         ))}
       </View>
       {connected ? (
-        <TouchableOpacity
-          style={cardStyles.disconnectBtn}
-          onPress={onDisconnect}
-          activeOpacity={0.8}
-        >
-          <Text style={cardStyles.disconnectBtnText}>Disconnect</Text>
+        <TouchableOpacity style={cardStyles.disconnectBtn} onPress={onDisconnect} activeOpacity={0.8}>
+          <Text style={cardStyles.disconnectBtnText}>{disconnectLabel}</Text>
         </TouchableOpacity>
       ) : (
-        <TouchableOpacity
-          style={cardStyles.connectBtn}
-          onPress={onConnect}
-          disabled={loading}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={cardStyles.connectBtn} onPress={onConnect} disabled={loading} activeOpacity={0.8}>
           {loading ? (
             <ActivityIndicator size="small" color={COLORS.white} />
           ) : (
-            <Text style={cardStyles.connectBtnText}>Connect</Text>
+            <Text style={cardStyles.connectBtnText}>{connectLabel}</Text>
           )}
         </TouchableOpacity>
       )}
@@ -99,11 +98,7 @@ const cardStyles = StyleSheet.create({
     padding: SPACING.lg,
     gap: SPACING.md,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.md,
-  },
+  header: { flexDirection: "row", alignItems: "center", gap: SPACING.md },
   iconWrap: {
     width: 44,
     height: 44,
@@ -112,21 +107,10 @@ const cardStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconWrapConnected: {
-    backgroundColor: COLORS.sage,
-  },
+  iconWrapConnected: { backgroundColor: COLORS.sage },
   info: { flex: 1 },
-  title: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 16,
-    color: COLORS.navy,
-  },
-  subtitle: {
-    fontFamily: FONTS.body,
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
+  title: { fontFamily: FONTS.bodySemiBold, fontSize: 16, color: COLORS.navy },
+  subtitle: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -136,27 +120,15 @@ const cardStyles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: RADIUS.full,
   },
-  badgeText: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 11,
-    color: COLORS.sage,
-  },
-  dataTypes: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SPACING.xs,
-  },
+  badgeText: { fontFamily: FONTS.bodySemiBold, fontSize: 11, color: COLORS.sage },
+  dataTypes: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
   dataChip: {
     backgroundColor: COLORS.navy10,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 3,
     borderRadius: RADIUS.full,
   },
-  dataChipText: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    color: COLORS.navy,
-  },
+  dataChipText: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.navy },
   connectBtn: {
     backgroundColor: COLORS.navy,
     borderRadius: RADIUS.md,
@@ -164,11 +136,7 @@ const cardStyles = StyleSheet.create({
     alignItems: "center",
     marginTop: SPACING.xs,
   },
-  connectBtnText: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 14,
-    color: COLORS.white,
-  },
+  connectBtnText: { fontFamily: FONTS.bodySemiBold, fontSize: 14, color: COLORS.white },
   disconnectBtn: {
     borderRadius: RADIUS.md,
     paddingVertical: SPACING.md,
@@ -177,11 +145,7 @@ const cardStyles = StyleSheet.create({
     borderColor: COLORS.border,
     marginTop: SPACING.xs,
   },
-  disconnectBtnText: {
-    fontFamily: FONTS.bodyMedium,
-    fontSize: 14,
-    color: COLORS.textMuted,
-  },
+  disconnectBtnText: { fontFamily: FONTS.bodyMedium, fontSize: 14, color: COLORS.textMuted },
 });
 
 export default function HealthConnectScreen() {
@@ -190,6 +154,7 @@ export default function HealthConnectScreen() {
   const router = useRouter();
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id;
+  const { t, i18n } = useTranslation();
 
   const [connections, setConnections] = useState<HealthConnectionState>({
     appleHealth: false,
@@ -208,10 +173,7 @@ export default function HealthConnectScreen() {
 
   async function handleConnect(source: "apple_health" | "google_fit") {
     if (Platform.OS === "web") {
-      Alert.alert(
-        "Not Available",
-        "Health integration requires the native iOS or Android app."
-      );
+      Alert.alert(t("healthConnect.notAvailable"), t("healthConnect.requiresNative"));
       return;
     }
     setLoadingSource(source);
@@ -225,15 +187,10 @@ export default function HealthConnectScreen() {
         };
         await saveConnectionState(updated, profileId);
         setConnections(updated);
-        Alert.alert(
-          "Connected!",
-          `${source === "apple_health" ? "Apple Health" : "Google Fit"} is now connected. Your steps, sleep, and activity data will sync automatically.`
-        );
+        const sourceName = source === "apple_health" ? "Apple Health" : "Google Fit";
+        Alert.alert(t("healthConnect.connectedTitle"), t("healthConnect.connectedBody", { source: sourceName }));
       } else {
-        Alert.alert(
-          "Permission Denied",
-          "Health permissions are required to sync your data. You can enable them in your device settings."
-        );
+        Alert.alert(t("healthConnect.permissionDenied"), t("healthConnect.permissionDeniedBody"));
       }
     } finally {
       setLoadingSource(null);
@@ -241,13 +198,14 @@ export default function HealthConnectScreen() {
   }
 
   async function handleDisconnect(source: "apple_health" | "google_fit") {
+    const sourceName = source === "apple_health" ? "Apple Health" : "Google Fit";
     Alert.alert(
-      "Disconnect",
-      `Stop syncing data from ${source === "apple_health" ? "Apple Health" : "Google Fit"}?`,
+      t("healthConnect.disconnect"),
+      t("healthConnect.disconnectConfirm", { source: sourceName }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Disconnect",
+          text: t("healthConnect.disconnect"),
           style: "destructive",
           onPress: async () => {
             const updated: HealthConnectionState = {
@@ -275,46 +233,49 @@ export default function HealthConnectScreen() {
   const isAndroid = Platform.OS === "android";
   const isWeb = Platform.OS === "web";
 
+  const locale = i18n.language === "es" ? "es-MX" : "en-US";
+
+  const syncItems = [
+    { icon: "trending-up", label: t("healthConnect.dailyStepCount") },
+    { icon: "moon", label: t("healthConnect.sleepDuration") },
+    { icon: "zap", label: t("healthConnect.activeMinutes") },
+    { icon: "sun", label: t("healthConnect.mindfulnessSessions") },
+  ];
+
   return (
     <View style={[styles.screen, { paddingTop: topPad }]}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={COLORS.navy} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Connected Services</Text>
+        <Text style={styles.headerTitle}>{t("healthConnect.title")}</Text>
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.heroBanner}>
           <Feather name="activity" size={28} color={COLORS.amber} />
-          <Text style={styles.heroTitle}>Sync Your Health Data</Text>
-          <Text style={styles.heroBody}>
-            Connect Apple Health or Google Fit to automatically log your daily steps,
-            sleep, active minutes, and mindfulness — no manual tracking required.
-          </Text>
+          <Text style={styles.heroTitle}>{t("healthConnect.heroTitle")}</Text>
+          <Text style={styles.heroBody}>{t("healthConnect.heroBody")}</Text>
         </View>
 
         {isWeb && (
           <View style={styles.webNotice}>
             <Feather name="info" size={16} color={COLORS.amber} />
-            <Text style={styles.webNoticeText}>
-              Health integration is available on the iOS and Android apps. Install the
-              native app to connect your device health data.
-            </Text>
+            <Text style={styles.webNoticeText}>{t("healthConnect.webNotice")}</Text>
           </View>
         )}
 
         {(isIos || isWeb) && (
           <HealthSourceCard
             title="Apple Health"
-            subtitle="iOS · HealthKit"
+            subtitle={t("healthConnect.appleSubtitle")}
             iconName="heart"
             connected={connections.appleHealth}
             loading={loadingSource === "apple_health"}
+            connectedLabel={t("healthConnect.connected")}
+            connectLabel={t("healthConnect.connect")}
+            disconnectLabel={t("healthConnect.disconnect")}
             onConnect={() => handleConnect("apple_health")}
             onDisconnect={() => handleDisconnect("apple_health")}
           />
@@ -323,24 +284,22 @@ export default function HealthConnectScreen() {
         {(isAndroid || isWeb) && (
           <HealthSourceCard
             title="Google Fit"
-            subtitle="Android · Health Connect"
+            subtitle={t("healthConnect.googleSubtitle")}
             iconName="activity"
             connected={connections.googleFit}
             loading={loadingSource === "google_fit"}
+            connectedLabel={t("healthConnect.connected")}
+            connectLabel={t("healthConnect.connect")}
+            disconnectLabel={t("healthConnect.disconnect")}
             onConnect={() => handleConnect("google_fit")}
             onDisconnect={() => handleDisconnect("google_fit")}
           />
         )}
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>What gets synced?</Text>
+          <Text style={styles.infoTitle}>{t("healthConnect.whatGetsSynced")}</Text>
           <View style={styles.infoRows}>
-            {[
-              { icon: "trending-up", label: "Daily step count" },
-              { icon: "moon", label: "Sleep duration" },
-              { icon: "zap", label: "Active minutes" },
-              { icon: "sun", label: "Mindfulness sessions" },
-            ].map((item) => (
+            {syncItems.map((item) => (
               <View key={item.label} style={styles.infoRow}>
                 <Feather name={item.icon as React.ComponentProps<typeof Feather>["name"]} size={16} color={COLORS.amber} />
                 <Text style={styles.infoRowText}>{item.label}</Text>
@@ -351,15 +310,14 @@ export default function HealthConnectScreen() {
 
         <View style={styles.privacyCard}>
           <Feather name="shield" size={16} color={COLORS.navy} />
-          <Text style={styles.privacyText}>
-            Health data is stored securely and only used to improve your wellness score.
-            We never sell your health data. You can disconnect at any time.
-          </Text>
+          <Text style={styles.privacyText}>{t("healthConnect.privacyNote")}</Text>
         </View>
 
         {connections.lastSynced && (
           <Text style={styles.lastSynced}>
-            Last synced: {new Date(connections.lastSynced).toLocaleString()}
+            {t("healthConnect.lastSynced", {
+              date: new Date(connections.lastSynced).toLocaleString(locale),
+            })}
           </Text>
         )}
 
@@ -386,15 +344,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.navy10,
   },
-  headerTitle: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 17,
-    color: COLORS.navy,
-  },
-  content: {
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.lg,
-  },
+  headerTitle: { fontFamily: FONTS.bodySemiBold, fontSize: 17, color: COLORS.navy },
+  content: { paddingHorizontal: SPACING.xl, gap: SPACING.lg },
   heroBanner: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
@@ -404,12 +355,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: SPACING.md,
   },
-  heroTitle: {
-    fontFamily: FONTS.heading,
-    fontSize: 22,
-    color: COLORS.navy,
-    textAlign: "center",
-  },
+  heroTitle: { fontFamily: FONTS.heading, fontSize: 22, color: COLORS.navy, textAlign: "center" },
   heroBody: {
     fontFamily: FONTS.body,
     fontSize: 14,
@@ -442,22 +388,10 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     gap: SPACING.md,
   },
-  infoTitle: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 14,
-    color: COLORS.navy,
-  },
+  infoTitle: { fontFamily: FONTS.bodySemiBold, fontSize: 14, color: COLORS.navy },
   infoRows: { gap: SPACING.sm },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.md,
-  },
-  infoRowText: {
-    fontFamily: FONTS.body,
-    fontSize: 14,
-    color: COLORS.navy,
-  },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: SPACING.md },
+  infoRowText: { fontFamily: FONTS.body, fontSize: 14, color: COLORS.navy },
   privacyCard: {
     flexDirection: "row",
     gap: SPACING.md,

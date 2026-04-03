@@ -16,6 +16,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { fetch } from "expo/fetch";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
@@ -29,31 +30,18 @@ interface Message {
   isStreaming?: boolean;
 }
 
-const SUGGESTION_CHIPS = [
-  "How am I doing this week?",
-  "Tips to stay consistent",
-  "Explain my plan items",
-  "Help me build a morning routine",
-];
-
-const OPENING_MESSAGE: Message = {
-  id: "opening",
-  role: "assistant",
-  content:
-    "Hey! I'm your HealthPlanFactory accountability coach. I'm here to help you stay on track, answer questions about your wellness plan, and celebrate your wins.\n\nWhat's on your mind today?",
-};
-
 const STORAGE_KEY = "hpf_coach_messages_v2";
 const MAX_STORED_MESSAGES = 30;
 
-function formatSessionDate(dateStr: string): string {
+function formatSessionDate(dateStr: string, lang: string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
-  if (diffDays === 0) return "today";
-  if (diffDays === 1) return "yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const locale = lang === "es" ? "es-MX" : "en-US";
+  if (diffDays === 0) return lang === "es" ? "hoy" : "today";
+  if (diffDays === 1) return lang === "es" ? "ayer" : "yesterday";
+  if (diffDays < 7) return lang === "es" ? `hace ${diffDays} días` : `${diffDays} days ago`;
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 function MessageBubble({ message }: { message: Message }) {
@@ -69,39 +57,28 @@ function MessageBubble({ message }: { message: Message }) {
 
   const isUser = message.role === "user";
   return (
-    <View
-      style={[styles.bubbleRow, isUser ? styles.bubbleRowUser : styles.bubbleRowAssistant]}
-    >
+    <View style={[styles.bubbleRow, isUser ? styles.bubbleRowUser : styles.bubbleRowAssistant]}>
       {!isUser && (
         <View style={styles.avatarDot}>
           <Feather name="cpu" size={12} color={COLORS.white} />
         </View>
       )}
-      <View
-        style={[
-          styles.bubble,
-          isUser ? styles.bubbleUser : styles.bubbleAssistant,
-        ]}
-      >
+      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
         <Text style={[styles.bubbleText, isUser && styles.bubbleTextUser]}>
           {message.content}
-          {message.isStreaming && (
-            <Text style={styles.cursor}>▋</Text>
-          )}
+          {message.isStreaming && <Text style={styles.cursor}>▋</Text>}
         </Text>
       </View>
     </View>
   );
 }
 
-function MemoryBadge({ sessionCount }: { sessionCount: number }) {
+function MemoryBadge({ sessionCount, label }: { sessionCount: number; label: string }) {
   if (sessionCount === 0) return null;
   return (
     <View style={styles.memoryBadge}>
       <Feather name="zap" size={10} color={COLORS.purple} />
-      <Text style={styles.memoryBadgeText}>
-        Memory active · {sessionCount} session{sessionCount !== 1 ? "s" : ""}
-      </Text>
+      <Text style={styles.memoryBadgeText}>{label}</Text>
     </View>
   );
 }
@@ -112,6 +89,20 @@ export default function CoachScreen() {
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
   const { getToken } = useAuth();
   const { data: authData } = useGetCurrentAuthUser();
+  const { t, i18n } = useTranslation();
+
+  const SUGGESTION_CHIPS = [
+    t("coach.chip1"),
+    t("coach.chip2"),
+    t("coach.chip3"),
+    t("coach.chip4"),
+  ];
+
+  const OPENING_MESSAGE: Message = {
+    id: "opening",
+    role: "assistant",
+    content: t("coach.openingMessage"),
+  };
 
   const [messages, setMessages] = useState<Message[]>([OPENING_MESSAGE]);
   const [input, setInput] = useState("");
@@ -142,9 +133,7 @@ export default function CoachScreen() {
         .filter((m) => !m.isStreaming && m.role !== "separator")
         .slice(-MAX_STORED_MESSAGES);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(storable));
-    } catch {
-      // Storage failure is non-fatal
-    }
+    } catch {}
   }
 
   async function loadServerMemory(): Promise<number> {
@@ -152,7 +141,6 @@ export default function CoachScreen() {
       const apiBase = getApiBaseUrl();
       const headers = await getAuthHeaders();
       if (!headers.Authorization) return 0;
-
       const res = await fetch(`${apiBase}/api/coach/memory`, {
         headers: { "Content-Type": "application/json", ...headers },
       });
@@ -164,12 +152,15 @@ export default function CoachScreen() {
     }
   }
 
-  async function loadServerSession(): Promise<{ sessionId: number | null; messages: Message[]; sessionStartedAt: string | null }> {
+  async function loadServerSession(): Promise<{
+    sessionId: number | null;
+    messages: Message[];
+    sessionStartedAt: string | null;
+  }> {
     try {
       const apiBase = getApiBaseUrl();
       const headers = await getAuthHeaders();
       if (!headers.Authorization) return { sessionId: null, messages: [], sessionStartedAt: null };
-
       const res = await fetch(`${apiBase}/api/coach/session`, {
         headers: { "Content-Type": "application/json", ...headers },
       });
@@ -191,11 +182,9 @@ export default function CoachScreen() {
         (m) => m.id !== "opening" && !m.isStreaming && m.role !== "separator" && m.content.length > 5
       );
       if (meaningful.length < 2) return;
-
       const apiBase = getApiBaseUrl();
       const headers = await getAuthHeaders();
       if (!headers.Authorization) return;
-
       await fetch(`${apiBase}/api/coach/memory`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers },
@@ -204,37 +193,29 @@ export default function CoachScreen() {
         }),
       });
       setMemorySessionCount((c) => c + 1);
-    } catch {
-      // Non-fatal — memory save failure doesn't break the chat
-    }
+    } catch {}
   }
 
-  // Load history from server session on mount
   useEffect(() => {
     async function load() {
       try {
-        // Try server session first, fall back to AsyncStorage
         const { sessionId: serverId, messages: serverMsgs, sessionStartedAt } = await loadServerSession();
 
         if (serverMsgs.length > 0) {
           setCurrentSessionId(serverId);
           const dateLabel = sessionStartedAt
-            ? `Continuing from ${formatSessionDate(sessionStartedAt)}`
-            : "Continuing from a previous session";
+            ? t("coach.continuingFrom", { date: formatSessionDate(sessionStartedAt, i18n.language) })
+            : t("coach.continuingFromPrevious");
           const separator: Message = {
             id: "separator-server",
             role: "separator",
             content: dateLabel,
           };
-          const restored = serverMsgs.map((m: Message) => ({
-            ...m,
-            isStreaming: false,
-          }));
+          const restored = serverMsgs.map((m: Message) => ({ ...m, isStreaming: false }));
           const withWelcome = [OPENING_MESSAGE, separator, ...restored.filter((m: Message) => m.id !== "opening")];
           messagesRef.current = withWelcome;
           setMessages(withWelcome);
         } else {
-          // Fall back to AsyncStorage
           const stored = await AsyncStorage.getItem(STORAGE_KEY);
           if (stored) {
             const parsed: Message[] = JSON.parse(stored);
@@ -250,7 +231,6 @@ export default function CoachScreen() {
         const sessionCount = await loadServerMemory();
         setMemorySessionCount(sessionCount);
       } catch {
-        // Silently continue with defaults
       } finally {
         setIsLoadingHistory(false);
       }
@@ -267,17 +247,16 @@ export default function CoachScreen() {
 
   async function handleNewConversation() {
     Alert.alert(
-      "Start New Conversation",
-      "This will clear your current chat history. Your coach memory (goals, preferences) is preserved.",
+      t("coach.newConversationTitle"),
+      t("coach.newConversationBody"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Start Fresh",
+          text: t("coach.startFresh"),
           style: "destructive",
           onPress: async () => {
             setIsResetting(true);
             try {
-              // Archive server session (preserves history, starts fresh on next load)
               const apiBase = getApiBaseUrl();
               const headers = await getAuthHeaders();
               if (headers.Authorization) {
@@ -289,12 +268,9 @@ export default function CoachScreen() {
                   headers: { "Content-Type": "application/json", ...headers },
                 }).catch(() => {});
               }
-              // Clear local storage
               await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
             } catch {
-              // Non-fatal
             } finally {
-              // Reset to fresh state — next message will create a new session
               messagesRef.current = [OPENING_MESSAGE];
               setMessages([OPENING_MESSAGE]);
               setCurrentSessionId(null);
@@ -366,7 +342,6 @@ export default function CoachScreen() {
           if (done) break;
 
           lineBuffer += decoder.decode(value, { stream: true });
-
           const lines = lineBuffer.split("\n");
           lineBuffer = lines.pop() ?? "";
 
@@ -381,9 +356,7 @@ export default function CoachScreen() {
                 accumulated += parsed.text;
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === assistantId
-                      ? { ...m, content: accumulated }
-                      : m
+                    m.id === assistantId ? { ...m, content: accumulated } : m
                   )
                 );
               } else if (parsed.type === "done") {
@@ -394,9 +367,7 @@ export default function CoachScreen() {
                 streamDone = true;
                 break;
               }
-            } catch {
-              // skip malformed frames
-            }
+            } catch {}
           }
         }
 
@@ -414,7 +385,6 @@ export default function CoachScreen() {
           }
         }
 
-        // Store the server-issued session id for subsequent turns
         if (serverSessionId) {
           setCurrentSessionId(serverSessionId);
         }
@@ -432,12 +402,7 @@ export default function CoachScreen() {
       } catch {
         const errorMessages = messagesRef.current.map((m) =>
           m.id === assistantId
-            ? {
-                ...m,
-                content:
-                  "I'm having trouble connecting right now. Please try again in a moment.",
-                isStreaming: false,
-              }
+            ? { ...m, content: t("coach.connectionError"), isStreaming: false }
             : m
         );
         messagesRef.current = errorMessages;
@@ -446,11 +411,13 @@ export default function CoachScreen() {
         setIsSending(false);
       }
     },
-    [isSending, getToken, scheduleMemorySave, currentSessionId]
+    [isSending, getToken, scheduleMemorySave, currentSessionId, t]
   );
 
   const hasHistory = messages.length > 1;
   const reversedMessages = [...messages].reverse();
+
+  const memoryLabel = t("coach.memoryActive", { count: memorySessionCount });
 
   return (
     <KeyboardAvoidingView
@@ -464,12 +431,12 @@ export default function CoachScreen() {
             <Feather name="cpu" size={16} color={COLORS.white} />
           </View>
           <View>
-            <Text style={styles.headerTitle}>AI Coach</Text>
-            <Text style={styles.headerSub}>Powered by Claude</Text>
+            <Text style={styles.headerTitle}>{t("coach.title")}</Text>
+            <Text style={styles.headerSub}>{t("coach.poweredBy")}</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
-          <MemoryBadge sessionCount={memorySessionCount} />
+          <MemoryBadge sessionCount={memorySessionCount} label={memoryLabel} />
           {hasHistory && !isLoadingHistory && (
             <TouchableOpacity
               style={styles.newConvoBtn}
@@ -487,7 +454,7 @@ export default function CoachScreen() {
       {isLoadingHistory ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator color={COLORS.purple} size="small" />
-          <Text style={styles.loadingText}>Restoring your conversation…</Text>
+          <Text style={styles.loadingText}>{t("coach.restoringConversation")}</Text>
         </View>
       ) : (
         <FlatList
@@ -537,7 +504,7 @@ export default function CoachScreen() {
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="Ask your coach..."
+            placeholder={t("coach.inputPlaceholder")}
             placeholderTextColor={COLORS.textLight}
             value={input}
             onChangeText={(text) => {
@@ -562,9 +529,7 @@ export default function CoachScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.disclaimer}>
-          Not medical advice. For emergencies, call 911 or text 988.
-        </Text>
+        <Text style={styles.disclaimer}>{t("coach.disclaimer")}</Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -592,17 +557,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: {
-    fontFamily: FONTS.heading,
-    fontSize: 18,
-    color: COLORS.navy,
-  },
-  headerSub: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 1,
-  },
+  headerTitle: { fontFamily: FONTS.heading, fontSize: 18, color: COLORS.navy },
+  headerSub: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
   onlineIndicator: {
     width: 8,
     height: 8,
@@ -628,22 +584,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(124,58,237,0.15)",
   },
-  memoryBadgeText: {
-    fontFamily: FONTS.body,
-    fontSize: 10,
-    color: COLORS.purple,
-  },
+  memoryBadgeText: { fontFamily: FONTS.body, fontSize: 10, color: COLORS.purple },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: SPACING.sm,
   },
-  loadingText: {
-    fontFamily: FONTS.body,
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
+  loadingText: { fontFamily: FONTS.body, fontSize: 13, color: COLORS.textMuted },
   listContent: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg,
@@ -656,17 +604,8 @@ const styles = StyleSheet.create({
     marginVertical: SPACING.md,
     paddingHorizontal: SPACING.sm,
   },
-  separatorLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  separatorText: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    color: COLORS.textMuted,
-    flexShrink: 1,
-  },
+  separatorLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+  separatorText: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted, flexShrink: 1 },
   bubbleRow: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -692,20 +631,15 @@ const styles = StyleSheet.create({
   },
   bubbleUser: {
     backgroundColor: COLORS.navy,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: RADIUS.xs,
   },
   bubbleAssistant: {
     backgroundColor: COLORS.white,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: RADIUS.xs,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  bubbleText: {
-    fontFamily: FONTS.body,
-    fontSize: 14,
-    color: COLORS.navy,
-    lineHeight: 20,
-  },
+  bubbleText: { fontFamily: FONTS.body, fontSize: 15, color: COLORS.navy, lineHeight: 21 },
   bubbleTextUser: { color: COLORS.white },
   cursor: { color: COLORS.purple },
   typingRow: {
@@ -717,8 +651,8 @@ const styles = StyleSheet.create({
   typingBubble: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
+    borderBottomLeftRadius: RADIUS.xs,
+    padding: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -726,19 +660,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.warm,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
+    paddingTop: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     gap: SPACING.sm,
   },
-  chipsRow: { marginBottom: 4 },
-  chipsContent: { gap: SPACING.sm, paddingVertical: 2 },
+  chipsRow: { marginHorizontal: -SPACING.sm },
+  chipsContent: { paddingHorizontal: SPACING.sm, gap: SPACING.sm },
   chip: {
-    backgroundColor: COLORS.white,
     borderRadius: RADIUS.full,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 7,
+    paddingVertical: SPACING.xs + 2,
+    backgroundColor: COLORS.navy10,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.navy20,
   },
   chipText: {
     fontFamily: FONTS.body,
@@ -747,35 +681,38 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     flexDirection: "row",
-    gap: SPACING.sm,
     alignItems: "flex-end",
+    gap: SPACING.sm,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
   input: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.xl,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
     fontFamily: FONTS.body,
-    fontSize: 14,
-    color: COLORS.navy,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    fontSize: 15,
+    color: COLORS.text,
     maxHeight: 100,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: COLORS.navy,
     alignItems: "center",
     justifyContent: "center",
   },
-  sendBtnDisabled: { backgroundColor: COLORS.border },
+  sendBtnDisabled: { opacity: 0.4 },
   disclaimer: {
     fontFamily: FONTS.body,
     fontSize: 10,
     color: COLORS.textLight,
     textAlign: "center",
+    lineHeight: 14,
   },
 });

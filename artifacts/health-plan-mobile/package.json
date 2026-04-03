@@ -64,9 +64,12 @@
     "@supabase/supabase-js": "^2.101.0",
     "expo-auth-session": "^7.0.10",
     "expo-background-fetch": "^55.0.10",
+    "expo-localization": "^55.0.11",
     "expo-notifications": "~0.32.16",
     "expo-secure-store": "^15.0.8",
     "expo-task-manager": "^55.0.10",
+    "i18next": "^26.0.3",
+    "react-i18next": "^17.0.2",
     "react-native-google-fit": "^0.20.0",
     "react-native-health": "^1.19.0",
     "react-native-purchases": "9.15.1"

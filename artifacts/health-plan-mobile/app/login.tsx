@@ -8,15 +8,24 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 
 export default function LoginScreen() {
   const { login, isLoading } = useAuth();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
+
+  const featureKeys = [
+    "login.features.plan",
+    "login.features.coach",
+    "login.features.tracking",
+    "login.features.evidence",
+  ] as const;
 
   return (
     <View
@@ -31,19 +40,14 @@ export default function LoginScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.tagline}>Build the health plan you actually need.</Text>
+        <Text style={styles.tagline}>{t("login.tagline")}</Text>
       </View>
 
       <View style={styles.features}>
-        {[
-          "Personalized wellness plan",
-          "AI accountability coach",
-          "Progress tracking & streaks",
-          "Evidence-based modalities",
-        ].map((feat) => (
-          <View key={feat} style={styles.featureRow}>
+        {featureKeys.map((key) => (
+          <View key={key} style={styles.featureRow}>
             <View style={styles.dot} />
-            <Text style={styles.featureText}>{feat}</Text>
+            <Text style={styles.featureText}>{t(key)}</Text>
           </View>
         ))}
       </View>
@@ -56,13 +60,10 @@ export default function LoginScreen() {
           activeOpacity={0.85}
         >
           <Text style={styles.loginBtnText}>
-            {isLoading ? "Signing in..." : "Sign In to Continue"}
+            {isLoading ? t("login.signingIn") : t("login.signIn")}
           </Text>
         </TouchableOpacity>
-        <Text style={styles.disclaimer}>
-          By continuing, you agree that all content is for informational
-          purposes only and not medical advice.
-        </Text>
+        <Text style={styles.disclaimer}>{t("login.disclaimer")}</Text>
       </View>
     </View>
   );

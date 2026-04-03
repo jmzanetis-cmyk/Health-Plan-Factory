@@ -15,6 +15,7 @@ import Slider from "@react-native-community/slider";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import {
   useListProgress,
@@ -26,9 +27,9 @@ import {
 import type { ProgressLogRecord } from "@workspace/api-client-react";
 import { interceptEmergencyText } from "@/lib/emergencyCheck";
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string, locale: string) {
   try {
-    return new Date(dateStr).toLocaleDateString("en-US", {
+    return new Date(dateStr).toLocaleDateString(locale, {
       month: "short",
       day: "numeric",
     });
@@ -37,9 +38,9 @@ function formatDate(dateStr: string) {
   }
 }
 
-function formatTime(dateStr: string) {
+function formatTime(dateStr: string, locale: string) {
   try {
-    return new Date(dateStr).toLocaleTimeString("en-US", {
+    return new Date(dateStr).toLocaleTimeString(locale, {
       hour: "numeric",
       minute: "2-digit",
     });
@@ -49,7 +50,6 @@ function formatTime(dateStr: string) {
 }
 
 const RATING_ICONS = ["", "😣", "😕", "😐", "🙂", "😄"];
-const RATING_LABELS = ["", "Rough", "Low", "Okay", "Good", "Great"];
 const SLEEP_OPTIONS = ["< 5h", "5-6h", "6-7h", "7-8h", "8-9h", "9h+"];
 
 function encodeMetrics(sleep: number, energy: number, pain: number): string {
@@ -67,14 +67,15 @@ function cleanNote(note: string | null | undefined): string {
   return note.replace(/\[[^\]]+\]/g, "").trim();
 }
 
-function MiniInsightChart({ entries }: { entries: ProgressLogRecord[] }) {
+function MiniInsightChart({ entries, locale }: { entries: ProgressLogRecord[]; locale: string }) {
+  const { t } = useTranslation();
   const recent = [...entries].slice(0, 10).reverse();
   if (recent.length < 2) return null;
   const maxH = 48;
 
   return (
     <View style={chartStyles.container}>
-      <Text style={chartStyles.title}>Rating Trend (last {recent.length} entries)</Text>
+      <Text style={chartStyles.title}>{t("journal.ratingTrend", { count: recent.length })}</Text>
       <View style={chartStyles.bars}>
         {recent.map((e) => {
           const val = e.rating ?? 0;
@@ -90,11 +91,11 @@ function MiniInsightChart({ entries }: { entries: ProgressLogRecord[] }) {
       </View>
       <View style={chartStyles.legend}>
         <View style={[chartStyles.dot, { backgroundColor: COLORS.sage }]} />
-        <Text style={chartStyles.legendText}>Great/Good</Text>
+        <Text style={chartStyles.legendText}>{t("journal.legendGreatGood")}</Text>
         <View style={[chartStyles.dot, { backgroundColor: COLORS.amber }]} />
-        <Text style={chartStyles.legendText}>Okay</Text>
+        <Text style={chartStyles.legendText}>{t("journal.legendOkay")}</Text>
         <View style={[chartStyles.dot, { backgroundColor: COLORS.rose }]} />
-        <Text style={chartStyles.legendText}>Low/Rough</Text>
+        <Text style={chartStyles.legendText}>{t("journal.legendLowRough")}</Text>
       </View>
     </View>
   );
@@ -142,6 +143,11 @@ export default function JournalScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
+  const { t, i18n } = useTranslation();
+
+  const locale = i18n.language === "es" ? "es-MX" : "en-US";
+
+  const RATING_LABELS = ["", t("journal.rough"), t("journal.low"), t("journal.okay"), t("journal.good"), t("journal.great")];
 
   const [rating, setRating] = useState(3);
   const [energy, setEnergy] = useState(3);
@@ -176,7 +182,7 @@ export default function JournalScreen() {
 
   function submitEntry() {
     if (!profileId) {
-      Alert.alert("Not signed in");
+      Alert.alert(t("journal.notSignedIn"));
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -205,7 +211,7 @@ export default function JournalScreen() {
           refetch();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
-        onError: () => Alert.alert("Error", "Could not save journal entry"),
+        onError: () => Alert.alert(t("journal.error"), t("journal.errorSaving")),
       }
     );
   }
@@ -217,7 +223,7 @@ export default function JournalScreen() {
   return (
     <View style={[styles.screen, { paddingTop: topPad }]}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Journal</Text>
+        <Text style={styles.title}>{t("journal.title")}</Text>
         <TouchableOpacity
           style={styles.addBtn}
           onPress={() => setShowForm((p) => !p)}
@@ -237,9 +243,9 @@ export default function JournalScreen() {
       >
         {showForm && (
           <View style={styles.formCard}>
-            <Text style={styles.formHeading}>How are you doing?</Text>
+            <Text style={styles.formHeading}>{t("journal.howAreYouDoing")}</Text>
 
-            <Text style={styles.sectionLabel}>Overall Rating</Text>
+            <Text style={styles.sectionLabel}>{t("journal.overallRating")}</Text>
             <View style={styles.ratingRow}>
               {[1, 2, 3, 4, 5].map((v) => (
                 <TouchableOpacity
@@ -262,7 +268,7 @@ export default function JournalScreen() {
             <View style={styles.sliderGroup}>
               <View style={styles.sliderRow}>
                 <Feather name="zap" size={14} color={COLORS.amber} />
-                <Text style={styles.sliderTitle}>Energy</Text>
+                <Text style={styles.sliderTitle}>{t("journal.energy")}</Text>
                 <Text style={styles.sliderValue}>{energy}/5</Text>
               </View>
               <Slider
@@ -280,7 +286,7 @@ export default function JournalScreen() {
             <View style={styles.sliderGroup}>
               <View style={styles.sliderRow}>
                 <Feather name="activity" size={14} color={COLORS.rose} />
-                <Text style={styles.sliderTitle}>Pain / Discomfort</Text>
+                <Text style={styles.sliderTitle}>{t("journal.painDiscomfort")}</Text>
                 <Text style={styles.sliderValue}>{pain}/5</Text>
               </View>
               <Slider
@@ -295,7 +301,7 @@ export default function JournalScreen() {
               />
             </View>
 
-            <Text style={styles.sectionLabel}>Sleep Last Night</Text>
+            <Text style={styles.sectionLabel}>{t("journal.sleepLastNight")}</Text>
             <View style={styles.chipRow}>
               {SLEEP_OPTIONS.map((opt, idx) => (
                 <TouchableOpacity
@@ -316,7 +322,7 @@ export default function JournalScreen() {
 
             {popularModalities.length > 0 && (
               <>
-                <Text style={styles.sectionLabel}>Modality Practiced (optional)</Text>
+                <Text style={styles.sectionLabel}>{t("journal.modalityOptional")}</Text>
                 <View style={styles.chipRow}>
                   {popularModalities.map((m) => (
                     <TouchableOpacity
@@ -347,7 +353,7 @@ export default function JournalScreen() {
 
             <TextInput
               style={styles.noteInput}
-              placeholder="Add a note (optional)..."
+              placeholder={t("journal.addNoteOptional")}
               placeholderTextColor={COLORS.textLight}
               value={note}
               onChangeText={handleNoteChange}
@@ -364,13 +370,13 @@ export default function JournalScreen() {
               {isPending ? (
                 <ActivityIndicator color={COLORS.white} size="small" />
               ) : (
-                <Text style={styles.saveBtnText}>Save Entry</Text>
+                <Text style={styles.saveBtnText}>{t("journal.saveEntry")}</Text>
               )}
             </TouchableOpacity>
           </View>
         )}
 
-        {showChart && <MiniInsightChart entries={entries} />}
+        {showChart && <MiniInsightChart entries={entries} locale={locale} />}
 
         {isLoading ? (
           <View style={styles.loadingState}>
@@ -379,8 +385,8 @@ export default function JournalScreen() {
         ) : entries.length === 0 ? (
           <View style={styles.emptyState}>
             <Feather name="book-open" size={36} color={COLORS.textLight} />
-            <Text style={styles.emptyTitle}>No entries yet</Text>
-            <Text style={styles.emptyText}>Tap + to log your first wellness check-in.</Text>
+            <Text style={styles.emptyTitle}>{t("journal.noEntriesYet")}</Text>
+            <Text style={styles.emptyText}>{t("journal.noEntriesText")}</Text>
           </View>
         ) : (
           <View style={styles.entryList}>
@@ -397,8 +403,8 @@ export default function JournalScreen() {
                 <View key={entry.id} style={styles.entryCard}>
                   <View style={styles.entryMeta}>
                     <View>
-                      <Text style={styles.entryDate}>{formatDate(entry.createdAt)}</Text>
-                      <Text style={styles.entryTime}>{formatTime(entry.createdAt)}</Text>
+                      <Text style={styles.entryDate}>{formatDate(entry.createdAt, locale)}</Text>
+                      <Text style={styles.entryTime}>{formatTime(entry.createdAt, locale)}</Text>
                     </View>
                     {ratingVal > 0 && (
                       <View style={[styles.ratingTag, { backgroundColor: ratingColor + "18" }]}>
@@ -419,13 +425,13 @@ export default function JournalScreen() {
                     {energyVal && (
                       <View style={styles.metaChip}>
                         <Feather name="zap" size={11} color={COLORS.amber} />
-                        <Text style={styles.metaChipText}>Energy {energyVal}/5</Text>
+                        <Text style={styles.metaChipText}>{t("journal.energyLabel", { value: energyVal })}</Text>
                       </View>
                     )}
                     {painVal && (
                       <View style={styles.metaChip}>
                         <Feather name="activity" size={11} color={COLORS.rose} />
-                        <Text style={styles.metaChipText}>Pain {painVal}/5</Text>
+                        <Text style={styles.metaChipText}>{t("journal.painLabel", { value: painVal })}</Text>
                       </View>
                     )}
                   </View>
@@ -439,10 +445,7 @@ export default function JournalScreen() {
         )}
 
         <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerText}>
-            Journal entries are for personal tracking only. This is not medical advice.
-            If you are in crisis, call or text 988.
-          </Text>
+          <Text style={styles.disclaimerText}>{t("journal.disclaimer")}</Text>
         </View>
 
         <View style={{ height: 120 }} />

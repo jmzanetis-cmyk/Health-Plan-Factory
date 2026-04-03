@@ -7,41 +7,44 @@ import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { COLORS } from "@/constants/theme";
 
 function NativeTabLayout() {
+  const { t } = useTranslation();
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>Home</Label>
+        <Label>{t("tabs.home")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="plan">
         <Icon sf={{ default: "doc.text", selected: "doc.text.fill" }} />
-        <Label>Plan</Label>
+        <Label>{t("tabs.plan")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="journal">
         <Icon sf={{ default: "book", selected: "book.fill" }} />
-        <Label>Journal</Label>
+        <Label>{t("tabs.journal")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="accountability">
         <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
-        <Label>Track</Label>
+        <Label>{t("tabs.track")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="coach">
         <Icon sf={{ default: "brain", selected: "brain.fill" }} />
-        <Label>Coach</Label>
+        <Label>{t("tabs.coach")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="discover">
         <Icon sf={{ default: "magnifyingglass", selected: "magnifyingglass" }} />
-        <Label>Discover</Label>
+        <Label>{t("tabs.discover")}</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
 
 function ClassicTabLayout() {
+  const { t } = useTranslation();
   const isDark = useColorScheme() === "dark";
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
@@ -76,7 +79,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("tabs.home"),
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="house" tintColor={color} size={24} />
@@ -88,7 +91,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="plan"
         options={{
-          title: "Plan",
+          title: t("tabs.plan"),
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="doc.text" tintColor={color} size={24} />
@@ -100,7 +103,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="journal"
         options={{
-          title: "Journal",
+          title: t("tabs.journal"),
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="book" tintColor={color} size={24} />
@@ -112,7 +115,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="accountability"
         options={{
-          title: "Track",
+          title: t("tabs.track"),
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="chart.bar" tintColor={color} size={24} />
@@ -124,7 +127,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="coach"
         options={{
-          title: "Coach",
+          title: t("tabs.coach"),
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="brain.head.profile" tintColor={color} size={24} />
@@ -136,7 +139,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="discover"
         options={{
-          title: "Discover",
+          title: t("tabs.discover"),
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="magnifyingglass" tintColor={color} size={24} />

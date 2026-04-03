@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
@@ -24,6 +25,7 @@ import * as SecureStore from "expo-secure-store";
 import { loadConnectionState, type HealthConnectionState } from "@/lib/healthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { useSubscription } from "@/lib/revenuecat";
+import { changeLanguage, type SupportedLang } from "@/lib/i18n";
 
 async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptionStatus: string }> {
   const base = getApiBaseUrl();
@@ -59,6 +61,7 @@ function NotificationPrefsSection() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { t } = useTranslation();
 
   const apiBase = getApiBaseUrl();
 
@@ -73,7 +76,7 @@ function NotificationPrefsSection() {
         const d = await res.json();
         if (d.prefs) setPrefs(d.prefs);
         if (d.phone) setPhone(d.phone);
-      } catch { /* ignore */ }
+      } catch {}
       setLoading(false);
     })();
   }, []);
@@ -91,9 +94,9 @@ function NotificationPrefsSection() {
         },
         body: JSON.stringify({ ...prefs, phone: phone || null }),
       });
-      Alert.alert("Saved", "Notification preferences updated.");
+      Alert.alert(t("settings.saved"), t("settings.notifPrefsUpdated"));
     } catch {
-      Alert.alert("Error", "Failed to save preferences.");
+      Alert.alert(t("common.error"), t("settings.failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -113,7 +116,7 @@ function NotificationPrefsSection() {
         <View style={notifStyles.icon}>
           <Feather name="mail" size={16} color={COLORS.amber} />
         </View>
-        <Text style={notifStyles.label}>Email notifications</Text>
+        <Text style={notifStyles.label}>{t("settings.emailNotifications")}</Text>
         <Switch
           value={prefs.email}
           onValueChange={(v) => setPrefs((p) => ({ ...p, email: v }))}
@@ -125,7 +128,7 @@ function NotificationPrefsSection() {
         <View style={notifStyles.icon}>
           <Feather name="message-square" size={16} color={COLORS.amber} />
         </View>
-        <Text style={notifStyles.label}>SMS notifications</Text>
+        <Text style={notifStyles.label}>{t("settings.smsNotifications")}</Text>
         <Switch
           value={prefs.sms}
           onValueChange={(v) => setPrefs((p) => ({ ...p, sms: v }))}
@@ -156,7 +159,7 @@ function NotificationPrefsSection() {
         {saving ? (
           <ActivityIndicator size="small" color={COLORS.white} />
         ) : (
-          <Text style={notifStyles.saveBtnText}>Save preferences</Text>
+          <Text style={notifStyles.saveBtnText}>{t("settings.savePreferences")}</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -186,18 +189,8 @@ const notifStyles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: COLORS.amberPale,
   },
-  label: {
-    fontFamily: FONTS.bodyMedium,
-    fontSize: 15,
-    color: COLORS.navy,
-    flex: 1,
-  },
-  phoneInput: {
-    flex: 1,
-    fontFamily: FONTS.body,
-    fontSize: 14,
-    color: COLORS.navy,
-  },
+  label: { fontFamily: FONTS.bodyMedium, fontSize: 15, color: COLORS.navy, flex: 1 },
+  phoneInput: { flex: 1, fontFamily: FONTS.body, fontSize: 14, color: COLORS.navy },
   saveBtn: {
     margin: SPACING.lg,
     marginTop: SPACING.sm,
@@ -206,15 +199,12 @@ const notifStyles = StyleSheet.create({
     padding: SPACING.md,
     alignItems: "center",
   },
-  saveBtnText: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 14,
-    color: COLORS.white,
-  },
+  saveBtnText: { fontFamily: FONTS.bodySemiBold, fontSize: 14, color: COLORS.white },
 });
 
 function ConnectedServicesSection({ profileId }: { profileId?: string }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [connections, setConnections] = useState<HealthConnectionState>({
     appleHealth: false,
     googleFit: false,
@@ -227,7 +217,6 @@ function ConnectedServicesSection({ profileId }: { profileId?: string }) {
 
   const isIos = Platform.OS === "ios";
   const isAndroid = Platform.OS === "android";
-
   const anyConnected = connections.appleHealth || connections.googleFit;
 
   return (
@@ -242,17 +231,15 @@ function ConnectedServicesSection({ profileId }: { profileId?: string }) {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={connStyles.label}>
-            {isIos ? "Apple Health" : isAndroid ? "Google Fit" : "Health Apps"}
+            {isIos ? "Apple Health" : isAndroid ? "Google Fit" : t("settings.healthApps")}
           </Text>
           {anyConnected ? (
-            <Text style={connStyles.statusConnected}>Connected</Text>
+            <Text style={connStyles.statusConnected}>{t("settings.connected")}</Text>
           ) : (
-            <Text style={connStyles.statusDisconnected}>Not connected</Text>
+            <Text style={connStyles.statusDisconnected}>{t("settings.notConnected")}</Text>
           )}
         </View>
-        {anyConnected && (
-          <View style={connStyles.connectedDot} />
-        )}
+        {anyConnected && <View style={connStyles.connectedDot} />}
         <Feather name="chevron-right" size={16} color={COLORS.textLight} />
       </TouchableOpacity>
     </View>
@@ -281,29 +268,80 @@ const connStyles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: COLORS.amberPale,
   },
-  label: {
-    fontFamily: FONTS.bodyMedium,
-    fontSize: 15,
-    color: COLORS.navy,
+  label: { fontFamily: FONTS.bodyMedium, fontSize: 15, color: COLORS.navy },
+  statusConnected: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.sage, marginTop: 1 },
+  statusDisconnected: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
+  connectedDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.sage },
+});
+
+function LanguageSection() {
+  const { t, i18n } = useTranslation();
+  const [switching, setSwitching] = useState(false);
+
+  const currentLang = i18n.language as SupportedLang;
+
+  async function switchLang(lang: SupportedLang) {
+    if (lang === currentLang || switching) return;
+    setSwitching(true);
+    await changeLanguage(lang);
+    setSwitching(false);
+  }
+
+  return (
+    <View style={langStyles.card}>
+      <TouchableOpacity
+        style={[langStyles.row, langStyles.rowBorder]}
+        onPress={() => switchLang("en")}
+        activeOpacity={0.7}
+        disabled={switching}
+      >
+        <View style={langStyles.icon}>
+          <Text style={langStyles.flag}>🇺🇸</Text>
+        </View>
+        <Text style={langStyles.label}>English</Text>
+        {currentLang === "en" && <Feather name="check" size={16} color={COLORS.navy} />}
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={langStyles.row}
+        onPress={() => switchLang("es")}
+        activeOpacity={0.7}
+        disabled={switching}
+      >
+        <View style={langStyles.icon}>
+          <Text style={langStyles.flag}>🇲🇽</Text>
+        </View>
+        <Text style={langStyles.label}>Español</Text>
+        {currentLang === "es" && <Feather name="check" size={16} color={COLORS.navy} />}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const langStyles = StyleSheet.create({
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: "hidden",
   },
-  statusConnected: {
-    fontFamily: FONTS.body,
-    fontSize: 12,
-    color: COLORS.sage,
-    marginTop: 1,
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    padding: SPACING.lg,
   },
-  statusDisconnected: {
-    fontFamily: FONTS.body,
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 1,
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  icon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.off,
   },
-  connectedDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.sage,
-  },
+  flag: { fontSize: 18 },
+  label: { fontFamily: FONTS.bodyMedium, fontSize: 15, color: COLORS.navy, flex: 1 },
 });
 
 export default function SettingsScreen() {
@@ -313,6 +351,7 @@ export default function SettingsScreen() {
   const { logout } = useAuth();
   const { data: authData } = useGetCurrentAuthUser();
   const user = authData?.user;
+  const { t } = useTranslation();
 
   const { data: subscriptionData } = useQuery({
     queryKey: ["subscription-status"],
@@ -326,25 +365,25 @@ export default function SettingsScreen() {
   const isPlus = isSubscribed || subscriptionStatus === "plus";
   const membershipLabel =
     isPlus
-      ? "Plus"
+      ? t("settings.plus")
       : subscriptionStatus === "employer"
-        ? "Employer"
-        : "Explorer";
+        ? t("settings.employer")
+        : t("settings.explorer");
 
   async function handleRestorePurchases() {
     try {
       await restore();
-      Alert.alert("Purchases Restored", "Your purchases have been restored successfully.");
+      Alert.alert(t("settings.purchasesRestored"), t("settings.purchasesRestoredBody"));
     } catch {
-      Alert.alert("Restore Failed", "Could not restore purchases. Please try again.");
+      Alert.alert(t("settings.restoreFailed"), t("settings.restoreFailedBody"));
     }
   }
 
   function handleSignOut() {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("settings.signOut"), t("settings.signOutConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Sign Out",
+        text: t("settings.signOut"),
         style: "destructive",
         onPress: () => {
           logout();
@@ -358,13 +397,13 @@ export default function SettingsScreen() {
     {
       id: "email",
       icon: "mail",
-      label: "Email",
+      label: t("settings.email"),
       value: user?.email ?? "—",
     },
     {
       id: "plan",
       icon: "star",
-      label: "Membership",
+      label: t("settings.membership"),
       value: membershipLabel,
     },
   ];
@@ -373,19 +412,19 @@ export default function SettingsScreen() {
     {
       id: "privacy",
       icon: "shield",
-      label: "Privacy Policy",
+      label: t("settings.privacyPolicy"),
       onPress: () => Linking.openURL("https://healthplanfactory.com/privacy"),
     },
     {
       id: "terms",
       icon: "file-text",
-      label: "Terms of Service",
+      label: t("settings.termsOfService"),
       onPress: () => Linking.openURL("https://healthplanfactory.com/terms"),
     },
     {
       id: "contact",
       icon: "help-circle",
-      label: "Contact Support",
+      label: t("settings.contactSupport"),
       onPress: () => Linking.openURL("mailto:support@healthplanfactory.com"),
     },
   ];
@@ -415,14 +454,14 @@ export default function SettingsScreen() {
             </View>
             <View>
               <Text style={styles.profileName}>
-                {user.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : "Member"}
+                {user.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : t("settings.member")}
               </Text>
               <Text style={styles.profileEmail}>{user.email}</Text>
             </View>
           </View>
         )}
 
-        <Text style={styles.sectionLabel}>Account</Text>
+        <Text style={styles.sectionLabel}>{t("settings.account")}</Text>
         <View style={styles.card}>
           {accountRows.map((row, idx) => (
             <TouchableOpacity
@@ -457,19 +496,22 @@ export default function SettingsScreen() {
                   <Feather name="refresh-cw" size={16} color={COLORS.amber} />
                 )}
               </View>
-              <Text style={styles.rowLabel}>Restore Purchases</Text>
+              <Text style={styles.rowLabel}>{t("settings.restorePurchases")}</Text>
               <Feather name="chevron-right" size={16} color={COLORS.textLight} />
             </View>
           </TouchableOpacity>
         )}
 
-        <Text style={styles.sectionLabel}>Connected Services</Text>
+        <Text style={styles.sectionLabel}>{t("settings.language")}</Text>
+        <LanguageSection />
+
+        <Text style={styles.sectionLabel}>{t("settings.connectedServices")}</Text>
         <ConnectedServicesSection profileId={user?.id} />
 
-        <Text style={styles.sectionLabel}>Notifications</Text>
+        <Text style={styles.sectionLabel}>{t("settings.notifications")}</Text>
         <NotificationPrefsSection />
 
-        <Text style={styles.sectionLabel}>Support</Text>
+        <Text style={styles.sectionLabel}>{t("settings.support")}</Text>
         <View style={styles.card}>
           {supportRows.map((row, idx) => (
             <TouchableOpacity
@@ -490,26 +532,16 @@ export default function SettingsScreen() {
         <View style={styles.disclaimerCard}>
           <View style={styles.disclaimerHeader}>
             <Feather name="alert-circle" size={16} color={COLORS.amber} />
-            <Text style={styles.disclaimerTitle}>Medical Disclaimer</Text>
+            <Text style={styles.disclaimerTitle}>{t("settings.medicalDisclaimerTitle")}</Text>
           </View>
-          <Text style={styles.disclaimerBody}>
-            HealthPlan Factory provides general wellness information for educational purposes only.
-            Content on this app is not intended to be a substitute for professional medical advice,
-            diagnosis, or treatment. Always seek the advice of your physician or other qualified
-            health provider with any questions you may have regarding a medical condition.
-          </Text>
-          <Text style={styles.disclaimerBody}>
-            If you are experiencing a medical emergency, call 911 immediately.
-          </Text>
-          <Text style={styles.disclaimerBody}>
-            If you are in mental health crisis, call or text 988 (Suicide & Crisis Lifeline) or
-            text HOME to 741741 (Crisis Text Line).
-          </Text>
+          <Text style={styles.disclaimerBody}>{t("settings.medicalDisclaimer1")}</Text>
+          <Text style={styles.disclaimerBody}>{t("settings.medicalDisclaimer2")}</Text>
+          <Text style={styles.disclaimerBody}>{t("settings.medicalDisclaimer3")}</Text>
         </View>
 
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} activeOpacity={0.8}>
           <Feather name="log-out" size={16} color={COLORS.rose} />
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.signOutText}>{t("settings.signOut")}</Text>
         </TouchableOpacity>
 
         <Text style={styles.version}>HealthPlan Factory · v1.0.0</Text>
@@ -537,10 +569,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.navy10,
   },
-  headerLogo: {
-    width: 120,
-    height: 40,
-  },
+  headerLogo: { width: 120, height: 40 },
   content: { paddingHorizontal: SPACING.xl, gap: SPACING.md },
   profileCard: {
     flexDirection: "row",
@@ -559,22 +588,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: {
-    fontFamily: FONTS.heading,
-    fontSize: 24,
-    color: COLORS.white,
-  },
-  profileName: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 16,
-    color: COLORS.white,
-  },
-  profileEmail: {
-    fontFamily: FONTS.body,
-    fontSize: 13,
-    color: "rgba(255,255,255,0.65)",
-    marginTop: 2,
-  },
+  avatarText: { fontFamily: FONTS.heading, fontSize: 24, color: COLORS.white },
+  profileName: { fontFamily: FONTS.bodySemiBold, fontSize: 16, color: COLORS.white },
+  profileEmail: { fontFamily: FONTS.body, fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 2 },
   sectionLabel: {
     fontFamily: FONTS.bodySemiBold,
     fontSize: 11,
@@ -605,17 +621,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: COLORS.amberPale,
   },
-  rowLabel: {
-    fontFamily: FONTS.bodyMedium,
-    fontSize: 15,
-    color: COLORS.navy,
-    flex: 1,
-  },
-  rowValue: {
-    fontFamily: FONTS.body,
-    fontSize: 14,
-    color: COLORS.textMuted,
-  },
+  rowLabel: { fontFamily: FONTS.bodyMedium, fontSize: 15, color: COLORS.navy, flex: 1 },
+  rowValue: { fontFamily: FONTS.body, fontSize: 14, color: COLORS.textMuted },
   disclaimerCard: {
     backgroundColor: COLORS.amberPale,
     borderRadius: RADIUS.lg,
@@ -624,16 +631,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.amber10,
     gap: SPACING.md,
   },
-  disclaimerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-  },
-  disclaimerTitle: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 14,
-    color: COLORS.navy,
-  },
+  disclaimerHeader: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
+  disclaimerTitle: { fontFamily: FONTS.bodySemiBold, fontSize: 14, color: COLORS.navy },
   disclaimerBody: {
     fontFamily: FONTS.body,
     fontSize: 13,
@@ -653,11 +652,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.rosePale,
     marginTop: SPACING.sm,
   },
-  signOutText: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 15,
-    color: COLORS.rose,
-  },
+  signOutText: { fontFamily: FONTS.bodySemiBold, fontSize: 15, color: COLORS.rose },
   version: {
     fontFamily: FONTS.mono,
     fontSize: 11,
