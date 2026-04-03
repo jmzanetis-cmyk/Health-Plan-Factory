@@ -131,7 +131,16 @@ async function generateBatch(modalityName, modalityCategory, targets, retries = 
         .replace(/```\s*$/i, "");
       const parsed = JSON.parse(cleaned);
       if (!Array.isArray(parsed)) throw new Error("Expected JSON array");
-      return parsed.map((row) => validateRow(row, requestedTargetSet));
+      const validated = parsed.map((row) => validateRow(row, requestedTargetSet));
+
+      // Verify cardinality: every requested target must be in the response.
+      const returnedKeys = new Set(validated.map((r) => `${r.target_type}:${r.target_id}`));
+      const missingKeys = [...requestedTargetSet].filter((k) => !returnedKeys.has(k));
+      if (missingKeys.length > 0) {
+        throw new Error(`Missing ${missingKeys.length} target(s): ${missingKeys.join(", ")}`);
+      }
+
+      return validated;
     } catch (err) {
       if (attempt === retries) throw err;
       console.warn(`  Retry ${attempt}/${retries}: ${err.message}`);
