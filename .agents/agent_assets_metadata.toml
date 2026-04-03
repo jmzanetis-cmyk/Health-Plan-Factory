@@ -6,6 +6,36 @@ uri = "file://artifacts/health-plan-factory/public/assets/factory-hero.png"
 type = "image"
 title = "factory hero illustration little man worker"
 
+[[generated]]
+id = "oYorVTxAkibFsf7Q0v145"
+uri = "file://artifacts/health-plan-mobile/assets/images/icon.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "V13V9eNfMcsAlJE5AqMCJ"
+uri = "file://artifacts/health-plan-mobile/assets/screenshots/screenshot-01-home.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "YGWexbXBzUd9rcETaQ42L"
+uri = "file://artifacts/health-plan-mobile/assets/screenshots/screenshot-02-plan.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "gmTFfLdSraptVNM7Ca_AP"
+uri = "file://artifacts/health-plan-mobile/assets/screenshots/screenshot-03-journal.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "j3y0OegPkt1_yXa4Ld_-8"
+uri = "file://artifacts/health-plan-mobile/assets/screenshots/screenshot-04-coach.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "_oksy9U7218arL7KOXDuU"
 uri = "file://docs/business-plan.pdf"
