@@ -554,7 +554,6 @@ export default function Plan() {
     if (!storedPlan || !storedIntake) return;
 
     persistAttemptedRef.current = true;
-    sessionStorage.setItem("hpf_plan_saved", "1");
 
     try {
       const rawIntake = JSON.parse(storedIntake);
@@ -577,7 +576,9 @@ export default function Plan() {
         .then((r) => r.ok ? r.json() : null)
         .then((saved) => {
           if (saved?.plan?.id) {
+            // Only mark as saved after confirmed successful DB write
             sessionStorage.setItem("hpf_plan_id", saved.plan.id);
+            sessionStorage.setItem("hpf_plan_saved", "1");
           }
         })
         .catch(() => {});

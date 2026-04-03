@@ -264,7 +264,6 @@ export default function Onboarding() {
     // Persist to DB immediately for authenticated users (fire-and-forget).
     // The Plan page also guards against duplicates via the hpf_plan_saved flag.
     if (isAuthenticated && user?.id) {
-      sessionStorage.setItem("hpf_plan_saved", "1");
       const base = getApiBase();
       fetch(`${base}/api/plans/generate`, {
         method: "POST",
@@ -285,7 +284,9 @@ export default function Onboarding() {
         .then((r) => r.ok ? r.json() : null)
         .then((saved) => {
           if (saved?.plan?.id) {
+            // Only mark as saved after a confirmed successful DB write
             sessionStorage.setItem("hpf_plan_id", saved.plan.id);
+            sessionStorage.setItem("hpf_plan_saved", "1");
           }
         })
         .catch(() => {});
