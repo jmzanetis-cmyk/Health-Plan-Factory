@@ -174,10 +174,10 @@ function TestDigestSection() {
         setPreview(data);
         setShowPreview(true);
       } else {
-        setPreviewError(data.error ?? "Failed to generate preview");
+        setPreviewError(data.error ?? t("admin.digest.previewError"));
       }
     } catch {
-      setPreviewError("Network error — please try again");
+      setPreviewError(t("common.networkError"));
     } finally {
       setPreviewing(false);
     }
@@ -197,10 +197,10 @@ function TestDigestSection() {
       if (res.ok) {
         setSendResult({ ok: true, sentTo: data.sentTo });
       } else {
-        setSendResult({ ok: false, error: data.error ?? "Failed to send test digest" });
+        setSendResult({ ok: false, error: data.error ?? t("admin.digest.sendTestError") });
       }
     } catch {
-      setSendResult({ ok: false, error: "Network error — please try again" });
+      setSendResult({ ok: false, error: t("common.networkError") });
     } finally {
       setSending(false);
     }
@@ -359,7 +359,7 @@ function TestDigestSection() {
               <iframe
                 srcDoc={preview.html}
                 style={{ width: "100%", height: 680, border: "none", borderRadius: 8, background: "white" }}
-                title="Digest Preview"
+                title={t("admin.digest.modalTitle")}
                 sandbox="allow-same-origin"
               />
             </div>
@@ -398,9 +398,9 @@ function ReEngagementSection() {
       });
       const data = await res.json();
       if (res.ok) setSingleResult(data);
-      else setSingleError(data.error ?? "Failed to send");
+      else setSingleError(data.error ?? t("admin.reEngagement.sendError"));
     } catch {
-      setSingleError("Network error — please try again");
+      setSingleError(t("common.networkError"));
     } finally {
       setSendingSingle(false);
     }
@@ -420,9 +420,9 @@ function ReEngagementSection() {
       });
       const data = await res.json();
       if (res.ok) setBulkResult(data);
-      else setBulkError(data.error ?? "Bulk send failed");
+      else setBulkError(data.error ?? t("admin.reEngagement.bulkError"));
     } catch {
-      setBulkError("Network error — please try again");
+      setBulkError(t("common.networkError"));
     } finally {
       setRunningBulk(null);
     }
@@ -569,10 +569,10 @@ export default function AdminDashboard() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
-            Admin Dashboard
+            {t("admin.dashboard.title")}
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-            t("admin.dashboard.sub" || "{t("admin.dashboard.sub")}")
+            {t("admin.dashboard.sub")}
           </p>
         </div>
 
@@ -580,11 +580,11 @@ export default function AdminDashboard() {
 
         {/* Stat cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <StatCard label="Members" value={stats?.totalMembers ?? 0} icon={<Users size={18} />} loading={loading} to="/admin/users" />
+          <StatCard label={t("admin.dashboard.totalMembers")} value={stats?.totalMembers ?? 0} icon={<Users size={18} />} loading={loading} to="/admin/users" />
           <StatCard label={t("admin.dashboard.totalProviders")} value={stats?.totalProviders ?? 0} icon={<Stethoscope size={18} />} loading={loading} to="/admin/providers" />
-          <StatCard label="Plans" value={stats?.totalPlans ?? 0} icon={<FileText size={18} />} loading={loading} />
-          <StatCard label="Pending" value={stats?.pendingProviders ?? 0} icon={<Clock size={18} />} loading={loading} to="/admin/providers" />
-          <StatCard label="30d Signups" value={stats?.recentSignups ?? 0} icon={<TrendingUp size={18} />} loading={loading} />
+          <StatCard label={t("admin.dashboard.totalPlans")} value={stats?.totalPlans ?? 0} icon={<FileText size={18} />} loading={loading} />
+          <StatCard label={t("admin.dashboard.pendingProviders")} value={stats?.pendingProviders ?? 0} icon={<Clock size={18} />} loading={loading} to="/admin/providers" />
+          <StatCard label={t("admin.dashboard.recentSignups")} value={stats?.recentSignups ?? 0} icon={<TrendingUp size={18} />} loading={loading} />
           <StatCard label={t("admin.dashboard.activeModalities")} value={stats?.activeModalities ?? 0} icon={<Loader2 size={18} />} loading={loading} to="/admin/modalities" />
         </div>
 
@@ -593,7 +593,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2 mb-5">
             <Gift size={18} style={{ color: "var(--hpf-crimson)" }} />
             <h2 className="text-base font-semibold" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
-              Referral Program
+              {t("admin.dashboard.referralStats")}
             </h2>
           </div>
           {referralLoading ? (
@@ -605,28 +605,28 @@ export default function AdminDashboard() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <ReferralStatTile
-                label="Total Referrals"
+                label={t("admin.referrals.total")}
                 value={referralStats?.totalReferrals ?? 0}
                 icon={<Users size={14} />}
-                sub={`${referralStats?.pendingReferrals ?? 0} pending`}
+                sub={t("admin.referrals.pendingSub", { n: referralStats?.pendingReferrals ?? 0 })}
               />
               <ReferralStatTile
-                label="Rewarded"
+                label={t("admin.referrals.rewarded")}
                 value={referralStats?.rewardedReferrals ?? 0}
                 icon={<Gift size={14} />}
-                sub="completed + rewarded"
+                sub={t("admin.referrals.completedSub")}
               />
               <ReferralStatTile
-                label="Conversion Rate"
+                label={t("admin.referrals.conversionRate")}
                 value={`${referralStats?.conversionRate ?? 0}%`}
                 icon={<Percent size={14} />}
-                sub="referrals → completions"
+                sub={t("admin.referrals.conversionNote")}
               />
               <ReferralStatTile
-                label="Credits Issued"
+                label={t("admin.referrals.creditsIssued")}
                 value={referralStats?.totalCreditsIssuedFormatted ?? "$0.00"}
                 icon={<CreditCard size={14} />}
-                sub={`${referralStats?.totalCreditsUsedFormatted ?? "$0.00"} redeemed`}
+                sub={t("admin.referrals.redeemedSub", { amount: referralStats?.totalCreditsUsedFormatted ?? "$0.00" })}
               />
             </div>
           )}
@@ -641,7 +641,7 @@ export default function AdminDashboard() {
         {/* Weekly signups chart */}
         <div className="p-6 rounded-2xl" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
           <h2 className="text-base font-semibold mb-5" style={{ fontFamily: "var(--app-font-serif)", color: "var(--hpf-pink)" }}>
-            Weekly Signups
+            {t("admin.dashboard.weeklySignups")}
           </h2>
           {chartLoading ? (
             <div className="h-52 animate-pulse rounded-xl" style={{ background: "rgba(212,34,126,0.04)" }} />

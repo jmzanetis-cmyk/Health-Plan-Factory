@@ -108,8 +108,17 @@ export default function ProviderDashboard() {
       .catch(() => {});
   }, []);
 
-  const displayName = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : user?.email ?? "Provider";
+  const displayName = user?.firstName
+    ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}`
+    : user?.email ?? t("provider.dashboard.defaultName");
   const completeness = provider ? computeCompleteness(provider) : 0;
+
+  const statusLabel =
+    provider?.status === "approved"
+      ? t("provider.dashboard.statusActive")
+      : provider?.status === "pending"
+      ? t("provider.dashboard.statusPending")
+      : t("provider.dashboard.statusOther", { status: provider?.status });
 
   return (
     <div className="min-h-screen px-6 md:px-12 py-16" style={{ background: "var(--warm-white)" }}>
@@ -119,10 +128,10 @@ export default function ProviderDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
           <div>
             <h1 style={{ fontFamily: "var(--app-font-serif)", fontSize: "2rem", fontWeight: 700, color: "var(--hpf-pink)" }}>
-              Welcome back, {displayName.split(" ")[0]}
+              {t("provider.dashboard.welcome", { name: displayName.split(" ")[0] })}
             </h1>
             <p className="text-sm mt-1" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              Provider dashboard · {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+              {t("provider.dashboard.subtitle", { date: new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) })}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -131,38 +140,43 @@ export default function ProviderDashboard() {
               className="px-4 py-2 rounded-lg text-sm font-semibold no-underline"
               style={{ border: "1.5px solid rgba(212,34,126,0.2)", color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
-              Edit profile
+              {t("provider.dashboard.editProfile")}
             </Link>
             <Link
               to="/provider/leads"
               className="px-4 py-2 rounded-lg text-sm font-semibold text-white no-underline flex items-center gap-2"
               style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
             >
-              View leads <ChevronRight size={14} />
+              {t("provider.dashboard.viewLeadsBtn")} <ChevronRight size={14} />
             </Link>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={<Users size={18} style={{ color: "var(--hpf-pink)" }} />} label="Profile views this month" value="—" trend="+12%" />
-          <StatCard icon={<Star size={18} style={{ color: "var(--hpf-crimson)" }} />} label="Average rating" value={averageRating !== null ? `${averageRating.toFixed(1)} ★` : "—"} trend={reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? "s" : ""}` : undefined} />
-          <StatCard icon={<Calendar size={18} style={{ color: "var(--sage)" }} />} label="Bookings this month" value="—" />
-          <StatCard icon={<TrendingUp size={18} style={{ color: "var(--hpf-pink)" }} />} label="Plan recommendations" value="—" trend="Coming soon" />
+          <StatCard icon={<Users size={18} style={{ color: "var(--hpf-pink)" }} />} label={t("provider.dashboard.statsViews")} value="—" trend="+12%" />
+          <StatCard
+            icon={<Star size={18} style={{ color: "var(--hpf-crimson)" }} />}
+            label={t("provider.dashboard.statsRating")}
+            value={averageRating !== null ? `${averageRating.toFixed(1)} ★` : "—"}
+            trend={reviewCount > 0 ? `${reviewCount} ${t("provider.dashboard.reviewWord", { count: reviewCount })}` : undefined}
+          />
+          <StatCard icon={<Calendar size={18} style={{ color: "var(--sage)" }} />} label={t("provider.dashboard.statsBookings")} value="—" />
+          <StatCard icon={<TrendingUp size={18} style={{ color: "var(--hpf-pink)" }} />} label={t("provider.dashboard.statsRecommendations")} value="—" trend={t("provider.dashboard.comingSoon")} />
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           {/* Profile card */}
           <div className="md:col-span-2 rounded-xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Your profile</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{t("provider.dashboard.profileCard")}</h2>
               <div className="flex items-center gap-3">
                 <Link to="/provider/preview" className="text-xs no-underline flex items-center gap-1" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
                   <Eye size={11} />
-                  Preview
+                  {t("provider.dashboard.previewLink")}
                 </Link>
                 <Link to="/provider/profile" className="text-xs no-underline flex items-center gap-1" style={{ color: "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>
-                  Edit <ExternalLink size={11} />
+                  {t("common.edit")} <ExternalLink size={11} />
                 </Link>
               </div>
             </div>
@@ -171,7 +185,7 @@ export default function ProviderDashboard() {
             {provider && (
               <div className="mb-5">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Profile completeness</span>
+                  <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{t("provider.dashboard.completeness")}</span>
                   <span className="text-xs font-semibold" style={{ color: completeness >= 80 ? "var(--sage)" : "var(--hpf-crimson)", fontFamily: "var(--app-font-sans)" }}>{completeness}%</span>
                 </div>
                 <div className="h-1.5 rounded-full" style={{ background: "rgba(212,34,126,0.08)" }}>
@@ -179,7 +193,7 @@ export default function ProviderDashboard() {
                 </div>
                 {completeness < 80 && (
                   <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                    Complete your profile to get more leads — add bio, location, and pricing.
+                    {t("provider.dashboard.completeHint")}
                   </p>
                 )}
               </div>
@@ -188,7 +202,7 @@ export default function ProviderDashboard() {
             {loading ? (
               <div className="flex items-center gap-3">
                 <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--hpf-pink)", borderTopColor: "transparent" }} />
-                <span className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>Loading...</span>
+                <span className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>{t("common.loading")}</span>
               </div>
             ) : provider ? (
               <div className="flex flex-col gap-4">
@@ -208,12 +222,12 @@ export default function ProviderDashboard() {
                   {provider.offersTelehealth && (
                     <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--sage)", fontFamily: "var(--app-font-sans)" }}>
                       <Video size={12} />
-                      Telehealth available
+                      {t("provider.dashboard.telehealthAvailable")}
                     </div>
                   )}
                   {provider.costPerSession && (
                     <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                      ${Number(provider.costPerSession).toFixed(0)}/session
+                      ${Number(provider.costPerSession).toFixed(0)}{t("provider.dashboard.perSessionLabel")}
                     </div>
                   )}
                 </div>
@@ -237,20 +251,20 @@ export default function ProviderDashboard() {
                   }}
                 >
                   <div className="w-1.5 h-1.5 rounded-full" style={{ background: provider.status === "approved" ? "var(--sage)" : "var(--hpf-crimson)" }} />
-                  {provider.status === "approved" ? "Profile active" : provider.status === "pending" ? "Pending review" : `Status: ${provider.status}`}
+                  {statusLabel}
                 </div>
               </div>
             ) : (
               <div className="text-center py-8">
                 <p className="text-sm mb-4" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                  No provider profile found. Complete your application to appear in member searches.
+                  {t("provider.dashboard.noProfile")}
                 </p>
                 <Link
                   to="/provider/signup"
                   className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white no-underline"
                   style={{ background: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}
                 >
-                  Complete application →
+                  {t("provider.dashboard.completeApp")}
                 </Link>
               </div>
             )}
@@ -259,14 +273,14 @@ export default function ProviderDashboard() {
           {/* Quick links & upcoming */}
           <div className="flex flex-col gap-4">
             <div className="rounded-xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
-              <h2 className="text-base font-semibold mb-4" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Quick links</h2>
+              <h2 className="text-base font-semibold mb-4" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{t("provider.dashboard.quickLinks")}</h2>
               <div className="flex flex-col gap-1">
                 {[
-                  { to: "/provider/leads", label: "Member leads" },
-                  { to: "/provider/profile", label: "Edit profile" },
-                  { to: "/provider/preview", label: "Preview public profile" },
-                  { to: "/modalities", label: "Browse modalities" },
-                  { to: "/for-providers", label: "Provider resources" },
+                  { to: "/provider/leads", label: t("provider.dashboard.linkLeads") },
+                  { to: "/provider/profile", label: t("provider.dashboard.linkEdit") },
+                  { to: "/provider/preview", label: t("provider.dashboard.linkPreview") },
+                  { to: "/modalities", label: t("provider.dashboard.linkModalities") },
+                  { to: "/for-providers", label: t("provider.dashboard.linkResources") },
                 ].map((item) => (
                   <Link
                     key={item.to}
@@ -284,32 +298,32 @@ export default function ProviderDashboard() {
             <div className="rounded-xl p-5" style={{ background: "rgba(212,34,126,0.03)", border: "1px solid rgba(212,34,126,0.08)" }}>
               <div className="flex items-center gap-2 mb-2">
                 <Clock size={14} style={{ color: "var(--hpf-crimson)" }} />
-                <p className="text-xs font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>Founding Provider Offer</p>
+                <p className="text-xs font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>{t("provider.dashboard.foundingTitle")}</p>
               </div>
               <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                0% platform commission for your first 90 days as a founding provider. Invite colleagues before spots fill up.
+                {t("provider.dashboard.foundingBody")}
               </p>
             </div>
           </div>
         </div>
 
         {/* My Reviews */}
-        <div className="rounded-xl p-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
+        <div className="rounded-xl p-6 mt-6" style={{ background: "white", border: "1px solid rgba(212,34,126,0.08)" }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold flex items-center gap-2" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
               <Star size={16} style={{ color: "#f59e0b" }} />
-              Member Reviews
+              {t("provider.dashboard.reviewsTitle")}
             </h2>
             {reviewCount > 0 && (
               <span className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                {reviewCount} review{reviewCount !== 1 ? "s" : ""} · avg {averageRating?.toFixed(1)} ★
+                {reviewCount} {t("provider.dashboard.reviewWord", { count: reviewCount })} · {t("provider.dashboard.reviewAvgStar", { avg: averageRating?.toFixed(1) })}
               </span>
             )}
           </div>
 
           {reviews.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-              No reviews yet. Once members rate you after sessions, they'll appear here.
+              {t("provider.dashboard.noReviews")}
             </p>
           ) : (
             <div className="flex flex-col gap-3">
@@ -318,14 +332,14 @@ export default function ProviderDashboard() {
                   <div className="flex items-center gap-2 mb-1">
                     <StarDisplay rating={r.rating} />
                     <span className="text-xs font-semibold" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)" }}>
-                      {r.memberName ?? "Member"}
+                      {r.memberName ?? t("provider.dashboard.memberFallback")}
                     </span>
                     <span className="text-xs ml-auto" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-                      {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                     </span>
                     {r.isHidden && (
                       <span className="text-xs font-medium px-1.5 py-0.5 rounded" style={{ background: "rgba(192,57,43,0.08)", color: "#c0392b", fontFamily: "var(--app-font-sans)" }}>
-                        Hidden
+                        {t("provider.dashboard.reviewHidden")}
                       </span>
                     )}
                   </div>
@@ -338,7 +352,7 @@ export default function ProviderDashboard() {
               ))}
               {reviews.length > 5 && (
                 <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textAlign: "center" }}>
-                  +{reviews.length - 5} more review{reviews.length - 5 !== 1 ? "s" : ""}
+                  {t("provider.dashboard.moreReviews", { count: reviews.length - 5 })}
                 </p>
               )}
             </div>

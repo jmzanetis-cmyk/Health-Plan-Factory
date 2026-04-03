@@ -525,7 +525,57 @@
     "feedbackNotHelpful": "Not helpful",
     "reconfigureTitle": "Reconfigure Plan",
     "reconfigureDesc": "Adjust your budget, goals, or preferences to regenerate your plan.",
-    "reconfigureBtn": "Update Preferences →"
+    "reconfigureBtn": "Update Preferences →",
+    "estCost": "Est. cost",
+    "less": "Less ↑",
+    "more": "More ↓",
+    "thumbsUp": "Thumbs up — this modality is helpful",
+    "thumbsDown": "Thumbs down — this modality is not helping",
+    "noLocalProviders": "No in-person providers found in your area · consider telehealth options",
+    "defaultTitle": "My personalized wellness plan",
+    "upgradeLoading": "Loading…",
+    "goalAchieved": "Goal achieved",
+    "goalPartial": "Goal partially achieved",
+    "outcomePainReduced": "Pain reduced",
+    "outcomeEnergyImproved": "Energy improved",
+    "outcomeStressManaged": "Stress managed",
+    "outcomeSleepBetter": "Sleep better",
+    "outcomeFitnessImproved": "Fitness improved",
+    "outcomeOther": "Other",
+    "outcomePlaceholder": "Anything you'd like to remember about your progress…",
+    "outcomeConfirm": "Confirm ✓",
+    "reconfigureLoading": "Updating plan…",
+    "reconfigureConfirm": "Confirm — Update my plan",
+    "noProvidersNotice": "Your plan modalities are listed below under \"Deprioritized\" because our directory doesn't yet have in-person providers mapped to that ZIP code. Your plan content is still fully personalized — try a nearby ZIP or enable telehealth to see modalities in your active plan.",
+    "feedbackError": "Couldn't save your feedback. Please try again.",
+    "updateSuccess": "Your plan has been updated.",
+    "updateError": "Couldn't update your plan. Please try again.",
+    "closeAria": "Close",
+    "copy": "Copy",
+    "evidenceLabel": {
+      "strong": "Strong Evidence",
+      "moderate": "Moderate Evidence",
+      "emerging": "Emerging Evidence"
+    },
+    "providersNearPlural": "{{count}} providers near you",
+    "goalAchievedFull": "Goal {{status}}",
+    "workingForMe": "Working for me?",
+    "cancelOutcome": "Cancel",
+    "cancelUpdate": "Cancel",
+    "outcomeNoteLabel": "Note (optional)",
+    "overBudget": "Over budget for this cycle · ${{cost}}/mo est.",
+    "nearYouCount": "{{count}} near you",
+    "myWellnessPlanFor": "My wellness plan for {{goal}}",
+    "savePlan": "Save Plan",
+    "upgradeHeading": "Upgrade to Plus",
+    "upgradePriceLine": "$9.99/mo — See real matched local providers for every modality in your plan. Phone, website, and booking info included.",
+    "upgradeSub": "Cancel anytime. Referral credits apply as a first-month discount.",
+    "upgradeGo": "Complete Purchase",
+    "couldNotShare": "Could not generate share link. Please try again.",
+    "outcomeLegend": "What outcome best describes your results?",
+    "noProvidersHeading": "No providers found near {{zip}}",
+    "planSummaryLine": "${{cost}}/mo · {{count}} evidence-based modalities",
+    "providersFoundNear": "✨ {{count}} providers found near you for this plan"
   },
   "coach": {
     "title": "AI Coach",
@@ -779,7 +829,57 @@
       "referral": "Referral from a provider",
       "other": "Other"
     },
-    "skip": "Skip survey"
+    "skip": "Skip survey",
+    "step1": {
+      "heading": "What best describes your current healthcare situation?",
+      "sub": "We use this to understand where people are starting from — not to judge."
+    },
+    "step2": {
+      "heading": "What's missing from your current healthcare?",
+      "sub": "Select all that apply — this is anonymous market research that helps us build better features."
+    },
+    "step3": {
+      "heading": "What would you most like to improve about how healthcare works for you?",
+      "sub": "Pick all that resonate with your experience."
+    },
+    "step4": {
+      "heading": "How likely would you be to use a service that builds you a personalized, budget-optimized wellness plan?",
+      "sub": "Be honest — your feedback helps us prioritize.",
+      "comment": "Anything else you'd like us to know?",
+      "placeholder": "Share your thoughts…",
+      "commentOptional": "optional"
+    },
+    "step5": {
+      "heading": "What's your primary wellness goal?",
+      "sub": "Select all that apply — we'll build your plan around these."
+    },
+    "step6": {
+      "heading": "What's your monthly wellness budget?",
+      "sub": "We'll optimize your plan to fit this range — no surprise costs.",
+      "perMonth": "per month"
+    },
+    "step7": {
+      "heading": "How did you find us?",
+      "sub": "Optional — helps us understand where to focus our growth."
+    },
+    "back": "Back",
+    "continue": "Continue",
+    "seePlan": "See My Personalized Plan →",
+    "stepOf": "Step {{step}} of {{total}}",
+    "footer": "Your responses are anonymous and used only to improve HealthPlanFactory. Health Plan Factory is a wellness tool — not a medical provider.",
+    "goals": {
+      "pain-relief": "Pain Relief",
+      "stress-reduction": "Stress Reduction",
+      "mobility": "Mobility",
+      "recovery": "Recovery",
+      "posture": "Posture",
+      "energy": "Energy",
+      "fitness": "Fitness",
+      "weight-loss": "Weight Loss",
+      "sleep": "Better Sleep",
+      "nutrition": "Nutrition Support",
+      "preventive": "Preventive Care"
+    }
   },
   "profile": {
     "title": "My Profile",
@@ -994,7 +1094,9 @@
       "previewUpcoming": "Upcoming",
       "previewSessions": "{{n}} sessions",
       "closePreview": "Close Preview",
-      "previewGoal": "Goal"
+      "previewGoal": "Goal",
+      "previewError": "Failed to generate preview",
+      "sendTestError": "Failed to send test digest"
     },
     "reEngagement": {
       "title": "Re-engagement Drip Emails",
@@ -1017,16 +1119,29 @@
         "noPlan": "Skipped — member has no plan.",
         "noEmail": "Skipped — profile has no email address.",
         "notFound": "Error — member ID not found."
-      }
+      },
+      "sendError": "Failed to send",
+      "bulkError": "Bulk send failed"
     },
-    "viewDetails": "View details →"
+    "viewDetails": "View details →",
+    "referrals": {
+      "total": "Total Referrals",
+      "rewarded": "Rewarded",
+      "conversionRate": "Conversion Rate",
+      "creditsIssued": "Credits Issued",
+      "pendingSub": "{{n}} pending",
+      "completedSub": "completed + rewarded",
+      "conversionNote": "referrals → completions",
+      "redeemedSub": "{{amount}} redeemed"
+    }
   },
   "employer": {
     "nav": {
       "dashboard": "Dashboard",
       "members": "Members",
-      "roi": "ROI Report",
-      "settings": "Settings"
+      "roi": "ROI & Impact",
+      "settings": "Settings",
+      "overview": "Overview"
     },
     "dashboard": {
       "title": "Employer Dashboard",
@@ -1035,7 +1150,26 @@
       "utilized": "Budget Utilized",
       "activePlans": "Active Plans",
       "viewMembers": "View Members →",
-      "viewROI": "View ROI Report →"
+      "viewROI": "View ROI Report →",
+      "billingError": "Unable to create billing session.",
+      "loadError": "Could not load dashboard.",
+      "inviteCodeHint": "Share with employees to enroll them in the benefit",
+      "privacyBanner": "Aggregate data only — individual member health information is never shared.",
+      "utilization": "Utilization",
+      "employeesOf": "of {{n}} employees",
+      "totalStipend": "total stipend pool",
+      "spent": "{{amount}} spent",
+      "suppressed": "Suppressed (<5 members)",
+      "nextInvoice": "Next Invoice",
+      "platformFee": "incl. 8% platform fee",
+      "monthlySpend": "Monthly Spend (6 months)",
+      "spendTooltip": "Spend",
+      "topModalities": "Top Modalities Used",
+      "noSessionData": "No session data yet",
+      "sessions_one": "{{count}} session",
+      "sessions_other": "{{count}} sessions",
+      "avgWellness": "Avg. Wellness Rating",
+      "wellnessNote": "Aggregated from anonymized session ratings across all enrolled employees. Individual data is never shared."
     },
     "members": {
       "title": "Coverage Analytics",
@@ -1146,7 +1280,45 @@
       "rejected": "Not Approved",
       "completeProfile": "Complete your profile to go live →",
       "viewLeads": "View Leads →",
-      "previewListing": "Preview Listing →"
+      "previewListing": "Preview Listing →",
+      "welcome": "Welcome back, {{name}}",
+      "subtitle": "Provider dashboard · {{date}}",
+      "editProfile": "Edit profile",
+      "viewLeadsBtn": "View leads",
+      "statsViews": "Profile views this month",
+      "statsRating": "Average rating",
+      "statsBookings": "Bookings this month",
+      "statsRecommendations": "Plan recommendations",
+      "comingSoon": "Coming soon",
+      "reviewWord_one": "review",
+      "reviewWord_other": "reviews",
+      "reviewAvgStar": "avg {{avg}} ★",
+      "profileCard": "Your profile",
+      "previewLink": "Preview",
+      "completeness": "Profile completeness",
+      "completeHint": "Complete your profile to get more leads — add bio, location, and pricing.",
+      "telehealthAvailable": "Telehealth available",
+      "perSessionLabel": "/session",
+      "statusActive": "Profile active",
+      "statusPending": "Pending review",
+      "statusOther": "Status: {{status}}",
+      "noProfile": "No provider profile found. Complete your application to appear in member searches.",
+      "completeApp": "Complete application →",
+      "quickLinks": "Quick links",
+      "linkLeads": "Member leads",
+      "linkEdit": "Edit profile",
+      "linkPreview": "Preview public profile",
+      "linkModalities": "Browse modalities",
+      "linkResources": "Provider resources",
+      "foundingTitle": "Founding Provider Offer",
+      "foundingBody": "0% platform commission for your first 90 days as a founding provider. Invite colleagues before spots fill up.",
+      "reviewsTitle": "Member Reviews",
+      "noReviews": "No reviews yet. Once members rate you after sessions, they'll appear here.",
+      "memberFallback": "Member",
+      "reviewHidden": "Hidden",
+      "moreReviews_one": "+1 more review",
+      "moreReviews_other": "+{{count}} more reviews",
+      "defaultName": "Provider"
     },
     "profile": {
       "title": "My Provider Profile",

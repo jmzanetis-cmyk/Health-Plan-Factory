@@ -20,65 +20,6 @@ export interface SurveyData {
   referralSource?: string;
 }
 
-/* ── Constants ── */
-const HEALTHCARE_SITUATIONS = [
-  { id: "insufficient-coverage", label: "I have insurance but it doesn't cover enough", icon: "🏥" },
-  { id: "uninsured", label: "I'm uninsured or underinsured", icon: "📋" },
-  { id: "out-of-pocket", label: "I rely mostly on out-of-pocket care", icon: "💳" },
-  { id: "generally-healthy", label: "I'm generally healthy and looking to stay that way", icon: "✅" },
-];
-
-const HEALTHCARE_GAPS = [
-  { id: "specialists", label: "Affordable access to specialists" },
-  { id: "holistic", label: "Alternative & holistic care" },
-  { id: "mental-health", label: "Mental health support" },
-  { id: "nutrition", label: "Nutrition & lifestyle guidance" },
-  { id: "preventive", label: "Preventive & proactive care" },
-  { id: "dental-vision", label: "Affordable dental & vision" },
-  { id: "coordination", label: "Something to tie it all together" },
-  { id: "satisfied", label: "Nothing — I'm satisfied" },
-];
-
-const DESIRED_IMPROVEMENTS = [
-  { id: "lower-costs", label: "Lower costs" },
-  { id: "personalized", label: "More personalized recommendations" },
-  { id: "easier-access", label: "Easier access to providers" },
-  { id: "preventive-focus", label: "Better preventive focus" },
-  { id: "integrative", label: "More natural/integrative options" },
-  { id: "coordination", label: "Simpler coordination" },
-  { id: "control", label: "More control over my choices" },
-];
-
-const LIKELIHOOD_OPTIONS = [
-  { value: 1, emoji: "😕", label: "Definitely not" },
-  { value: 2, emoji: "🤔", label: "Unlikely" },
-  { value: 3, emoji: "😐", label: "Maybe" },
-  { value: 4, emoji: "🙂", label: "Likely" },
-  { value: 5, emoji: "🤩", label: "Very likely" },
-];
-
-const BUDGET_RANGES = [
-  { id: "under-100", label: "Under $100", midpoint: 75 },
-  { id: "100-250", label: "$100–$250", midpoint: 175 },
-  { id: "250-500", label: "$250–$500", midpoint: 375 },
-  { id: "500-plus", label: "$500+", midpoint: 600 },
-];
-
-const REFERRAL_SOURCES = [
-  { id: "word-of-mouth", label: "Word of mouth" },
-  { id: "social-media", label: "Social media" },
-  { id: "search", label: "Search (Google, Bing, etc.)" },
-  { id: "employer-hr", label: "Employer / HR" },
-  { id: "referral", label: "Referral from a provider" },
-  { id: "other", label: "Other" },
-];
-
-/* ── Progress bar sections ── */
-const SECTIONS = [
-  { label: "Tell Us About Healthcare", steps: [1, 2, 3, 4] },
-  { label: "Personalize Your Plan", steps: [5, 6, 7] },
-];
-
 /* ── Slide animation ── */
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 56 : -56, opacity: 0 }),
@@ -206,6 +147,59 @@ export default function Survey() {
 
   const TOTAL_STEPS = 7;
 
+  /* ── i18n option arrays (defined here so t() is in scope) ── */
+  const HEALTHCARE_SITUATIONS = [
+    { id: "insufficient-coverage", label: t("survey.situations.insufficient-coverage"), icon: "🏥" },
+    { id: "uninsured", label: t("survey.situations.uninsured"), icon: "📋" },
+    { id: "out-of-pocket", label: t("survey.situations.out-of-pocket"), icon: "💳" },
+    { id: "generally-healthy", label: t("survey.situations.generally-healthy"), icon: "✅" },
+  ];
+  const HEALTHCARE_GAPS = [
+    { id: "specialists", label: t("survey.gaps.specialists") },
+    { id: "holistic", label: t("survey.gaps.holistic") },
+    { id: "mental-health", label: t("survey.gaps.mental-health") },
+    { id: "nutrition", label: t("survey.gaps.nutrition") },
+    { id: "preventive", label: t("survey.gaps.preventive") },
+    { id: "dental-vision", label: t("survey.gaps.dental-vision") },
+    { id: "coordination", label: t("survey.gaps.coordination") },
+    { id: "satisfied", label: t("survey.gaps.satisfied") },
+  ];
+  const DESIRED_IMPROVEMENTS = [
+    { id: "lower-costs", label: t("survey.improvements.lower-costs") },
+    { id: "personalized", label: t("survey.improvements.personalized") },
+    { id: "easier-access", label: t("survey.improvements.easier-access") },
+    { id: "preventive-focus", label: t("survey.improvements.preventive-focus") },
+    { id: "integrative", label: t("survey.improvements.integrative") },
+    { id: "coordination", label: t("survey.improvements.coordination") },
+    { id: "control", label: t("survey.improvements.control") },
+  ];
+  const LIKELIHOOD_OPTIONS = [
+    { value: 1, emoji: "😕", label: t("survey.likelihood.1") },
+    { value: 2, emoji: "🤔", label: t("survey.likelihood.2") },
+    { value: 3, emoji: "😐", label: t("survey.likelihood.3") },
+    { value: 4, emoji: "🙂", label: t("survey.likelihood.4") },
+    { value: 5, emoji: "🤩", label: t("survey.likelihood.5") },
+  ];
+  const BUDGET_RANGES = [
+    { id: "under-100", label: t("survey.budgetRanges.under-100"), midpoint: 75 },
+    { id: "100-250", label: t("survey.budgetRanges.100-250"), midpoint: 175 },
+    { id: "250-500", label: t("survey.budgetRanges.250-500"), midpoint: 375 },
+    { id: "500-plus", label: t("survey.budgetRanges.500-plus"), midpoint: 600 },
+  ];
+  const REFERRAL_SOURCES = [
+    { id: "word-of-mouth", label: t("survey.referralSources.word-of-mouth") },
+    { id: "social-media", label: t("survey.referralSources.social-media") },
+    { id: "search", label: t("survey.referralSources.search") },
+    { id: "employer-hr", label: t("survey.referralSources.employer-hr") },
+    { id: "referral", label: t("survey.referralSources.referral") },
+    { id: "other", label: t("survey.referralSources.other") },
+  ];
+  const TRANSLATED_GOALS = GOALS.map((g) => ({ ...g, label: t(`survey.goals.${g.id}`) }));
+  const SECTIONS = [
+    { label: t("survey.sections.about"), steps: [1, 2, 3, 4] },
+    { label: t("survey.sections.personalize"), steps: [5, 6, 7] },
+  ];
+
   const currentSection =
     step <= 4
       ? SECTIONS[0]
@@ -271,8 +265,8 @@ export default function Survey() {
       case 1:
         return (
           <StepShell
-            heading="What best describes your current healthcare situation?"
-            subtitle="We use this to understand where people are starting from — not to judge."
+            heading={t("survey.step1.heading")}
+            subtitle={t("survey.step1.sub")}
           >
             <SingleCard
               options={HEALTHCARE_SITUATIONS}
@@ -284,8 +278,8 @@ export default function Survey() {
       case 2:
         return (
           <StepShell
-            heading="What's missing from your current healthcare?"
-            subtitle="Select all that apply — this is anonymous market research that helps us build better features."
+            heading={t("survey.step2.heading")}
+            subtitle={t("survey.step2.sub")}
           >
             <MultiTile
               options={HEALTHCARE_GAPS}
@@ -297,8 +291,8 @@ export default function Survey() {
       case 3:
         return (
           <StepShell
-            heading="What would you most like to improve about how healthcare works for you?"
-            subtitle="Pick all that resonate with your experience."
+            heading={t("survey.step3.heading")}
+            subtitle={t("survey.step3.sub")}
           >
             <MultiTile
               options={DESIRED_IMPROVEMENTS}
@@ -312,8 +306,8 @@ export default function Survey() {
       case 4:
         return (
           <StepShell
-            heading="How likely would you be to use a service that builds you a personalized, budget-optimized wellness plan?"
-            subtitle="Be honest — your feedback helps us prioritize."
+            heading={t("survey.step4.heading")}
+            subtitle={t("survey.step4.sub")}
           >
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "space-between", marginBottom: "1.5rem" }}>
               {LIKELIHOOD_OPTIONS.map((opt) => {
@@ -364,12 +358,12 @@ export default function Survey() {
                   fontFamily: "var(--app-font-sans)",
                 }}
               >
-                Anything else you'd like us to know? <span style={{ color: "var(--text-muted)" }}>(optional)</span>
+                {t("survey.step4.comment")} <span style={{ color: "var(--text-muted)" }}>({t("survey.step4.commentOptional")})</span>
               </label>
               <textarea
                 value={data.likelihoodComment ?? ""}
                 onChange={(e) => save({ likelihoodComment: e.target.value })}
-                placeholder="Share your thoughts…"
+                placeholder={t("survey.step4.placeholder")}
                 rows={3}
                 style={{
                   width: "100%",
@@ -390,11 +384,11 @@ export default function Survey() {
       case 5:
         return (
           <StepShell
-            heading="What's your primary wellness goal?"
-            subtitle="Select all that apply — we'll build your plan around these."
+            heading={t("survey.step5.heading")}
+            subtitle={t("survey.step5.sub")}
           >
             <MultiTile
-              options={GOALS}
+              options={TRANSLATED_GOALS}
               selected={data.goals ?? []}
               onToggle={(id) => save({ goals: toggle(data.goals ?? [], id) })}
             />
@@ -403,8 +397,8 @@ export default function Survey() {
       case 6:
         return (
           <StepShell
-            heading="What's your monthly wellness budget?"
-            subtitle="We'll optimize your plan to fit this range — no surprise costs."
+            heading={t("survey.step6.heading")}
+            subtitle={t("survey.step6.sub")}
           >
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem" }}>
               {BUDGET_RANGES.map((opt) => {
@@ -443,7 +437,7 @@ export default function Survey() {
                         fontFamily: "var(--app-font-sans)",
                       }}
                     >
-                      per month
+                      {t("survey.step6.perMonth")}
                     </span>
                   </button>
                 );
@@ -454,8 +448,8 @@ export default function Survey() {
       case 7:
         return (
           <StepShell
-            heading="How did you find us?"
-            subtitle="Optional — helps us understand where to focus our growth."
+            heading={t("survey.step7.heading")}
+            subtitle={t("survey.step7.sub")}
           >
             <SingleCard
               options={REFERRAL_SOURCES}
@@ -592,7 +586,7 @@ export default function Survey() {
               letterSpacing: "0.05em",
             }}
           >
-            Step {step} of {TOTAL_STEPS} &nbsp;·&nbsp; {currentSection.label}
+            {t("survey.stepOf", { step, total: TOTAL_STEPS })} &nbsp;·&nbsp; {currentSection.label}
           </span>
         </div>
       </div>
@@ -660,7 +654,7 @@ export default function Survey() {
                   fontFamily: "var(--app-font-sans)",
                 }}
               >
-                Back
+                {t("survey.back")}
               </button>
             )}
             <button
@@ -681,7 +675,7 @@ export default function Survey() {
                 transition: "background 0.2s",
               }}
             >
-              {step === TOTAL_STEPS ? "See My Personalized Plan →" : "Continue"}
+              {step === TOTAL_STEPS ? t("survey.seePlan") : t("survey.continue")}
             </button>
           </div>
         </div>
@@ -699,8 +693,7 @@ export default function Survey() {
             margin: "0 auto",
           }}
         >
-          Your responses are anonymous and used only to improve HealthPlanFactory. Health Plan Factory
-          is a wellness tool — not a medical provider.
+          {t("survey.footer")}
         </p>
       </footer>
     </div>

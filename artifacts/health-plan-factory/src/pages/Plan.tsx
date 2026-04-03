@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; isTelehealth?: boolean }) {
+  const { t } = useTranslation();
   if (isTelehealth) {
     return (
       <span style={{
@@ -62,7 +63,7 @@ function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; is
       color: "var(--sage)",
       fontFamily: "var(--app-font-sans)",
     }}>
-      📍 {count} provider{count !== 1 ? "s" : ""} near you
+      📍 {count === 1 ? t("plan.providersNear", { count }) : t("plan.providersNearPlural", { count })}
     </span>
   );
 }
@@ -70,12 +71,14 @@ function ProviderCountBadge({ count, isTelehealth }: { count?: number | null; is
 const BASE = getApiBase();
 
 function EvidenceBadge({ level }: { level: EvidenceLevel }) {
+  const { t } = useTranslation();
   const styles: Record<EvidenceLevel, { bg: string; color: string }> = {
     Strong:   { bg: "rgba(125,181,92,0.1)",  color: "var(--sage)" },
     Moderate: { bg: "rgba(224,32,64,0.1)", color: "var(--hpf-crimson)" },
     Emerging: { bg: "rgba(212,34,126,0.07)",  color: "var(--hpf-pink)" },
   };
   const s = styles[level];
+  const labelKey = level === "Strong" ? "plan.evidenceLabel.strong" : level === "Moderate" ? "plan.evidenceLabel.moderate" : "plan.evidenceLabel.emerging";
   return (
     <span style={{
       display: "inline-block",
@@ -88,7 +91,7 @@ function EvidenceBadge({ level }: { level: EvidenceLevel }) {
       fontFamily: "var(--app-font-sans)",
       letterSpacing: "0.02em",
     }}>
-      {level} Evidence
+      {t(labelKey)}
     </span>
   );
 }
@@ -117,6 +120,7 @@ interface LmnContext {
 }
 
 function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, onUpgrade, feedback, onFeedback, feedbackLoading, isAuthenticated }: { item: PlanItem; rank: number; lmnContext?: LmnContext; nearbyProviderCount?: number | null; zipCode?: string; onUpgrade?: () => void; feedback?: "helpful" | "not_helpful"; onFeedback?: (modalityId: string, fb: "helpful" | "not_helpful") => void; feedbackLoading?: boolean; isAuthenticated?: boolean }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -197,7 +201,7 @@ function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, on
         <div style={{ display: "flex", gap: "1.5rem" }}>
           <div>
             <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-              Est. cost
+              {t("plan.estCost")}
             </p>
             <p style={{ fontFamily: "var(--app-font-mono)", fontSize: "1rem", fontWeight: 600, color: "var(--hpf-pink)" }}>
               ${item.estimatedMonthlyCost}/mo
@@ -205,7 +209,7 @@ function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, on
           </div>
           <div>
             <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-              Frequency
+              {t("plan.frequency")}
             </p>
             <p style={{ fontFamily: "var(--app-font-sans)", fontSize: "0.875rem", fontWeight: 500, color: "var(--text-secondary)" }}>
               {item.frequency}
@@ -226,7 +230,7 @@ function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, on
             fontFamily: "var(--app-font-sans)",
           }}
         >
-          {expanded ? "Less ↑" : "More ↓"}
+          {expanded ? t("plan.less") : t("plan.more")}
         </button>
       </div>
 
@@ -241,14 +245,14 @@ function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, on
           background: feedback === "not_helpful" ? "rgba(245,158,11,0.04)" : "transparent",
         }}>
           <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", flex: 1 }}>
-            Working for me?
+            {t("plan.workingForMe")}
           </span>
           <button
             type="button"
             disabled={feedbackLoading}
             onClick={() => onFeedback?.(item.modality.id, "helpful")}
             data-testid={`feedback-helpful-${item.modality.id}`}
-            aria-label="Thumbs up — this modality is helpful"
+            aria-label={t("plan.thumbsUp")}
             style={{
               background: feedback === "helpful" ? "rgba(22,163,74,0.12)" : "rgba(0,0,0,0.04)",
               border: feedback === "helpful" ? "1.5px solid rgba(22,163,74,0.4)" : "1.5px solid transparent",
@@ -268,7 +272,7 @@ function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, on
             disabled={feedbackLoading}
             onClick={() => onFeedback?.(item.modality.id, "not_helpful")}
             data-testid={`feedback-not-helpful-${item.modality.id}`}
-            aria-label="Thumbs down — this modality is not helping"
+            aria-label={t("plan.thumbsDown")}
             style={{
               background: feedback === "not_helpful" ? "rgba(245,158,11,0.15)" : "rgba(0,0,0,0.04)",
               border: feedback === "not_helpful" ? "1.5px solid rgba(245,158,11,0.5)" : "1.5px solid transparent",
@@ -422,6 +426,7 @@ function ModalityCard({ item, rank, lmnContext, nearbyProviderCount, zipCode, on
 }
 
 function DeprioritizedCard({ item, nearbyProviderCount }: { item: PlanItem; nearbyProviderCount?: number | null }) {
+  const { t } = useTranslation();
   const noLocalProviders = nearbyProviderCount === 0 && item.modality.category !== "telehealth";
   return (
     <div style={{
@@ -441,15 +446,15 @@ function DeprioritizedCard({ item, nearbyProviderCount }: { item: PlanItem; near
         </p>
         <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
           {noLocalProviders
-            ? "No in-person providers found in your area · consider telehealth options"
-            : `Over budget for this cycle · $${item.estimatedMonthlyCost}/mo est.`}
+            ? t("plan.noLocalProviders")
+            : t("plan.overBudget", { cost: item.estimatedMonthlyCost })}
         </p>
       </div>
       <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.2rem" }}>
         <EvidenceBadge level={item.modality.evidenceLevel} />
         {nearbyProviderCount !== undefined && nearbyProviderCount !== null && (
           <span style={{ fontSize: "0.6rem", fontFamily: "var(--app-font-sans)", color: "var(--text-muted)" }}>
-            {nearbyProviderCount} near you
+            {t("plan.nearYouCount", { count: nearbyProviderCount })}
           </span>
         )}
       </div>
@@ -975,7 +980,7 @@ export default function Plan() {
           if (previousFeedback === undefined) { delete updated[modalityId]; } else { updated[modalityId] = previousFeedback; }
           return updated;
         });
-        toast.error("Couldn't save your feedback. Please try again.");
+        toast.error(t("plan.feedbackError"));
       }
     } catch {
       // Revert optimistic update on network error
@@ -984,7 +989,7 @@ export default function Plan() {
         if (previousFeedback === undefined) { delete updated[modalityId]; } else { updated[modalityId] = previousFeedback; }
         return updated;
       });
-      toast.error("Couldn't save your feedback. Please try again.");
+      toast.error(t("plan.feedbackError"));
     } finally {
       setModalityFeedbackLoading((prev) => ({ ...prev, [modalityId]: false }));
     }
@@ -1043,9 +1048,9 @@ export default function Plan() {
       }
 
       setShowReconfigureModal(false);
-      toast.success("Your plan has been updated.");
+      toast.success(t("plan.updateSuccess"));
     } catch {
-      toast.error("Couldn't update your plan. Please try again.");
+      toast.error(t("plan.updateError"));
     } finally {
       setReconfigureLoading(false);
     }
@@ -1250,7 +1255,7 @@ export default function Plan() {
                 type="button"
                 onClick={() => setShowShareModal(false)}
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem", color: "var(--text-muted)" }}
-                aria-label="Close"
+                aria-label={t("common.close")}
               >
                 ✕
               </button>
@@ -1272,11 +1277,11 @@ export default function Plan() {
               </p>
               <p style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.1rem", fontWeight: 700, lineHeight: 1.25, marginBottom: "0.5rem" }}>
                 {intake.goals?.[0]
-                  ? `My wellness plan for ${intake.goals[0].toLowerCase()}`
-                  : "My personalized wellness plan"}
+                  ? t("plan.myWellnessPlanFor", { goal: intake.goals[0].toLowerCase() })
+                  : t("plan.defaultTitle")}
               </p>
               <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.7)", fontFamily: "var(--app-font-sans)", marginBottom: "1rem" }}>
-                ${plan.totalMonthlyCost}/mo · {plan.included.length} evidence-based modalities
+                {t("plan.planSummaryLine", { cost: plan.totalMonthlyCost, count: plan.included.length })}
               </p>
               {top3Modalities.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
@@ -1360,14 +1365,14 @@ export default function Plan() {
                       transition: "background 0.2s",
                     }}
                   >
-                    {copied ? "Copied!" : "Copy"}
+                    {copied ? t("plan.copied") : t("plan.copy")}
                   </button>
                 </div>
               </div>
             ) : (
               <div style={{ background: "rgba(212,34,126,0.04)", border: "1.5px solid rgba(212,34,126,0.12)", borderRadius: 12, padding: "0.875rem", marginBottom: "1rem" }}>
                 <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                  Could not generate share link. Please try again.
+                  {t("plan.couldNotShare")}
                 </p>
               </div>
             )}
@@ -1430,8 +1435,8 @@ export default function Plan() {
             >
               <span style={{ fontSize: "1rem" }}>✅</span>
               <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#15803d", fontFamily: "var(--app-font-sans)" }}>
-                Goal {outcomeStatus === "achieved" ? "achieved" : "partially achieved"}
-                {outcomeAt ? ` · ${new Date(outcomeAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
+                {outcomeStatus === "achieved" ? t("plan.goalAchieved") : t("plan.goalPartial")}
+                {outcomeAt ? ` · ${new Date(outcomeAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : ""}
               </span>
             </div>
           )}
@@ -1502,10 +1507,10 @@ export default function Plan() {
             <span style={{ fontSize: "1.25rem", flexShrink: 0, lineHeight: 1.4 }}>⚠️</span>
             <div>
               <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#92400e", fontFamily: "var(--app-font-sans)", marginBottom: "0.25rem" }}>
-                No providers found near {intake.zipCode}
+                {t("plan.noProvidersHeading", { zip: intake.zipCode })}
               </p>
               <p style={{ fontSize: "0.8rem", color: "#a16207", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, margin: 0 }}>
-                Your plan modalities are listed below under "Deprioritized" because our directory doesn't yet have in-person providers mapped to that ZIP code. Your plan content is still fully personalized — try a nearby ZIP or enable telehealth to see modalities in your active plan.
+                {t("plan.noProvidersNotice")}
               </p>
             </div>
           </div>
@@ -1722,7 +1727,7 @@ export default function Plan() {
               fontFamily: "var(--app-font-sans)",
               marginBottom: "1rem",
             }}>
-              ✨ {Object.values(providerCounts).reduce<number>((acc, c) => acc + (c || 0), 0)} providers found near you for this plan
+              {t("plan.providersFoundNear", { count: Object.values(providerCounts).reduce<number>((acc, c) => acc + (c || 0), 0) })}
             </p>
           )}
           <p style={{
@@ -1754,7 +1759,7 @@ export default function Plan() {
                 opacity: checkoutLoading ? 0.7 : 1,
               }}
             >
-              {checkoutLoading ? "Loading…" : "Upgrade to Plus →"}
+              {checkoutLoading ? t("plan.upgradeLoading") : t("plan.upgradeBtn")}
             </button>
             <Link
               to="/sign-up"
@@ -1770,7 +1775,7 @@ export default function Plan() {
                 fontFamily: "var(--app-font-sans)",
               }}
             >
-              Save Plan
+              {t("plan.savePlan")}
             </Link>
           </div>
           {/* Outcome modal */}
@@ -1802,16 +1807,16 @@ export default function Plan() {
                 {/* Label selection — radio group */}
                 <fieldset style={{ border: "none", padding: 0, margin: 0, marginBottom: "1.25rem" }}>
                   <legend style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    What improved most?
+                    {t("plan.outcomeLegend")}
                   </legend>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                     {[
-                      { value: "pain-reduced", label: "Pain reduced" },
-                      { value: "energy-improved", label: "Energy improved" },
-                      { value: "stress-managed", label: "Stress managed" },
-                      { value: "sleep-better", label: "Sleep better" },
-                      { value: "fitness-improved", label: "Fitness improved" },
-                      { value: "other", label: "Other" },
+                      { value: "pain-reduced", label: t("plan.outcomePainReduced") },
+                      { value: "energy-improved", label: t("plan.outcomeEnergyImproved") },
+                      { value: "stress-managed", label: t("plan.outcomeStressManaged") },
+                      { value: "sleep-better", label: t("plan.outcomeSleepBetter") },
+                      { value: "fitness-improved", label: t("plan.outcomeFitnessImproved") },
+                      { value: "other", label: t("plan.outcomeOther") },
                     ].map((opt) => {
                       const checked = outcomeFormLabel === opt.value;
                       return (
@@ -1851,13 +1856,13 @@ export default function Plan() {
 
                 {/* Optional note */}
                 <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", marginBottom: "0.4rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Note (optional)
+                  {t("plan.outcomeNoteLabel")}
                 </label>
                 <textarea
                   data-testid="outcome-note-input"
                   value={outcomeFormNote}
                   onChange={(e) => setOutcomeFormNote(e.target.value.slice(0, 500))}
-                  placeholder="Anything you'd like to remember about your progress…"
+                  placeholder={t("plan.outcomePlaceholder")}
                   rows={3}
                   style={{
                     width: "100%",
@@ -1880,7 +1885,7 @@ export default function Plan() {
                     onClick={() => setShowOutcomeModal(false)}
                     style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(0,0,0,0.12)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
                   >
-                    Cancel
+                    {t("plan.cancelOutcome")}
                   </button>
                   <button
                     type="button"
@@ -1889,7 +1894,7 @@ export default function Plan() {
                     disabled={outcomeSubmitting}
                     style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "#15803d", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: outcomeSubmitting ? "default" : "pointer", opacity: outcomeSubmitting ? 0.7 : 1, fontFamily: "var(--app-font-sans)" }}
                   >
-                    {outcomeSubmitting ? "Saving…" : "Confirm ✓"}
+                    {outcomeSubmitting ? t("plan.outcomeSaving") : t("plan.outcomeConfirm")}
                   </button>
                 </div>
               </div>
@@ -1910,26 +1915,26 @@ export default function Plan() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <h3 style={{ fontFamily: "var(--app-font-serif)", fontSize: "1.15rem", fontWeight: 700, color: "var(--hpf-pink)", marginBottom: "0.5rem" }}>
-                  Upgrade to Plus
+                  {t("plan.upgradeHeading")}
                 </h3>
                 <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)", lineHeight: 1.6, marginBottom: "0.5rem" }}>
-                  <strong>$9.99/mo</strong> — See real matched local providers for every modality in your plan. Phone, website, and booking info included.
+                  {t("plan.upgradePriceLine")}
                 </p>
                 <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", marginBottom: "1.25rem" }}>
-                  Cancel anytime. Referral credits apply as a first-month discount.
+                  {t("plan.upgradeSub")}
                 </p>
                 <div style={{ display: "flex", gap: "0.75rem" }}>
                   <button
                     onClick={() => setCheckoutModal(null)}
                     style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--hpf-pink)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(212,34,126,0.15)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
                   >
-                    Cancel
+                    {t("plan.cancelOutcome")}
                   </button>
                   <button
                     onClick={handleConfirmCheckout}
                     style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "var(--hpf-pink)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
                   >
-                    Continue to checkout →
+                    {t("plan.upgradeGo")}
                   </button>
                 </div>
               </div>
@@ -2046,7 +2051,7 @@ export default function Plan() {
                 disabled={reconfigureLoading}
                 style={{ flex: 1, padding: "0.7rem", borderRadius: 10, background: "transparent", color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem", border: "1.5px solid rgba(0,0,0,0.1)", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
               >
-                Cancel
+                {t("plan.cancelUpdate")}
               </button>
               <button
                 type="button"
@@ -2055,7 +2060,7 @@ export default function Plan() {
                 disabled={reconfigureLoading}
                 style={{ flex: 2, padding: "0.7rem", borderRadius: 10, background: "rgba(245,158,11,0.85)", color: "white", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: reconfigureLoading ? "wait" : "pointer", opacity: reconfigureLoading ? 0.7 : 1, fontFamily: "var(--app-font-sans)" }}
               >
-                {reconfigureLoading ? "Updating plan…" : "Confirm — Update my plan"}
+                {reconfigureLoading ? t("plan.reconfigureLoading") : t("plan.reconfigureConfirm")}
               </button>
             </div>
           </div>

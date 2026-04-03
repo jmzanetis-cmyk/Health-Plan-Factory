@@ -36,11 +36,12 @@ interface DashboardData {
 }
 
 export function EmployerNav({ active }: { active: string }) {
+  const { t } = useTranslation();
   const links = [
-    { to: "/employer/dashboard", label: "Overview" },
-    { to: "/employer/members", label: "Members" },
-    { to: "/employer/roi", label: "ROI & Impact" },
-    { to: "/employer/settings", label: "Coverage Rules" },
+    { to: "/employer/dashboard", label: t("employer.nav.overview") },
+    { to: "/employer/members", label: t("employer.nav.members") },
+    { to: "/employer/roi", label: t("employer.nav.roi") },
+    { to: "/employer/settings", label: t("employer.nav.coverageRules") },
   ];
   return (
     <nav style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 32 }}>
@@ -147,10 +148,10 @@ export default function EmployerDashboard() {
       if (json.url) {
         window.location.href = json.url;
       } else {
-        setBillingMsg(json.error ?? "Unable to create billing session.");
+        setBillingMsg(json.error ?? t("employer.dashboard.billingError"));
       }
     } catch {
-      setBillingMsg("Network error. Please try again.");
+      setBillingMsg(t("common.networkError"));
     } finally {
       setBillingLoading(false);
     }
@@ -167,8 +168,8 @@ export default function EmployerDashboard() {
   if (!data) {
     return (
       <div style={{ textAlign: "center", padding: 80 }}>
-        <p style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-secondary)" }}>Could not load dashboard.</p>
-        <button onClick={load} style={{ marginTop: 16, background: navy, color: "white", border: "none", borderRadius: 8, padding: "10px 20px", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>Retry</button>
+        <p style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-secondary)" }}>{t("employer.dashboard.loadError")}</p>
+        <button onClick={load} style={{ marginTop: 16, background: navy, color: "white", border: "none", borderRadius: 8, padding: "10px 20px", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>{t("common.tryAgain")}</button>
       </div>
     );
   }
@@ -177,6 +178,10 @@ export default function EmployerDashboard() {
     name: monthLabel(m.month),
     spend: m.totalCents / 100,
   }));
+
+  const spentSub = data.stats.totalSpentCents != null
+    ? t("employer.dashboard.spent", { amount: fmt(data.stats.totalSpentCents) })
+    : t("employer.dashboard.suppressed");
 
   return (
     <div style={{ background: "var(--warm-white)", minHeight: "100vh", padding: "40px 24px" }}>
@@ -247,7 +252,7 @@ export default function EmployerDashboard() {
             {copied ? t("common.copied") : t("common.copy")}
           </button>
           <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: "var(--text-secondary)" }}>
-            Share with employees to enroll them in the benefit
+            {t("employer.dashboard.inviteCodeHint")}
           </div>
         </div>
 
@@ -264,7 +269,7 @@ export default function EmployerDashboard() {
         }}>
           <Shield size={16} color={sage} style={{ flexShrink: 0 }} />
           <span style={{ fontFamily: "var(--app-font-sans)", fontSize: 13, color: sage, fontWeight: 500 }}>
-            Aggregate data only — individual member health information is never shared.
+            {t("employer.dashboard.privacyBanner")}
           </span>
         </div>
 
@@ -288,26 +293,26 @@ export default function EmployerDashboard() {
 
         {/* Stats grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 28 }}>
-          <StatCard icon={<Users size={18} />} label={t("employer.dashboard.enrolled")} value={String(data.stats.totalEnrolled)} sub={`of ${data.employer.numberOfEmployees} employees`} />
-          <StatCard icon={<DollarSign size={18} />} label={t("employer.dashboard.budget")} value={fmt(data.stats.totalBudgetCents)} sub="total stipend pool" />
-          <StatCard icon={<TrendingUp size={18} />} label="Utilization"
+          <StatCard icon={<Users size={18} />} label={t("employer.dashboard.enrolled")} value={String(data.stats.totalEnrolled)} sub={t("employer.dashboard.employeesOf", { n: data.employer.numberOfEmployees })} />
+          <StatCard icon={<DollarSign size={18} />} label={t("employer.dashboard.budget")} value={fmt(data.stats.totalBudgetCents)} sub={t("employer.dashboard.totalStipend")} />
+          <StatCard icon={<TrendingUp size={18} />} label={t("employer.dashboard.utilization")}
             value={data.stats.utilizationPct != null ? `${data.stats.utilizationPct}%` : "—"}
-            sub={data.stats.totalSpentCents != null ? `${fmt(data.stats.totalSpentCents)} spent` : "Suppressed (<5 members)"} />
-          <StatCard icon={<DollarSign size={18} />} label="Next Invoice" value={fmt(data.stats.monthlyInvoiceCents)} sub="incl. 8% platform fee" />
+            sub={spentSub} />
+          <StatCard icon={<DollarSign size={18} />} label={t("employer.dashboard.nextInvoice")} value={fmt(data.stats.monthlyInvoiceCents)} sub={t("employer.dashboard.platformFee")} />
         </div>
 
         {/* Charts */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
           {/* Monthly spend chart */}
           <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: "24px 20px" }}>
-            <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, marginBottom: 20 }}>Monthly Spend (6 months)</h3>
+            <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, marginBottom: 20 }}>{t("employer.dashboard.monthlySpend")}</h3>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={chartData} barCategoryGap="30%">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,34,126,0.06)" />
                 <XAxis dataKey="name" tick={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
                 <Tooltip
-                  formatter={(v: number) => [`$${v.toFixed(2)}`, "Spend"]}
+                  formatter={(v: number) => [`$${v.toFixed(2)}`, t("employer.dashboard.spendTooltip")]}
                   contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, border: "1px solid rgba(212,34,126,0.15)", borderRadius: 8 }}
                 />
                 <Bar dataKey="spend" fill={navy} radius={[4, 4, 0, 0]} />
@@ -317,10 +322,10 @@ export default function EmployerDashboard() {
 
           {/* Top modalities */}
           <div style={{ background: "white", border: "1.5px solid rgba(212,34,126,0.1)", borderRadius: 12, padding: "24px 20px" }}>
-            <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, marginBottom: 20 }}>Top Modalities Used</h3>
+            <h3 style={{ fontFamily: "var(--app-font-sans)", fontSize: 14, fontWeight: 700, color: navy, marginBottom: 20 }}>{t("employer.dashboard.topModalities")}</h3>
             {data.topModalities.length === 0 ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 160, color: "var(--text-muted)", fontFamily: "var(--app-font-sans)", fontSize: 14 }}>
-                No session data yet
+                {t("employer.dashboard.noSessionData")}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -331,7 +336,7 @@ export default function EmployerDashboard() {
                     <div key={m.modalityId}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--app-font-sans)", fontSize: 13, marginBottom: 4 }}>
                         <span style={{ color: navy, fontWeight: 600 }}>{m.modalityId}</span>
-                        <span style={{ color: "var(--text-muted)" }}>{m.sessionCount} sessions</span>
+                        <span style={{ color: "var(--text-muted)" }}>{t("employer.dashboard.sessions", { count: m.sessionCount })}</span>
                       </div>
                       <div style={{ height: 6, background: "rgba(212,34,126,0.08)", borderRadius: 3 }}>
                         <div style={{ height: "100%", width: `${pct}%`, background: i === 0 ? navy : i === 1 ? sage : amber, borderRadius: 3 }} />
@@ -357,11 +362,11 @@ export default function EmployerDashboard() {
             flexWrap: "wrap",
           }}>
             <div>
-              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, opacity: 0.7, textTransform: "uppercase", letterSpacing: "0.08em" }}>Avg. Wellness Rating</div>
+              <div style={{ fontFamily: "var(--app-font-sans)", fontSize: 12, fontWeight: 600, opacity: 0.7, textTransform: "uppercase", letterSpacing: "0.08em" }}>{t("employer.dashboard.avgWellness")}</div>
               <div style={{ fontFamily: "var(--app-font-serif)", fontSize: "3rem", fontWeight: 700 }}>{data.stats.avgWellnessScore}<span style={{ fontSize: "1.2rem", opacity: 0.5 }}>/5</span></div>
             </div>
             <div style={{ flex: 1, fontFamily: "var(--app-font-sans)", fontSize: 14, opacity: 0.85, lineHeight: 1.6 }}>
-              Aggregated from anonymized session ratings across all enrolled employees. Individual data is never shared.
+              {t("employer.dashboard.wellnessNote")}
             </div>
           </div>
         )}

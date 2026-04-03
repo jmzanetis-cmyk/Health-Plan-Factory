@@ -525,7 +525,57 @@
     "feedbackNotHelpful": "No útil",
     "reconfigureTitle": "Reconfigurar Plan",
     "reconfigureDesc": "Ajusta tu presupuesto, objetivos o preferencias para regenerar tu plan.",
-    "reconfigureBtn": "Actualizar Preferencias →"
+    "reconfigureBtn": "Actualizar Preferencias →",
+    "estCost": "Costo est.",
+    "less": "Menos ↑",
+    "more": "Más ↓",
+    "thumbsUp": "Útil — esta modalidad me ayuda",
+    "thumbsDown": "No útil — esta modalidad no me está ayudando",
+    "noLocalProviders": "Sin proveedores presenciales en tu área · considera opciones de telesalud",
+    "defaultTitle": "Mi plan de bienestar personalizado",
+    "upgradeLoading": "Cargando…",
+    "goalAchieved": "Meta alcanzada",
+    "goalPartial": "Meta parcialmente alcanzada",
+    "outcomePainReduced": "Dolor reducido",
+    "outcomeEnergyImproved": "Energía mejorada",
+    "outcomeStressManaged": "Estrés manejado",
+    "outcomeSleepBetter": "Duermo mejor",
+    "outcomeFitnessImproved": "Estado físico mejorado",
+    "outcomeOther": "Otro",
+    "outcomePlaceholder": "Algo que quieras recordar sobre tu progreso…",
+    "outcomeConfirm": "Confirmar ✓",
+    "reconfigureLoading": "Actualizando plan…",
+    "reconfigureConfirm": "Confirmar — Actualizar mi plan",
+    "noProvidersNotice": "Las modalidades de tu plan aparecen abajo en \"Despriorizado\" porque nuestro directorio aún no tiene proveedores presenciales en ese código postal. El contenido de tu plan sigue siendo completamente personalizado — prueba un código postal cercano o activa la telesalud para ver modalidades en tu plan activo.",
+    "feedbackError": "No se pudo guardar tu comentario. Por favor intenta de nuevo.",
+    "updateSuccess": "Tu plan ha sido actualizado.",
+    "updateError": "No se pudo actualizar tu plan. Por favor intenta de nuevo.",
+    "closeAria": "Cerrar",
+    "copy": "Copiar",
+    "evidenceLabel": {
+      "strong": "Evidencia Sólida",
+      "moderate": "Evidencia Moderada",
+      "emerging": "Evidencia Emergente"
+    },
+    "providersNearPlural": "{{count}} proveedores cerca",
+    "goalAchievedFull": "Meta {{status}}",
+    "workingForMe": "¿Me está funcionando?",
+    "cancelOutcome": "Cancelar",
+    "cancelUpdate": "Cancelar",
+    "outcomeNoteLabel": "Nota (opcional)",
+    "overBudget": "Sobre presupuesto este ciclo · ${{cost}}/mes est.",
+    "nearYouCount": "{{count}} cerca de ti",
+    "myWellnessPlanFor": "Mi plan de bienestar para {{goal}}",
+    "savePlan": "Guardar Plan",
+    "upgradeHeading": "Actualizar a Plus",
+    "upgradePriceLine": "$9.99/mes — Ve proveedores locales reales para cada modalidad de tu plan. Teléfono, sitio web e información de reserva incluidos.",
+    "upgradeSub": "Cancela cuando quieras. Los créditos de referido se aplican como descuento en el primer mes.",
+    "upgradeGo": "Completar Compra",
+    "couldNotShare": "No se pudo generar el enlace para compartir. Inténtalo de nuevo.",
+    "outcomeLegend": "¿Qué resultado describe mejor tus resultados?",
+    "noProvidersHeading": "No se encontraron proveedores cerca de {{zip}}",
+    "planSummaryLine": "${{cost}}/mes · {{count}} modalidades basadas en evidencia",
+    "providersFoundNear": "✨ {{count}} proveedores encontrados cerca de ti para este plan"
   },
   "coach": {
     "title": "Coach de IA",
@@ -779,7 +829,57 @@
       "referral": "Referido de un proveedor",
       "other": "Otro"
     },
-    "skip": "Omitir encuesta"
+    "skip": "Omitir encuesta",
+    "step1": {
+      "heading": "¿Qué describe mejor tu situación actual de salud?",
+      "sub": "Usamos esto para entender el punto de partida — sin juzgar."
+    },
+    "step2": {
+      "heading": "¿Qué le falta a tu cuidado de salud actual?",
+      "sub": "Selecciona todo lo que aplique — es investigación anónima que nos ayuda a mejorar."
+    },
+    "step3": {
+      "heading": "¿Qué te gustaría mejorar más sobre cómo funciona tu atención médica?",
+      "sub": "Elige todo lo que resuene con tu experiencia."
+    },
+    "step4": {
+      "heading": "¿Qué tan probable es que uses un servicio que te construya un plan de bienestar personalizado y optimizado para tu presupuesto?",
+      "sub": "Sé honesto — tus comentarios nos ayudan a priorizar.",
+      "comment": "¿Algo más que quieras que sepamos?",
+      "placeholder": "Comparte tus ideas…",
+      "commentOptional": "opcional"
+    },
+    "step5": {
+      "heading": "¿Cuál es tu objetivo principal de bienestar?",
+      "sub": "Selecciona todo lo que aplique — construiremos tu plan en torno a estos."
+    },
+    "step6": {
+      "heading": "¿Cuál es tu presupuesto mensual de bienestar?",
+      "sub": "Optimizaremos tu plan para este rango — sin costos sorpresa.",
+      "perMonth": "por mes"
+    },
+    "step7": {
+      "heading": "¿Cómo nos encontraste?",
+      "sub": "Opcional — nos ayuda a entender dónde enfocar nuestro crecimiento."
+    },
+    "back": "Atrás",
+    "continue": "Continuar",
+    "seePlan": "Ver Mi Plan Personalizado →",
+    "stepOf": "Paso {{step}} de {{total}}",
+    "footer": "Tus respuestas son anónimas y se usan solo para mejorar HealthPlanFactory. Health Plan Factory es una herramienta de bienestar — no un proveedor médico.",
+    "goals": {
+      "pain-relief": "Alivio del Dolor",
+      "stress-reduction": "Reducción del Estrés",
+      "mobility": "Movilidad",
+      "recovery": "Recuperación",
+      "posture": "Postura",
+      "energy": "Energía",
+      "fitness": "Acondicionamiento Físico",
+      "weight-loss": "Pérdida de Peso",
+      "sleep": "Mejor Sueño",
+      "nutrition": "Apoyo Nutricional",
+      "preventive": "Cuidado Preventivo"
+    }
   },
   "profile": {
     "title": "Mi Perfil",
@@ -994,7 +1094,9 @@
       "previewUpcoming": "Próximas",
       "previewSessions": "{{n}} sesiones",
       "closePreview": "Cerrar Vista Previa",
-      "previewGoal": "Meta"
+      "previewGoal": "Meta",
+      "previewError": "Error al generar la vista previa",
+      "sendTestError": "Error al enviar el digest de prueba"
     },
     "reEngagement": {
       "title": "Correos de Reenganche",
@@ -1017,16 +1119,29 @@
         "noPlan": "Omitido — el miembro no tiene plan.",
         "noEmail": "Omitido — el perfil no tiene dirección de correo.",
         "notFound": "Error — ID de miembro no encontrado."
-      }
+      },
+      "sendError": "Error al enviar",
+      "bulkError": "El envío masivo falló"
     },
-    "viewDetails": "Ver detalles →"
+    "viewDetails": "Ver detalles →",
+    "referrals": {
+      "total": "Total de Referidos",
+      "rewarded": "Recompensados",
+      "conversionRate": "Tasa de Conversión",
+      "creditsIssued": "Créditos Emitidos",
+      "pendingSub": "{{n}} pendiente",
+      "completedSub": "completados + recompensados",
+      "conversionNote": "referidos → completados",
+      "redeemedSub": "{{amount}} canjeados"
+    }
   },
   "employer": {
     "nav": {
       "dashboard": "Panel",
       "members": "Miembros",
-      "roi": "Informe ROI",
-      "settings": "Configuración"
+      "roi": "ROI e Impacto",
+      "settings": "Configuración",
+      "overview": "Resumen"
     },
     "dashboard": {
       "title": "Panel del Empleador",
@@ -1035,7 +1150,26 @@
       "utilized": "Presupuesto Utilizado",
       "activePlans": "Planes Activos",
       "viewMembers": "Ver Miembros →",
-      "viewROI": "Ver Informe ROI →"
+      "viewROI": "Ver Informe ROI →",
+      "billingError": "No se pudo crear la sesión de pago.",
+      "loadError": "No se pudo cargar el panel.",
+      "inviteCodeHint": "Comparte con empleados para inscribirlos en el beneficio",
+      "privacyBanner": "Solo datos agregados — nunca se comparte información de salud individual de los miembros.",
+      "utilization": "Utilización",
+      "employeesOf": "de {{n}} empleados",
+      "totalStipend": "fondo total de estipendio",
+      "spent": "{{amount}} gastado",
+      "suppressed": "Suprimido (<5 miembros)",
+      "nextInvoice": "Próxima Factura",
+      "platformFee": "incl. 8% de comisión de plataforma",
+      "monthlySpend": "Gasto Mensual (6 meses)",
+      "spendTooltip": "Gasto",
+      "topModalities": "Modalidades Más Usadas",
+      "noSessionData": "Aún sin datos de sesiones",
+      "sessions_one": "{{count}} sesión",
+      "sessions_other": "{{count}} sesiones",
+      "avgWellness": "Calificación Promedio de Bienestar",
+      "wellnessNote": "Datos agregados de calificaciones anónimas de sesiones de todos los empleados inscritos. Los datos individuales nunca se comparten."
     },
     "members": {
       "title": "Análisis de Cobertura",
@@ -1146,7 +1280,45 @@
       "rejected": "No Aprobado",
       "completeProfile": "Completa tu perfil para salir en vivo →",
       "viewLeads": "Ver Leads →",
-      "previewListing": "Vista Previa del Listado →"
+      "previewListing": "Vista Previa del Listado →",
+      "welcome": "Bienvenido de nuevo, {{name}}",
+      "subtitle": "Panel de proveedor · {{date}}",
+      "editProfile": "Editar perfil",
+      "viewLeadsBtn": "Ver contactos",
+      "statsViews": "Vistas al perfil este mes",
+      "statsRating": "Calificación promedio",
+      "statsBookings": "Reservas este mes",
+      "statsRecommendations": "Recomendaciones en planes",
+      "comingSoon": "Próximamente",
+      "reviewWord_one": "reseña",
+      "reviewWord_other": "reseñas",
+      "reviewAvgStar": "prom. {{avg}} ★",
+      "profileCard": "Tu perfil",
+      "previewLink": "Vista previa",
+      "completeness": "Completitud del perfil",
+      "completeHint": "Completa tu perfil para obtener más contactos — agrega biografía, ubicación y precios.",
+      "telehealthAvailable": "Telesalud disponible",
+      "perSessionLabel": "/sesión",
+      "statusActive": "Perfil activo",
+      "statusPending": "En revisión",
+      "statusOther": "Estado: {{status}}",
+      "noProfile": "No se encontró perfil de proveedor. Completa tu solicitud para aparecer en búsquedas de miembros.",
+      "completeApp": "Completar solicitud →",
+      "quickLinks": "Accesos rápidos",
+      "linkLeads": "Contactos de miembros",
+      "linkEdit": "Editar perfil",
+      "linkPreview": "Ver perfil público",
+      "linkModalities": "Explorar modalidades",
+      "linkResources": "Recursos para proveedores",
+      "foundingTitle": "Oferta de Proveedor Fundador",
+      "foundingBody": "0% de comisión de plataforma durante tus primeros 90 días como proveedor fundador. Invita a colegas antes de que se llenen los cupos.",
+      "reviewsTitle": "Reseñas de Miembros",
+      "noReviews": "Aún sin reseñas. Una vez que los miembros te califiquen tras las sesiones, aparecerán aquí.",
+      "memberFallback": "Miembro",
+      "reviewHidden": "Oculto",
+      "moreReviews_one": "+1 reseña más",
+      "moreReviews_other": "+{{count}} reseñas más",
+      "defaultName": "Proveedor"
     },
     "profile": {
       "title": "Mi Perfil de Proveedor",
