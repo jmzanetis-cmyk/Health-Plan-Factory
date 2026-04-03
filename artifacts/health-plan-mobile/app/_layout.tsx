@@ -29,7 +29,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import "@/lib/backgroundHealthSync";
 import { registerBackgroundHealthSync } from "@/lib/backgroundHealthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { initializeRevenueCat, loginRevenueCat, logoutRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
+import { initializeRevenueCat, loginRevenueCat, logoutRevenueCat, SubscriptionProvider, useSubscription } from "@/lib/revenuecat";
 
 const apiBase = getApiBaseUrl();
 if (apiBase) {
@@ -39,10 +39,11 @@ setAuthTokenGetter(() => SecureStore.getItemAsync("auth_session_token"));
 
 try {
   initializeRevenueCat();
-} catch (err: any) {
-  console.warn("[RevenueCat] Init failed:", err?.message ?? "Unknown error");
+} catch (err: unknown) {
+  const message = err instanceof Error ? err.message : "Unknown error";
+  console.warn("[RevenueCat] Init failed:", message);
   if (__DEV__) {
-    Alert.alert("RevenueCat Unavailable", err?.message ?? "Unknown error");
+    Alert.alert("RevenueCat Unavailable", message);
   }
 }
 
@@ -54,6 +55,7 @@ const queryClient = new QueryClient({
 
 function AuthGate() {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { refetchCustomerInfo } = useSubscription();
   const router = useRouter();
   const segments = useSegments();
 
@@ -72,14 +74,18 @@ function AuthGate() {
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      loginRevenueCat(user.id);
+      loginRevenueCat(user.id).then(() => {
+        refetchCustomerInfo();
+      });
       registerBackgroundHealthSync(user.id).catch(() => {});
     }
   }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      logoutRevenueCat();
+      logoutRevenueCat().then(() => {
+        refetchCustomerInfo();
+      });
     }
   }, [isAuthenticated, isLoading]);
 

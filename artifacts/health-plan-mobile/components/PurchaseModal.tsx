@@ -21,7 +21,7 @@ interface PurchaseModalProps {
 }
 
 export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseModalProps) {
-  const { offerings, purchase, isPurchasing } = useSubscription();
+  const { offerings, purchase, isPurchasing, isOfferingsLoading, offeringsError, refetchOfferings } = useSubscription();
 
   const currentOffering = offerings?.current;
   const pkg: PurchasesPackage | undefined = currentOffering?.availablePackages[0];
@@ -113,10 +113,26 @@ export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseM
             >
               <Text style={styles.purchaseBtnText}>Subscribe on the web →</Text>
             </TouchableOpacity>
-          ) : (
+          ) : offeringsError ? (
+            <View style={styles.errorWrap}>
+              <Feather name="alert-circle" size={18} color={COLORS.amber} />
+              <Text style={styles.errorText}>Could not load plans. Check your connection.</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => refetchOfferings()} activeOpacity={0.8}>
+                <Text style={styles.retryBtnText}>Try Again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : isOfferingsLoading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator color={COLORS.pink} />
               <Text style={styles.loadingText}>Loading plans…</Text>
+            </View>
+          ) : (
+            <View style={styles.errorWrap}>
+              <Feather name="alert-circle" size={18} color={COLORS.textMuted} />
+              <Text style={styles.errorText}>No plans available. Try again later or upgrade on the web.</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={handleWebFallback} activeOpacity={0.8}>
+                <Text style={styles.retryBtnText}>Open Web →</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -232,6 +248,31 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.textMuted,
+  },
+  errorWrap: {
+    alignSelf: "stretch",
+    alignItems: "center",
+    padding: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  errorText: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+    color: COLORS.textMuted,
+    textAlign: "center",
+  },
+  retryBtn: {
+    marginTop: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.pink,
+  },
+  retryBtnText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 13,
+    color: COLORS.pink,
   },
   legalText: {
     fontFamily: FONTS.body,

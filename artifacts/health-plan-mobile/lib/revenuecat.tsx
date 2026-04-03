@@ -113,13 +113,16 @@ function useSubscriptionContext() {
     offerings: offeringsQuery.data,
     isSubscribed,
     isLoading: customerInfoQuery.isLoading || offeringsQuery.isLoading,
+    isOfferingsLoading: offeringsQuery.isLoading,
     customerInfoError: customerInfoQuery.error,
+    offeringsError: offeringsQuery.error,
     purchase: purchaseMutation.mutateAsync,
     restore: restoreMutation.mutateAsync,
     isPurchasing: purchaseMutation.isPending,
     isRestoring: restoreMutation.isPending,
     purchaseError: purchaseMutation.error,
     refetchCustomerInfo: customerInfoQuery.refetch,
+    refetchOfferings: offeringsQuery.refetch,
   };
 }
 
