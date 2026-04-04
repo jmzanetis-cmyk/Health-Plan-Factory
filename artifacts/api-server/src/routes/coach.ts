@@ -94,7 +94,7 @@ router.post("/coach", async (req: Request, res: Response) => {
   }
 
   if (userLanguage === "es") {
-    systemWithContext += "\n\nIMPORTANT: The member has selected Spanish as their preferred language. You MUST reply entirely in Spanish. Do not switch to English under any circumstances.";
+    systemWithContext += "\n\nIMPORTANT: The member has selected Spanish as their preferred language. You MUST reply entirely in Spanish in a warm, accessible, and encouraging tone — as if speaking with a trusted wellness friend. Do not switch to English under any circumstances, even for technical wellness terms (translate or explain them in Spanish).";
   }
 
   if (context) {
