@@ -284,6 +284,16 @@ function LanguageSection() {
     if (lang === currentLang || switching) return;
     setSwitching(true);
     await changeLanguage(lang);
+    // Persist to server — fire-and-forget; local storage is authoritative if this fails
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      fetch(`${apiBase}/api/profile/language`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ language: lang }),
+      }).catch(() => {});
+    }
     setSwitching(false);
   }
 

@@ -45,6 +45,18 @@ const CANNED_INSIGHTS: Record<string, string> = {
   "herbal-medicine": "Naturopathic physicians integrate evidence-guided botanical medicine with whole-person wellness care. Ask which herbal approaches they typically use for your primary health concern and how they track progress.",
 };
 
+// Spanish canned insight fallbacks
+const CANNED_INSIGHTS_ES: Record<string, string> = {
+  massage: "La terapia de masaje puede reducir significativamente la tensión muscular, el dolor crónico y el estrés. Pregunta a tu terapeuta si se especializa en masaje terapéutico o médico para entender cómo puede apoyar mejor tus objetivos.",
+  chiropractic: "La quiropráctica tiene sólida evidencia para aliviar el dolor de espalda y cuello mediante ajustes espinales y trabajo de tejidos blandos. Pregunta sobre su proceso de evaluación y cuántas visitas recomienda antes de evaluar el progreso.",
+  acupuncture: "La acupuntura tiene evidencia clínica para el alivio del dolor, la reducción del estrés y la regulación del sueño. Pregunta cuántas sesiones recomienda antes de evaluar si el tratamiento está funcionando para ti.",
+  "physical-therapy": "La fisioterapia es uno de los enfoques con mayor evidencia para la rehabilitación de lesiones y el manejo del dolor crónico. Pregunta sobre el programa de ejercicios en casa que diseñarán para extender tu progreso entre sesiones.",
+  "registered-dietitian": "Una dietista registrada ofrece la orientación nutricional más rigurosa clínicamente, especialmente para condiciones como disfunción metabólica o problemas digestivos. Pregunta qué datos de laboratorio o historial de salud utilizará para personalizar tu estrategia alimentaria.",
+  dpc: "La Atención Primaria Directa te da acceso ilimitado a un médico por una cuota mensual fija, facilitando la atención preventiva y las cartas de necesidad médica para el reembolso de HSA. Pregunta si pueden emitir una Carta de Necesidad Médica para los servicios de bienestar ya en tu plan.",
+  shiatsu: "El shiatsu combina técnicas japonesas de presión en puntos específicos con la teoría de meridianos para aliviar la tensión y restaurar el flujo de energía. Pregunta sobre su formación y qué condiciones de salud tratan con más frecuencia.",
+  "herbal-medicine": "Los médicos naturopáticos integran la medicina botánica basada en evidencia con el cuidado integral de la persona. Pregunta qué enfoques herbales utilizan típicamente para tu principal preocupación de salud y cómo miden el progreso.",
+};
+
 const router: IRouter = Router();
 
 router.get("/providers", async (req, res) => {
@@ -1006,18 +1018,23 @@ router.post("/providers/insight", async (req, res) => {
     }
   }
 
-  const { providerName, specialty, city, state, modalityId } =
+  const { providerName, specialty, city, state, modalityId, language } =
     req.body as {
       providerName?: string;
       specialty?: string;
       city?: string;
       state?: string;
       modalityId?: string;
+      language?: string;
     };
 
-  const fallback =
-    CANNED_INSIGHTS[modalityId || ""] ||
-    `${specialty || "This provider"} can be a valuable part of a whole-person wellness plan. Ask about their experience with your specific health goals at the first visit.`;
+  const isSpanish = language === "es";
+
+  const fallback = isSpanish
+    ? (CANNED_INSIGHTS_ES[modalityId || ""] ||
+        `${specialty || "Este proveedor"} puede ser una parte valiosa de un plan de bienestar integral. Pregunta sobre su experiencia con tus objetivos de salud específicos en la primera visita.`)
+    : (CANNED_INSIGHTS[modalityId || ""] ||
+        `${specialty || "This provider"} can be a valuable part of a whole-person wellness plan. Ask about their experience with your specific health goals at the first visit.`);
 
   if (!anthropic) {
     res.json({ insight: fallback });
@@ -1025,8 +1042,10 @@ router.post("/providers/insight", async (req, res) => {
   }
 
   try {
-    const location = [city, state].filter(Boolean).join(", ") || "your area";
-    const prompt = `You are a wellness advisor for HealthPlanFactory. Write exactly 2 concise sentences for a member who is considering seeing ${providerName || "a provider"} (${specialty || modalityId || "wellness care"}) in ${location}. Cover: (1) the primary evidence-based health benefit of this modality, and (2) one specific, smart question to ask at the first visit. Be warm but precise. No bullet points, no intros.`;
+    const location = [city, state].filter(Boolean).join(", ") || (isSpanish ? "tu área" : "your area");
+    const prompt = isSpanish
+      ? `Eres un asesor de bienestar para HealthPlanFactory. Escribe exactamente 2 oraciones concisas en español para un miembro que está considerando ver a ${providerName || "un proveedor"} (${specialty || modalityId || "bienestar"}) en ${location}. Cubre: (1) el principal beneficio de salud basado en evidencia de esta modalidad, y (2) una pregunta específica e inteligente para hacer en la primera visita. Sé cálido pero preciso. Sin viñetas, sin introducciones.`
+      : `You are a wellness advisor for HealthPlanFactory. Write exactly 2 concise sentences for a member who is considering seeing ${providerName || "a provider"} (${specialty || modalityId || "wellness care"}) in ${location}. Cover: (1) the primary evidence-based health benefit of this modality, and (2) one specific, smart question to ask at the first visit. Be warm but precise. No bullet points, no intros.`;
 
     const msg = await anthropic.messages.create({
       model: "claude-3-haiku-20240307",

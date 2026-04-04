@@ -19,6 +19,7 @@ interface Modality {
   lmnEligible: boolean;
   evidenceSummary: string | null;
   metaDescription: string | null;
+  descriptionEs: string | null;
 }
 
 interface EditState {
@@ -30,6 +31,7 @@ interface EditState {
 interface EvidenceEditState {
   evidenceSummary: string;
   metaDescription: string;
+  descriptionEs: string;
 }
 
 export default function AdminModalities() {
@@ -44,7 +46,7 @@ export default function AdminModalities() {
   const [togglingLmnId, setTogglingLmnId] = useState<string | null>(null);
 
   const [evidenceEditId, setEvidenceEditId] = useState<string | null>(null);
-  const [evidenceEditState, setEvidenceEditState] = useState<EvidenceEditState>({ evidenceSummary: "", metaDescription: "" });
+  const [evidenceEditState, setEvidenceEditState] = useState<EvidenceEditState>({ evidenceSummary: "", metaDescription: "", descriptionEs: "" });
   const [savingEvidenceId, setSavingEvidenceId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,6 +99,7 @@ export default function AdminModalities() {
     setEvidenceEditState({
       evidenceSummary: m.evidenceSummary ?? "",
       metaDescription: m.metaDescription ?? "",
+      descriptionEs: m.descriptionEs ?? "",
     });
   };
 
@@ -110,6 +113,7 @@ export default function AdminModalities() {
         body: JSON.stringify({
           evidenceSummary: evidenceEditState.evidenceSummary,
           metaDescription: evidenceEditState.metaDescription,
+          descriptionEs: evidenceEditState.descriptionEs,
         }),
       });
       if (!res.ok) throw new Error("Failed");
@@ -315,6 +319,16 @@ export default function AdminModalities() {
                               placeholder="SEO meta description (140–160 characters)"
                               style={{ ...inputStyle, width: "100%", padding: "8px 12px", fontSize: 13, marginBottom: 10 }}
                               maxLength={170}
+                            />
+                            <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--hpf-pink)", fontFamily: "var(--app-font-sans)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                              Descripción en Español
+                            </p>
+                            <textarea
+                              value={evidenceEditState.descriptionEs}
+                              onChange={(e) => setEvidenceEditState((s) => ({ ...s, descriptionEs: e.target.value }))}
+                              rows={5}
+                              placeholder="Spanish description for this modality. Shown to members with Spanish selected as their preferred language."
+                              style={{ ...inputStyle, width: "100%", padding: "10px 12px", fontSize: 13, lineHeight: 1.6, resize: "vertical", marginBottom: 10 }}
                             />
                             <div className="flex items-center gap-1.5">
                               <button onClick={() => saveEvidenceEdit(m.id)} disabled={savingEvidenceId === m.id} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: "var(--hpf-pink)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}>

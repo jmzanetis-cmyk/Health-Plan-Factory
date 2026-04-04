@@ -80,6 +80,23 @@ router.post("/coach", async (req: Request, res: Response) => {
   let systemWithContext = SYSTEM_PROMPT;
   const contextParts: string[] = [];
 
+  // Load user language preference
+  let userLanguage = "en";
+  try {
+    const [prof] = await db
+      .select({ language: profiles.language })
+      .from(profiles)
+      .where(eq(profiles.id, req.user!.id))
+      .limit(1);
+    userLanguage = prof?.language ?? "en";
+  } catch {
+    // Non-blocking — default to English
+  }
+
+  if (userLanguage === "es") {
+    systemWithContext += "\n\nIMPORTANT: The member has selected Spanish as their preferred language. You MUST reply entirely in Spanish. Do not switch to English under any circumstances.";
+  }
+
   if (context) {
     if (context.streakDays !== undefined) contextParts.push(`Member's current streak: ${context.streakDays} days`);
     if (context.recentMood !== undefined) contextParts.push(`Recent mood score: ${context.recentMood}/5`);

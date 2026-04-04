@@ -1,10 +1,26 @@
 import i18n from "@/i18n";
 
+const BASE = import.meta.env.BASE_URL.replace(/\/+$/, "");
+
+async function persistLanguageToServer(lang: "en" | "es") {
+  try {
+    await fetch(`${BASE}/api/profile/language`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ language: lang }),
+    });
+  } catch {
+    // Non-blocking — language is always stored in localStorage regardless
+  }
+}
+
 export function LanguageSwitcher({ className = "" }: { className?: string }) {
   const currentLang = i18n.language?.startsWith("es") ? "es" : "en";
 
   const toggle = (lang: "en" | "es") => {
     i18n.changeLanguage(lang);
+    persistLanguageToServer(lang);
   };
 
   return (

@@ -71,6 +71,7 @@ export const profiles = pgTable(
     referralCode: text("referral_code"),               // unique shareable code, e.g. "HPF-ABCD1234"
     referralCount: integer("referral_count").notNull().default(0), // number of successful referrals made
     phone: text("phone"),                               // for SMS notifications
+    language: text("language").default("en"),           // "en" | "es"
     communicationPrefs: jsonb("communication_prefs")
       .$type<{ email: boolean; sms: boolean }>()
       .default({ email: true, sms: false }),
@@ -111,6 +112,7 @@ export const modalities = pgTable("modalities", {
   isActive: boolean("is_active").notNull().default(true),
   evidenceSummary: text("evidence_summary"),
   metaDescription: text("meta_description"),
+  descriptionEs: text("description_es"),
   relatedModalities: jsonb("related_modalities").notNull().default([]).$type<string[]>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
