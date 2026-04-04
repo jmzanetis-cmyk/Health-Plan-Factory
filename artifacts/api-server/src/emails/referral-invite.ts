@@ -45,7 +45,7 @@ export function referralInviteEmail(props: ReferralInviteEmailProps): { subject:
           <p style="color:#2C2825;font-family:monospace;font-size:24px;font-weight:700;letter-spacing:0.1em;margin:0;">${props.referralCode}</p>
         </div>
         <p style="color:#4a5568;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;margin:0 0 28px;">
-          Sign up and get <strong style="color:#D4227E;">$3 in free credits</strong> to unlock your first wellness modality.
+          Sign up and your <strong style="color:#D4227E;">first month of Plus is on us</strong> — a $9.99 credit is automatically applied when you subscribe.
         </p>
         <div style="text-align:center;">
           <a href="${props.signupUrl}" style="display:inline-block;background:#D4227E;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:700;padding:14px 32px;border-radius:10px;text-decoration:none;">Join Health Plan Factory →</a>

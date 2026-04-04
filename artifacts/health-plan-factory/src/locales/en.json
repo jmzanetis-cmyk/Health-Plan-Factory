@@ -690,8 +690,8 @@
     "backToModalities": "← Back to modalities"
   },
   "referral": {
-    "title": "Refer Friends, Earn Credits",
-    "sub": "Share your unique referral link. When a friend signs up and builds a plan, you both earn credits toward provider unlocks.",
+    "title": "Refer & Earn",
+    "sub": "Share your link — your friend's first month of Plus is free, and you earn $3 credit when they build their first plan.",
     "yourLink": "Your referral link",
     "copy": "Copy",
     "copied": "Copied!",
@@ -704,10 +704,10 @@
     "howItWorks": "How it works",
     "howItWorksStep1": "Share your unique referral link with friends, family, or colleagues.",
     "howItWorksStep2": "When they sign up and build their first wellness plan, the reward triggers.",
-    "howItWorksStep3": "You both receive a referral credit — automatically applied as a discount on your first month of Plus.",
+    "howItWorksStep3": "Your friend gets their first month of Plus free ($9.99 credit). You earn $3 credit — both applied automatically at checkout.",
     "step1": "Share your unique link",
     "step2": "Friend signs up and builds a plan",
-    "step3": "You both earn $5 in unlock credits",
+    "step3": "Friend's first plan is free — you earn $3",
     "creditBalanceAmount": "You have {{amount}} in referral credits",
     "creditsAppliedDesc": "Credits are automatically applied as a discount on your first month of Plus.",
     "history": "Referral History",

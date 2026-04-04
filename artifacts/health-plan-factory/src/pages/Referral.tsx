@@ -242,7 +242,7 @@ export default function Referral() {
 
   function shareVia(channel: "sms" | "email" | "whatsapp" | "twitter") {
     if (!referralLink) return;
-    const msg = `Join me on HealthPlanFactory — the personalized wellness platform that helps you find the right modalities for your goals and budget. Use my referral link to earn a credit toward Plus: ${referralLink}`;
+    const msg = `Join me on HealthPlanFactory — the personalized wellness platform that builds you a custom health plan. Use my referral link and your first month of Plus is free: ${referralLink}`;
     const encodedMsg = encodeURIComponent(msg);
     const encodedLink = encodeURIComponent(referralLink);
     const urls: Record<string, string> = {
@@ -319,9 +319,9 @@ export default function Referral() {
         </h2>
         <div className="flex flex-col gap-3">
           {[
-            { step: "1", text: "Share your unique referral link with friends, family, or colleagues." },
-            { step: "2", text: "When they sign up and build their first wellness plan, the reward triggers." },
-            { step: "3", text: "You both receive a referral credit — automatically applied as a discount on your first month of Plus." },
+            { step: "1", text: t("referral.howItWorksStep1") },
+            { step: "2", text: t("referral.howItWorksStep2") },
+            { step: "3", text: t("referral.howItWorksStep3") },
           ].map((item) => (
             <div key={item.step} className="flex items-start gap-3">
               <div

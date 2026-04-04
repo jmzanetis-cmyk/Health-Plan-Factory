@@ -423,6 +423,13 @@ export default function SettingsScreen() {
     },
   ];
 
+  const referralRow: SettingsRow = {
+    id: "referral",
+    icon: "gift",
+    label: t("settings.referEarn"),
+    onPress: () => router.push("/referral" as never),
+  };
+
   const supportRows: SettingsRow[] = [
     {
       id: "privacy",
@@ -525,6 +532,24 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionLabel}>{t("settings.notifications")}</Text>
         <NotificationPrefsSection />
+
+        <Text style={styles.sectionLabel}>{t("settings.referEarn")}</Text>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={referralRow.onPress}
+          activeOpacity={0.7}
+        >
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Feather name="gift" size={16} color={COLORS.amber} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowLabel}>{t("settings.referEarnTitle")}</Text>
+              <Text style={[styles.rowValue, { fontSize: 12, marginTop: 1 }]}>{t("settings.referEarnSub")}</Text>
+            </View>
+            <Feather name="chevron-right" size={16} color={COLORS.textLight} />
+          </View>
+        </TouchableOpacity>
 
         <Text style={styles.sectionLabel}>{t("settings.support")}</Text>
         <View style={styles.card}>

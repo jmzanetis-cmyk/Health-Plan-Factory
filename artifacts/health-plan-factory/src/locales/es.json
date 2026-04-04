@@ -690,8 +690,8 @@
     "backToModalities": "← Volver a modalidades"
   },
   "referral": {
-    "title": "Refiere Amigos, Gana Créditos",
-    "sub": "Comparte tu enlace único de referido. Cuando un amigo se registra y crea un plan, ambos ganan créditos para desbloquear proveedores.",
+    "title": "Refiere y Gana",
+    "sub": "Comparte tu enlace — el primer mes de Plus de tu amigo es gratis, y tú ganas $3 de crédito cuando crea su primer plan.",
     "yourLink": "Tu enlace de referido",
     "copy": "Copiar",
     "copied": "¡Copiado!",
@@ -704,10 +704,10 @@
     "howItWorks": "Cómo funciona",
     "howItWorksStep1": "Comparte tu enlace de referido único con amigos, familia o colegas.",
     "howItWorksStep2": "Cuando se registren y creen su primer plan de bienestar, se activa la recompensa.",
-    "howItWorksStep3": "Ambos reciben un crédito de referido — aplicado automáticamente como descuento en tu primer mes de Plus.",
+    "howItWorksStep3": "Tu amigo recibe su primer mes de Plus gratis (crédito de $9.99). Tú ganas $3 — ambos aplicados automáticamente al pagar.",
     "step1": "Comparte tu enlace único",
     "step2": "El amigo se registra y crea un plan",
-    "step3": "Ambos ganan $5 en créditos de desbloqueo",
+    "step3": "El primer plan del amigo es gratis — tú ganas $3",
     "creditBalanceAmount": "Tienes {{amount}} en créditos de referido",
     "creditsAppliedDesc": "Los créditos se aplican automáticamente como descuento en tu primer mes de Plus.",
     "history": "Historial de Referidos",

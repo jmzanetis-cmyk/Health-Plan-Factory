@@ -481,12 +481,12 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
     createdAt: now,
   });
 
-  // Award $3 welcome credit to the referred member
+  // Award $9.99 (999 cents) welcome credit to the referred member — covers their first month of Plus free
   await db.insert(memberCredits).values({
     id: randomUUID(),
     profileId: referredMemberId,
     source: "referral",
-    amountCents: 300,
+    amountCents: 999,
     used: false,
     referralId: pendingReferral.id,
     createdAt: now,
@@ -532,7 +532,7 @@ export async function maybeRewardReferrer(referredMemberId: string): Promise<voi
           type: "referral-reward",
           subject,
           html,
-          smsBody: `Health Plan Factory: Your referral just earned you $3 in credits! Log in to use them.`,
+          smsBody: `Health Plan Factory: Your referral just earned you $3 in credits! Your friend also gets their first month of Plus free. Log in to see your balance.`,
         });
       }
     } catch (err) {
