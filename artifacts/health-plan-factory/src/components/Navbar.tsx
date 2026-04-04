@@ -182,15 +182,18 @@ export function Navbar() {
           ) : null}
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden p-2 rounded-md transition-colors"
-          style={{ color: "var(--hpf-pink)" }}
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        {/* Mobile: language switcher + hamburger — always visible */}
+        <div className="md:hidden flex items-center gap-2">
+          <LanguageSwitcher />
+          <button
+            className="p-2 rounded-md transition-colors"
+            style={{ color: "var(--hpf-pink)" }}
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu */}
@@ -241,9 +244,6 @@ export function Navbar() {
                 <UserMenu onClose={() => setMobileOpen(false)} />
               </div>
             )}
-            <div className="pt-4">
-              <LanguageSwitcher />
-            </div>
           </div>
         </div>
       )}
