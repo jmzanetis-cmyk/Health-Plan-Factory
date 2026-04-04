@@ -68,6 +68,12 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en, es]
+          description: Language for localised fields (defaults to authenticated user profile language or "en")
       responses:
         "200":
           description: List of modalities
@@ -157,6 +163,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en, es]
+          description: Language for localised fields (defaults to authenticated user profile language or "en")
       responses:
         "200":
           description: Modality detail
@@ -1674,6 +1686,95 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get the authenticated user's profile
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  email:
+                    type: string
+                  language:
+                    type: string
+                    enum: [en, es]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: patchProfile
+      tags: [profile]
+      summary: Update the authenticated user's profile (language, etc.)
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  enum: [en, es]
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  language:
+                    type: string
+                    enum: [en, es]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /profile/language:
+    patch:
+      operationId: patchProfileLanguage
+      tags: [profile]
+      summary: Update only the authenticated user's language preference
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [language]
+              properties:
+                language:
+                  type: string
+                  enum: [en, es]
+      responses:
+        "200":
+          description: Updated language
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  language:
+                    type: string
+                    enum: [en, es]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /profile/comms-prefs:
     get:
       operationId: getCommsPrefs
@@ -2161,6 +2262,10 @@ components:
           type: string
           nullable: true
           description: SEO meta description (140–160 chars)
+        descriptionEs:
+          type: string
+          nullable: true
+          description: Spanish translation of the modality description
         relatedModalities:
           type: array
           items:

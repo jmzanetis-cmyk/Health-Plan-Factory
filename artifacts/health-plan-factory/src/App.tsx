@@ -1,12 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@workspace/replit-auth-web";
+import { AuthProvider, useAuth } from "@workspace/replit-auth-web";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import i18n from "@/i18n";
 
 /** Silently captures ?ref=CODE from any URL and stores it in localStorage for post-auth registration.
  *  Must live inside <BrowserRouter> but outside <Routes> so it runs on every page visit. */
@@ -21,10 +22,41 @@ function ReferralCapture() {
   return null;
 }
 
+const BASE_APP = import.meta.env.BASE_URL.replace(/\/+$/, "");
+
+/** Syncs server-side language preference to i18n on login / page restore.
+ *  Runs once when the user is authenticated; server language wins for cross-device sync. */
+function LanguageSyncer() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const syncedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || !user) return;
+    const userId = user.id ?? user.email ?? "unknown";
+    if (syncedRef.current === userId) return; // already synced this session
+    syncedRef.current = userId;
+
+    fetch(`${BASE_APP}/api/profile`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        const serverLang = data?.language;
+        if (serverLang && (serverLang === "en" || serverLang === "es")) {
+          if (i18n.language !== serverLang) {
+            i18n.changeLanguage(serverLang);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [isAuthenticated, isLoading, user]);
+
+  return null;
+}
+
 function AppContent() {
   return (
     <>
       <ReferralCapture />
+      <LanguageSyncer />
       <AppRoutes />
     </>
   );

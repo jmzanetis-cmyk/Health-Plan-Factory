@@ -50,6 +50,10 @@ export const ListModalitiesResponseItem = zod.object({
     .string()
     .nullish()
     .describe("SEO meta description (140–160 chars)"),
+  descriptionEs: zod
+    .string()
+    .nullish()
+    .describe("Spanish description of this modality"),
   relatedModalities: zod
     .array(zod.string())
     .optional()

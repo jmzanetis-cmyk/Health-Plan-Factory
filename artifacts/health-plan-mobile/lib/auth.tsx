@@ -10,6 +10,7 @@ import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { changeLanguage } from "@/lib/i18n";
 
 type AuthRequestWithNonce = AuthSession.AuthRequest & {
   /** nonce is set internally by expo-auth-session for OpenID Connect flows
@@ -92,6 +93,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.user) {
         setUser(data.user);
+        // Restore server-side language preference (cross-device sync)
+        try {
+          const profRes = await fetch(`${apiBase}/api/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const profData = await profRes.json();
+          const serverLang = profData?.language;
+          if (serverLang === "en" || serverLang === "es") {
+            await changeLanguage(serverLang);
+          }
+        } catch {
+          // Non-blocking — language restore is supplementary
+        }
       } else {
         await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
         setUser(null);

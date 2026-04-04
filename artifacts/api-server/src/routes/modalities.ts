@@ -12,6 +12,37 @@ import {
   CreateModalityBody,
 } from "@workspace/api-zod";
 
+/** Resolve the effective language for a request.
+ *  Priority: ?lang query param > authenticated user profile.language > "en" */
+async function resolveLanguage(req: Request): Promise<string> {
+  const langParam = req.query.lang;
+  if (typeof langParam === "string" && langParam === "es") return "es";
+  if (req.isAuthenticated()) {
+    try {
+      const [prof] = await db
+        .select({ language: profiles.language })
+        .from(profiles)
+        .where(eq(profiles.id, req.user!.id))
+        .limit(1);
+      if (prof?.language === "es") return "es";
+    } catch {
+      // Fall through to default
+    }
+  }
+  return "en";
+}
+
+/** When language is Spanish, replace description with descriptionEs (fallback to English). */
+function applyLanguageToModality<T extends { description: string; descriptionEs?: string | null }>(
+  m: T,
+  lang: string,
+): T {
+  if (lang === "es" && m.descriptionEs) {
+    return { ...m, description: m.descriptionEs };
+  }
+  return m;
+}
+
 function requireAuth(req: Request, res: Response): boolean {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Authentication required" });
@@ -45,7 +76,10 @@ router.get("/modalities", async (req, res) => {
       return true;
     });
 
-    res.json(ListModalitiesResponse.parse(filtered));
+    const lang = await resolveLanguage(req);
+    const localized = filtered.map((m) => applyLanguageToModality(m, lang));
+
+    res.json(ListModalitiesResponse.parse(localized));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
@@ -95,7 +129,8 @@ router.get("/modalities/:id", async (req, res) => {
       res.status(404).json({ error: "Modality not found" });
       return;
     }
-    res.json(row);
+    const lang = await resolveLanguage(req);
+    res.json(applyLanguageToModality(row, lang));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });

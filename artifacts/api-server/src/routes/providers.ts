@@ -1028,7 +1028,20 @@ router.post("/providers/insight", async (req, res) => {
       language?: string;
     };
 
-  const isSpanish = language === "es";
+  // Resolve language: authenticated user profile takes priority, then request body, then default
+  let resolvedLanguage = language ?? "en";
+  if (req.isAuthenticated()) {
+    try {
+      const [prof] = await db
+        .select({ language: profiles.language })
+        .from(profiles)
+        .where(and(eq(profiles.id, req.user!.id)))
+        .limit(1);
+      if (prof?.language) resolvedLanguage = prof.language;
+    } catch { /* Non-blocking — use request body or default */ }
+  }
+
+  const isSpanish = resolvedLanguage === "es";
 
   const fallback = isSpanish
     ? (CANNED_INSIGHTS_ES[modalityId || ""] ||

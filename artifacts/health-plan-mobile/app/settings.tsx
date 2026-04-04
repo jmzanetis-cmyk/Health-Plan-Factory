@@ -287,10 +287,15 @@ function LanguageSection() {
     // Persist to server — fire-and-forget; local storage is authoritative if this fails
     const apiBase = getApiBaseUrl();
     if (apiBase) {
+      let token: string | null = null;
+      try {
+        token = await SecureStore.getItemAsync("auth_session_token");
+      } catch { /* ignore */ }
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       fetch(`${apiBase}/api/profile/language`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers,
         body: JSON.stringify({ language: lang }),
       }).catch(() => {});
     }

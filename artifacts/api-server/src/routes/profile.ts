@@ -18,6 +18,10 @@ const PatchLanguageBody = z.object({
   language: z.enum(["en", "es"]),
 });
 
+const PatchProfileBody = z.object({
+  language: z.enum(["en", "es"]).optional(),
+});
+
 router.get("/profile", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   const profileId = req.user!.id;
@@ -53,6 +57,33 @@ router.patch("/profile/language", async (req: Request, res: Response) => {
       .where(eq(profiles.id, profileId));
 
     res.json({ language: body.data.language });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+router.patch("/profile", async (req: Request, res: Response) => {
+  if (!requireAuth(req, res)) return;
+  const profileId = req.user!.id;
+
+  const body = PatchProfileBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Validation error", details: body.error.flatten() });
+    return;
+  }
+
+  try {
+    const updatePayload: { updatedAt: Date; language?: string } = { updatedAt: new Date() };
+    if (body.data.language !== undefined) updatePayload.language = body.data.language;
+
+    const [updated] = await db
+      .update(profiles)
+      .set(updatePayload)
+      .where(eq(profiles.id, profileId))
+      .returning({ language: profiles.language });
+
+    res.json({ language: updated?.language ?? "en" });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
