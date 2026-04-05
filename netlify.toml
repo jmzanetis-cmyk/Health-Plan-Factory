@@ -1,6 +1,7 @@
 [build]
+  base    = "artifacts/health-plan-factory"
   command = "pnpm run build"
-  publish = "artifacts/health-plan-factory/dist/public"
+  publish = "dist/public"
 
 # API proxy — set VITE_API_BASE_URL in Netlify's environment variables to point
 # at the deployed API server (e.g. https://your-api.replit.app).
