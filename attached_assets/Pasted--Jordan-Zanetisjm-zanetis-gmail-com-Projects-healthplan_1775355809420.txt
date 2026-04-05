@@ -1,0 +1,112 @@
+
+
+
+Jordan Zanetisjm.zanetis@gmail.com
+
+Projects
+healthplanfactory.com
+Switch projects
+Project navigation
+Agent runs
+Runner details
+Netlify deploy error due to Vite sourcemap issue and incorrect publish directory
+Today at 10:19 PM
+by
+Jordan Zanetis
+Jordan Zanetis
+Based on
+Production: Deploy 69d1c67
+No changes to preview
+
+
+Tasks
+Logs
+Done
+The Netlify deploy errored, with the following guidance provided: Diagnosis - Relevant Vite error: ...
+1m 38s
+
+Jordan Zanetis
+
+
+Jordan Zanetis
+The Netlify deploy errored, with the following guidance provided:
+
+Diagnosis
+
+Relevant Vite error: line 164 shows the failing transform: "src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of". The build script exits with non-zero code as shown at lines 159–161 and 211–212.
+Netlify config error: after the build failure Netlify reports the configured publish directory does not exist; the resolved config shows a duplicated path: publish resolved to /opt/build/repo/artifacts/health-plan-factory/artifacts/health-plan-factory/dist/public — see lines 199–206.
+Root causes
+
+Vite build fails because of a sourcemap-related error while transforming artifacts/health-plan-factory/src/components/ui/tooltip.tsx. The sourcemap system cannot resolve the original location for a mapping and Vite aborts the build. See the file in the repo here: https://github.com/jmzanetis-cmyk/Health-Plan-Factory/blob/main/artifacts/health-plan-factory/src/components/ui/tooltip.tsx
+Even if the build succeeds later, your Netlify publish path is misconfigured: because you set a base in netlify.toml, the publish path is being prefixed twice. Netlify resolves publish to artifact/artifact/… which will not exist and causes a deploy failure. See the resolved config in the logs lines 201–206.
+Fixes / Steps to resolve
+
+Fix (or work around) the Vite sourcemap error
+Reproduce locally to get full error details:
+
+From the repo root run:
+pnpm install
+cd artifacts/health-plan-factory
+pnpm run build
+Inspect the full stack trace and the contents of artifacts/health-plan-factory/src/components/ui/tooltip.tsx.
+Quick checks in tooltip.tsx:
+
+Open the file and look for stray source map comments like //# sourceMappingURL=… or any build artifact comments at top/bottom. If present, remove them.
+If the file imports a generated file (or a file from node_modules) that includes a bad sourceMappingURL, try removing that import or replacing it with a clean alternative.
+If the direct cause is not obvious or you need a safe immediate workaround, disable generation/usage of sourcemaps during build by setting build.sourcemap to false in your Vite config (vite.config.ts). Example change:
+
+// vite.config.ts
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  // ...existing config...
+  build: {
+    // turn off sourcemaps to avoid the sourcemap lookup error
+    sourcemap: false,
+    // other build options...
+  },
+});
+After making this change, commit and push, then re-run Netlify build. Note: disabling sourcemaps is a workaround; prefer fixing the underlying source/sourcemap lines if possible.
+
+Fix Netlify publish/base misconfiguration
+Open netlify.toml in the repo and correct the publish path so it is not duplicated relative to base.
+
+Two options (pick one):
+
+Option A — keep base and make publish relative to it:
+
+[build]
+  base = "artifacts/health-plan-factory"
+  publish = "dist/public"
+  command = "pnpm run build"
+Option B — remove base and give an absolute publish path relative to the repo root:
+
+[build]
+  # no base
+  publish = "artifacts/health-plan-factory/dist/public"
+  command = "pnpm run build"
+After changing netlify.toml, commit and push. Confirm in Netlify UI (or check the resolved config in logs) that publish resolves to a single correct path (…/artifacts/health-plan-factory/dist/public) — not the duplicated path shown in the current logs lines 201–206.
+Verify the result
+Ensure a successful local build creates artifacts/health-plan-factory/dist/public.
+Push changes and re-trigger a Netlify build. If Vite still fails, paste the full local Vite error stack (from the local build) so we can pinpoint the exact source mapping location.
+Notes
+
+If the error turns out to be caused by an external package or generated file that is missing from the repo, verify that the package is present in package.json or that the file was committed to the repo before adding it to any external configuration.
+If you suspect a Node version mismatch, adjust Node via Netlify's Node version configuration. See Netlify docs for changing Node versions: https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript
+If you want, paste the contents of artifacts/health-plan-factory/src/components/ui/tooltip.tsx (or the full local build stack trace) and I will point to the exact offending line and the precise fix.
+
+The relevant error logs are:
+
+Line 71: + @radix-ui/react-slider 1.3.6 Line 72: + @radix-ui/react-slot 1.2.4 Line 73: + @radix-ui/react-switch 1.2.6 Line 74: + @radix-ui/react-tabs 1.1.13 Line 75: + @radix-ui/react-toast 1.2.15 Line 76: + @radix-ui/react-toggle 1.1.10 Line 77: + @radix-ui/react-toggle-group 1.1.11 Line 78: + @radix-ui/react-tooltip 1.2.8 Line 79: + @replit/vite-plugin-cartographer 0.5.1 Line 80: + @replit/vite-plugin-dev-banner 0.1.2 Line 81: + @replit/vite-plugin-runtime-error-modal 0.0.6 Line 82: + @tailwindcss/typography 0.5.19 Line 83: + @tailwindcss/vite 4.2.1 Line 84: + @tanstack/react-query 5.90.21 Line 85: + @types/google.maps 3.58.1 Line 86: + @types/leaflet 1.9.21 Line 87: + @types/node 25.3.5 Line 88: + @types/react 19.2.14 Line 89: + @types/react-dom 19.2.3 Line 90: + @vitejs/plugin-react 5.1.4 Line 91: + @workspace/api-client-react 0.0.0 <- ../../lib/api-client-react Line 154: production Line 155: [96m[1m​[22m[39m Line 156: [96m[1mbuild.command from netlify.toml [22m[39m Line 157: [96m[1m────────────────────────────────────────────────────────────────[22m[39m Line 158: ​ Line 159: [36m$ pnpm run build[39m Line 160: > @workspace/health-plan-factory@0.0.0 build /opt/build/repo/artifacts/health-plan-factory Line 161: > vite build --config vite.config.ts Line 162: [36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m Line 163: transforming... Line 164: [33msrc/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of Line 165: Failed during stage 'building site': Build script returned non-zero exit code: 2 Line 166: rendering chunks... Line 167: computing gzip size... Line 168: [2mdist/public/[22m[32mindex.html [39m[1m[2m 1.52 kB[22m[1m[22m[2m │ gzip: 0.72 kB[22m Line 169: [2mdist/public/[22m[2massets/[22m[35mindex-BffiveQX.css [39m[1m[2m 200.05 kB[22m[1m[22m[2m │ gzip: 36.09 Line 170: [2mdist/public/[22m[2massets/[22m[36mpurify.es-CovBOfck.js [39m[1m[2m 22.58 kB[22m[1m[22m[2m │ gzip: 8.67 Line 171: [2mdist/public/[22m[2massets/[22m[36mindex.es-Da3MxTJr.js [39m[1m[2m 159.04 kB[22m[1m[22m[2m │ gzip: 53.04 Line 172: [2mdist/public/[22m[2massets/[22m[36mhtml2canvas.esm-DXEQVQnt.js [39m[1m[2m 201.04 kB[22m[1m[22m[2m │ gzip: 47.43 Line 173: [2mdist/public/[22m[2massets/[22m[36mindex-Klrz8-Ek.js [39m[1m[33m2,486.35 kB[39m[22m[2m │ gzip: 694.42 kB Line 174: [33m Line 175: (!) Some chunks are larger than 500 kB after minification. Consider: Line 185: ​ Line 186: The Netlify Functions setting targets a non-existing directory: netlify/functions Line 187: ​ Line 188: [90m(Functions bundling completed in 2ms)[39m Line 189: [96m[1m​[22m[39m Line 190: [96m[1mDeploy site [22m[39m Line 191: [96m[1m────────────────────────────────────────────────────────────────[22m[39m Line 192: ​ Line 193: Section completed: deploying Line 194: [91m[1m​[22m[39m Line 195: [91m[1mConfiguration error [22m[39m Line 196: [91m[1m────────────────────────────────────────────────────────────────[22m[39m Line 197: ​ Line 198: [31m[1mError message[22m[39m Line 199: Deploy did not succeed: Deploy directory 'artifacts/health-plan-factory/artifacts/health-plan-factory/dist/public' does not ex Line 200: ​ Line 201: [31m[1mResolved config[22m[39m Line 202: build: Line 203: base: /opt/build/repo/artifacts/health-plan-factory Line 204: command: pnpm run build Line 205: commandOrigin: config Line 206: publish: /opt/build/repo/artifacts/health-plan-factory/artifacts/health-plan-factory/dist/public Line 207: publishOrigin: config Line 208: functionsDirectory: /opt/build/repo/artifacts/health-plan-factory/netlify/functions Line 209: redirects: Line 210: - from: /* status: 200 to: /index.html redirectsOrigin: config Line 211: Build failed due to a user error: Build script returned non-zero exit code: 2 Line 212: Failing build: Failed to build site Line 213: Finished processing build request in 28.398s
+
+4 minutes ago
+Claude Agent
+Claude Agent took 1m 38s
+· 44 credits
+
+8 actions
+Fixed the Netlify deploy failure caused by a misconfigured publish directory path in netlify.toml. The previous configuration omitted the base directive and specified publish as a full path from the repo root (artifacts/health-plan-factory/dist/public). Because the Netlify site settings already set the base directory to artifacts/health-plan-factory, the publish path was being resolved relative to that base, resulting in a doubled path: artifacts/health-plan-factory/artifacts/health-plan-factory/dist/public — which did not exist.
+
+The fix explicitly declares base = "artifacts/health-plan-factory" in netlify.toml and changes publish to dist/public (relative to the base). This ensures Netlify resolves the publish directory to the correct absolute path where Vite outputs the built files.
+
+The Vite sourcemap warning that appeared in the build logs (src/components/ui/tooltip.tsx (2:0): Error when using sourcemap...) is a non-fatal diagnostic message. The Vite config already has sourcemap: false set, and the build successfully produced all output files. The warning occurs because Vite attempts to use upstream sourcemaps from @radix-ui packages when reporting other diagnostics, and those sourcemaps have incomplete mappings. This does not affect the build output
