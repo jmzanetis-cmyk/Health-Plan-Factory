@@ -400,7 +400,7 @@
     "githubError": "GitHub sign-in failed. Please try again.",
     "githubNotConfigured": "GitHub sign-in is not available right now.",
     "genericError": "Something went wrong. Please try again.",
-    "continueWithGitHub": "Continue with GitHub",
+    "continueWithGitHub": "Sign in",
     "noAccount": "Don't have an account?",
     "signUp": "Sign up"
   },
@@ -421,7 +421,7 @@
     ],
     "employerCodeLabel": "Employer invite code (optional)",
     "employerCodePlaceholder": "Enter code",
-    "continueWithGitHub": "Continue with GitHub",
+    "continueWithGitHub": "Create my account",
     "haveAccount": "Already have an account?",
     "signIn": "Sign in"
   },

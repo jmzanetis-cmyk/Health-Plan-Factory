@@ -400,7 +400,7 @@
     "githubError": "El inicio de sesión con GitHub falló. Por favor intenta de nuevo.",
     "githubNotConfigured": "El inicio de sesión con GitHub no está disponible ahora.",
     "genericError": "Algo salió mal. Por favor intenta de nuevo.",
-    "continueWithGitHub": "Continuar con GitHub",
+    "continueWithGitHub": "Iniciar sesión",
     "noAccount": "¿No tienes una cuenta?",
     "signUp": "Regístrate"
   },
@@ -421,7 +421,7 @@
     ],
     "employerCodeLabel": "Código de invitación del empleador (opcional)",
     "employerCodePlaceholder": "Ingresa el código",
-    "continueWithGitHub": "Continuar con GitHub",
+    "continueWithGitHub": "Crear mi cuenta",
     "haveAccount": "¿Ya tienes una cuenta?",
     "signIn": "Inicia sesión"
   },
