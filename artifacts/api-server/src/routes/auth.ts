@@ -97,7 +97,7 @@ function setSessionCookie(res: Response, sid: string) {
   res.cookie(SESSION_COOKIE, sid, {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "none",
     path: "/",
     maxAge: SESSION_TTL,
   });
@@ -107,21 +107,44 @@ function setOidcCookie(res: Response, name: string, value: string) {
   res.cookie(name, value, {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "none",
     path: "/",
     maxAge: OIDC_COOKIE_TTL,
   });
 }
 
-function getSafeReturnTo(value: unknown): string {
-  if (
-    typeof value !== "string" ||
-    !value.startsWith("/") ||
-    value.startsWith("//")
-  ) {
-    return "/";
+/**
+ * Validates the returnTo value from the OIDC flow.
+ * Accepts:
+ *   - Safe relative paths ("/onboarding", "/dashboard", etc.)
+ *   - Absolute HTTPS URLs whose origin matches FRONTEND_URL env var
+ *     (e.g. "https://healthplanfactory.com/onboarding")
+ *   - Absolute HTTPS URLs whose origin matches the API server's own origin
+ *     (handles same-origin dev environments where frontend and API share a domain)
+ */
+function getSafeReturnTo(value: unknown, extraTrustedOrigins: string[] = []): string {
+  if (typeof value !== "string") return "/";
+
+  // Allow relative paths
+  if (value.startsWith("/") && !value.startsWith("//")) return value;
+
+  // Build trusted origin list from env var + caller-supplied origins
+  const trustedOrigins: string[] = [...extraTrustedOrigins];
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (frontendUrl) trustedOrigins.push(frontendUrl);
+
+  if (value.startsWith("https://") && trustedOrigins.length > 0) {
+    try {
+      const returnOrigin = new URL(value).origin;
+      for (const trusted of trustedOrigins) {
+        if (returnOrigin === new URL(trusted).origin) return value;
+      }
+    } catch {
+      // fall through to default
+    }
   }
-  return value;
+
+  return "/";
 }
 
 async function upsertUserAndProfile(claims: Record<string, unknown>) {
@@ -250,7 +273,9 @@ router.get("/login", async (req: Request, res: Response) => {
   const config = await getOidcConfig();
   const callbackUrl = `${getOrigin(req)}/api/callback`;
 
-  const returnTo = getSafeReturnTo(req.query.returnTo);
+  // Trust the API server's own origin so absolute returnTo URLs from same-origin
+  // dev environments are accepted alongside the configured FRONTEND_URL.
+  const returnTo = getSafeReturnTo(req.query.returnTo, [getOrigin(req)]);
 
   const state = oidc.randomState();
   const nonce = oidc.randomNonce();
@@ -289,7 +314,8 @@ router.get("/callback", async (req: Request, res: Response) => {
   const codeVerifier = req.cookies?.code_verifier;
   const nonce = req.cookies?.nonce;
   const expectedState = req.cookies?.state;
-  const returnTo = getSafeReturnTo(req.cookies?.return_to);
+  // Trust the API's own origin so same-origin dev returnTo URLs are accepted
+  const returnTo = getSafeReturnTo(req.cookies?.return_to, [getOrigin(req)]);
 
   if (!codeVerifier || !expectedState) {
     res.redirect("/api/login");
@@ -457,21 +483,21 @@ router.get("/auth/github/login", async (req: Request, res: Response) => {
   }
 
   const state = crypto.randomBytes(16).toString("hex");
-  const returnTo = getSafeReturnTo(req.query.returnTo);
   const origin = getOrigin(req);
+  const returnTo = getSafeReturnTo(req.query.returnTo, [origin]);
   const callbackUrl = `${origin}/api/auth/github/callback`;
 
   res.cookie("gh_state", state, {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "none",
     path: "/",
     maxAge: GITHUB_OAUTH_COOKIE_TTL,
   });
   res.cookie("gh_return_to", returnTo, {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "none",
     path: "/",
     maxAge: GITHUB_OAUTH_COOKIE_TTL,
   });
@@ -493,7 +519,8 @@ router.get("/auth/github/callback", async (req: Request, res: Response) => {
 
   const { code, state } = req.query;
   const expectedState = req.cookies?.gh_state;
-  const returnTo = getSafeReturnTo(req.cookies?.gh_return_to);
+  const origin = getOrigin(req);
+  const returnTo = getSafeReturnTo(req.cookies?.gh_return_to, [origin]);
 
   if (!code || !state || state !== expectedState) {
     res.redirect("/sign-in?error=github_oauth_failed");
@@ -504,7 +531,6 @@ router.get("/auth/github/callback", async (req: Request, res: Response) => {
   res.clearCookie("gh_return_to", { path: "/" });
 
   try {
-    const origin = getOrigin(req);
     const callbackUrl = `${origin}/api/auth/github/callback`;
 
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {

@@ -5,6 +5,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@workspace/replit-auth-web";
+import { getApiBase } from "@/lib/apiBase";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import i18n from "@/i18n";
@@ -219,7 +220,7 @@ function App() {
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AuthProvider>
+          <AuthProvider apiBase={getApiBase()}>
             <BrowserRouter basename={base}>
               <AppContent />
             </BrowserRouter>
