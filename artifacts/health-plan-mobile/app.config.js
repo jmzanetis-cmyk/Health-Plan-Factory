@@ -8,7 +8,8 @@ const origin = apiUrl || (domain ? `https://${domain}` : "https://healthplanfact
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = {
   name: "Health Plan Factory",
-  slug: "health-plan-mobile",
+  slug: "healthplanfactory",
+  owner: "jzanetis",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
