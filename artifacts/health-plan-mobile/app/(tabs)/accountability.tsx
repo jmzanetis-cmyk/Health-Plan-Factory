@@ -132,9 +132,9 @@ function MonthlyHeatmap({
               key={ci}
               style={[
                 styles.heatmapCell,
-                day && entryDayNums.has(day) && styles.heatmapCellFilled,
+                day !== null && entryDayNums.has(day) && styles.heatmapCellFilled,
                 day === today.getDate() && styles.heatmapCellToday,
-                !day && styles.heatmapCellEmpty,
+                day === null && styles.heatmapCellEmpty,
               ]}
             >
               {day ? (
