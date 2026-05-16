@@ -26,6 +26,7 @@ module.exports = {
     buildNumber: "1",
     supportsTablet: false,
     infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
       NSHealthShareUsageDescription:
         "Health Plan Factory reads your steps, sleep, active energy, and mindfulness sessions to update your wellness score and habit tracking.",
       NSHealthUpdateUsageDescription:
