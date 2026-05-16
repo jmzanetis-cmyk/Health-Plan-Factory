@@ -49,6 +49,12 @@ if (process.env.NODE_ENV === "test") {
 }
 app.use(authMiddleware);
 
+// Health check — must be registered before the main router so it responds
+// even if auth middleware or DB isn't fully ready.
+app.get("/api/healthz", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use("/api", router);
 
 export default app;
