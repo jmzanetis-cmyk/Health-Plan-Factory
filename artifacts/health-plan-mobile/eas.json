@@ -22,7 +22,6 @@
       }
     },
     "production": {
-      "autoIncrement": true,
       "ios": {
         "simulator": false
       },
@@ -34,7 +33,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "developer@healthplanfactory.com",
+        "appleId": "jm.zanetis@gmail.com",
         "ascAppId": "6770102215",
         "appleTeamId": "VNCVGPP9LS"
       }
