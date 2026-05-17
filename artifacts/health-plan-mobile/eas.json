@@ -26,7 +26,8 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.healthplanfactory.com"
+        "EXPO_PUBLIC_API_URL": "https://api.healthplanfactory.com",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },
