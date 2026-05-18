@@ -17,7 +17,14 @@ router.get("/healthz", (_req, res) => {
  * Does NOT expose secret values — only boolean presence flags.
  * Useful for ops dashboards, deployment checks, and smoke tests.
  */
-router.get("/healthz/config", (_req, res) => {
+router.get("/healthz/config", (req, res) => {
+  // Require admin auth — this endpoint reveals which integrations are configured,
+  // which is useful operational info but also useful to an attacker.
+  if (!req.isAuthenticated() || req.user?.role !== "admin") {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
   const stripeMode = process.env.STRIPE_SECRET_KEY
     ? process.env.STRIPE_SECRET_KEY.startsWith("sk_live_") ? "live" : "test"
     : "unconfigured";

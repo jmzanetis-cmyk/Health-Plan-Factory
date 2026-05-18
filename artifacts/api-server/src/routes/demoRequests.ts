@@ -5,8 +5,12 @@ import { eq, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { Resend } from "resend";
+import { strictLimiter } from "../middlewares/rateLimit";
 
 const router: IRouter = Router();
+
+// Demo requests trigger admin emails — strict limit
+router.use(strictLimiter);
 
 const resendKey = process.env.RESEND_API_KEY;
 const resendClient = resendKey ? new Resend(resendKey) : null;

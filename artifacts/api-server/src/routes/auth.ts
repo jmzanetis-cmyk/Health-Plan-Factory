@@ -24,6 +24,7 @@ import {
   ISSUER_URL,
   type SessionData,
 } from "../lib/auth";
+import { strictLimiter, moderateLimiter } from "../middlewares/rateLimit";
 
 const OIDC_COOKIE_TTL = 10 * 60 * 1000;
 
@@ -85,6 +86,13 @@ async function processReferralCookie(profileId: string, refCode: string | undefi
 }
 
 const router: IRouter = Router();
+
+// Login/signup attempts — strict to prevent credential stuffing.
+// Apply to specific routes rather than router-wide since auth has many GET endpoints.
+router.use("/auth/login", strictLimiter);
+router.use("/auth/signup", strictLimiter);
+router.use("/auth/github", moderateLimiter);
+router.use("/auth/callback", moderateLimiter);
 
 function getOrigin(req: Request): string {
   const proto = req.headers["x-forwarded-proto"] || "https";

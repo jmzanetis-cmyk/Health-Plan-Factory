@@ -18,10 +18,14 @@ import { sendNotification } from "../lib/comms";
 import { planReadyEmail } from "../emails/plan-ready";
 import { randomBytes } from "crypto";
 import PDFDocument from "pdfkit";
+import { moderateLimiter } from "../middlewares/rateLimit";
 
 const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
 const router: IRouter = Router();
+
+// Plan generation is expensive (DB-heavy) — moderate limit per user
+router.use("/plans/generate", moderateLimiter);
 
 /** Fetch the full clinical evidence corpus once per plan generation call. */
 async function fetchClinicalEvidenceCorpus() {

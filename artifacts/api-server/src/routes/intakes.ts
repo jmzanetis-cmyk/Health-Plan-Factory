@@ -7,8 +7,11 @@ import {
   ListIntakesResponse,
   ListIntakesResponseItem,
 } from "@workspace/api-zod";
+import { moderateLimiter } from "../middlewares/rateLimit";
 
 const router: IRouter = Router();
+
+router.use(moderateLimiter);
 
 router.get("/intakes", async (req, res) => {
   try {

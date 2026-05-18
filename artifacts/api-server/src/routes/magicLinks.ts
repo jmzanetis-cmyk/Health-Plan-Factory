@@ -20,12 +20,16 @@ import { sendEmail, sendNotification } from "../lib/comms";
 import { magicLinkEmail } from "../emails/magic-link";
 import { paymentConfirmedEmail } from "../emails/payment-confirmed";
 import { createSession, SESSION_COOKIE } from "../lib/auth";
+import { strictLimiter } from "../middlewares/rateLimit";
 
 const MAGIC_LINK_SESSION_TTL = 15 * 60 * 1000; // 15 minutes for magic-link login
 
 const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
 const router = Router();
+
+// Magic link requests are an email-sending endpoint — strict limit to prevent abuse
+router.use(strictLimiter);
 
 const ACTION_TTLS_MS: Record<string, number> = {
   login: 15 * 60 * 1000,

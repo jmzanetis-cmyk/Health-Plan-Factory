@@ -4,8 +4,12 @@ import { db } from "@workspace/db";
 import { insightsCache, coachMemories, coachSessions, profiles } from "@workspace/db";
 import { eq, sql, desc, and } from "drizzle-orm";
 import { z } from "zod";
+import { aiLimiter } from "../middlewares/rateLimit";
 
 const router = Router();
+
+// Apply AI rate limiter to all coach endpoints (per-user, 10/min)
+router.use(aiLimiter);
 
 const SYSTEM_PROMPT = `You are the HealthPlanFactory AI accountability coach — a warm, evidence-based wellness guide. 
 You help members stay on track with their personalized health plans. 
