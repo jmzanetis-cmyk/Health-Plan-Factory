@@ -285,7 +285,7 @@ export default function HowItWorks() {
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg"
                           style={{ background: "var(--crimson-pale)", color: "var(--hpf-crimson)", border: "1px solid rgba(224,32,64,0.15)" }}
                         >
-                          Unlock $5 →
+                          Plus: View contact →
                         </div>
                       </div>
                     </div>
@@ -293,19 +293,17 @@ export default function HowItWorks() {
                   {i === 3 && (
                     <div className="mt-5 flex flex-wrap gap-2">
                       {[
-                        { label: "App-based", price: "$3" },
-                        { label: "Wellness provider", price: "$5" },
-                        { label: "Physician / DPC", price: "$8" },
-                        { label: "Plus member", price: "$0" },
+                        { label: "Provider contact details", icon: "📞" },
+                        { label: "Direct booking", icon: "📅" },
+                        { label: "Provider messaging", icon: "💬" },
+                        { label: "AI coach + journaling", icon: "🤖" },
                       ].map((item) => (
                         <div
                           key={item.label}
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium"
                           style={{ background: "var(--off-white)", border: "1px solid rgba(212,34,126,0.08)", color: "var(--hpf-pink)" }}
                         >
-                          <span style={{ fontFamily: "var(--app-font-mono)", fontWeight: 700, color: "var(--hpf-pink)" }}>
-                            {item.price}
-                          </span>
+                          <span>{item.icon}</span>
                           {item.label}
                         </div>
                       ))}

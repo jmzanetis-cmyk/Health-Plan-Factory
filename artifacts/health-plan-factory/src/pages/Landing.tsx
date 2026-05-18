@@ -44,7 +44,7 @@ const FAQS = [
   },
   {
     q: "How much does it cost to get started?",
-    a: "Building your initial plan is completely free. You pay unlock fees ($3–$8) only when you want to view a specific provider's contact information. A Plus membership ($9.99/month) unlocks unlimited reveals, journaling, routine building, and the AI accountability coach.",
+    a: "Building your initial plan is completely free. You can browse all matched providers and modalities, and a Plus membership ($9.99/month or $99/year) unlocks provider contact details, the AI accountability coach, journaling, routine building, progress tracking, and unlimited plan revisions. No per-reveal fees, no surprises — one subscription covers everything.",
   },
   {
     q: "Can I use my HSA or FSA?",
@@ -79,10 +79,10 @@ const PRICING_TIERS = [
     tier: "Plus",
     price: "$9.99",
     per: "per month",
-    desc: "The full factory experience — unlimited reveals, coaching, and tracking.",
+    desc: "The full factory experience — provider details, AI coaching, journaling, and progress tracking.",
     features: [
       "Everything in Explorer",
-      "Unlimited provider reveals",
+      "Full provider contact details",
       "AI accountability coach",
       "Routine & journal builder",
       "HSA/FSA spending log",
@@ -959,7 +959,7 @@ export default function Landing() {
               Start free. Upgrade when you're <em style={{ color: "var(--hpf-crimson)" }}>ready.</em>
             </h2>
             <p className="text-sm font-light max-w-md mx-auto leading-relaxed" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-              No subscription required to build your plan. Pay small unlock fees only for the provider contacts you actually want.
+              Build your plan free. Upgrade to Plus for full provider access, AI coaching, and progress tracking.
             </p>
           </div>
 
@@ -1066,7 +1066,7 @@ export default function Landing() {
           </div>
 
           <p className="text-center text-xs mt-6" style={{ color: "var(--text-muted)", fontFamily: "var(--app-font-sans)" }}>
-            Provider unlocks: $5 wellness · $8 physician · $3 app-based · Plus members pay $0 per reveal
+            Plus members get full provider access — contact details, booking, and direct messaging — for one flat monthly or annual fee.
           </p>
         </div>
       </section>

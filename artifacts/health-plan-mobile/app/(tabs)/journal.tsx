@@ -26,6 +26,8 @@ import {
 } from "@workspace/api-client-react";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
 import { interceptEmergencyText } from "@/lib/emergencyCheck";
+import { PlusPaywall } from "@/components/PlusPaywall";
+import { usePlusAccess } from "@/lib/subscription";
 
 function formatDate(dateStr: string, locale: string) {
   try {
@@ -141,6 +143,7 @@ const chartStyles = StyleSheet.create({
 export default function JournalScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const { isPlus, loading: plusLoading } = usePlusAccess();
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
   const { t, i18n } = useTranslation();
@@ -168,6 +171,13 @@ export default function JournalScreen() {
   });
 
   const { mutate: createLog, isPending } = useCreateProgressLog();
+
+  if (plusLoading) return (
+    <View style={{ flex: 1, backgroundColor: COLORS.warm, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator color={COLORS.amber} />
+    </View>
+  );
+  if (!isPlus) return <PlusPaywall feature="journal" />;
 
   async function onRefresh() {
     setRefreshing(true);

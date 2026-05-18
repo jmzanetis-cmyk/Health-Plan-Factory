@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Linking,
   Alert,
+  Modal,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,8 +22,8 @@ import { useListModalities, partialQuery } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
 import { EmergencyTextInput } from "@/components/EmergencyTextInput";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { PurchaseModal } from "@/components/PurchaseModal";
-import { useSubscription } from "@/lib/revenuecat";
+import { PlusPaywall } from "@/components/PlusPaywall";
+import { usePlusAccess } from "@/lib/subscription";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
@@ -222,7 +223,7 @@ const lockedStyles = StyleSheet.create({
   blurLine: { height: 12, borderRadius: 6, backgroundColor: COLORS.border },
 });
 
-function ProviderCard({ provider }: { provider: ProviderRecord }) {
+function ProviderCard({ provider, isPlus }: { provider: ProviderRecord; isPlus: boolean }) {
   const { t } = useTranslation();
 
   function handleContact() {
@@ -285,10 +286,17 @@ function ProviderCard({ provider }: { provider: ProviderRecord }) {
       {provider.bio ? (
         <Text style={styles.providerBio} numberOfLines={2}>{provider.bio}</Text>
       ) : null}
-      <TouchableOpacity style={styles.contactBtn} onPress={handleContact} activeOpacity={0.85}>
-        <Feather name="phone" size={14} color={COLORS.white} />
-        <Text style={styles.contactBtnText}>{t("discover.contact")}</Text>
-      </TouchableOpacity>
+      {isPlus ? (
+        <TouchableOpacity style={styles.contactBtn} onPress={handleContact} activeOpacity={0.85}>
+          <Feather name="phone" size={14} color={COLORS.white} />
+          <Text style={styles.contactBtnText}>{t("discover.contact")}</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.lockedContactHint}>
+          <Feather name="lock" size={13} color={COLORS.textMuted} />
+          <Text style={styles.lockedContactText}>Sign in with Plus to see contact details</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -335,8 +343,8 @@ export default function DiscoverScreen() {
     setRefreshing(false);
   }
 
-  const { isSubscribed } = useSubscription();
-  const isLocked = providersData?.locked === true && !isSubscribed;
+  const { isPlus } = usePlusAccess();
+  const isLocked = providersData?.locked === true && !isPlus;
   const lockedCount = providersData?.count ?? 0;
   const providerList = (providersData?.providers ?? []).filter(
     (p) => p.status === "active" || p.status === "approved"
@@ -406,12 +414,13 @@ export default function DiscoverScreen() {
           ListEmptyComponent={
             <LockedProvidersPlaceholder count={lockedCount} onOpenPaywall={() => setPaywallVisible(true)} />
           }
+
         />
       ) : (
         <FlatList
           data={providerList}
           keyExtractor={(p) => p.id}
-          renderItem={({ item }) => <ProviderCard provider={item} />}
+          renderItem={({ item }) => <ProviderCard provider={item} isPlus={isPlus} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -431,11 +440,14 @@ export default function DiscoverScreen() {
         />
       )}
 
-      <PurchaseModal
+      <Modal
         visible={paywallVisible}
-        onClose={() => setPaywallVisible(false)}
-        onPurchaseSuccess={() => refetch()}
-      />
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setPaywallVisible(false)}
+      >
+        <PlusPaywall feature="provider_details" />
+      </Modal>
     </View>
   );
 }
@@ -565,5 +577,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600" as const,
     color: COLORS.white,
+  },
+  lockedContactHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.xs,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.off,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  lockedContactText: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
 });

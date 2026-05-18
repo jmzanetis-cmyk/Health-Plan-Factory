@@ -22,6 +22,8 @@ import { useAuth } from "@/lib/auth";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import { interceptEmergencyText } from "@/lib/emergencyCheck";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { PlusPaywall } from "@/components/PlusPaywall";
+import { usePlusAccess } from "@/lib/subscription";
 
 interface Message {
   id: string;
@@ -88,6 +90,7 @@ export default function CoachScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
   const { getToken } = useAuth();
+  const { isPlus, loading: plusLoading } = usePlusAccess();
   const { data: authData } = useGetCurrentAuthUser();
   const { t, i18n } = useTranslation();
 
@@ -413,6 +416,13 @@ export default function CoachScreen() {
     },
     [isSending, getToken, scheduleMemorySave, currentSessionId, t]
   );
+
+  if (plusLoading) return (
+    <View style={{ flex: 1, backgroundColor: COLORS.warm, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator color={COLORS.purple} />
+    </View>
+  );
+  if (!isPlus) return <PlusPaywall feature="coach" />;
 
   const hasHistory = messages.length > 1;
   const reversedMessages = [...messages].reverse();

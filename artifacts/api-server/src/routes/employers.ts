@@ -6,6 +6,7 @@ import {
   employerModalityRules,
   profiles,
   planProgressLogs,
+  processedWebhooks,
 } from "@workspace/db";
 import { eq, and, count, sql, desc, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -998,6 +999,25 @@ router.post(
     }
 
     try {
+      // Idempotency check — exit early if we've already processed this event.
+      // Guards against replays re-activating cancelled employer accounts.
+      const existing = await db
+        .select({ eventId: processedWebhooks.eventId })
+        .from(processedWebhooks)
+        .where(eq(processedWebhooks.eventId, event.id))
+        .limit(1);
+
+      if (existing.length > 0) {
+        res.json({ received: true, duplicate: true });
+        return;
+      }
+
+      await db.insert(processedWebhooks).values({
+        eventId: event.id,
+        eventType: event.type,
+        payload: event as Record<string, unknown>,
+      });
+
       switch (event.type) {
         case "invoice.payment_succeeded": {
           const invoice = event.data.object as Stripe.Invoice;

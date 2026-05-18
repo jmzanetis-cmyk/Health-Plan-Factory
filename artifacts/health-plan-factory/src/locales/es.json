@@ -157,7 +157,7 @@
       "q1": "¿Esto es consejo médico?",
       "a1": "No. HealthPlanFactory es una plataforma de optimización del bienestar — no es un proveedor médico, herramienta de diagnóstico ni sustituto de la atención médica con licencia. Siempre consulta a un profesional de salud calificado antes de comenzar cualquier programa de bienestar.",
       "q2": "¿Cuánto cuesta comenzar?",
-      "a2": "Crear tu plan inicial es completamente gratuito. Pagas tarifas de desbloqueo ($3–$8) solo cuando quieres ver la información de contacto de un proveedor específico. Una membresía Plus ($9.99/mes) desbloquea revelaciones ilimitadas, diario, construcción de rutinas y el coach de rendición de cuentas con IA.",
+      "a2": "Generar tu plan personalizado es gratis. Para acceder a los detalles de contacto del proveedor, el coach de IA, el diario y el seguimiento del progreso, Plus cuesta $9.99/mes o $99/año. Los empleadores pueden ofrecer Plus a su equipo por $6–8 por empleado al mes. Sin tarifas por uso, sin sorpresas.",
       "q3": "¿Puedo usar mi HSA o FSA?",
       "a3": "Muchos servicios de tu plan — incluyendo masajes, acupuntura, terapia física y asesoramiento nutricional — pueden calificar para reembolso HSA/FSA. La elegibilidad la determina el administrador de tu plan. Nuestra plataforma incluye un registro HSA/FSA para ayudarte a rastrear gastos.",
       "q4": "¿Cómo se verifican los proveedores?",
@@ -220,24 +220,14 @@
       ]
     },
     "step4": {
-      "title": "Desbloquea, reserva y registra",
-      "tagline": "Paga solo por lo que quieras",
+      "title": "Conéctate con proveedores",
+      "tagline": "Solo miembros Plus",
       "bullets": [
-        "Desbloquea la información de contacto de un proveedor con un solo clic — basada en app $3 · bienestar $5 · médico $8.",
-        "Los créditos de referido (ganados al invitar amigos) pueden cubrir la tarifa de desbloqueo por completo.",
-        "Registra sesiones directamente en tu página del plan y observa cómo tu puntuación de bienestar aumenta.",
-        "Tu coach de rendición de cuentas con IA (Plus) envía recordatorios y te ayuda a mantenerte en camino entre sesiones."
-      ],
-      "unlockPricing": {
-        "appBased": "Basado en app",
-        "appPrice": "$3",
-        "wellness": "Proveedor de bienestar",
-        "wellnessPrice": "$5",
-        "physician": "Médico / DPC",
-        "physicianPrice": "$8",
-        "plus": "Miembro Plus",
-        "plusPrice": "$0"
-      }
+        "Cuando estés listo, actualiza a Plus para ver los datos de contacto completos del proveedor — teléfono, sitio web y enlace de reserva.",
+        "Solicita reservas directamente y envía mensajes a los proveedores sobre tus necesidades específicas.",
+        "Registra sesiones en tu página del plan y observa cómo tu puntuación de bienestar aumenta.",
+        "Tu coach de rendición de cuentas con IA envía recordatorios y te ayuda a mantenerte en camino entre sesiones."
+      ]
     },
     "faq": {
       "tag": "Preguntas",
@@ -247,9 +237,9 @@
       "q2": "¿Puedo editar mi plan después de generarlo?",
       "a2": "Sí. Puedes volver a realizar el registro en cualquier momento con datos actualizados — tu nuevo plan reemplaza el anterior. Los miembros Plus también tienen acceso a un constructor de rutinas manual donde pueden ajustar la frecuencia y los presupuestos de las modalidades.",
       "q3": "¿Necesito pagar algo para ver mi plan?",
-      "a3": "No. Tu plan de bienestar personalizado completo — con cada modalidad, estimación de costos y marcador HSA/FSA — es completamente gratuito. Solo pagas cuando eliges desbloquear la información de contacto de un proveedor específico.",
-      "q4": "¿Qué pasa cuando desbloqueo un proveedor?",
-      "a4": "Ves inmediatamente los datos de contacto completos del proveedor, sitio web y enlace de reserva. Los miembros Explorer pagan una pequeña tarifa por desbloqueo ($3–$8 según el tipo de proveedor). Los miembros Plus obtienen desbloqueos ilimitados sin costo adicional.",
+      "a3": "No. Tu plan de bienestar personalizado completo — con cada modalidad, estimación de costos y marcador HSA/FSA — es completamente gratuito. Actualiza a Plus ($9.99/mes o $99/año) para ver los datos de contacto del proveedor y reservar directamente.",
+      "q4": "¿Qué incluye Plus?",
+      "a4": "Plus te da datos de contacto completos del proveedor (teléfono, sitio web, reserva), el coach de IA, diario diario, constructor de rutinas, seguimiento del progreso, registro HSA/FSA y mensajería directa con proveedores — todo por una suscripción fija. Sin tarifas por proveedor, nunca.",
       "q5": "¿Qué pasa si no hay proveedores cerca de mí?",
       "a5": "Muchas modalidades incluyen opciones de telesalud o basadas en aplicaciones que funcionan en cualquier lugar. Si los proveedores locales son escasos en tu área, el plan mostrará alternativas amigables para trabajo remoto y las marcará claramente."
     },
@@ -307,7 +297,7 @@
     "q1": "¿Esto es consejo médico?",
     "a1": "No. HealthPlanFactory es una plataforma de optimización del bienestar — no es un proveedor médico, herramienta de diagnóstico ni sustituto de la atención médica con licencia. Siempre consulta a un profesional de salud calificado antes de comenzar cualquier programa de bienestar.",
     "q2": "¿Cuánto cuesta comenzar?",
-    "a2": "Crear tu plan inicial es completamente gratuito. Pagas pequeñas tarifas de desbloqueo ($1–$3) solo cuando quieres ver la información de contacto de un proveedor específico. Una membresía Plus ($9.99/mes) desbloquea revelaciones ilimitadas, diario, construcción de rutinas y el coach de rendición de cuentas con IA.",
+    "a2": "Generar tu plan personalizado es gratis. Para acceder a los detalles de contacto del proveedor, el coach de IA, el diario y el seguimiento del progreso, Plus cuesta $9.99/mes o $99/año. Sin tarifas por uso, sin sorpresas.",
     "q3": "¿Puedo usar mi HSA o FSA?",
     "a3": "Muchos servicios de tu plan — incluyendo masajes, acupuntura, terapia física y asesoramiento nutricional — pueden calificar para reembolso HSA/FSA. La elegibilidad la determina el administrador de tu plan. Nuestra plataforma incluye un registro HSA/FSA para ayudarte a rastrear gastos.",
     "q4": "¿Cómo se verifican los proveedores?",

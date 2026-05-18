@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions, bookingRequests, plans, planItems, memberIntakes } from "@workspace/db";
+import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions, bookingRequests, plans, planItems, memberIntakes, processedWebhooks } from "@workspace/db";
 import { eq, and, inArray, desc as descOrd } from "drizzle-orm";
 import { sendEmail } from "../lib/comms";
 import { bookingRequestProviderEmail } from "../emails/booking-request-provider";
@@ -496,6 +496,25 @@ router.post(
     }
 
     try {
+      // Idempotency check — exit early if we've already processed this event.
+      // Guards against Stripe replays re-granting Plus after a later cancellation.
+      const existing = await db
+        .select({ eventId: processedWebhooks.eventId })
+        .from(processedWebhooks)
+        .where(eq(processedWebhooks.eventId, event.id))
+        .limit(1);
+
+      if (existing.length > 0) {
+        res.json({ received: true, duplicate: true });
+        return;
+      }
+
+      await db.insert(processedWebhooks).values({
+        eventId: event.id,
+        eventType: event.type,
+        payload: event as Record<string, unknown>,
+      });
+
       if (event.type === "checkout.session.completed") {
         const session = event.data.object as Stripe.Checkout.Session;
         const sessionType = session.metadata?.type;

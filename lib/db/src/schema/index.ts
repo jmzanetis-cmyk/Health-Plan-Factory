@@ -1131,3 +1131,15 @@ export const insertSurveyResponseSchema = createInsertSchema(surveyResponses).om
 });
 export type InsertSurveyResponse = InferInsertModel<typeof surveyResponses>;
 export type SurveyResponse = InferSelectModel<typeof surveyResponses>;
+
+// ── Stripe webhook idempotency log ───────────────────────────────────────────
+
+export const processedWebhooks = pgTable("processed_webhooks", {
+  eventId: text("event_id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+  payload: jsonb("payload"),
+});
+
+export type ProcessedWebhook = InferSelectModel<typeof processedWebhooks>;
+export type InsertProcessedWebhook = InferInsertModel<typeof processedWebhooks>;

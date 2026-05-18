@@ -25,7 +25,7 @@ Health Plan Factory (HPF) is a wellness planning and provider-matching platform 
 
 **The core insight** is simple: 73% of American adults want a structured wellness plan but don't know where to start or what they can afford. Preventive wellness spending remains nearly zero for most households despite $2.4 trillion in annual US healthcare expenditure. At the same time, 68% of HSA/FSA holders don't realize that many wellness services — massage, acupuncture, nutrition counseling, physical therapy — qualify for tax-advantaged spending. Health Plan Factory closes all three of those gaps simultaneously.
 
-**The product** is free to start. Members complete a short intake (budget, goals, conditions, preferences) and receive a prioritized, costed wellness plan built by a rule-based AI engine. They can browse matched providers for free; they pay only when they unlock a specific provider's contact information ($3–$8 per reveal). A Plus subscription ($9.99/month) unlocks unlimited reveals, an AI accountability coach, routine and journal tools, HSA/FSA spending logs, and progress tracking — all for less than a single massage session.
+**The product** is free to start. Members complete a short intake (budget, goals, conditions, preferences) and receive a prioritized, costed wellness plan built by a rule-based AI engine with clinical evidence backing. They can browse matched providers and modalities for free. A Plus subscription ($9.99/month or $99/year) unlocks provider contact details, the AI accountability coach, daily journaling, routine and progress tracking, HSA/FSA spending logs with LMN workflows, and direct provider messaging — everything they need to execute their plan.
 
 **The B2B channel** sells the same experience as an employer benefit at $6–$8 per employee per month, billed annually. Employers get a wellness dashboard with aggregate engagement data; employees get a fully personalized plan at no out-of-pocket cost. This channel provides predictable recurring revenue and drives large-batch provider supply.
 
@@ -86,10 +86,10 @@ The plan engine scores every modality in the evidence library using a multi-fact
 The engine then allocates the monthly budget in descending score order, up to six included modalities and four "next cycle" (deprioritized) modalities. Each plan item shows estimated frequency, estimated monthly cost, and a plain-language rationale.
 
 **Stage 3 — Provider Discovery**
-Members browse matched local providers for each modality. Provider cards display name, specialty, session rate, HSA/FSA acceptance, and rating. Contact information is blurred for Explorer (free) members; it is unlocked via à la carte payment or automatically revealed for Plus subscribers.
+Members browse matched local providers for each modality. Provider cards display name, specialty, session rate, HSA/FSA acceptance, and rating. Contact information is visible only to Plus subscribers; Explorer (free) members see provider names, modalities, and ratings but not contact details.
 
-**Stage 4 — Unlock, Book & Track**
-Members unlock provider contacts at tiered rates: app-based programs ($3), wellness providers ($5), physician/DPC providers ($8). Plus members pay $0 per reveal. Referral credits earned through the referral program can fully offset unlock fees. Members log sessions, build routines, use the AI accountability coach, and track a wellness score over time.
+**Stage 4 — Connect, Book & Track**
+Plus members see full provider contact details, request bookings directly, and message providers about their specific needs. Members log sessions, build routines, use the AI accountability coach, and track a wellness score over time. Referral credits can offset Plus subscription charges.
 
 ### 3.2 Modality Evidence Library
 
@@ -155,18 +155,13 @@ Health Plan Factory operates a three-sided revenue model with distinct monetizat
 
 | Tier | Price | Key Features |
 |---|---|---|
-| **Explorer** | Free forever | Full AI plan generation, modality library, provider browse (blurred), 1 free provider unlock included |
-| **Plus** | $9.99/month · $79.99/year | Unlimited provider reveals, AI accountability coach, routine & journal builder, HSA/FSA spending log, progress tracking, 14-day free trial |
+| **Explorer** | Free forever | Full AI plan generation, modality library, provider list view (no contact details), HSA/FSA eligibility flags |
+| **Plus** | $9.99/month · $99/year | Full provider contact details and booking, AI accountability coach, daily journaling, routine builder, progress tracking, HSA/FSA spending log with LMN workflow, direct provider messaging, unlimited plan revisions |
+| **Employer** | $6–8/seat/month | All Plus features for every employee, admin dashboard with aggregate insights, wellness ROI reporting, branded PDF exports, custom onboarding support |
 
-À la carte provider unlocks (Explorer members):
+> **Note on pay-per-reveal:** Earlier product iterations included a $3–8 per-provider unlock fee. This was simplified to a single Plus subscription in Q2 2026 to reduce decision friction, improve conversion, and provide more predictable recurring revenue. Per-reveal pricing remains a potential future feature for international markets and price-sensitive segments but is not part of the current product.
 
-| Provider Type | Unlock Price |
-|---|---|
-| App-based program | $3.00 |
-| Wellness provider | $5.00 |
-| Physician / DPC | $8.00 |
-
-Referral credits are earned by inviting new members. Credits never expire and can fully offset unlock fees or Plus subscription charges.
+Referral credits are earned by inviting new members. Credits never expire and can fully offset Plus subscription charges.
 
 ### 4.2 B2B Employer Tiers
 
@@ -232,7 +227,7 @@ Health Plan Factory's go-to-market strategy leverages organic content, referral 
 Each modality page doubles as a high-value SEO asset targeting queries such as "does massage therapy help with back pain?", "is acupuncture HSA eligible?", and "how much does nutrition coaching cost?". As the library expands to dozens of modalities and conditions, organic search becomes a durable, compounding acquisition channel with zero marginal cost per visit.
 
 **Referral Program**
-Members earn referral credits when they invite friends who sign up and generate plans. Credits can offset unlock fees and Plus subscriptions. This creates a viral loop anchored to the core product value: the more members unlock providers and find real wellness benefit, the more they share.
+Members earn referral credits when they invite friends who sign up and generate plans. Credits can offset Plus subscriptions. This creates a viral loop anchored to the core product value: the more members connect with providers and find real wellness benefit, the more they share.
 
 **Pre-Survey Funnel**
 A lightweight pre-intake survey (budget, goals, primary concern) captures intent from organic and paid traffic before requiring account creation. Survey data personalizes the post-signup experience and increases activation rates by letting users see a tailored welcome message on the landing page before building their full plan.
@@ -415,7 +410,7 @@ Health Plan Factory's durable competitive advantages are:
 
 ### 9.5 Path to Gross Margin
 
-Consumer Plus subscriptions and B2B per-seat fees are predominantly software gross margin (70–80%+ at scale). Provider unlock fees and commission revenue carry modest transaction costs. The highest cost items in Year 1–2 are growth (CAC) and provider network operations. By Year 3, the organic referral and SEO channels are expected to reduce blended CAC significantly, expanding contribution margin.
+Consumer Plus subscriptions and B2B per-seat fees are predominantly software gross margin (70–80%+ at scale). The highest cost items in Year 1–2 are growth (CAC) and provider network operations. By Year 3, the organic referral and SEO channels are expected to reduce blended CAC significantly, expanding contribution margin.
 
 ### 9.6 Use of Seed Funds
 
