@@ -136,7 +136,7 @@ export default function Dashboard() {
         if (d?.hasNewCredit && d.count > 0) {
           toast({
             title: "Referral reward earned!",
-            description: `Your referral just earned you ${d.newCreditsFormatted} in modality unlock credits.`,
+            description: `Your referral just earned you ${d.newCreditsFormatted} in wellness credits.`,
           });
         }
       })
@@ -270,11 +270,11 @@ export default function Dashboard() {
             <div className="flex-1">
               <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--app-font-sans)" }}>
                 {referrerName
-                  ? `${referrerName} invited you to HealthPlanFactory — your first modality unlock is on them`
+                  ? `${referrerName} invited you to Health Plan Factory — you have a $3.00 wellness credit waiting`
                   : "Welcome! You have a $3.00 credit waiting"}
               </p>
               <p className="text-xs mt-0.5 text-white" style={{ fontFamily: "var(--app-font-sans)", opacity: 0.8 }}>
-                Build your first wellness plan and your $3.00 unlock credit will be applied automatically at checkout.
+                Build your first wellness plan — your $3.00 wellness credit will be applied when you upgrade to Plus.
               </p>
             </div>
             <Link

@@ -165,7 +165,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
       {/* PUBLIC lead-capture pages — intentionally no auth or Layout wrapper.
           Unauthenticated users complete onboarding → see their plan → then sign up.
-          Auth gate is deferred to pay-per-reveal unlock (Stripe) and provider booking. */}
+          Auth gate is deferred to Plus subscription check and provider booking. */}
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/survey" element={<Survey />} />
       <Route path="/plan" element={<Plan />} />

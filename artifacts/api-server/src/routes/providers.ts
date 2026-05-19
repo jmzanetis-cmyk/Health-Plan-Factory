@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@workspace/db";
-import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerUnlocks, providerSubscriptions, bookingRequests, plans, planItems, memberIntakes, processedWebhooks } from "@workspace/db";
+import { providers, providerModalities, profiles, modalities as modalitiesTable, providerCredentials, memberCredits, providerSubscriptions, bookingRequests, plans, planItems, memberIntakes, processedWebhooks } from "@workspace/db";
 import { eq, and, inArray, desc as descOrd } from "drizzle-orm";
 import { sendEmail } from "../lib/comms";
 import { bookingRequestProviderEmail } from "../emails/booking-request-provider";

@@ -2,7 +2,7 @@
 
 ## Current State (as of 2026-05-19)
 
-**Branch:** phase-1-option-c (7 commits ahead of main, not yet merged)
+**Branch:** phase-1-option-c (10+ commits ahead of main, not yet merged)
 **Production Supabase:** healthplanfactory (us-east-2, ACTIVE_HEALTHY)
 **Deployment status:** Web on Netlify, mobile not yet on TestFlight, API on Replit (currently suspended pending payment)
 
@@ -27,6 +27,9 @@
 | 4ffa625 | Phase 2 §7 — demo reviewer SQL script (scripts/demo-reviewer-account.sql) |
 | b26fcf4 | Demo SQL bug fixes (coach_sessions ON CONFLICT, insights_cache constraint) |
 | 48570de | Phase 2 §8 — RLS enabled on all 30 public tables (deny-all, migration 0015) |
+| 3eb2ac4 | Phase 2 §3 — App Store metadata drafts + privacy labels + provider outreach emails (docs/) |
+| pending | Phase 2 §4 — Remove unused providerUnlocks import; update stale PPR copy in Dashboard + App.tsx |
+| pending | Phase 2 §5 — .env.example refreshed with SUPABASE_SERVICE_ROLE_KEY, RESEND, Twilio, CORS vars |
 
 ## Outstanding Work
 
@@ -40,7 +43,9 @@
 - [ ] App Store submission rehearsal
 
 ### Not blocked — can do anytime
-- [ ] App Store Connect metadata (name, keywords, 4000-char description, support URL, privacy label)
+- [x] App Store Connect metadata — drafts in `docs/APP_STORE_METADATA.md` (commit 3eb2ac4)
+- [x] App Store privacy nutrition labels — `docs/APP_STORE_PRIVACY_LABELS.md` (commit 3eb2ac4)
+- [x] Provider outreach email templates (3 lengths) — `docs/PROVIDER_OUTREACH_EMAILS.md` (commit 3eb2ac4)
 - [ ] Lawyer review of Privacy.tsx + Terms.tsx ($300-800 quoted; Termly.io $15/mo as alternative)
 - [ ] 10 screenshots for 6.7" + 6.5" iPhone for App Store
 - [ ] Sentry secrets push to EAS (SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT)
