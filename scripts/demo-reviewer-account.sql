@@ -381,7 +381,7 @@ ON CONFLICT (id) DO NOTHING;
 --  9. coach_sessions — pre-seeded conversation 
 
 INSERT INTO coach_sessions (profile_id, messages, archived, created_at, updated_at)
-VALUES (
+SELECT
   '00000000-0000-0000-0000-000000000099',
   jsonb_build_array(
     jsonb_build_object('id', 'msg-01', 'role', 'user',
@@ -400,8 +400,10 @@ VALUES (
   false,
   NOW() - INTERVAL '14 days',
   NOW()
-)
-ON CONFLICT DO NOTHING;
+WHERE NOT EXISTS (
+  SELECT 1 FROM coach_sessions
+  WHERE profile_id = '00000000-0000-0000-0000-000000000099'
+);
 
 --  10. insights_cache — pre-computed wellness score 
 
@@ -461,7 +463,7 @@ VALUES (
   NOW(),
   NOW() - INTERVAL '14 days'
 )
-ON CONFLICT (profile_id) DO UPDATE
+ON CONFLICT (id) DO UPDATE
   SET wellness_score = 82,
       journal_count = 7,
       session_count = 13,
