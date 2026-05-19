@@ -28,11 +28,11 @@ module.exports = {
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSHealthShareUsageDescription:
-        "Health Plan Factory reads your steps, sleep, active energy, and mindfulness sessions to update your wellness score and habit tracking.",
+        "Health Plan Factory reads your steps, sleep, active energy, and mindfulness minutes to update your wellness score and personalize your plan. Your health data never leaves your device without your explicit consent.",
       NSHealthUpdateUsageDescription:
-        "Health Plan Factory does not write data to Apple Health.",
+        "Health Plan Factory does not write data to Apple Health. This permission is requested only to comply with Apple's HealthKit requirements; you can deny it without affecting app functionality.",
       NSMotionUsageDescription:
-        "Health Plan Factory uses motion data to count your steps and active minutes.",
+        "Health Plan Factory uses motion data to count steps when Apple Health is not available, helping track your daily activity progress.",
     },
     entitlements: {
       "com.apple.developer.healthkit": true,
