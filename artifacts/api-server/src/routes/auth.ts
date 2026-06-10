@@ -1,82 +1,95 @@
-import * as oidc from "openid-client";
 import { Router, type IRouter, type Request, type Response } from "express";
 import crypto from "crypto";
 import {
   GetCurrentAuthUserResponse,
-  ExchangeMobileAuthorizationCodeBody,
-  ExchangeMobileAuthorizationCodeResponse,
   LogoutMobileSessionResponse,
 } from "@workspace/api-zod";
 import { db, profiles, usersTable, referrals } from "@workspace/db";
 import { eq, sql as drizzleSql } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import { z } from "zod";
 import { sendNotification } from "../lib/comms";
 import { welcomeEmail } from "../emails/welcome";
 import {
   clearSession,
-  getOidcConfig,
   getSessionId,
-  createSession,
   deleteSession,
-  updateSession,
+  createSession,
   SESSION_COOKIE,
   SESSION_TTL,
-  ISSUER_URL,
+  SB_COOKIE,
   type SessionData,
 } from "../lib/auth";
+import { supabase } from "../lib/supabase";
 import { strictLimiter, moderateLimiter } from "../middlewares/rateLimit";
 
-const OIDC_COOKIE_TTL = 10 * 60 * 1000;
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+const GITHUB_OAUTH_COOKIE_TTL = 10 * 60 * 1000;
 
 /** Generate a unique referral code at signup (no 0/O/I/1 to avoid confusion) */
 function makeReferralCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "HPF-";
-  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 8; i++)
+    code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }
 
 /**
- * Server-side referral registration — called at auth callback completion.
- * Reads the hpf_ref cookie set during /api/login, creates a pending referral
- * row, and increments the referrer's referralCount atomically.
+ * Server-side referral registration — called at auth completion.
+ * Reads the hpf_ref cookie, creates a pending referral row, and increments
+ * the referrer's referralCount atomically.
  * Fire-and-forget; errors are swallowed so they don't interrupt login.
  */
-async function processReferralCookie(profileId: string, refCode: string | undefined): Promise<void> {
+async function processReferralCookie(
+  profileId: string,
+  refCode: string | undefined,
+): Promise<void> {
   if (!refCode) return;
   const code = refCode.trim().toUpperCase();
   try {
-    // Prevent self-referral
-    const [self] = await db.select({ referralCode: profiles.referralCode })
-      .from(profiles).where(eq(profiles.id, profileId)).limit(1);
+    const [self] = await db
+      .select({ referralCode: profiles.referralCode })
+      .from(profiles)
+      .where(eq(profiles.id, profileId))
+      .limit(1);
     if (self?.referralCode === code) return;
 
-    // Look up the referrer
-    const [referrer] = await db.select({ id: profiles.id })
-      .from(profiles).where(eq(profiles.referralCode, code)).limit(1);
+    const [referrer] = await db
+      .select({ id: profiles.id })
+      .from(profiles)
+      .where(eq(profiles.referralCode, code))
+      .limit(1);
     if (!referrer) return;
 
-    // Skip if already referred
-    const [existing] = await db.select({ id: referrals.id })
-      .from(referrals).where(eq(referrals.referredMemberId, profileId)).limit(1);
+    const [existing] = await db
+      .select({ id: referrals.id })
+      .from(referrals)
+      .where(eq(referrals.referredMemberId, profileId))
+      .limit(1);
     if (existing) return;
 
-    // Atomically insert referral + increment referralCount.
-    // onConflictDoNothing + conditional update ensures the DB unique constraint
-    // on referred_member_id is the authoritative guard against duplicate registration.
     await db.transaction(async (tx) => {
-      const [created] = await tx.insert(referrals).values({
-        id: randomUUID(),
-        referrerId: referrer.id,
-        referredMemberId: profileId,
-        code,
-        status: "pending",
-        createdAt: new Date(),
-      }).onConflictDoNothing().returning({ id: referrals.id });
-      // Only increment referralCount if a new row was actually inserted
+      const [created] = await tx
+        .insert(referrals)
+        .values({
+          id: randomUUID(),
+          referrerId: referrer.id,
+          referredMemberId: profileId,
+          code,
+          status: "pending",
+          createdAt: new Date(),
+        })
+        .onConflictDoNothing()
+        .returning({ id: referrals.id });
       if (created) {
-        await tx.update(profiles)
-          .set({ referralCount: drizzleSql`referral_count + 1`, updatedAt: new Date() })
+        await tx
+          .update(profiles)
+          .set({
+            referralCount: drizzleSql`referral_count + 1`,
+            updatedAt: new Date(),
+          })
           .where(eq(profiles.id, referrer.id));
       }
     });
@@ -85,91 +98,31 @@ async function processReferralCookie(profileId: string, refCode: string | undefi
   }
 }
 
-const router: IRouter = Router();
-
-// Login/signup attempts — strict to prevent credential stuffing.
-// Apply to specific routes rather than router-wide since auth has many GET endpoints.
-router.use("/auth/login", strictLimiter);
-router.use("/auth/signup", strictLimiter);
-router.use("/auth/github", moderateLimiter);
-router.use("/auth/callback", moderateLimiter);
-
-function getOrigin(req: Request): string {
-  const proto = req.headers["x-forwarded-proto"] || "https";
-  const host =
-    req.headers["x-forwarded-host"] || req.headers["host"] || "localhost";
-  return `${proto}://${host}`;
-}
-
-function setSessionCookie(res: Response, sid: string) {
-  res.cookie(SESSION_COOKIE, sid, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    path: "/",
-    maxAge: SESSION_TTL,
-  });
-}
-
-function setOidcCookie(res: Response, name: string, value: string) {
-  res.cookie(name, value, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    path: "/",
-    maxAge: OIDC_COOKIE_TTL,
-  });
-}
-
-/**
- * Validates the returnTo value from the OIDC flow.
- * Accepts:
- *   - Safe relative paths ("/onboarding", "/dashboard", etc.)
- *   - Absolute HTTPS URLs whose origin matches FRONTEND_URL env var
- *     (e.g. "https://healthplanfactory.com/onboarding")
- *   - Absolute HTTPS URLs whose origin matches the API server's own origin
- *     (handles same-origin dev environments where frontend and API share a domain)
- */
-function getSafeReturnTo(value: unknown, extraTrustedOrigins: string[] = []): string {
-  if (typeof value !== "string") return "/";
-
-  // Allow relative paths
-  if (value.startsWith("/") && !value.startsWith("//")) return value;
-
-  // Build trusted origin list from env var + caller-supplied origins
-  const trustedOrigins: string[] = [...extraTrustedOrigins];
-  const frontendUrl = process.env.FRONTEND_URL;
-  if (frontendUrl) trustedOrigins.push(frontendUrl);
-
-  if (value.startsWith("https://") && trustedOrigins.length > 0) {
-    try {
-      const returnOrigin = new URL(value).origin;
-      for (const trusted of trustedOrigins) {
-        if (returnOrigin === new URL(trusted).origin) return value;
-      }
-    } catch {
-      // fall through to default
-    }
-  }
-
-  return "/";
-}
-
 async function upsertUserAndProfile(claims: Record<string, unknown>) {
   const id = claims.sub as string;
   const email = (claims.email as string) || "";
   const firstName = (claims.first_name as string) || null;
   const lastName = (claims.last_name as string) || null;
-  const profileImageUrl = ((claims.profile_image_url || claims.picture) as string) || null;
+  const profileImageUrl =
+    ((claims.profile_image_url || claims.picture) as string) || null;
 
-  const displayName = [firstName, lastName].filter(Boolean).join(" ") || null;
+  const displayName =
+    (claims.display_name as string) ||
+    [firstName, lastName].filter(Boolean).join(" ") ||
+    null;
 
   await db
     .insert(usersTable)
     .values({ id, email: email || null, firstName, lastName, profileImageUrl })
     .onConflictDoUpdate({
       target: usersTable.id,
-      set: { email: email || null, firstName, lastName, profileImageUrl, updatedAt: new Date() },
+      set: {
+        email: email || null,
+        firstName,
+        lastName,
+        profileImageUrl,
+        updatedAt: new Date(),
+      },
     });
 
   const [profile] = await db
@@ -180,7 +133,7 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
       displayName,
       avatarUrl: profileImageUrl,
       role: "member",
-      referralCode: makeReferralCode(), // assigned at creation; guaranteed for every new member
+      referralCode: makeReferralCode(),
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -196,7 +149,8 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
     })
     .returning();
 
-  const isNewProfile = profile.createdAt &&
+  const isNewProfile =
+    profile.createdAt &&
     Date.now() - new Date(profile.createdAt).getTime() < 30_000;
 
   if (isNewProfile && email) {
@@ -217,40 +171,275 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
   return { id, email, firstName, lastName, profileImageUrl, role: profile.role };
 }
 
-// GET /auth/me — alias for /auth/user (spec contract)
-router.get("/auth/me", async (req: Request, res: Response) => {
-  if (!req.isAuthenticated()) {
-    res.json(GetCurrentAuthUserResponse.parse({ user: null }));
+function getOrigin(req: Request): string {
+  const proto = req.headers["x-forwarded-proto"] || "https";
+  const host =
+    req.headers["x-forwarded-host"] || req.headers["host"] || "localhost";
+  return `${proto}://${host}`;
+}
+
+function getSafeReturnTo(
+  value: unknown,
+  extraTrustedOrigins: string[] = [],
+): string {
+  if (typeof value !== "string") return "/";
+  if (value.startsWith("/") && !value.startsWith("//")) return value;
+
+  const trustedOrigins: string[] = [...extraTrustedOrigins];
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (frontendUrl) trustedOrigins.push(frontendUrl);
+
+  if (value.startsWith("https://") && trustedOrigins.length > 0) {
+    try {
+      const returnOrigin = new URL(value).origin;
+      for (const trusted of trustedOrigins) {
+        if (returnOrigin === new URL(trusted).origin) return value;
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return "/";
+}
+
+function setSbCookie(res: Response, token: string) {
+  res.cookie(SB_COOKIE, token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+    maxAge: SESSION_TTL,
+  });
+}
+
+function setSessionCookie(res: Response, sid: string) {
+  res.cookie(SESSION_COOKIE, sid, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+    maxAge: SESSION_TTL,
+  });
+}
+
+function setOidcCookie(res: Response, name: string, value: string) {
+  res.cookie(name, value, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+    maxAge: GITHUB_OAUTH_COOKIE_TTL,
+  });
+}
+
+const router: IRouter = Router();
+
+// Rate limiting
+router.use("/login", strictLimiter);
+router.use("/auth/login", strictLimiter);
+router.use("/auth/signup", strictLimiter);
+router.use("/auth/magic-link", strictLimiter);
+router.use("/auth/github", moderateLimiter);
+
+// ── Supabase Auth endpoints ───────────────────────────────────────────────────
+
+const LoginBody = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+router.post("/login", async (req: Request, res: Response) => {
+  const body = LoginBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "email and password (min 6 chars) required" });
     return;
   }
-  try {
-    const [profile] = await db
-      .select({ role: profiles.role })
-      .from(profiles)
-      .where(eq(profiles.id, req.user!.id));
-    res.json(GetCurrentAuthUserResponse.parse({ user: { ...req.user, role: profile?.role ?? "member" } }));
-  } catch {
-    res.json(GetCurrentAuthUserResponse.parse({ user: req.user ?? null }));
+
+  const { email, password } = body.data;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.user || !data.session) {
+    res
+      .status(401)
+      .json({ error: error?.message ?? "Invalid email or password" });
+    return;
   }
+
+  const sbUser = data.user;
+  const session = data.session;
+
+  const userInfo = await upsertUserAndProfile({
+    sub: sbUser.id,
+    email: sbUser.email ?? email,
+    first_name: sbUser.user_metadata?.first_name ?? null,
+    last_name: sbUser.user_metadata?.last_name ?? null,
+    display_name: sbUser.user_metadata?.full_name ?? null,
+    profile_image_url: sbUser.user_metadata?.avatar_url ?? null,
+  });
+
+  const refCode = req.cookies?.hpf_ref as string | undefined;
+  void processReferralCookie(userInfo.id, refCode);
+
+  setSbCookie(res, session.access_token);
+  if (session.refresh_token) {
+    res.cookie("sb-refresh-token", session.refresh_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+  }
+
+  res.json({
+    user: {
+      id: userInfo.id,
+      email: userInfo.email,
+      firstName: userInfo.firstName,
+      lastName: userInfo.lastName,
+      profileImageUrl: userInfo.profileImageUrl,
+      role: userInfo.role,
+    },
+    access_token: session.access_token,
+    refresh_token: session.refresh_token ?? null,
+  });
 });
 
-// Auth path aliases: /auth/login, /auth/logout, /auth/callback
-// These are direct aliases of the top-level routes handled in app.ts
-// They are registered here so they appear in the same auth router context
-router.get("/auth/login", async (req: Request, res: Response) => {
-  // Preserve query string (returnTo, etc.) when forwarding to /login
-  const qs = new URL(req.url, "http://localhost").searchParams.toString();
-  res.redirect(302, `/api/login${qs ? "?" + qs : ""}`);
+const SignupBody = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  full_name: z.string().optional(),
 });
 
-router.get("/auth/logout", async (req: Request, res: Response) => {
-  res.redirect(302, "/api/logout");
+router.post("/auth/signup", async (req: Request, res: Response) => {
+  const body = SignupBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "email and password (min 6 chars) required" });
+    return;
+  }
+
+  const { email, password, full_name } = body.data;
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name } },
+  });
+
+  if (error) {
+    res.status(400).json({ error: error.message });
+    return;
+  }
+
+  if (!data.user) {
+    res.status(400).json({ error: "Signup failed" });
+    return;
+  }
+
+  // If email confirmation is required, Supabase won't return a session yet
+  if (!data.session) {
+    res.json({ message: "Check your email to confirm your account." });
+    return;
+  }
+
+  const userInfo = await upsertUserAndProfile({
+    sub: data.user.id,
+    email: data.user.email ?? email,
+    display_name: full_name ?? null,
+  });
+
+  setSbCookie(res, data.session.access_token);
+  if (data.session.refresh_token) {
+    res.cookie("sb-refresh-token", data.session.refresh_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+  }
+
+  res.status(201).json({
+    user: {
+      id: userInfo.id,
+      email: userInfo.email,
+      firstName: userInfo.firstName,
+      lastName: userInfo.lastName,
+      profileImageUrl: userInfo.profileImageUrl,
+      role: userInfo.role,
+    },
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token ?? null,
+  });
 });
 
-router.get("/auth/callback", async (req: Request, res: Response) => {
-  const qs = new URL(req.url, "http://localhost").searchParams.toString();
-  res.redirect(302, `/api/callback${qs ? "?" + qs : ""}`);
+const MagicLinkBody = z.object({ email: z.string().email() });
+
+router.post("/auth/magic-link", async (req: Request, res: Response) => {
+  const body = MagicLinkBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Valid email required" });
+    return;
+  }
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email: body.data.email,
+    options: {
+      emailRedirectTo: `${process.env.FRONTEND_URL ?? process.env.BASE_URL ?? ""}/dashboard`,
+    },
+  });
+
+  if (error) {
+    res.status(400).json({ error: error.message });
+    return;
+  }
+
+  res.json({ message: "Check your email for a magic link." });
 });
+
+const RefreshBody = z.object({ refresh_token: z.string() });
+
+router.post("/auth/refresh", async (req: Request, res: Response) => {
+  const refresh = req.cookies?.["sb-refresh-token"];
+  const body = RefreshBody.safeParse(req.body);
+  const token = refresh ?? (body.success ? body.data.refresh_token : null);
+
+  if (!token) {
+    res.status(400).json({ error: "refresh_token required" });
+    return;
+  }
+
+  const { data, error } = await supabase.auth.refreshSession({
+    refresh_token: token,
+  });
+
+  if (error || !data.session) {
+    res.status(401).json({ error: "Refresh failed — please log in again" });
+    return;
+  }
+
+  setSbCookie(res, data.session.access_token);
+  if (data.session.refresh_token) {
+    res.cookie("sb-refresh-token", data.session.refresh_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+  }
+
+  res.json({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  });
+});
+
+// ── Auth state endpoints ──────────────────────────────────────────────────────
 
 router.get("/auth/user", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
@@ -277,200 +466,72 @@ router.get("/auth/user", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/login", async (req: Request, res: Response) => {
-  const config = await getOidcConfig();
-  const callbackUrl = `${getOrigin(req)}/api/callback`;
-
-  // Trust the API server's own origin so absolute returnTo URLs from same-origin
-  // dev environments are accepted alongside the configured FRONTEND_URL.
-  const returnTo = getSafeReturnTo(req.query.returnTo, [getOrigin(req)]);
-
-  const state = oidc.randomState();
-  const nonce = oidc.randomNonce();
-  const codeVerifier = oidc.randomPKCECodeVerifier();
-  const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
-
-  const redirectTo = oidc.buildAuthorizationUrl(config, {
-    redirect_uri: callbackUrl,
-    scope: "openid email profile offline_access",
-    code_challenge: codeChallenge,
-    code_challenge_method: "S256",
-    prompt: "login consent",
-    state,
-    nonce,
-  });
-
-  setOidcCookie(res, "code_verifier", codeVerifier);
-  setOidcCookie(res, "nonce", nonce);
-  setOidcCookie(res, "state", state);
-  setOidcCookie(res, "return_to", returnTo);
-
-  // Persist referral code through the OIDC round-trip so we can register it server-side
-  const refCode = typeof req.query.ref === "string" ? req.query.ref.trim().toUpperCase() : undefined;
-  if (refCode && /^HPF-[A-Z0-9]{8}$/.test(refCode)) {
-    setOidcCookie(res, "hpf_ref", refCode);
-  }
-
-  res.redirect(redirectTo.href);
-});
-
-// Query params are NOT validated with Zod — OIDC provider may include extra params
-router.get("/callback", async (req: Request, res: Response) => {
-  const config = await getOidcConfig();
-  const callbackUrl = `${getOrigin(req)}/api/callback`;
-
-  const codeVerifier = req.cookies?.code_verifier;
-  const nonce = req.cookies?.nonce;
-  const expectedState = req.cookies?.state;
-  // Trust the API's own origin so same-origin dev returnTo URLs are accepted
-  const returnTo = getSafeReturnTo(req.cookies?.return_to, [getOrigin(req)]);
-
-  if (!codeVerifier || !expectedState) {
-    res.redirect("/api/login");
+router.get("/auth/me", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.json(GetCurrentAuthUserResponse.parse({ user: null }));
     return;
   }
-
-  const currentUrl = new URL(
-    `${callbackUrl}?${new URL(req.url, `http://${req.headers.host}`).searchParams}`,
-  );
-
-  let tokens: oidc.TokenEndpointResponse & oidc.TokenEndpointResponseHelpers;
   try {
-    tokens = await oidc.authorizationCodeGrant(config, currentUrl, {
-      pkceCodeVerifier: codeVerifier,
-      expectedNonce: nonce,
-      expectedState,
-    });
-  } catch (err) {
-    req.log?.error({ err }, "OIDC callback error");
-    res.redirect("/api/login");
-    return;
+    const [profile] = await db
+      .select({ role: profiles.role })
+      .from(profiles)
+      .where(eq(profiles.id, req.user!.id));
+    res.json(
+      GetCurrentAuthUserResponse.parse({
+        user: { ...req.user, role: profile?.role ?? "member" },
+      }),
+    );
+  } catch {
+    res.json(GetCurrentAuthUserResponse.parse({ user: req.user ?? null }));
   }
-
-  const claims = tokens.claims();
-  if (!claims) {
-    res.redirect("/api/login");
-    return;
-  }
-
-  const userInfo = await upsertUserAndProfile(
-    claims as unknown as Record<string, unknown>,
-  );
-
-  // Server-side referral registration — fires at auth completion, not Dashboard load
-  const hpfRef = req.cookies?.hpf_ref as string | undefined;
-  void processReferralCookie(userInfo.id, hpfRef);
-
-  const now = Math.floor(Date.now() / 1000);
-  const sessionData: SessionData = {
-    user: {
-      id: userInfo.id,
-      email: userInfo.email,
-      firstName: userInfo.firstName,
-      lastName: userInfo.lastName,
-      profileImageUrl: userInfo.profileImageUrl,
-    },
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_at: tokens.expiresIn() ? now + tokens.expiresIn()! : claims.exp,
-  };
-
-  const sid = await createSession(sessionData);
-  setSessionCookie(res, sid);
-
-  res.clearCookie("code_verifier", { path: "/" });
-  res.clearCookie("nonce", { path: "/" });
-  res.clearCookie("state", { path: "/" });
-  res.clearCookie("return_to", { path: "/" });
-  res.clearCookie("hpf_ref", { path: "/" });
-
-  // Role-based post-login routing when no explicit returnTo was set
-  let destination = returnTo;
-  if (destination === "/") {
-    if (userInfo.role === "provider") destination = "/provider/dashboard";
-    else if (userInfo.role === "admin") destination = "/admin/dashboard";
-    else if (userInfo.role === "employer") destination = "/employer/dashboard";
-    else destination = "/dashboard";
-  }
-
-  res.redirect(destination);
 });
 
+// Alias — redirect to /sign-in
+router.get("/auth/login", (_req: Request, res: Response) => {
+  res.redirect(302, "/sign-in");
+});
+
+router.get("/auth/logout", (_req: Request, res: Response) => {
+  res.redirect(302, "/api/logout");
+});
+
+// Redirect legacy /login path to /sign-in (no longer an OIDC redirect)
+router.get("/login", (_req: Request, res: Response) => {
+  res.redirect(302, "/sign-in");
+});
+
+// Logout — clears both Supabase cookie and legacy session cookie
 router.get("/logout", async (req: Request, res: Response) => {
+  res.clearCookie(SB_COOKIE, { path: "/" });
+  res.clearCookie("sb-refresh-token", { path: "/" });
+
+  // Clear GitHub OAuth session if present
   const sid = getSessionId(req);
   if (sid) {
     await clearSession(res, sid);
   }
 
-  try {
-    const config = await getOidcConfig();
-    const endSessionUrl = new URL(`${ISSUER_URL}/logout`);
-    endSessionUrl.searchParams.set(
-      "post_logout_redirect_uri",
-      `${getOrigin(req)}/`,
-    );
-    res.redirect(endSessionUrl.href);
-  } catch {
-    res.redirect("/");
-  }
+  const frontendUrl = process.env.FRONTEND_URL ?? process.env.BASE_URL ?? "";
+  res.redirect(`${frontendUrl}/sign-in`);
 });
 
-router.post(
-  "/mobile-auth/token-exchange",
-  async (req: Request, res: Response) => {
-    const body = ExchangeMobileAuthorizationCodeBody.safeParse(req.body);
-    if (!body.success) {
-      res.status(400).json({ error: "Missing or invalid required fields" });
-      return;
-    }
+// SPA-friendly POST logout
+router.post("/logout", async (req: Request, res: Response) => {
+  res.clearCookie(SB_COOKIE, { path: "/" });
+  res.clearCookie("sb-refresh-token", { path: "/" });
 
-    const { code, code_verifier, redirect_uri, state, nonce } = body.data;
+  const sid = getSessionId(req);
+  if (sid) {
+    await clearSession(res, sid);
+  }
 
-    try {
-      const config = await getOidcConfig();
-      // Include code (and state) in the URL so authorizationCodeGrant can extract them
-      const callbackUrl = new URL(redirect_uri);
-      callbackUrl.searchParams.set("code", code);
-      if (state) callbackUrl.searchParams.set("state", state);
-      const tokens = await oidc.authorizationCodeGrant(config, callbackUrl, {
-        pkceCodeVerifier: code_verifier,
-        expectedNonce: nonce ?? undefined,
-        expectedState: state,
-        idTokenExpected: true,
-      });
+  res.json(LogoutMobileSessionResponse.parse({ success: true }));
+});
 
-      const claims = tokens.claims();
-      if (!claims) {
-        res.status(401).json({ error: "No claims in ID token" });
-        return;
-      }
+// ── Mobile auth ───────────────────────────────────────────────────────────────
 
-      const userInfo = await upsertUserAndProfile(
-        claims as unknown as Record<string, unknown>,
-      );
-
-      const now = Math.floor(Date.now() / 1000);
-      const sessionData: SessionData = {
-        user: {
-          id: userInfo.id,
-          email: userInfo.email,
-          firstName: userInfo.firstName,
-          lastName: userInfo.lastName,
-          profileImageUrl: userInfo.profileImageUrl,
-        },
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: tokens.expiresIn() ? now + tokens.expiresIn()! : claims.exp,
-      };
-
-      const sid = await createSession(sessionData);
-      res.json(ExchangeMobileAuthorizationCodeResponse.parse({ token: sid }));
-    } catch (err) {
-      req.log?.error({ err }, "Mobile token exchange error");
-      res.status(500).json({ error: "Token exchange failed" });
-    }
-  },
-);
+// Mobile apps call POST /api/login directly with email/password and receive
+// { access_token } which they send as Authorization: Bearer on each request.
 
 router.post("/mobile-auth/logout", async (req: Request, res: Response) => {
   const sid = getSessionId(req);
@@ -480,9 +541,7 @@ router.post("/mobile-auth/logout", async (req: Request, res: Response) => {
   res.json(LogoutMobileSessionResponse.parse({ success: true }));
 });
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const GITHUB_OAUTH_COOKIE_TTL = 10 * 60 * 1000;
+// ── GitHub OAuth ──────────────────────────────────────────────────────────────
 
 router.get("/auth/github/login", async (req: Request, res: Response) => {
   if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
@@ -495,20 +554,8 @@ router.get("/auth/github/login", async (req: Request, res: Response) => {
   const returnTo = getSafeReturnTo(req.query.returnTo, [origin]);
   const callbackUrl = `${origin}/api/auth/github/callback`;
 
-  res.cookie("gh_state", state, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    path: "/",
-    maxAge: GITHUB_OAUTH_COOKIE_TTL,
-  });
-  res.cookie("gh_return_to", returnTo, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    path: "/",
-    maxAge: GITHUB_OAUTH_COOKIE_TTL,
-  });
+  setOidcCookie(res, "gh_state", state);
+  setOidcCookie(res, "gh_return_to", returnTo);
 
   const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
   authorizeUrl.searchParams.set("client_id", GITHUB_CLIENT_ID);
@@ -541,27 +588,35 @@ router.get("/auth/github/callback", async (req: Request, res: Response) => {
   try {
     const callbackUrl = `${origin}/api/auth/github/callback`;
 
-    const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
+    const tokenRes = await fetch(
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          client_id: GITHUB_CLIENT_ID,
+          client_secret: GITHUB_CLIENT_SECRET,
+          code,
+          redirect_uri: callbackUrl,
+        }),
       },
-      body: JSON.stringify({
-        client_id: GITHUB_CLIENT_ID,
-        client_secret: GITHUB_CLIENT_SECRET,
-        code,
-        redirect_uri: callbackUrl,
-      }),
-    });
+    );
 
     if (!tokenRes.ok) {
       throw new Error(`GitHub token exchange HTTP error: ${tokenRes.status}`);
     }
 
-    const tokenData = await tokenRes.json() as { access_token?: string; error?: string };
+    const tokenData = (await tokenRes.json()) as {
+      access_token?: string;
+      error?: string;
+    };
     if (!tokenData.access_token) {
-      throw new Error(tokenData.error ?? "No access token in GitHub response");
+      throw new Error(
+        tokenData.error ?? "No access token in GitHub response",
+      );
     }
 
     const [userRes, emailsRes] = await Promise.all([
@@ -583,7 +638,7 @@ router.get("/auth/github/callback", async (req: Request, res: Response) => {
       throw new Error(`GitHub user fetch HTTP error: ${userRes.status}`);
     }
 
-    const githubUser = await userRes.json() as {
+    const githubUser = (await userRes.json()) as {
       id: unknown;
       login?: string;
       name?: string;
@@ -591,14 +646,26 @@ router.get("/auth/github/callback", async (req: Request, res: Response) => {
       email?: string;
     };
 
-    if (typeof githubUser.id !== "number" || !Number.isFinite(githubUser.id) || githubUser.id <= 0) {
+    if (
+      typeof githubUser.id !== "number" ||
+      !Number.isFinite(githubUser.id) ||
+      githubUser.id <= 0
+    ) {
       throw new Error("GitHub user response is missing a valid numeric id");
     }
 
     const githubId: number = githubUser.id;
 
-    const githubEmails: Array<{ email: string; primary: boolean; verified: boolean }> = emailsRes.ok
-      ? (await emailsRes.json() as Array<{ email: string; primary: boolean; verified: boolean }>)
+    const githubEmails: Array<{
+      email: string;
+      primary: boolean;
+      verified: boolean;
+    }> = emailsRes.ok
+      ? ((await emailsRes.json()) as Array<{
+          email: string;
+          primary: boolean;
+          verified: boolean;
+        }>)
       : [];
 
     const primaryEmail =
@@ -607,8 +674,15 @@ router.get("/auth/github/callback", async (req: Request, res: Response) => {
       githubEmails[0]?.email ||
       "";
 
-    const login = typeof githubUser.login === "string" ? githubUser.login : `github-${githubId}`;
-    const nameParts = (typeof githubUser.name === "string" && githubUser.name ? githubUser.name : login).split(" ");
+    const login =
+      typeof githubUser.login === "string"
+        ? githubUser.login
+        : `github-${githubId}`;
+    const nameParts = (
+      typeof githubUser.name === "string" && githubUser.name
+        ? githubUser.name
+        : login
+    ).split(" ");
     const firstName = nameParts[0] ?? null;
     const lastName = nameParts.slice(1).join(" ") || null;
 
@@ -617,7 +691,10 @@ router.get("/auth/github/callback", async (req: Request, res: Response) => {
       email: primaryEmail,
       first_name: firstName,
       last_name: lastName,
-      profile_image_url: typeof githubUser.avatar_url === "string" ? githubUser.avatar_url : null,
+      profile_image_url:
+        typeof githubUser.avatar_url === "string"
+          ? githubUser.avatar_url
+          : null,
     };
 
     const userInfo = await upsertUserAndProfile(claims);

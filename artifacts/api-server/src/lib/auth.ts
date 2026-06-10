@@ -1,12 +1,12 @@
-import * as client from "openid-client";
 import crypto from "crypto";
 import { type Request, type Response } from "express";
 import { db, sessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import type { AuthUser } from "@workspace/api-zod";
+import { supabase } from "./supabase";
 
-export const ISSUER_URL = process.env.ISSUER_URL ?? "https://replit.com/oidc";
 export const SESSION_COOKIE = "sid";
+export const SB_COOKIE = "sb-access-token";
 export const SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
 
 export interface SessionData {
@@ -16,19 +16,12 @@ export interface SessionData {
   expires_at?: number;
 }
 
-let oidcConfig: client.Configuration | null = null;
+// ── Session table helpers (used by GitHub OAuth path) ────────────────────────
 
-export async function getOidcConfig(): Promise<client.Configuration> {
-  if (!oidcConfig) {
-    oidcConfig = await client.discovery(
-      new URL(ISSUER_URL),
-      process.env.REPL_ID!,
-    );
-  }
-  return oidcConfig;
-}
-
-export async function createSession(data: SessionData, ttlMs: number = SESSION_TTL): Promise<string> {
+export async function createSession(
+  data: SessionData,
+  ttlMs: number = SESSION_TTL,
+): Promise<string> {
   const sid = crypto.randomBytes(32).toString("hex");
   await db.insert(sessionsTable).values({
     sid,
@@ -77,10 +70,46 @@ export async function clearSession(
   res.clearCookie(SESSION_COOKIE, { path: "/" });
 }
 
+// ── Token helpers ─────────────────────────────────────────────────────────────
+
+/** Returns the Supabase JWT from Authorization: Bearer header or sb-access-token cookie. */
+export function getSupabaseToken(req: Request): string | undefined {
+  const authHeader = req.headers["authorization"];
+  if (authHeader?.startsWith("Bearer ")) {
+    const candidate = authHeader.slice(7);
+    // A Supabase JWT starts with "eyJ"; a hex session ID does not.
+    if (candidate.startsWith("eyJ")) return candidate;
+  }
+  return req.cookies?.[SB_COOKIE];
+}
+
+/**
+ * Returns the hex session ID (GitHub OAuth path) from Authorization header or sid cookie.
+ * Exported for backward compat — route code that needs the raw session identifier uses this.
+ */
 export function getSessionId(req: Request): string | undefined {
   const authHeader = req.headers["authorization"];
   if (authHeader?.startsWith("Bearer ")) {
-    return authHeader.slice(7);
+    const candidate = authHeader.slice(7);
+    if (/^[0-9a-f]{64}$/.test(candidate)) return candidate;
   }
   return req.cookies?.[SESSION_COOKIE];
+}
+
+// ── Supabase JWT verification ─────────────────────────────────────────────────
+
+/** Verify a Supabase JWT and return the raw user object, or null if invalid/expired. */
+export async function verifyToken(
+  req: Request,
+): Promise<{ id: string; email: string } | null> {
+  const token = getSupabaseToken(req);
+  if (!token) return null;
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) return null;
+    return { id: data.user.id, email: data.user.email ?? "" };
+  } catch {
+    return null;
+  }
 }

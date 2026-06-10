@@ -1,4 +1,3 @@
-import * as oidc from "openid-client";
 import { type Request, type Response, type NextFunction } from "express";
 import type { AuthUser } from "@workspace/api-zod";
 import { db } from "@workspace/db";
@@ -6,11 +5,9 @@ import { profiles } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import {
   clearSession,
-  getOidcConfig,
   getSessionId,
   getSession,
-  updateSession,
-  type SessionData,
+  verifyToken,
 } from "../lib/auth";
 
 declare global {
@@ -21,7 +18,6 @@ declare global {
 
     interface Request {
       isAuthenticated(): this is AuthedRequest;
-
       user?: User | undefined;
     }
 
@@ -31,42 +27,65 @@ declare global {
   }
 }
 
-async function refreshIfExpired(
-  sid: string,
-  session: SessionData,
-): Promise<SessionData | null> {
-  const now = Math.floor(Date.now() / 1000);
-  if (!session.expires_at || now <= session.expires_at) return session;
-
-  if (!session.refresh_token) return null;
-
-  try {
-    const config = await getOidcConfig();
-    const tokens = await oidc.refreshTokenGrant(
-      config,
-      session.refresh_token,
-    );
-    session.access_token = tokens.access_token;
-    session.refresh_token = tokens.refresh_token ?? session.refresh_token;
-    session.expires_at = tokens.expiresIn()
-      ? now + tokens.expiresIn()!
-      : session.expires_at;
-    await updateSession(sid, session);
-    return session;
-  } catch {
-    return null;
-  }
-}
-
 export async function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction,
-) {
+): Promise<void> {
   req.isAuthenticated = function (this: Request) {
     return this.user != null;
   } as Request["isAuthenticated"];
 
+  // ── Supabase JWT path ──────────────────────────────────────────────────────
+  const sbUser = await verifyToken(req);
+  if (sbUser) {
+    let role: AuthUser["role"] = "member";
+    let subscriptionStatus: string | null = null;
+    let firstName: string | null = null;
+    let lastName: string | null = null;
+    let profileImageUrl: string | null = null;
+
+    try {
+      const [profile] = await db
+        .select({
+          role: profiles.role,
+          subscriptionStatus: profiles.subscriptionStatus,
+          displayName: profiles.displayName,
+          avatarUrl: profiles.avatarUrl,
+        })
+        .from(profiles)
+        .where(eq(profiles.id, sbUser.id));
+
+      if (profile) {
+        role = profile.role as AuthUser["role"];
+        subscriptionStatus = profile.subscriptionStatus ?? null;
+        profileImageUrl = profile.avatarUrl ?? null;
+        if (profile.displayName) {
+          const parts = profile.displayName.split(" ");
+          firstName = parts[0] ?? null;
+          lastName = parts.slice(1).join(" ") || null;
+        }
+      }
+    } catch {
+      // Use defaults if DB is unavailable
+    }
+
+    // Cast needed: global Express.User augmentation loses AuthUser property
+    // resolution under TypeScript project references in this monorepo.
+    (req as Request & { user: Express.User }).user = {
+      id: sbUser.id,
+      email: sbUser.email,
+      firstName,
+      lastName,
+      profileImageUrl,
+      role,
+      subscriptionStatus,
+    } as Express.User;
+    next();
+    return;
+  }
+
+  // ── Session table path (GitHub OAuth users) ───────────────────────────────
   const sid = getSessionId(req);
   if (!sid) {
     next();
@@ -80,22 +99,19 @@ export async function authMiddleware(
     return;
   }
 
-  const refreshed = await refreshIfExpired(sid, session);
-  if (!refreshed) {
-    await clearSession(res, sid);
-    next();
-    return;
-  }
-
-  // Hydrate role and subscriptionStatus from DB so they're always current
-  const userId = refreshed.user.id;
-  let role: AuthUser["role"] = refreshed.user.role ?? "member";
+  const userId = session.user.id;
+  let role: AuthUser["role"] = session.user.role ?? "member";
   let subscriptionStatus: string | null = null;
+
   try {
     const [profile] = await db
-      .select({ role: profiles.role, subscriptionStatus: profiles.subscriptionStatus })
+      .select({
+        role: profiles.role,
+        subscriptionStatus: profiles.subscriptionStatus,
+      })
       .from(profiles)
       .where(eq(profiles.id, userId));
+
     if (profile) {
       role = profile.role as AuthUser["role"];
       subscriptionStatus = profile.subscriptionStatus ?? null;
@@ -104,6 +120,6 @@ export async function authMiddleware(
     // Use cached role if DB is unavailable
   }
 
-  req.user = { ...refreshed.user, role, subscriptionStatus };
+  req.user = { ...session.user, role, subscriptionStatus };
   next();
 }

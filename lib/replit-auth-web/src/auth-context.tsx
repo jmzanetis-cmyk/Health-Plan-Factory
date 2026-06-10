@@ -5,7 +5,10 @@ export interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (returnTo?: string) => void;
+  /** Sign in with email + password. Returns { error } on failure. */
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  /** Send a magic-link email. Returns { error } on failure. */
+  loginWithMagicLink: (email: string) => Promise<{ error?: string }>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -15,8 +18,8 @@ export interface AuthProviderProps {
   /**
    * Base URL of the API server.
    * In development (same-origin): leave undefined or pass "".
-   * In production (cross-origin Netlify → Replit): pass VITE_API_BASE_URL,
-   * e.g. "https://my-api.replit.app"
+   * In production (cross-origin Netlify → Railway): pass VITE_API_BASE_URL,
+   * e.g. "https://api.healthplanfactory.com"
    */
   apiBase?: string;
 }
@@ -31,9 +34,11 @@ export function AuthProvider({ children, apiBase = "" }: AuthProviderProps) {
 
   const fetchUser = useCallback(async (): Promise<AuthUser | null> => {
     try {
-      const res = await fetch(`${base}/api/auth/user`, { credentials: "include" });
+      const res = await fetch(`${base}/api/auth/user`, {
+        credentials: "include",
+      });
       if (!res.ok) return null;
-      const data = await res.json() as { user: AuthUser | null };
+      const data = (await res.json()) as { user: AuthUser | null };
       return data.user ?? null;
     } catch {
       return null;
@@ -55,33 +60,84 @@ export function AuthProvider({ children, apiBase = "" }: AuthProviderProps) {
         setIsLoading(false);
       }
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [fetchUser]);
 
-  const login = useCallback((returnTo?: string) => {
-    const path =
-      returnTo ??
-      (typeof window !== "undefined"
-        ? window.location.pathname + window.location.search
-        : "/");
+  const login = useCallback(
+    async (email: string, password: string): Promise<{ error?: string }> => {
+      try {
+        const res = await fetch(`${base}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password }),
+        });
 
-    // Always build an absolute returnTo so the API server can redirect back to
-    // the correct frontend origin after OAuth (works for both same-origin dev
-    // and cross-origin Netlify → Replit production).
-    const absoluteReturnTo =
-      typeof window !== "undefined"
-        ? new URL(path.startsWith("/") ? path : `/${path}`, window.location.origin).href
-        : path;
+        const data = (await res.json()) as {
+          user?: AuthUser;
+          access_token?: string;
+          refresh_token?: string;
+          error?: string;
+        };
 
-    window.location.href = `${base}/api/login?returnTo=${encodeURIComponent(absoluteReturnTo)}`;
-  }, [base]);
+        if (!res.ok || data.error) {
+          return { error: data.error ?? "Sign in failed" };
+        }
+
+        if (data.access_token) {
+          localStorage.setItem("sb-access-token", data.access_token);
+        }
+
+        setUser(data.user ?? null);
+        return {};
+      } catch {
+        return { error: "Network error — please try again" };
+      }
+    },
+    [base],
+  );
+
+  const loginWithMagicLink = useCallback(
+    async (email: string): Promise<{ error?: string }> => {
+      try {
+        const res = await fetch(`${base}/api/auth/magic-link`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email }),
+        });
+
+        const data = (await res.json()) as { message?: string; error?: string };
+        if (!res.ok || data.error) {
+          return { error: data.error ?? "Could not send magic link" };
+        }
+        return {};
+      } catch {
+        return { error: "Network error — please try again" };
+      }
+    },
+    [base],
+  );
 
   const logout = useCallback(() => {
+    localStorage.removeItem("sb-access-token");
     window.location.href = `${base}/api/logout`;
   }, [base]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, logout, refresh }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        loginWithMagicLink,
+        logout,
+        refresh,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -11,7 +11,7 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-// Trust the first proxy hop (Replit / Cloudflare) so req.ip reflects the real client IP.
+// Trust the first proxy hop (Railway / Cloudflare) so req.ip reflects the real client IP.
 // Required for rate limiting to work correctly behind a proxy.
 app.set("trust proxy", 1);
 

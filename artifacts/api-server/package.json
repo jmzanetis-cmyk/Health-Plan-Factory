@@ -25,7 +25,6 @@
     "google-auth-library": "^10.6.2",
     "helmet": "^8.1.0",
     "node-cron": "^4.2.1",
-    "openid-client": "^6.8.2",
     "pdfkit": "^0.18.0",
     "pino": "^9",
     "pino-http": "^10",
