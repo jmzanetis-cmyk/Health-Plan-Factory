@@ -77,7 +77,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: COLORS.navy }}
+      style={{ flex: 1, backgroundColor: "#1b2d4f" }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
@@ -161,7 +161,7 @@ export default function LoginScreen() {
               activeOpacity={0.7}
             >
               {isSendingLink ? (
-                <ActivityIndicator color={COLORS.amber} size="small" />
+                <ActivityIndicator color="#d4a44c" size="small" />
               ) : (
                 <Text style={styles.magicLinkText}>Send magic link instead</Text>
               )}
@@ -178,7 +178,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: COLORS.navy,
+    backgroundColor: "#1b2d4f",
     paddingHorizontal: SPACING.xxl,
     justifyContent: "space-between",
   },
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   tagline: {
     fontFamily: FONTS.body,
     fontSize: 15,
-    color: "rgba(255,255,255,0.6)",
+    color: "rgba(255,255,255,0.7)",
     textAlign: "center",
     lineHeight: 22,
   },
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontFamily: FONTS.body,
     fontSize: 16,
-    color: "rgba(255,255,255,0.85)",
+    color: "rgba(255,255,255,0.8)",
   },
   footer: {
     gap: SPACING.md,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   magicLinkText: {
     fontFamily: FONTS.body,
     fontSize: 14,
-    color: COLORS.amber,
+    color: "#d4a44c",
     textDecorationLine: "underline",
   },
   disclaimer: {
