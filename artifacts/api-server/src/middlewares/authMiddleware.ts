@@ -85,7 +85,7 @@ export async function authMiddleware(
     return;
   }
 
-  // ── Session table path (GitHub OAuth users) ───────────────────────────────
+  // ── Session table path (magic-link users) ────────────────────────────────
   const sid = getSessionId(req);
   if (!sid) {
     next();

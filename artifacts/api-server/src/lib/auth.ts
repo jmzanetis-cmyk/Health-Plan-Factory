@@ -16,7 +16,7 @@ export interface SessionData {
   expires_at?: number;
 }
 
-// ── Session table helpers (used by GitHub OAuth path) ────────────────────────
+// ── Session table helpers (used by magic-link auth path) ─────────────────────
 
 export async function createSession(
   data: SessionData,
@@ -83,10 +83,7 @@ export function getSupabaseToken(req: Request): string | undefined {
   return req.cookies?.[SB_COOKIE];
 }
 
-/**
- * Returns the hex session ID (GitHub OAuth path) from Authorization header or sid cookie.
- * Exported for backward compat — route code that needs the raw session identifier uses this.
- */
+/** Returns the hex session ID (magic-link auth path) from Authorization header or sid cookie. */
 export function getSessionId(req: Request): string | undefined {
   const authHeader = req.headers["authorization"];
   if (authHeader?.startsWith("Bearer ")) {

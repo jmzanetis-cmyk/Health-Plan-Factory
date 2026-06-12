@@ -1,5 +1,4 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import crypto from "crypto";
 import {
   GetCurrentAuthUserResponse,
   LogoutMobileSessionResponse,
@@ -14,18 +13,11 @@ import {
   clearSession,
   getSessionId,
   deleteSession,
-  createSession,
-  SESSION_COOKIE,
   SESSION_TTL,
   SB_COOKIE,
-  type SessionData,
 } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { strictLimiter, moderateLimiter } from "../middlewares/rateLimit";
-
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const GITHUB_OAUTH_COOKIE_TTL = 10 * 60 * 1000;
 
 /** Generate a unique referral code at signup (no 0/O/I/1 to avoid confusion) */
 function makeReferralCode(): string {
@@ -171,37 +163,6 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
   return { id, email, firstName, lastName, profileImageUrl, role: profile.role };
 }
 
-function getOrigin(req: Request): string {
-  const proto = req.headers["x-forwarded-proto"] || "https";
-  const host =
-    req.headers["x-forwarded-host"] || req.headers["host"] || "localhost";
-  return `${proto}://${host}`;
-}
-
-function getSafeReturnTo(
-  value: unknown,
-  extraTrustedOrigins: string[] = [],
-): string {
-  if (typeof value !== "string") return "/";
-  if (value.startsWith("/") && !value.startsWith("//")) return value;
-
-  const trustedOrigins: string[] = [...extraTrustedOrigins];
-  const frontendUrl = process.env.FRONTEND_URL;
-  if (frontendUrl) trustedOrigins.push(frontendUrl);
-
-  if (value.startsWith("https://") && trustedOrigins.length > 0) {
-    try {
-      const returnOrigin = new URL(value).origin;
-      for (const trusted of trustedOrigins) {
-        if (returnOrigin === new URL(trusted).origin) return value;
-      }
-    } catch {
-      // fall through
-    }
-  }
-  return "/";
-}
-
 function setSbCookie(res: Response, token: string) {
   res.cookie(SB_COOKIE, token, {
     httpOnly: true,
@@ -212,26 +173,6 @@ function setSbCookie(res: Response, token: string) {
   });
 }
 
-function setSessionCookie(res: Response, sid: string) {
-  res.cookie(SESSION_COOKIE, sid, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    path: "/",
-    maxAge: SESSION_TTL,
-  });
-}
-
-function setOidcCookie(res: Response, name: string, value: string) {
-  res.cookie(name, value, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    path: "/",
-    maxAge: GITHUB_OAUTH_COOKIE_TTL,
-  });
-}
-
 const router: IRouter = Router();
 
 // Rate limiting
@@ -239,8 +180,6 @@ router.use("/login", strictLimiter);
 router.use("/auth/login", strictLimiter);
 router.use("/auth/signup", strictLimiter);
 router.use("/auth/magic-link", strictLimiter);
-router.use("/auth/github", moderateLimiter);
-
 // ── Supabase Auth endpoints ───────────────────────────────────────────────────
 
 const LoginBody = z.object({
@@ -505,7 +444,7 @@ router.get("/logout", async (req: Request, res: Response) => {
   res.clearCookie(SB_COOKIE, { path: "/" });
   res.clearCookie("sb-refresh-token", { path: "/" });
 
-  // Clear GitHub OAuth session if present
+  // Clear magic-link session if present
   const sid = getSessionId(req);
   if (sid) {
     await clearSession(res, sid);
@@ -520,6 +459,7 @@ router.post("/logout", async (req: Request, res: Response) => {
   res.clearCookie(SB_COOKIE, { path: "/" });
   res.clearCookie("sb-refresh-token", { path: "/" });
 
+  // Clear magic-link session if present
   const sid = getSessionId(req);
   if (sid) {
     await clearSession(res, sid);
@@ -539,195 +479,6 @@ router.post("/mobile-auth/logout", async (req: Request, res: Response) => {
     await deleteSession(sid);
   }
   res.json(LogoutMobileSessionResponse.parse({ success: true }));
-});
-
-// ── GitHub OAuth ──────────────────────────────────────────────────────────────
-
-router.get("/auth/github/login", async (req: Request, res: Response) => {
-  if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
-    res.redirect("/sign-in?error=github_not_configured");
-    return;
-  }
-
-  const state = crypto.randomBytes(16).toString("hex");
-  const origin = getOrigin(req);
-  const returnTo = getSafeReturnTo(req.query.returnTo, [origin]);
-  const callbackUrl = `${origin}/api/auth/github/callback`;
-
-  setOidcCookie(res, "gh_state", state);
-  setOidcCookie(res, "gh_return_to", returnTo);
-
-  const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
-  authorizeUrl.searchParams.set("client_id", GITHUB_CLIENT_ID);
-  authorizeUrl.searchParams.set("redirect_uri", callbackUrl);
-  authorizeUrl.searchParams.set("scope", "read:user user:email");
-  authorizeUrl.searchParams.set("state", state);
-
-  res.redirect(authorizeUrl.href);
-});
-
-router.get("/auth/github/callback", async (req: Request, res: Response) => {
-  if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
-    res.redirect("/sign-in?error=github_not_configured");
-    return;
-  }
-
-  const { code, state } = req.query;
-  const expectedState = req.cookies?.gh_state;
-  const origin = getOrigin(req);
-  const returnTo = getSafeReturnTo(req.cookies?.gh_return_to, [origin]);
-
-  if (!code || !state || state !== expectedState) {
-    res.redirect("/sign-in?error=github_oauth_failed");
-    return;
-  }
-
-  res.clearCookie("gh_state", { path: "/" });
-  res.clearCookie("gh_return_to", { path: "/" });
-
-  try {
-    const callbackUrl = `${origin}/api/auth/github/callback`;
-
-    const tokenRes = await fetch(
-      "https://github.com/login/oauth/access_token",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          client_id: GITHUB_CLIENT_ID,
-          client_secret: GITHUB_CLIENT_SECRET,
-          code,
-          redirect_uri: callbackUrl,
-        }),
-      },
-    );
-
-    if (!tokenRes.ok) {
-      throw new Error(`GitHub token exchange HTTP error: ${tokenRes.status}`);
-    }
-
-    const tokenData = (await tokenRes.json()) as {
-      access_token?: string;
-      error?: string;
-    };
-    if (!tokenData.access_token) {
-      throw new Error(
-        tokenData.error ?? "No access token in GitHub response",
-      );
-    }
-
-    const [userRes, emailsRes] = await Promise.all([
-      fetch("https://api.github.com/user", {
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-          Accept: "application/vnd.github+json",
-        },
-      }),
-      fetch("https://api.github.com/user/emails", {
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-          Accept: "application/vnd.github+json",
-        },
-      }),
-    ]);
-
-    if (!userRes.ok) {
-      throw new Error(`GitHub user fetch HTTP error: ${userRes.status}`);
-    }
-
-    const githubUser = (await userRes.json()) as {
-      id: unknown;
-      login?: string;
-      name?: string;
-      avatar_url?: string;
-      email?: string;
-    };
-
-    if (
-      typeof githubUser.id !== "number" ||
-      !Number.isFinite(githubUser.id) ||
-      githubUser.id <= 0
-    ) {
-      throw new Error("GitHub user response is missing a valid numeric id");
-    }
-
-    const githubId: number = githubUser.id;
-
-    const githubEmails: Array<{
-      email: string;
-      primary: boolean;
-      verified: boolean;
-    }> = emailsRes.ok
-      ? ((await emailsRes.json()) as Array<{
-          email: string;
-          primary: boolean;
-          verified: boolean;
-        }>)
-      : [];
-
-    const primaryEmail =
-      githubUser.email ||
-      githubEmails.find((e) => e.primary && e.verified)?.email ||
-      githubEmails[0]?.email ||
-      "";
-
-    const login =
-      typeof githubUser.login === "string"
-        ? githubUser.login
-        : `github-${githubId}`;
-    const nameParts = (
-      typeof githubUser.name === "string" && githubUser.name
-        ? githubUser.name
-        : login
-    ).split(" ");
-    const firstName = nameParts[0] ?? null;
-    const lastName = nameParts.slice(1).join(" ") || null;
-
-    const claims: Record<string, unknown> = {
-      sub: `github:${githubId}`,
-      email: primaryEmail,
-      first_name: firstName,
-      last_name: lastName,
-      profile_image_url:
-        typeof githubUser.avatar_url === "string"
-          ? githubUser.avatar_url
-          : null,
-    };
-
-    const userInfo = await upsertUserAndProfile(claims);
-
-    const now = Math.floor(Date.now() / 1000);
-    const sessionData: SessionData = {
-      user: {
-        id: userInfo.id,
-        email: userInfo.email,
-        firstName: userInfo.firstName,
-        lastName: userInfo.lastName,
-        profileImageUrl: userInfo.profileImageUrl,
-      },
-      access_token: tokenData.access_token,
-      expires_at: now + 8 * 3600,
-    };
-
-    const sid = await createSession(sessionData);
-    setSessionCookie(res, sid);
-
-    let destination = returnTo;
-    if (destination === "/") {
-      if (userInfo.role === "provider") destination = "/provider/dashboard";
-      else if (userInfo.role === "admin") destination = "/admin/dashboard";
-      else if (userInfo.role === "employer") destination = "/employer/dashboard";
-      else destination = "/dashboard";
-    }
-
-    res.redirect(destination);
-  } catch (err) {
-    req.log?.error({ err }, "GitHub OAuth callback error");
-    res.redirect("/sign-in?error=github_oauth_failed");
-  }
 });
 
 export default router;
