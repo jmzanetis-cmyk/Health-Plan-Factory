@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1290px; height: 2796px; background: #1b2d4f; overflow: hidden; }
+  .frame { width: 1290px; height: 2796px; display: flex; flex-direction: column; align-items: center; }
+  .status-bar { width: 100%; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; }
+  .time { color: rgba(255,255,255,0.9); font-size: 28px; font-weight: 600; font-family: sans-serif; }
+  .icons { display: flex; gap: 12px; }
+  .icon-bar { width: 44px; height: 14px; background: rgba(255,255,255,0.8); border-radius: 3px; }
+  .logo-area { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .logo-badge { width: 110px; height: 110px; background: linear-gradient(135deg, #c9a96e, #e8c97e); border-radius: 28px; display: flex; align-items: center; justify-content: center; }
+  .logo-text { color: #1b2d4f; font-size: 52px; font-weight: 900; font-family: sans-serif; }
+  .brand { color: #fff; font-size: 36px; font-family: Georgia, serif; }
+  .headline { margin-top: 56px; text-align: center; padding: 0 60px; }
+  .headline h1 { color: #fff; font-size: 76px; font-family: Georgia, serif; font-weight: 700; line-height: 1.05; }
+  .headline p { color: rgba(255,255,255,0.65); font-size: 34px; font-family: sans-serif; font-weight: 300; margin-top: 24px; line-height: 1.4; }
+  .phone-frame { margin-top: 56px; width: 560px; background: #0e1e36; border-radius: 52px; border: 3px solid rgba(255,255,255,0.12); padding: 28px 24px 36px; box-shadow: 0 40px 120px rgba(0,0,0,0.6); }
+  .phone-notch { width: 140px; height: 26px; background: #0e1e36; border-radius: 13px; margin: 0 auto 20px; }
+  .phone-content { background: #162540; border-radius: 32px; padding: 22px 20px; }
+  .hsa-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .hsa-title { color: #fff; font-size: 20px; font-family: sans-serif; font-weight: 700; }
+  .hsa-total-box { text-align: right; }
+  .hsa-total-label { color: rgba(255,255,255,0.4); font-size: 14px; font-family: sans-serif; }
+  .hsa-total-val { color: #4cbb78; font-size: 28px; font-family: sans-serif; font-weight: 700; }
+  .hsa-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: rgba(255,255,255,0.05); border-radius: 14px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.06); }
+  .hsa-left { display: flex; align-items: center; gap: 12px; }
+  .hsa-emoji { font-size: 24px; }
+  .hsa-name { color: rgba(255,255,255,0.85); font-size: 18px; font-family: sans-serif; font-weight: 500; }
+  .hsa-date { color: rgba(255,255,255,0.35); font-size: 14px; font-family: sans-serif; margin-top: 2px; }
+  .hsa-amount { text-align: right; }
+  .hsa-dollars { color: #c9a96e; font-size: 20px; font-family: sans-serif; font-weight: 700; }
+  .hsa-eligible { color: #4cbb78; font-size: 13px; font-family: sans-serif; margin-top: 2px; }
+  .hsa-not-eligible { color: rgba(255,255,255,0.3); font-size: 13px; font-family: sans-serif; margin-top: 2px; }
+  .add-btn { background: rgba(201,169,110,0.12); border: 1px solid rgba(201,169,110,0.25); border-radius: 40px; padding: 12px 0; text-align: center; margin-top: 12px; }
+  .add-text { color: #c9a96e; font-size: 18px; font-family: sans-serif; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons"><div class="icon-bar" style="width:28px;opacity:.7"></div><div class="icon-bar" style="width:36px"></div></div>
+  </div>
+  <div class="logo-area">
+    <div class="logo-badge"><span class="logo-text">H</span></div>
+    <span class="brand">Health Plan Factory</span>
+  </div>
+  <div class="headline">
+    <h1>HSA/FSA tracking built in</h1>
+    <p>Log tax-advantaged wellness spending. Know what qualifies.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+      <div class="hsa-header">
+        <span class="hsa-title">June Spending</span>
+        <div class="hsa-total-box">
+          <div class="hsa-total-label">HSA/FSA eligible</div>
+          <div class="hsa-total-val">$270</div>
+        </div>
+      </div>
+      <div class="hsa-row">
+        <div class="hsa-left"><span class="hsa-emoji">💆</span><div><div class="hsa-name">Serene Touch Massage</div><div class="hsa-date">Jun 13</div></div></div>
+        <div class="hsa-amount"><div class="hsa-dollars">$65</div><div class="hsa-eligible">✓ HSA eligible</div></div>
+      </div>
+      <div class="hsa-row">
+        <div class="hsa-left"><span class="hsa-emoji">🪡</span><div><div class="hsa-name">Hudson Valley Acupuncture</div><div class="hsa-date">Jun 11</div></div></div>
+        <div class="hsa-amount"><div class="hsa-dollars">$75</div><div class="hsa-eligible">✓ HSA eligible</div></div>
+      </div>
+      <div class="hsa-row">
+        <div class="hsa-left"><span class="hsa-emoji">🧘</span><div><div class="hsa-name">Flow State Yoga</div><div class="hsa-date">Jun 9</div></div></div>
+        <div class="hsa-amount"><div class="hsa-dollars">$20</div><div class="hsa-not-eligible">Check with HSA</div></div>
+      </div>
+      <div class="hsa-row">
+        <div class="hsa-left"><span class="hsa-emoji">🥗</span><div><div class="hsa-name">NutriWell RDN Session</div><div class="hsa-date">Jun 7</div></div></div>
+        <div class="hsa-amount"><div class="hsa-dollars">$120</div><div class="hsa-eligible">✓ HSA eligible</div></div>
+      </div>
+      <div class="add-btn"><span class="add-text">+ Log a session</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -363,7 +363,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const router = useRouter();
-  const { logout } = useAuth();
+  const { signOut: logout } = useAuth();
   const { data: authData } = useGetCurrentAuthUser();
   const user = authData?.user;
   const { t } = useTranslation();

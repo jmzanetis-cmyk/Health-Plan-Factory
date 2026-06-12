@@ -25,6 +25,7 @@ module.exports = {
     bundleIdentifier: "com.healthplanfactory.mobile",
     buildNumber: "1",
     supportsTablet: false,
+    requiresFullScreen: true,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSHealthShareUsageDescription:

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1290px; height: 2796px; background: #1b2d4f; overflow: hidden; }
+  .frame { width: 1290px; height: 2796px; display: flex; flex-direction: column; align-items: center; }
+  .status-bar { width: 100%; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; }
+  .time { color: rgba(255,255,255,0.9); font-size: 28px; font-weight: 600; font-family: sans-serif; }
+  .icons { display: flex; gap: 12px; }
+  .icon-bar { width: 44px; height: 14px; background: rgba(255,255,255,0.8); border-radius: 3px; }
+  .logo-area { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .logo-badge { width: 110px; height: 110px; background: linear-gradient(135deg, #c9a96e, #e8c97e); border-radius: 28px; display: flex; align-items: center; justify-content: center; }
+  .logo-text { color: #1b2d4f; font-size: 52px; font-weight: 900; font-family: sans-serif; }
+  .brand { color: #fff; font-size: 36px; font-family: Georgia, serif; }
+  .headline { margin-top: 56px; text-align: center; padding: 0 60px; }
+  .headline h1 { color: #fff; font-size: 80px; font-family: Georgia, serif; font-weight: 700; line-height: 1.05; }
+  .headline p { color: rgba(255,255,255,0.65); font-size: 34px; font-family: sans-serif; font-weight: 300; margin-top: 24px; line-height: 1.4; }
+  .phone-frame { margin-top: 56px; width: 560px; background: #0e1e36; border-radius: 52px; border: 3px solid rgba(255,255,255,0.12); padding: 28px 24px 36px; box-shadow: 0 40px 120px rgba(0,0,0,0.6); }
+  .phone-notch { width: 140px; height: 26px; background: #0e1e36; border-radius: 13px; margin: 0 auto 20px; }
+  .phone-content { background: #162540; border-radius: 32px; padding: 20px; }
+  .streak-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .streak-title { color: #fff; font-size: 20px; font-family: sans-serif; font-weight: 700; }
+  .streak-count { color: #c9a96e; font-size: 22px; font-family: sans-serif; font-weight: 700; }
+  .streak-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 16px; }
+  .streak-day { height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-family: sans-serif; color: rgba(255,255,255,0.5); }
+  .day-done { background: #c9a96e; color: #1b2d4f; font-weight: 700; }
+  .day-partial { background: rgba(201,169,110,0.35); color: rgba(255,255,255,0.8); }
+  .day-empty { background: rgba(255,255,255,0.05); }
+  .day-today { background: rgba(201,169,110,0.15); border: 1.5px solid #c9a96e; color: #c9a96e; font-weight: 700; }
+  .journal-entry { background: rgba(255,255,255,0.05); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.07); }
+  .entry-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .entry-modality { color: rgba(255,255,255,0.8); font-size: 18px; font-family: sans-serif; font-weight: 600; }
+  .entry-date { color: rgba(255,255,255,0.3); font-size: 15px; font-family: sans-serif; }
+  .entry-text { color: rgba(255,255,255,0.5); font-size: 16px; font-family: sans-serif; line-height: 1.4; }
+  .rating-row { display: flex; gap: 6px; margin-top: 8px; }
+  .rating-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .rating-filled { background: #c9a96e; }
+  .rating-empty { background: rgba(255,255,255,0.15); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons"><div class="icon-bar" style="width:28px;opacity:.7"></div><div class="icon-bar" style="width:36px"></div></div>
+  </div>
+  <div class="logo-area">
+    <div class="logo-badge"><span class="logo-text">H</span></div>
+    <span class="brand">Health Plan Factory</span>
+  </div>
+  <div class="headline">
+    <h1>Track your streak</h1>
+    <p>Log every session. See what's working over time.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+      <div class="streak-header">
+        <span class="streak-title">June 2026</span>
+        <span class="streak-count">🔥 13-day streak</span>
+      </div>
+      <div class="streak-grid">
+        <div class="streak-day day-done">1</div><div class="streak-day day-done">2</div><div class="streak-day day-done">3</div><div class="streak-day day-done">4</div><div class="streak-day day-done">5</div><div class="streak-day day-done">6</div><div class="streak-day day-done">7</div>
+        <div class="streak-day day-done">8</div><div class="streak-day day-done">9</div><div class="streak-day day-partial">10</div><div class="streak-day day-done">11</div><div class="streak-day day-done">12</div><div class="streak-day day-done">13</div><div class="streak-day day-today">14</div>
+        <div class="streak-day day-empty">15</div><div class="streak-day day-empty">16</div><div class="streak-day day-empty">17</div><div class="streak-day day-empty">18</div><div class="streak-day day-empty">19</div><div class="streak-day day-empty">20</div><div class="streak-day day-empty">21</div>
+      </div>
+      <div class="journal-entry">
+        <div class="entry-top"><span class="entry-modality">💆 Massage Therapy</span><span class="entry-date">Jun 13</span></div>
+        <div class="entry-text">Second massage. Therapist focused on thoracic spine. Noticeably better posture at my desk already.</div>
+        <div class="rating-row">
+          <div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-empty"></div>
+        </div>
+      </div>
+      <div class="journal-entry">
+        <div class="entry-top"><span class="entry-modality">🪡 Acupuncture</span><span class="entry-date">Jun 11</span></div>
+        <div class="entry-text">Best sleep in weeks. 8 hours straight. Practitioner added sleep meridian points.</div>
+        <div class="rating-row">
+          <div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-filled"></div><div class="rating-dot rating-empty"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

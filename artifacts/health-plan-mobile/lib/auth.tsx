@@ -6,23 +6,14 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
-import * as AuthSession from "expo-auth-session";
-import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
-import { getApiBaseUrl } from "@/lib/apiBase";
 import { changeLanguage } from "@/lib/i18n";
 
-type AuthRequestWithNonce = AuthSession.AuthRequest & {
-  /** nonce is set internally by expo-auth-session for OpenID Connect flows
-   *  but is not exposed in the AuthRequest type definition. */
-  nonce?: string;
-};
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "https://api.healthplanfactory.com";
 
-WebBrowser.maybeCompleteAuthSession();
-
-const AUTH_TOKEN_KEY = "auth_session_token";
-const ISSUER_URL =
-  process.env.EXPO_PUBLIC_ISSUER_URL ?? "https://replit.com/oidc";
+const TOKEN_KEY = "hpf_access_token";
+const REFRESH_KEY = "hpf_refresh_token";
 
 export interface User {
   id: string;
@@ -36,8 +27,10 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: () => Promise<void>;
-  logout: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signInWithMagicLink: (email: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
   getToken: () => Promise<string | null>;
 }
 
@@ -45,144 +38,161 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   isLoading: true,
   isAuthenticated: false,
-  login: async () => {},
-  logout: async () => {},
+  signIn: async () => {},
+  signInWithMagicLink: async () => {},
+  signOut: async () => {},
+  refreshSession: async () => {},
   getToken: async () => null,
 });
 
-function getClientId(): string {
-  return process.env.EXPO_PUBLIC_REPL_ID || "";
+async function storeTokens(accessToken: string, refreshToken: string) {
+  await Promise.all([
+    SecureStore.setItemAsync(TOKEN_KEY, accessToken),
+    SecureStore.setItemAsync(REFRESH_KEY, refreshToken),
+  ]);
+}
+
+async function clearTokens() {
+  await Promise.all([
+    SecureStore.deleteItemAsync(TOKEN_KEY),
+    SecureStore.deleteItemAsync(REFRESH_KEY),
+  ]);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const discovery = AuthSession.useAutoDiscovery(ISSUER_URL);
-  const redirectUri = AuthSession.makeRedirectUri();
-
-  const [requestRaw, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: getClientId(),
-      scopes: ["openid", "email", "profile", "offline_access"],
-      redirectUri,
-      prompt: AuthSession.Prompt.Login,
-    },
-    discovery
-  );
-  const request = requestRaw as AuthRequestWithNonce | null;
-
   const getToken = useCallback(async () => {
-    return SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+    return SecureStore.getItemAsync(TOKEN_KEY);
   }, []);
 
-  const fetchUser = useCallback(async () => {
-    try {
-      const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-      if (!token) {
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
+  const doRefreshSession = useCallback(async (): Promise<string> => {
+    const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
+    if (!refreshToken) throw new Error("No refresh token");
 
-      const apiBase = getApiBaseUrl();
-      const res = await fetch(`${apiBase}/api/auth/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+    const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
 
-      if (data.user) {
-        setUser(data.user);
-        // Restore server-side language preference (cross-device sync)
-        try {
-          const profRes = await fetch(`${apiBase}/api/profile`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const profData = await profRes.json();
-          const serverLang = profData?.language;
-          if (serverLang === "en" || serverLang === "es") {
-            await changeLanguage(serverLang);
-          }
-        } catch {
-          // Non-blocking — language restore is supplementary
-        }
-      } else {
-        await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
+    if (!res.ok) throw new Error("Session refresh failed");
+
+    const data = await res.json();
+    await storeTokens(data.access_token, data.refresh_token);
+    return data.access_token as string;
   }, []);
 
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
-
-  useEffect(() => {
-    if (response?.type !== "success" || !request?.codeVerifier) return;
-
-    const { code, state } = response.params;
-
-    (async () => {
-      try {
-        const apiBase = getApiBaseUrl();
-        if (!apiBase) return;
-
-        const exchangeRes = await fetch(
-          `${apiBase}/api/mobile-auth/token-exchange`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              code,
-              code_verifier: request?.codeVerifier,
-              redirect_uri: redirectUri,
-              state,
-              nonce: request?.nonce,
-            }),
-          }
-        );
-
-        if (!exchangeRes.ok) {
-          setIsLoading(false);
-          return;
-        }
-
-        const data = await exchangeRes.json();
-        if (data.token) {
-          await SecureStore.setItemAsync(AUTH_TOKEN_KEY, data.token);
-          setIsLoading(true);
-          await fetchUser();
-        }
-      } catch {
-        setIsLoading(false);
-      }
-    })();
-  }, [response, request, redirectUri, fetchUser]);
-
-  const login = useCallback(async () => {
+  const doSignOut = useCallback(async () => {
     try {
-      await promptAsync();
-    } catch {}
-  }, [promptAsync]);
-
-  const logout = useCallback(async () => {
-    try {
-      const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+      const token = await SecureStore.getItemAsync(TOKEN_KEY);
       if (token) {
-        const apiBase = getApiBaseUrl();
-        await fetch(`${apiBase}/api/mobile-auth/logout`, {
+        await fetch(`${API_BASE_URL}/api/logout`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         });
       }
     } catch {
+      // best-effort logout call
     } finally {
-      await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+      await clearTokens();
       setUser(null);
+    }
+  }, []);
+
+  const fetchAndSetUser = useCallback(async () => {
+    const token = await SecureStore.getItemAsync(TOKEN_KEY);
+    if (!token) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    let res = await fetch(`${API_BASE_URL}/api/auth/user`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (res.status === 401) {
+      try {
+        const newToken = await doRefreshSession();
+        res = await fetch(`${API_BASE_URL}/api/auth/user`, {
+          headers: { Authorization: `Bearer ${newToken}` },
+        });
+      } catch {
+        await clearTokens();
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    if (!res.ok) {
+      await clearTokens();
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    const data = await res.json();
+    if (data.user) {
+      setUser(data.user);
+      // Restore server-side language preference (cross-device sync)
+      try {
+        const currentToken = await SecureStore.getItemAsync(TOKEN_KEY);
+        const profRes = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: { Authorization: `Bearer ${currentToken}` },
+        });
+        const profData = await profRes.json();
+        const serverLang = profData?.language;
+        if (serverLang === "en" || serverLang === "es") {
+          await changeLanguage(serverLang);
+        }
+      } catch {
+        // non-blocking — language restore is supplementary
+      }
+    } else {
+      await clearTokens();
+      setUser(null);
+    }
+    setIsLoading(false);
+  }, [doRefreshSession]);
+
+  useEffect(() => {
+    fetchAndSetUser();
+  }, [fetchAndSetUser]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(
+        (err as { message?: string }).message ?? "Sign in failed"
+      );
+    }
+
+    const data = await res.json();
+    await storeTokens(data.access_token, data.refresh_token);
+    setUser(data.user);
+  }, []);
+
+  const signInWithMagicLink = useCallback(async (email: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/auth/magic-link`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(
+        (err as { message?: string }).message ?? "Failed to send magic link"
+      );
     }
   }, []);
 
@@ -192,8 +202,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
-        login,
-        logout,
+        signIn,
+        signInWithMagicLink,
+        signOut: doSignOut,
+        refreshSession: doRefreshSession,
         getToken,
       }}
     >

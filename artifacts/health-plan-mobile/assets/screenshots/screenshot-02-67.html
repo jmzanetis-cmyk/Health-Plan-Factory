@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1290px; height: 2796px; background: #1b2d4f; overflow: hidden; }
+  .frame { width: 1290px; height: 2796px; position: relative; display: flex; flex-direction: column; align-items: center; }
+  .status-bar { width: 100%; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; }
+  .time { color: rgba(255,255,255,0.9); font-size: 28px; font-weight: 600; font-family: sans-serif; }
+  .icons { display: flex; gap: 12px; }
+  .icon-bar { width: 44px; height: 14px; background: rgba(255,255,255,0.8); border-radius: 3px; }
+  .logo-area { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .logo-badge { width: 110px; height: 110px; background: linear-gradient(135deg, #c9a96e, #e8c97e); border-radius: 28px; display: flex; align-items: center; justify-content: center; }
+  .logo-text { color: #1b2d4f; font-size: 52px; font-weight: 900; font-family: sans-serif; }
+  .brand { color: #fff; font-size: 36px; font-family: Georgia, serif; }
+  .headline { margin-top: 56px; text-align: center; padding: 0 60px; }
+  .headline h1 { color: #fff; font-size: 80px; font-family: Georgia, serif; font-weight: 700; line-height: 1.05; }
+  .headline p { color: rgba(255,255,255,0.65); font-size: 34px; font-family: sans-serif; font-weight: 300; margin-top: 24px; line-height: 1.4; }
+  .phone-frame { margin-top: 56px; width: 560px; background: #0e1e36; border-radius: 52px; border: 3px solid rgba(255,255,255,0.12); padding: 28px 24px 36px; box-shadow: 0 40px 120px rgba(0,0,0,0.6); }
+  .phone-notch { width: 140px; height: 26px; background: #0e1e36; border-radius: 13px; margin: 0 auto 20px; }
+  .phone-content { background: #162540; border-radius: 32px; padding: 26px 22px; }
+  .thinking-bar { background: rgba(201,169,110,0.08); border: 1px solid rgba(201,169,110,0.2); border-radius: 14px; padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .thinking-dot { width: 8px; height: 8px; border-radius: 50%; background: #c9a96e; }
+  .thinking-text { color: #c9a96e; font-size: 19px; font-family: sans-serif; }
+  .modality-item { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; border: 1px solid rgba(255,255,255,0.06); }
+  .modality-emoji { font-size: 28px; }
+  .modality-info { flex: 1; }
+  .modality-name { color: #fff; font-size: 22px; font-family: sans-serif; font-weight: 600; }
+  .modality-sub { color: rgba(255,255,255,0.45); font-size: 17px; font-family: sans-serif; margin-top: 3px; }
+  .modality-score { background: rgba(201,169,110,0.15); border-radius: 8px; padding: 4px 10px; }
+  .score-text { color: #c9a96e; font-size: 19px; font-family: sans-serif; font-weight: 700; }
+  .progress-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 18px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #c9a96e, #e8c97e); border-radius: 2px; animation: none; }
+  .progress-label { color: rgba(255,255,255,0.4); font-size: 18px; font-family: sans-serif; margin-top: 10px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons"><div class="icon-bar" style="width:28px;opacity:.7"></div><div class="icon-bar" style="width:36px"></div></div>
+  </div>
+  <div class="logo-area">
+    <div class="logo-badge"><span class="logo-text">H</span></div>
+    <span class="brand">Health Plan Factory</span>
+  </div>
+  <div class="headline">
+    <h1>AI assembles your plan</h1>
+    <p>Ranked by evidence strength, matched to your budget.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+      <div class="thinking-bar">
+        <div class="thinking-dot"></div>
+        <span class="thinking-text">Analyzing 15 modalities for your goals…</span>
+      </div>
+      <div class="modality-item">
+        <span class="modality-emoji">💆</span>
+        <div class="modality-info">
+          <div class="modality-name">Massage Therapy</div>
+          <div class="modality-sub">2×/month · $120/mo</div>
+        </div>
+        <div class="modality-score"><span class="score-text">92</span></div>
+      </div>
+      <div class="modality-item">
+        <span class="modality-emoji">🪡</span>
+        <div class="modality-info">
+          <div class="modality-name">Acupuncture</div>
+          <div class="modality-sub">4×/month · $60/mo</div>
+        </div>
+        <div class="modality-score"><span class="score-text">87</span></div>
+      </div>
+      <div class="modality-item">
+        <span class="modality-emoji">🧘</span>
+        <div class="modality-info">
+          <div class="modality-name">Yoga</div>
+          <div class="modality-sub">8×/month · $40/mo</div>
+        </div>
+        <div class="modality-score"><span class="score-text">84</span></div>
+      </div>
+      <div class="modality-item" style="opacity:0.5">
+        <span class="modality-emoji">🥗</span>
+        <div class="modality-info">
+          <div class="modality-name">Nutrition Coaching</div>
+          <div class="modality-sub">1×/month · $15/mo</div>
+        </div>
+        <div class="modality-score"><span class="score-text">71</span></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+      <div class="progress-label">Assembling your plan…</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

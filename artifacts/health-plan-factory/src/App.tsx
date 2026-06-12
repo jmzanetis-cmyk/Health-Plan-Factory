@@ -74,6 +74,7 @@ import FAQ from "@/pages/FAQ";
 import Legal from "@/pages/Legal";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
+import Support from "@/pages/Support";
 import Contact from "@/pages/Contact";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
@@ -146,6 +147,7 @@ function AppRoutes() {
       <Route path="/legal" element={<Layout><Legal /></Layout>} />
       <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
       <Route path="/terms" element={<Layout><Terms /></Layout>} />
+      <Route path="/support" element={<Layout><Support /></Layout>} />
       <Route path="/contact" element={<Layout><Contact /></Layout>} />
       <Route path="/blog" element={<Layout><Blog /></Layout>} />
       <Route path="/blog/:slug" element={<Layout><BlogPost /></Layout>} />

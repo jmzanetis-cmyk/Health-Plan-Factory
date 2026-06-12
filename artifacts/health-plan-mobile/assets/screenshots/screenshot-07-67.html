@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1290px; height: 2796px; background: #1b2d4f; overflow: hidden; }
+  .frame { width: 1290px; height: 2796px; display: flex; flex-direction: column; align-items: center; }
+  .status-bar { width: 100%; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; }
+  .time { color: rgba(255,255,255,0.9); font-size: 28px; font-weight: 600; font-family: sans-serif; }
+  .icons { display: flex; gap: 12px; }
+  .icon-bar { width: 44px; height: 14px; background: rgba(255,255,255,0.8); border-radius: 3px; }
+  .logo-area { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .logo-badge { width: 110px; height: 110px; background: linear-gradient(135deg, #c9a96e, #e8c97e); border-radius: 28px; display: flex; align-items: center; justify-content: center; }
+  .logo-text { color: #1b2d4f; font-size: 52px; font-weight: 900; font-family: sans-serif; }
+  .brand { color: #fff; font-size: 36px; font-family: Georgia, serif; }
+  .headline { margin-top: 56px; text-align: center; padding: 0 60px; }
+  .headline h1 { color: #fff; font-size: 76px; font-family: Georgia, serif; font-weight: 700; line-height: 1.05; }
+  .headline p { color: rgba(255,255,255,0.65); font-size: 34px; font-family: sans-serif; font-weight: 300; margin-top: 24px; line-height: 1.4; }
+  .phone-frame { margin-top: 56px; width: 560px; background: #0e1e36; border-radius: 52px; border: 3px solid rgba(255,255,255,0.12); padding: 28px 24px 36px; box-shadow: 0 40px 120px rgba(0,0,0,0.6); }
+  .phone-notch { width: 140px; height: 26px; background: #0e1e36; border-radius: 13px; margin: 0 auto 20px; }
+  .phone-content { background: #162540; border-radius: 32px; padding: 22px 20px; }
+  .section-header { color: #fff; font-size: 22px; font-family: sans-serif; font-weight: 700; margin-bottom: 16px; }
+  .level-card { border-radius: 16px; padding: 18px; margin-bottom: 10px; border: 2px solid transparent; cursor: pointer; }
+  .level-free { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+  .level-daily { background: rgba(201,169,110,0.08); border-color: rgba(201,169,110,0.25); }
+  .level-active { background: rgba(201,169,110,0.12); border-color: #c9a96e; }
+  .level-intense { background: rgba(255,100,100,0.08); border-color: rgba(255,100,100,0.2); }
+  .level-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .level-name { color: #fff; font-size: 20px; font-family: sans-serif; font-weight: 600; }
+  .level-badge { font-size: 14px; font-family: sans-serif; font-weight: 600; padding: 3px 10px; border-radius: 10px; }
+  .badge-free { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+  .badge-plus { background: rgba(201,169,110,0.2); color: #c9a96e; }
+  .badge-active { background: #c9a96e; color: #1b2d4f; }
+  .level-desc { color: rgba(255,255,255,0.45); font-size: 16px; font-family: sans-serif; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons"><div class="icon-bar" style="width:28px;opacity:.7"></div><div class="icon-bar" style="width:36px"></div></div>
+  </div>
+  <div class="logo-area">
+    <div class="logo-badge"><span class="logo-text">H</span></div>
+    <span class="brand">Health Plan Factory</span>
+  </div>
+  <div class="headline">
+    <h1>Choose your accountability level</h1>
+    <p>From gentle nudges to intense daily coaching — you set the pace.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+      <div class="section-header">Accountability Mode</div>
+      <div class="level-card level-free">
+        <div class="level-top"><span class="level-name">🌱 Light</span><span class="level-badge badge-free">Free</span></div>
+        <div class="level-desc">Weekly check-ins. Track sessions when you want. No pressure.</div>
+      </div>
+      <div class="level-card level-daily">
+        <div class="level-top"><span class="level-name">📅 Daily</span><span class="level-badge badge-plus">Plus</span></div>
+        <div class="level-desc">Daily session prompts. Coach messages on missed days. Streak tracking.</div>
+      </div>
+      <div class="level-card level-active">
+        <div class="level-top"><span class="level-name">🔥 Active ✓</span><span class="level-badge badge-active">Selected</span></div>
+        <div class="level-desc">Morning check-ins, afternoon nudges, weekly progress reviews. Most popular.</div>
+      </div>
+      <div class="level-card level-intense">
+        <div class="level-top"><span class="level-name">⚡ Intense</span><span class="level-badge badge-plus">Plus</span></div>
+        <div class="level-desc">Push notifications 3×/day. Goal streaks. Coach intervenes on 2+ missed days.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1290px; height: 2796px; background: #1b2d4f; font-family: 'Georgia', serif; overflow: hidden; }
+  .frame { width: 1290px; height: 2796px; position: relative; display: flex; flex-direction: column; align-items: center; }
+  .status-bar { width: 100%; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; }
+  .time { color: rgba(255,255,255,0.9); font-size: 28px; font-weight: 600; font-family: sans-serif; }
+  .icons { display: flex; gap: 12px; align-items: center; }
+  .icon-bar { width: 44px; height: 14px; background: rgba(255,255,255,0.8); border-radius: 3px; }
+  .logo-area { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .logo-badge { width: 110px; height: 110px; background: linear-gradient(135deg, #c9a96e, #e8c97e); border-radius: 28px; display: flex; align-items: center; justify-content: center; }
+  .logo-text { color: #1b2d4f; font-size: 52px; font-weight: 900; font-family: sans-serif; }
+  .brand { color: #fff; font-size: 36px; font-family: 'Georgia', serif; letter-spacing: 0.5px; }
+  .headline { margin-top: 56px; text-align: center; padding: 0 60px; }
+  .headline h1 { color: #fff; font-size: 82px; font-family: 'Georgia', serif; font-weight: 700; line-height: 1.05; letter-spacing: -1px; }
+  .headline p { color: rgba(255,255,255,0.65); font-size: 34px; font-family: sans-serif; font-weight: 300; margin-top: 24px; line-height: 1.4; }
+  .phone-frame { margin-top: 60px; width: 560px; background: #0e1e36; border-radius: 52px; border: 3px solid rgba(255,255,255,0.12); padding: 28px 24px 36px; box-shadow: 0 40px 120px rgba(0,0,0,0.6); }
+  .phone-notch { width: 140px; height: 26px; background: #0e1e36; border-radius: 13px; margin: 0 auto 20px; }
+  .phone-content { background: #162540; border-radius: 32px; padding: 28px 22px; }
+  .section-label { color: rgba(255,255,255,0.4); font-size: 20px; font-family: sans-serif; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+  .intake-step { background: rgba(255,255,255,0.05); border-radius: 18px; padding: 20px 22px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.08); }
+  .step-row { display: flex; align-items: center; gap: 14px; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #c9a96e; flex-shrink: 0; }
+  .step-text { color: rgba(255,255,255,0.85); font-size: 22px; font-family: sans-serif; font-weight: 400; }
+  .step-active { background: rgba(201,169,110,0.12); border-color: rgba(201,169,110,0.35); }
+  .budget-row { margin-top: 20px; background: rgba(255,255,255,0.05); border-radius: 18px; padding: 22px; }
+  .budget-label { color: rgba(255,255,255,0.5); font-size: 18px; font-family: sans-serif; margin-bottom: 10px; }
+  .budget-amount { color: #c9a96e; font-size: 52px; font-family: sans-serif; font-weight: 700; }
+  .budget-slider { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 12px; position: relative; }
+  .budget-fill { width: 60%; height: 100%; background: linear-gradient(90deg, #c9a96e, #e8c97e); border-radius: 3px; }
+  .cta-btn { margin-top: 22px; background: #c9a96e; border-radius: 40px; padding: 18px 0; text-align: center; }
+  .cta-text { color: #1b2d4f; font-size: 26px; font-family: sans-serif; font-weight: 700; }
+  .tag { display: inline-block; background: rgba(201,169,110,0.15); border: 1px solid rgba(201,169,110,0.3); border-radius: 20px; padding: 6px 16px; color: #c9a96e; font-size: 18px; font-family: sans-serif; margin: 4px; }
+  .tags-row { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <div class="icon-bar" style="width:28px; opacity:.7"></div>
+      <div class="icon-bar" style="width:36px"></div>
+    </div>
+  </div>
+  <div class="logo-area">
+    <div class="logo-badge"><span class="logo-text">H</span></div>
+    <span class="brand">Health Plan Factory</span>
+  </div>
+  <div class="headline">
+    <h1>Build your plan</h1>
+    <p>Tell us your goals, budget, and conditions. We do the rest.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+      <div class="section-label">Your Wellness Goals</div>
+      <div class="intake-step step-active">
+        <div class="step-row"><div class="step-dot"></div><span class="step-text">Reduce stress &amp; anxiety</span></div>
+      </div>
+      <div class="intake-step step-active">
+        <div class="step-row"><div class="step-dot"></div><span class="step-text">Improve sleep quality</span></div>
+      </div>
+      <div class="intake-step">
+        <div class="step-row"><div class="step-dot" style="background:rgba(255,255,255,0.2)"></div><span class="step-text" style="color:rgba(255,255,255,0.45)">Back pain relief</span></div>
+      </div>
+      <div class="intake-step">
+        <div class="step-row"><div class="step-dot" style="background:rgba(255,255,255,0.2)"></div><span class="step-text" style="color:rgba(255,255,255,0.45)">More energy</span></div>
+      </div>
+      <div class="budget-row">
+        <div class="budget-label">Monthly wellness budget</div>
+        <div class="budget-amount">$250/mo</div>
+        <div class="budget-slider"><div class="budget-fill"></div></div>
+      </div>
+      <div class="cta-btn"><span class="cta-text">Build My Plan →</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1290px; height: 2796px; background: #1b2d4f; overflow: hidden; }
+  .frame { width: 1290px; height: 2796px; display: flex; flex-direction: column; align-items: center; }
+  .status-bar { width: 100%; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; }
+  .time { color: rgba(255,255,255,0.9); font-size: 28px; font-weight: 600; font-family: sans-serif; }
+  .icons { display: flex; gap: 12px; }
+  .icon-bar { width: 44px; height: 14px; background: rgba(255,255,255,0.8); border-radius: 3px; }
+  .logo-area { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .logo-badge { width: 110px; height: 110px; background: linear-gradient(135deg, #c9a96e, #e8c97e); border-radius: 28px; display: flex; align-items: center; justify-content: center; }
+  .logo-text { color: #1b2d4f; font-size: 52px; font-weight: 900; font-family: sans-serif; }
+  .brand { color: #fff; font-size: 36px; font-family: Georgia, serif; }
+  .headline { margin-top: 56px; text-align: center; padding: 0 60px; }
+  .headline h1 { color: #fff; font-size: 76px; font-family: Georgia, serif; font-weight: 700; line-height: 1.05; }
+  .headline p { color: rgba(255,255,255,0.65); font-size: 34px; font-family: sans-serif; font-weight: 300; margin-top: 24px; line-height: 1.4; }
+  .phone-frame { margin-top: 56px; width: 560px; background: #0e1e36; border-radius: 52px; border: 3px solid rgba(255,255,255,0.12); padding: 28px 24px 36px; box-shadow: 0 40px 120px rgba(0,0,0,0.6); }
+  .phone-notch { width: 140px; height: 26px; background: #0e1e36; border-radius: 13px; margin: 0 auto 20px; }
+  .phone-content { background: #162540; border-radius: 32px; padding: 24px 20px; }
+  .plan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .plan-title { color: #fff; font-size: 24px; font-family: sans-serif; font-weight: 700; }
+  .plan-budget { color: rgba(255,255,255,0.45); font-size: 18px; font-family: sans-serif; }
+  .modality-card { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.07); }
+  .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .card-name { display: flex; align-items: center; gap: 10px; }
+  .card-emoji { font-size: 24px; }
+  .card-title { color: #fff; font-size: 20px; font-family: sans-serif; font-weight: 600; }
+  .evidence-badge { font-size: 16px; font-family: sans-serif; font-weight: 600; padding: 4px 10px; border-radius: 8px; }
+  .strong { background: rgba(76,187,120,0.15); color: #4cbb78; }
+  .moderate { background: rgba(201,169,110,0.15); color: #c9a96e; }
+  .card-detail { color: rgba(255,255,255,0.45); font-size: 17px; font-family: sans-serif; }
+  .cost-row { display: flex; justify-content: space-between; margin-top: 6px; }
+  .cost-label { color: rgba(255,255,255,0.3); font-size: 16px; font-family: sans-serif; }
+  .cost-val { color: #c9a96e; font-size: 18px; font-family: sans-serif; font-weight: 600; }
+  .total-bar { background: rgba(201,169,110,0.08); border: 1px solid rgba(201,169,110,0.2); border-radius: 14px; padding: 14px 18px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .total-label { color: rgba(255,255,255,0.5); font-size: 18px; font-family: sans-serif; }
+  .total-val { color: #c9a96e; font-size: 24px; font-family: sans-serif; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons"><div class="icon-bar" style="width:28px;opacity:.7"></div><div class="icon-bar" style="width:36px"></div></div>
+  </div>
+  <div class="logo-area">
+    <div class="logo-badge"><span class="logo-text">H</span></div>
+    <span class="brand">Health Plan Factory</span>
+  </div>
+  <div class="headline">
+    <h1>Evidence-ranked recommendations</h1>
+    <p>Every modality rated Strong, Moderate, or Emerging.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-content">
+      <div class="plan-header">
+        <span class="plan-title">Your Plan</span>
+        <span class="plan-budget">$250/mo budget</span>
+      </div>
+      <div class="modality-card">
+        <div class="card-top">
+          <div class="card-name"><span class="card-emoji">💆</span><span class="card-title">Massage Therapy</span></div>
+          <span class="evidence-badge strong">Strong</span>
+        </div>
+        <div class="card-detail">2× per month · recommended</div>
+        <div class="cost-row"><span class="cost-label">Est. monthly cost</span><span class="cost-val">$120</span></div>
+      </div>
+      <div class="modality-card">
+        <div class="card-top">
+          <div class="card-name"><span class="card-emoji">🪡</span><span class="card-title">Acupuncture</span></div>
+          <span class="evidence-badge strong">Strong</span>
+        </div>
+        <div class="card-detail">4× per month · back pain + sleep</div>
+        <div class="cost-row"><span class="cost-label">Est. monthly cost</span><span class="cost-val">$60</span></div>
+      </div>
+      <div class="modality-card">
+        <div class="card-top">
+          <div class="card-name"><span class="card-emoji">🧘</span><span class="card-title">Yoga</span></div>
+          <span class="evidence-badge moderate">Moderate</span>
+        </div>
+        <div class="card-detail">8× per month · stress + mobility</div>
+        <div class="cost-row"><span class="cost-label">Est. monthly cost</span><span class="cost-val">$40</span></div>
+      </div>
+      <div class="total-bar">
+        <span class="total-label">Total / month</span>
+        <span class="total-val">$235 / $250</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

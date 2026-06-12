@@ -9,23 +9,64 @@
 -- and walking through every tab (plan, coach, journal, discover,
 -- accountability) to confirm Plus features are unlocked.
 --
--- LOGIN NOTE:
---   This app uses OIDC (Replit Auth) or GitHub OAuth -- no password login.
---   To give the Apple reviewer access, generate a magic link via the API
---   after running this script, using profileId 00000000-0000-0000-0000-000000000099.
---   Magic links expire in 15 minutes so generate one fresh before submitting.
---
--- CREDENTIALS FOR APP STORE CONNECT REVIEWER NOTES:
---   Email: appstore-reviewer@healthplanfactory.com
---   Login: Via magic link (see above)
+-- ============================================================
+-- App Store Reviewer Login
+--   Email:    appstore-reviewer@healthplanfactory.com
+--   Password: ReviewHPF2026!
+--   URL:      https://healthplanfactory.com/sign-in
+-- ============================================================
+-- Auth: Supabase Auth (email + password). The auth.users entry
+-- below creates the login credential. public.users mirrors it
+-- for the Express session layer. Both use the same fixed UUID.
 -- ============================================================
 
---  Fixed IDs used throughout this script 
+--  Fixed IDs used throughout this script
 --   Profile / User ID : 00000000-0000-0000-0000-000000000099
 --   Intake ID         : reviewer-intake-2026
 --   Plan ID           : reviewer-plan-2026
 
---  1. users table (required by Replit Auth) 
+--  1a. Supabase Auth user (enables email+password login)
+
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at, confirmation_token, email_change,
+  email_change_token_new, recovery_token
+)
+VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-0000-0000-000000000099'::uuid,
+  'authenticated', 'authenticated',
+  'appstore-reviewer@healthplanfactory.com',
+  crypt('ReviewHPF2026!', gen_salt('bf')),
+  NOW(),
+  '{"provider": "email", "providers": ["email"]}',
+  '{"first_name": "App Store", "last_name": "Reviewer"}',
+  NOW(), NOW(),
+  '', '', '', ''
+)
+ON CONFLICT (id) DO NOTHING;
+
+--  1b. Auth identity (links email provider to auth.users row)
+
+INSERT INTO auth.identities (
+  provider_id, user_id, identity_data, provider,
+  last_sign_in_at, created_at, updated_at
+)
+VALUES (
+  'appstore-reviewer@healthplanfactory.com',
+  '00000000-0000-0000-0000-000000000099'::uuid,
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000099',
+    'email', 'appstore-reviewer@healthplanfactory.com',
+    'email_verified', true
+  ),
+  'email',
+  NOW(), NOW(), NOW()
+)
+ON CONFLICT (provider, provider_id) DO NOTHING;
+
+--  1c. public.users mirror (required by Express session layer)
 
 INSERT INTO users (id, email, first_name, last_name, created_at, updated_at)
 VALUES (
