@@ -270,6 +270,9 @@ export default function Referral() {
         <p className="text-sm" style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-secondary)" }}>
           {t("referral.sub")}
         </p>
+        <p className="text-xs" style={{ fontFamily: "var(--app-font-sans)", color: "var(--text-muted)", marginTop: "0.5rem" }}>
+          When you refer someone who subscribes to Health Plan Factory Plus, you receive account credits applied to your subscription. Health Plan Factory benefits when referrals convert to paid members.
+        </p>
       </div>
 
       {/* ── Celebration Banner ─────────────────────────────────────────────── */}

@@ -110,7 +110,8 @@ function UserMenu({ onClose }: { onClose?: () => void }) {
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const { isAuthenticated, isLoading, login } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
   const navLinks = [
@@ -221,7 +222,7 @@ export function Navbar() {
             {!isLoading && !isAuthenticated && (
               <>
                 <button
-                  onClick={() => { setMobileOpen(false); login(); }}
+                  onClick={() => { setMobileOpen(false); navigate("/sign-in"); }}
                   className="text-lg font-medium py-3 border-b text-left"
                   style={{ color: "var(--text-secondary)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)", borderBottom: "1px solid rgba(212,34,126,0.08)" }}
                 >

@@ -45,8 +45,9 @@ export async function testAuthMiddleware(
         id: profile.id,
         email: profile.email ?? "",
         role: (profile.role as "member" | "admin" | "provider") ?? "member",
-        displayName: profile.displayName ?? null,
-        avatarUrl: profile.avatarUrl ?? null,
+        firstName: profile.displayName?.split(" ")[0] ?? null,
+        lastName: profile.displayName?.split(" ").slice(1).join(" ") || null,
+        profileImageUrl: profile.avatarUrl ?? null,
       };
     }
   } catch {

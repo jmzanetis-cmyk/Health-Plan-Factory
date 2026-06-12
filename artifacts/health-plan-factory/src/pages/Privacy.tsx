@@ -98,9 +98,8 @@ export default function Privacy() {
               "Anthropic — AI coaching responses. Conversation context is transmitted to Anthropic's API. Anthropic does not train on API data by default.",
               "Resend — transactional email delivery.",
               "Twilio — SMS notifications (only if you opt in).",
-              "RevenueCat — subscription verification for mobile (reads entitlements only; does not receive health data).",
               "Sentry — crash reporting (diagnostic data only, not linked to identity).",
-              "Apple — HealthKit integration operates under Apple's HealthKit agreements.",
+              "Apple — HealthKit integration operates under Apple's HealthKit agreements and developer program agreements.",
               "Providers — if you contact a provider through the Platform, limited profile information (name, plan summary) may be shared with that provider at your direction.",
               "Law enforcement or regulators — if required by applicable law, court order, or to protect the rights and safety of our users or the public.",
               "Business transfers — in connection with a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction.",
@@ -146,13 +145,26 @@ export default function Privacy() {
             </P>
           </Section>
 
-          <Section title="11. Changes to This Policy">
+          <Section title="11. Third-Party Service Providers">
+            <P>We use the following third-party service providers to operate the Platform. Each provider processes only the data necessary to deliver their service and is bound by a data processing agreement or equivalent contractual obligation:</P>
+            <UL items={[
+              "Stripe (United States) — payment processing and subscription management. Stripe is PCI-DSS Level 1 certified.",
+              "Supabase (United States) — database hosting and user authentication.",
+              "Anthropic (United States) — AI coaching responses powered by the Claude API.",
+              "Resend (United States) — transactional email delivery.",
+              "Twilio (United States) — SMS notifications (only if you opt in).",
+              "Sentry (United States) — crash reporting and error monitoring.",
+              "Apple (United States) — HealthKit integration and iOS app distribution.",
+            ]} />
+          </Section>
+
+          <Section title="12. Changes to This Policy">
             <P>
               We may update this Privacy Policy from time to time. If we make material changes, we will notify you by email (to the address on your account) or by displaying a notice on the Platform at least 14 days before the change takes effect. Your continued use of the Platform after the effective date constitutes acceptance of the updated policy.
             </P>
           </Section>
 
-          <Section title="12. Contact">
+          <Section title="13. Contact">
             <P>
               For privacy-related questions or requests, contact us at:<br />
               <strong>privacy@healthplanfactory.com</strong><br />

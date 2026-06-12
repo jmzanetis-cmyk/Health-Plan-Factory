@@ -116,7 +116,7 @@ export default function HsaUnlock() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const safeName = (user?.name ?? "member").toLowerCase().replace(/\s+/g, "-");
+      const safeName = (user?.firstName ?? "member").toLowerCase().replace(/\s+/g, "-");
       a.download = `lmn-draft-${safeName}-${new Date().toISOString().slice(0, 10)}.pdf`;
       document.body.appendChild(a);
       a.click();

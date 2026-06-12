@@ -512,7 +512,7 @@ router.post(
       await db.insert(processedWebhooks).values({
         eventId: event.id,
         eventType: event.type,
-        payload: event as Record<string, unknown>,
+        payload: event as unknown as Record<string, unknown>,
       });
 
       if (event.type === "checkout.session.completed") {

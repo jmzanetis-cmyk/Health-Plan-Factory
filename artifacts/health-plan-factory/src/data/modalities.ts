@@ -187,7 +187,7 @@ export const MODALITIES: Modality[] = [
     costRange: [30, 80],
     typicalFrequency: "1×/month",
     hsaEligible: true,
-    description: "Virtual consultations with wellness practitioners — convenient, flexible, and often covered by HSA.",
+    description: "Virtual consultations with wellness practitioners — convenient, flexible, and may qualify for HSA.",
     tags: ["Virtual", "Convenient", "HSA"],
     goals: ["preventive", "stress-reduction", "nutrition", "energy"],
     conditions: ["stress", "anxiety", "digestive"],

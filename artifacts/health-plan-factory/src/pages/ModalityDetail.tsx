@@ -193,7 +193,7 @@ export default function ModalityDetail() {
     {
       q: `Is ${modality.name} HSA or FSA eligible?`,
       a: modality.hsaEligible
-        ? `${modality.name} is generally eligible for HSA/FSA reimbursement when accompanied by a Letter of Medical Necessity (LMN) from a licensed physician. ${modality.lmnEligible ? "Health Plan Factory can help you obtain an LMN through our DPC physician network." : ""}`
+        ? `${modality.name} may qualify for HSA/FSA reimbursement when accompanied by a Letter of Medical Necessity (LMN) from a licensed physician. ${modality.lmnEligible ? "Health Plan Factory can help you obtain an LMN through our DPC physician network." : ""}`
         : `${modality.name} is not typically reimbursable through HSA/FSA without an LMN from a licensed physician. A Letter of Medical Necessity may unlock reimbursement in some cases.`,
     },
     {

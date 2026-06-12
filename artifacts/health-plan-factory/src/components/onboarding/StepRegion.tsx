@@ -114,7 +114,7 @@ export function StepRegion({ control }: StepRegionProps) {
                 Include telehealth options
               </p>
               <p className="text-xs" style={{ color: "var(--text-secondary)", fontFamily: "var(--app-font-sans)" }}>
-                Virtual consultations — often HSA-eligible
+                Virtual consultations — often HSA-qualifying
               </p>
             </div>
             <button

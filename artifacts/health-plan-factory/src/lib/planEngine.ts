@@ -218,7 +218,7 @@ function buildRationale(modality: Modality, intake: IntakeData): string {
   }
 
   if (modality.hsaEligible) {
-    parts.push("HSA/FSA-eligible — check your plan for reimbursement.");
+    parts.push("May qualify for HSA/FSA — check your plan for reimbursement.");
   }
 
   if (modality.evidenceLevel === "Strong") {

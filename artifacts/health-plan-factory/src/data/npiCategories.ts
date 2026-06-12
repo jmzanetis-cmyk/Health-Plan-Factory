@@ -17,7 +17,7 @@ export const NPI_CATEGORIES: Record<string, NpiCategory> = {
     taxonomy: "225700000X",
     taxonomyDesc: "Massage Therapist",
     hsaEligible: true,
-    costNote: "Medical massage with a physician Rx is HSA/FSA-eligible",
+    costNote: "Medical massage with a physician Rx may qualify for HSA/FSA",
     costs: { initial: [80, 160], followup: [70, 140], monthly: null },
   },
   chiropractic: {

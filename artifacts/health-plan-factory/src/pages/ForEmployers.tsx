@@ -533,7 +533,7 @@ export default function ForEmployers() {
                     name={field.name}
                     type={field.type}
                     placeholder={field.placeholder}
-                    value={(form as Record<string, string>)[field.name]}
+                    value={(form as unknown as Record<string, string>)[field.name]}
                     onChange={handleChange}
                     required={field.required}
                     style={{

@@ -92,7 +92,7 @@ function WellnessTrendChart({ trend, suppressed }: { trend: TrendPoint[]; suppre
             <XAxis dataKey="name" tick={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
             <YAxis domain={[0, 10]} tick={{ fontFamily: "var(--app-font-sans)", fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
             <Tooltip
-              formatter={(v: number | null) => v != null ? [v.toFixed(1), t("employer.roi.wellnessTrend.avgScore")] : ["—", t("employer.roi.wellnessTrend.avgScore")]}
+              formatter={(v) => { const n = typeof v === "number" ? v : null; return n != null ? [n.toFixed(1), t("employer.roi.wellnessTrend.avgScore")] : ["—", t("employer.roi.wellnessTrend.avgScore")]; }}
               contentStyle={{ fontFamily: "var(--app-font-sans)", fontSize: 12, border: "1px solid rgba(212,34,126,0.15)", borderRadius: 8 }}
             />
             <ReferenceLine y={7} stroke="rgba(125,181,92,0.3)" strokeDasharray="4 4" label={{ value: t("employer.roi.wellnessTrend.target7"), position: "right", fontSize: 10, fill: sage }} />
@@ -383,9 +383,9 @@ export default function EmployerROI() {
         if (cancelled) return;
 
         const [trData, bkData, meData] = await Promise.all([
-          tr.ok ? tr.json() : {},
+          (tr.ok ? tr.json() : {}) as { trend?: TrendPoint[]; privacySuppressed?: boolean },
           bk.ok ? bk.json() : null,
-          me.ok ? me.json() : {},
+          (me.ok ? me.json() : {}) as { stipendPerEmployee?: number; numberOfEmployees?: number },
         ]);
 
         setTrend(trData?.trend ?? []);

@@ -689,6 +689,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "accountability-nudge",
   "referral-invite",
   "referral-reward",
+  "referral-milestone",
   "magic-link",
   "weekly-summary",
   "streak-at-risk",

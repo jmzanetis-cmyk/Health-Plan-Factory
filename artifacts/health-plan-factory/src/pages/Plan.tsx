@@ -608,7 +608,7 @@ export default function Plan() {
         setProviderCounts(seedCounts);
       } else {
         // Fallback: fetch provider counts via API if plan items weren't pre-enriched
-        const zip = intakeResult.data.zipCode;
+        const zip = intakeResult.data?.zipCode;
         const params = new URLSearchParams({ radius: "25" });
         if (zip) params.set("zipCode", zip);
         fetch(`${BASE}/api/providers/counts?${params}`)

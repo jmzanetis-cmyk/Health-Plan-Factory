@@ -44,8 +44,9 @@ function buildTestApp(userId: string | null): Express {
         id: userId,
         email: `${userId}@test.example.com`,
         role: "member",
-        displayName: `User ${userId.slice(0, 6)}`,
-        avatarUrl: null,
+        firstName: null,
+        lastName: null,
+        profileImageUrl: null,
       };
     }
     next();

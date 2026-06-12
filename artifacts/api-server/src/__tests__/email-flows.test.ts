@@ -67,8 +67,9 @@ function buildApp(
         id: userId,
         email: email ?? `${userId}@flows-test.example.com`,
         role,
-        displayName: `Test User ${userId.slice(0, 6)}`,
-        avatarUrl: null,
+        firstName: "Test",
+        lastName: `User ${userId.slice(0, 6)}`,
+        profileImageUrl: null,
       };
     }
     next();

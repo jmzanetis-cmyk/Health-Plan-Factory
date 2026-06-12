@@ -50,7 +50,7 @@ async function validateStripeKey(): Promise<void> {
     const stripe = new Stripe(key, { apiVersion: "2026-03-25.dahlia" });
     const account = await stripe.accounts.retrieve();
     logger.info(
-      { accountId: account.id, livemode: account.livemode, country: account.country },
+      { accountId: account.id, country: account.country },
       "Stripe: live key validated successfully"
     );
     if (!process.env.STRIPE_WEBHOOK_SECRET) {

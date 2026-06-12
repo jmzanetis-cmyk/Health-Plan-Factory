@@ -13,7 +13,16 @@ const TAX_BRACKETS = [
   { label: "37%", value: 37 },
 ];
 
-const MODALITIES = [
+type ModalityEntry = {
+  emoji: string;
+  name: string;
+  eligible: boolean | "partial";
+  eligibleNote: string;
+  avgAnnual: number;
+  category: string;
+};
+
+const MODALITIES: ModalityEntry[] = [
   {
     emoji: "🏊",
     name: "Physical Therapy",

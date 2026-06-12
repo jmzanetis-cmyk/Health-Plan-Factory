@@ -65,7 +65,7 @@ function CostBar({ category }: { category: NpiCategory }) {
             color: "var(--sage)",
             fontFamily: "var(--app-font-sans)",
           }}>
-            💳 HSA/FSA Eligible
+            💳 May qualify for HSA/FSA
           </span>
         )}
       </div>
@@ -193,7 +193,7 @@ function ProviderCard({
                   color: "var(--sage)",
                   fontFamily: "var(--app-font-sans)",
                 }}>
-                  💳 HSA/FSA Eligible
+                  💳 May qualify for HSA/FSA
                 </span>
               )}
             </div>

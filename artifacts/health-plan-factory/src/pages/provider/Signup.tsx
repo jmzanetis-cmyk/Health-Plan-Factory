@@ -67,7 +67,7 @@ export default function ProviderSignup() {
     t("provider.signup.step2"),
     t("provider.signup.step3"),
   ];
-  const { isAuthenticated, isLoading, login } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [modalities, setModalities] = useState<Modality[]>([]);
@@ -217,7 +217,7 @@ export default function ProviderSignup() {
             {t("provider.signup.unauthP")}
           </p>
           <button
-            onClick={() => login()}
+            onClick={() => navigate("/sign-in")}
             className="w-full py-3.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-3"
             style={{ background: "var(--hpf-pink)", border: "none", cursor: "pointer", fontFamily: "var(--app-font-sans)" }}
           >
