@@ -18,7 +18,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { Alert } from "react-native";
 import { applyStoredLanguage } from "@/lib/i18n";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -31,8 +30,6 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import "@/lib/backgroundHealthSync";
 import { registerBackgroundHealthSync } from "@/lib/backgroundHealthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { initializeRevenueCat, loginRevenueCat, logoutRevenueCat, SubscriptionProvider, useSubscription } from "@/lib/revenuecat";
-
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? "",
   environment: __DEV__ ? "development" : "production",
@@ -46,16 +43,6 @@ if (apiBase) {
 }
 setAuthTokenGetter(() => SecureStore.getItemAsync("auth_session_token"));
 
-try {
-  initializeRevenueCat();
-} catch (err: unknown) {
-  const message = err instanceof Error ? err.message : "Unknown error";
-  console.warn("[RevenueCat] Init failed:", message);
-  if (__DEV__) {
-    Alert.alert("RevenueCat Unavailable", message);
-  }
-}
-
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
@@ -64,7 +51,6 @@ const queryClient = new QueryClient({
 
 function AuthGate() {
   const { isAuthenticated, isLoading, user } = useAuth();
-  const { refetchCustomerInfo } = useSubscription();
   const router = useRouter();
   const segments = useSegments();
 
@@ -83,20 +69,9 @@ function AuthGate() {
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      loginRevenueCat(user.id).then(() => {
-        refetchCustomerInfo();
-      });
       registerBackgroundHealthSync(user.id).catch(() => {});
     }
   }, [isAuthenticated, user?.id]);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      logoutRevenueCat().then(() => {
-        refetchCustomerInfo();
-      });
-    }
-  }, [isAuthenticated, isLoading]);
 
   return null;
 }
@@ -143,15 +118,13 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <SubscriptionProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <AuthProvider>
-                  <RootLayoutNav />
-                </AuthProvider>
-              </KeyboardProvider>
-            </GestureHandlerRootView>
-          </SubscriptionProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <KeyboardProvider>
+              <AuthProvider>
+                <RootLayoutNav />
+              </AuthProvider>
+            </KeyboardProvider>
+          </GestureHandlerRootView>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>

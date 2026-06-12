@@ -24,7 +24,6 @@ import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
 import { loadConnectionState, type HealthConnectionState } from "@/lib/healthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { useSubscription } from "@/lib/revenuecat";
 import { changeLanguage, type SupportedLang } from "@/lib/i18n";
 
 async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptionStatus: string }> {
@@ -374,25 +373,14 @@ export default function SettingsScreen() {
     staleTime: 120_000,
   });
 
-  const { isSubscribed, restore, isRestoring } = useSubscription();
-
   const subscriptionStatus = subscriptionData?.subscriptionStatus ?? "free";
-  const isPlus = isSubscribed || subscriptionStatus === "plus";
+  const isPlus = subscriptionStatus === "plus";
   const membershipLabel =
     isPlus
       ? t("settings.plus")
       : subscriptionStatus === "employer"
         ? t("settings.employer")
         : t("settings.explorer");
-
-  async function handleRestorePurchases() {
-    try {
-      await restore();
-      Alert.alert(t("settings.purchasesRestored"), t("settings.purchasesRestoredBody"));
-    } catch {
-      Alert.alert(t("settings.restoreFailed"), t("settings.restoreFailedBody"));
-    }
-  }
 
   function handleSignOut() {
     Alert.alert(t("settings.signOut"), t("settings.signOutConfirm"), [
@@ -502,27 +490,6 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-
-        {(Platform.OS === "ios" || Platform.OS === "android") && (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={handleRestorePurchases}
-            disabled={isRestoring}
-            activeOpacity={0.7}
-          >
-            <View style={styles.row}>
-              <View style={styles.rowIcon}>
-                {isRestoring ? (
-                  <ActivityIndicator size="small" color={COLORS.amber} />
-                ) : (
-                  <Feather name="refresh-cw" size={16} color={COLORS.amber} />
-                )}
-              </View>
-              <Text style={styles.rowLabel}>{t("settings.restorePurchases")}</Text>
-              <Feather name="chevron-right" size={16} color={COLORS.textLight} />
-            </View>
-          </TouchableOpacity>
-        )}
 
         <Text style={styles.sectionLabel}>{t("settings.language")}</Text>
         <LanguageSection />

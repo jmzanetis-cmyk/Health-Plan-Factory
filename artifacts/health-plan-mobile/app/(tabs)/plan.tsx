@@ -8,8 +8,6 @@ import {
   Platform,
   ActivityIndicator,
   RefreshControl,
-  Linking,
-  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,7 +19,6 @@ import { useGetCurrentAuthUser, useListModalities, partialQuery } from "@workspa
 import type { ModalityRecord } from "@workspace/api-client-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { PurchaseModal } from "@/components/PurchaseModal";
-import { useSubscription } from "@/lib/revenuecat";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
@@ -40,33 +37,6 @@ async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptio
     return res.json();
   } catch {
     return { isPlus: false, subscriptionStatus: "free" };
-  }
-}
-
-async function handleWebUpgrade(t: (key: string) => string) {
-  const token = await getToken();
-  const base = getApiBaseUrl();
-  try {
-    const res = await fetch(`${base}/api/subscriptions/checkout`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({}),
-    });
-    if (!res.ok) {
-      Alert.alert(t("plan.upgradeAlert"), t("plan.couldNotCheckout"));
-      return;
-    }
-    const { checkout_url } = await res.json();
-    if (checkout_url) {
-      await Linking.openURL(checkout_url);
-    } else {
-      Alert.alert(t("plan.upgradeAlert"), t("plan.noCheckoutUrl"));
-    }
-  } catch {
-    Alert.alert(t("plan.upgradeAlert"), t("plan.couldNotConnect"));
   }
 }
 
@@ -277,7 +247,6 @@ export default function PlanScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [refreshing, setRefreshing] = useState(false);
-  const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const { t } = useTranslation();
 
@@ -301,10 +270,7 @@ export default function PlanScreen() {
     staleTime: 120_000,
   });
 
-  const { isSubscribed } = useSubscription();
-
   const hasProviderAccess =
-    isSubscribed ||
     (subscriptionData?.isPlus ?? false) ||
     subscriptionData?.subscriptionStatus === "employer";
 
@@ -322,15 +288,8 @@ export default function PlanScreen() {
     setRefreshing(false);
   }
 
-  async function onUpgrade() {
-    const isNative = Platform.OS === "ios" || Platform.OS === "android";
-    if (isNative) {
-      setPaywallVisible(true);
-      return;
-    }
-    setUpgradeLoading(true);
-    await handleWebUpgrade(t);
-    setUpgradeLoading(false);
+  function onUpgrade() {
+    setPaywallVisible(true);
   }
 
   const sortedItems = [...(planData?.items ?? [])].sort(
@@ -352,7 +311,6 @@ export default function PlanScreen() {
       style={styles.upgradeCard}
       onPress={onUpgrade}
       activeOpacity={0.85}
-      disabled={upgradeLoading}
     >
       <View style={styles.upgradeCardLeft}>
         <Feather name="star" size={18} color={COLORS.pink} />
@@ -361,11 +319,7 @@ export default function PlanScreen() {
           <Text style={styles.upgradeCardSub}>{t("plan.unlockProvidersSub")}</Text>
         </View>
       </View>
-      {upgradeLoading ? (
-        <ActivityIndicator size="small" color={COLORS.pink} />
-      ) : (
-        <Feather name="chevron-right" size={16} color={COLORS.pink} />
-      )}
+      <Feather name="chevron-right" size={16} color={COLORS.pink} />
     </TouchableOpacity>
   ) : null;
 

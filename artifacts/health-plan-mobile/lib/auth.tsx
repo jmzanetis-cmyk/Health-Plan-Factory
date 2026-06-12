@@ -205,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signInWithMagicLink,
         signOut: doSignOut,
-        refreshSession: doRefreshSession,
+        refreshSession: async () => { await doRefreshSession(); },
         getToken,
       }}
     >

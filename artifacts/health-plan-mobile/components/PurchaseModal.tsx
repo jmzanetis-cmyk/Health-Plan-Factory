@@ -5,14 +5,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
-  Platform,
   Linking,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
-import { useSubscription, PURCHASES_ERROR_CODE } from "@/lib/revenuecat";
-import type { PurchasesPackage } from "react-native-purchases";
 
 interface PurchaseModalProps {
   visible: boolean;
@@ -20,46 +16,14 @@ interface PurchaseModalProps {
   onPurchaseSuccess?: () => void;
 }
 
-export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseModalProps) {
-  const { offerings, purchase, isPurchasing, isOfferingsLoading, offeringsError, refetchOfferings } = useSubscription();
-
-  const currentOffering = offerings?.current;
-  const pkg: PurchasesPackage | undefined = currentOffering?.availablePackages[0];
-  const priceString = pkg?.product?.priceString ?? "$9.99";
-  const productDescription =
-    pkg?.product?.description ??
-    "Unlock matched provider contacts, clinical evidence insights, and priority support.";
-
-  async function handlePurchase() {
-    if (!pkg) return;
-    try {
-      await purchase(pkg);
-      onPurchaseSuccess?.();
-      onClose();
-    } catch (err: unknown) {
-      if (
-        err !== null &&
-        typeof err === "object" &&
-        "code" in err &&
-        (err as { code: string }).code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR
-      ) {
-        return;
-      }
-    }
-  }
-
-  function handleWebFallback() {
-    Linking.openURL("https://healthplanfactory.com/upgrade");
+export function PurchaseModal({ visible, onClose }: PurchaseModalProps) {
+  function handleSubscribe() {
+    Linking.openURL("https://healthplanfactory.com/pricing");
     onClose();
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <View style={styles.handle} />
@@ -69,11 +33,13 @@ export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseM
           </TouchableOpacity>
 
           <View style={styles.iconWrap}>
-            <Feather name="star" size={32} color={COLORS.pink} />
+            <Feather name="star" size={32} color={COLORS.amber} />
           </View>
 
           <Text style={styles.title}>Upgrade to Plus</Text>
-          <Text style={styles.subtitle}>{productDescription}</Text>
+          <Text style={styles.subtitle}>
+            Unlock matched provider contacts, clinical evidence insights, and priority support.
+          </Text>
 
           <View style={styles.featureList}>
             {[
@@ -89,56 +55,14 @@ export function PurchaseModal({ visible, onClose, onPurchaseSuccess }: PurchaseM
             ))}
           </View>
 
-          {pkg ? (
-            <TouchableOpacity
-              style={[styles.purchaseBtn, isPurchasing && styles.purchaseBtnDisabled]}
-              onPress={handlePurchase}
-              disabled={isPurchasing}
-              activeOpacity={0.85}
-            >
-              {isPurchasing ? (
-                <ActivityIndicator size="small" color={COLORS.white} />
-              ) : (
-                <>
-                  <Text style={styles.purchaseBtnText}>Subscribe — {priceString}/mo</Text>
-                  <Text style={styles.purchaseBtnSub}>Cancel anytime in App Store settings</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          ) : Platform.OS !== "ios" && Platform.OS !== "android" ? (
-            <TouchableOpacity
-              style={styles.purchaseBtn}
-              onPress={handleWebFallback}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.purchaseBtnText}>Subscribe on the web →</Text>
-            </TouchableOpacity>
-          ) : offeringsError ? (
-            <View style={styles.errorWrap}>
-              <Feather name="alert-circle" size={18} color={COLORS.amber} />
-              <Text style={styles.errorText}>Could not load plans. Check your connection and try again.</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => refetchOfferings()} activeOpacity={0.8}>
-                <Text style={styles.retryBtnText}>Try Again</Text>
-              </TouchableOpacity>
-            </View>
-          ) : isOfferingsLoading ? (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator color={COLORS.pink} />
-              <Text style={styles.loadingText}>Loading plans…</Text>
-            </View>
-          ) : (
-            <View style={styles.errorWrap}>
-              <Feather name="alert-circle" size={18} color={COLORS.textMuted} />
-              <Text style={styles.errorText}>No plans available at this time. Please try again later.</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => refetchOfferings()} activeOpacity={0.8}>
-                <Text style={styles.retryBtnText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <Text style={styles.price}>$9.99/month or $89.99/year</Text>
 
-          <Text style={styles.legalText}>
-            Subscription auto-renews monthly. Manage in your{" "}
-            {Platform.OS === "ios" ? "App Store" : "Play Store"} settings.
+          <TouchableOpacity style={styles.subscribeBtn} onPress={handleSubscribe} activeOpacity={0.85}>
+            <Text style={styles.subscribeBtnText}>Subscribe at healthplanfactory.com →</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.alreadySubText}>
+            Already subscribed? Sign in on the web first, then return to the app.
           </Text>
         </View>
       </View>
@@ -153,7 +77,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.navy,
     borderTopLeftRadius: RADIUS.xl,
     borderTopRightRadius: RADIUS.xl,
     padding: SPACING.xl,
@@ -163,7 +87,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: COLORS.border,
+    backgroundColor: "rgba(255,255,255,0.2)",
     borderRadius: 2,
     marginBottom: SPACING.lg,
   },
@@ -177,7 +101,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: COLORS.amberPale,
+    backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: SPACING.lg,
@@ -185,14 +109,14 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: FONTS.heading,
     fontSize: 26,
-    color: COLORS.navy,
+    color: COLORS.white,
     marginBottom: SPACING.sm,
     textAlign: "center",
   },
   subtitle: {
     fontFamily: FONTS.body,
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: "rgba(255,255,255,0.7)",
     textAlign: "center",
     lineHeight: 20,
     marginBottom: SPACING.lg,
@@ -201,7 +125,7 @@ const styles = StyleSheet.create({
   featureList: {
     alignSelf: "stretch",
     gap: SPACING.md,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
     paddingHorizontal: SPACING.sm,
   },
   featureRow: {
@@ -212,74 +136,34 @@ const styles = StyleSheet.create({
   featureText: {
     fontFamily: FONTS.body,
     fontSize: 14,
-    color: COLORS.navy,
+    color: COLORS.white,
     flex: 1,
   },
-  purchaseBtn: {
+  price: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 15,
+    color: COLORS.amber,
+    marginBottom: SPACING.lg,
+  },
+  subscribeBtn: {
     alignSelf: "stretch",
-    backgroundColor: COLORS.pink,
+    backgroundColor: COLORS.amber,
     borderRadius: RADIUS.md,
     padding: SPACING.lg,
     alignItems: "center",
-    gap: 4,
     marginBottom: SPACING.md,
   },
-  purchaseBtnDisabled: {
-    opacity: 0.7,
-  },
-  purchaseBtnText: {
+  subscribeBtnText: {
     fontFamily: FONTS.bodySemiBold,
     fontSize: 16,
-    color: COLORS.white,
+    color: COLORS.navy,
   },
-  purchaseBtnSub: {
+  alreadySubText: {
     fontFamily: FONTS.body,
-    fontSize: 11,
-    color: "rgba(255,255,255,0.8)",
-  },
-  loadingWrap: {
-    alignSelf: "stretch",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: SPACING.xl,
-    gap: SPACING.md,
-  },
-  loadingText: {
-    fontFamily: FONTS.body,
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
-  errorWrap: {
-    alignSelf: "stretch",
-    alignItems: "center",
-    padding: SPACING.xl,
-    gap: SPACING.sm,
-  },
-  errorText: {
-    fontFamily: FONTS.body,
-    fontSize: 13,
-    color: COLORS.textMuted,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.5)",
     textAlign: "center",
-  },
-  retryBtn: {
-    marginTop: SPACING.sm,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.xl,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.pink,
-  },
-  retryBtnText: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 13,
-    color: COLORS.pink,
-  },
-  legalText: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    color: COLORS.textMuted,
-    textAlign: "center",
-    lineHeight: 16,
+    lineHeight: 17,
     paddingHorizontal: SPACING.md,
   },
 });

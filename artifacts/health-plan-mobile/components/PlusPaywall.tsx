@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { useAuth } from "@/lib/auth";
+import { useRouter } from "expo-router";
 import { COLORS, FONTS, SPACING, RADIUS } from "@/constants/theme";
 
 export type PlusFeature =
@@ -35,7 +35,7 @@ interface Props {
  * (sign in) or go to web through other channels (email, ads, SEO).
  */
 export function PlusPaywall({ feature }: Props) {
-  const { login } = useAuth();
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
@@ -44,7 +44,7 @@ export function PlusPaywall({ feature }: Props) {
         <Text style={styles.description}>{FEATURE_DESCRIPTIONS[feature]}</Text>
         <Text style={styles.subtext}>Sign in to your Plus account to continue.</Text>
 
-        <Pressable style={styles.button} onPress={login}>
+        <Pressable style={styles.button} onPress={() => router.replace("/login")}>
           <Text style={styles.buttonText}>Sign In</Text>
         </Pressable>
 
