@@ -196,14 +196,21 @@ router.post("/login", async (req: Request, res: Response) => {
   const sbUser = data.user;
   const session = data.session;
 
-  const userInfo = await upsertUserAndProfile({
-    sub: sbUser.id,
-    email: sbUser.email ?? email,
-    first_name: sbUser.user_metadata?.first_name ?? null,
-    last_name: sbUser.user_metadata?.last_name ?? null,
-    display_name: sbUser.user_metadata?.full_name ?? null,
-    profile_image_url: sbUser.user_metadata?.avatar_url ?? null,
-  });
+  let userInfo: Awaited<ReturnType<typeof upsertUserAndProfile>>;
+  try {
+    userInfo = await upsertUserAndProfile({
+      sub: sbUser.id,
+      email: sbUser.email ?? email,
+      first_name: sbUser.user_metadata?.first_name ?? null,
+      last_name: sbUser.user_metadata?.last_name ?? null,
+      display_name: sbUser.user_metadata?.full_name ?? null,
+      profile_image_url: sbUser.user_metadata?.avatar_url ?? null,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: "upsert_failed", detail: msg });
+    return;
+  }
 
   const refCode = req.cookies?.hpf_ref as string | undefined;
   void processReferralCookie(userInfo.id, refCode);
