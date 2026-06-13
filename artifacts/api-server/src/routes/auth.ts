@@ -208,7 +208,8 @@ router.post("/login", async (req: Request, res: Response) => {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    res.status(500).json({ error: "upsert_failed", detail: msg });
+    const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : String((err as { cause?: unknown })?.cause ?? "");
+    res.status(500).json({ error: "upsert_failed", detail: msg, cause });
     return;
   }
 
