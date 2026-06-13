@@ -12,7 +12,7 @@
  */
 import { Router, Request, Response } from "express";
 import { db } from "@workspace/db";
-import { magicLinks, planProgressLogs, profiles, usersTable } from "@workspace/db";
+import { magicLinks, planProgressLogs, profiles } from "@workspace/db";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { randomUUID } from "crypto";
@@ -159,26 +159,18 @@ router.get("/magic-links/redeem/:token", async (req: Request, res: Response) => 
     // All magic-link actions create a short-lived authenticated session so the user
     // lands in the correct screen without needing to log in separately.
     const [profile] = await db
-      .select({ id: profiles.id, email: profiles.email, role: profiles.role, avatarUrl: profiles.avatarUrl })
+      .select({ id: profiles.id, email: profiles.email, role: profiles.role, avatarUrl: profiles.avatarUrl, displayName: profiles.displayName })
       .from(profiles)
       .where(eq(profiles.id, link.profileId))
       .limit(1);
-
-    const [userRow] = profile
-      ? await db
-        .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
-        .from(usersTable)
-        .where(eq(usersTable.id, link.profileId))
-        .limit(1)
-      : [undefined];
 
     if (profile) {
       const sessionData = {
         user: {
           id: profile.id,
           email: profile.email ?? null,
-          firstName: userRow?.firstName ?? null,
-          lastName: userRow?.lastName ?? null,
+          firstName: profile.displayName ?? null,
+          lastName: null,
           profileImageUrl: profile.avatarUrl ?? null,
           role: profile.role ?? "member",
         },
