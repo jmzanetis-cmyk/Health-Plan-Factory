@@ -50,7 +50,7 @@ function buildUpcomingSessions(
   tomorrowLabel: string,
   weekDays: string[]
 ): Array<{ id: string; name: string; day: string; time: string; emoji: string }> {
-  const safeModalities = modalities ?? [];
+  const safeModalities = Array.isArray(modalities) ? modalities : [];
   if (!safeModalities.length) return [];
 
   const threeDaysAgo = Date.now() - 3 * 86400000;
@@ -217,7 +217,7 @@ export default function HomeScreen() {
     t("home.friday") || "Friday",
     t("home.saturday") || "Saturday",
   ];
-  const upcomingSessions = buildUpcomingSessions(modalities, entries, t("home.tomorrow"), weekDays);
+  const upcomingSessions = buildUpcomingSessions(Array.isArray(modalities) ? modalities : [], entries, t("home.tomorrow"), weekDays);
 
   return (
     <ScrollView
