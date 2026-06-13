@@ -118,11 +118,10 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
     .onConflictDoUpdate({
       target: profiles.id,
       set: {
-        email: email || undefined,
-        displayName: displayName ?? undefined,
-        avatarUrl: profileImageUrl ?? undefined,
+        email,
+        displayName: drizzleSql`${displayName}`,
+        avatarUrl: drizzleSql`${profileImageUrl}`,
         updatedAt: new Date(),
-        // referralCode intentionally excluded — preserve existing code on re-login
       },
     })
     .returning();
