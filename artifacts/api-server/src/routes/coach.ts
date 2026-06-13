@@ -79,7 +79,6 @@ router.post("/coach", async (req: Request, res: Response) => {
     return;
   }
 
-  console.log("Anthropic key present:", !!apiKey, "length:", apiKey.length);
   const client = new Anthropic({ apiKey });
 
   let systemWithContext = SYSTEM_PROMPT;
@@ -163,7 +162,7 @@ router.post("/coach", async (req: Request, res: Response) => {
 
   try {
     const stream = client.messages.stream({
-      model: "claude-3-5-haiku-20241022",
+      model: "claude-sonnet-4-6",
       max_tokens: 512,
       system: systemWithContext,
       messages: messages.map(m => ({ role: m.role, content: m.content })),
@@ -225,14 +224,11 @@ router.post("/coach", async (req: Request, res: Response) => {
     res.write(`data: ${JSON.stringify({ type: "done", sessionId: resolvedSessionId })}\n\n`);
     res.end();
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const cause = err instanceof Error && err.cause ? String(err.cause) : "";
     req.log?.error({ err }, "Coach streaming error");
-    console.error("Coach streaming error:", msg, cause ? `cause: ${cause}` : "");
     if (!res.headersSent) {
-      res.status(500).json({ error: "Coach error", detail: msg, cause });
+      res.status(500).json({ error: "Coach error" });
     } else {
-      res.write(`data: ${JSON.stringify({ type: "error", message: "Coach error", detail: msg, cause })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: "error", message: "Coach error" })}\n\n`);
       res.end();
     }
   }
@@ -404,7 +400,7 @@ Extract and update the memory. Output ONLY valid JSON in this exact format:
 Keep facts specific: health goals, conditions, preferred modalities, struggles, wins. Max 6 facts. No line breaks inside JSON strings.`;
 
     const response = await client.messages.create({
-      model: "claude-3-5-haiku-20241022",
+      model: "claude-sonnet-4-6",
       max_tokens: 256,
       messages: [{ role: "user", content: memoryPrompt }],
     });
