@@ -41,7 +41,7 @@ const apiBase = getApiBaseUrl();
 if (apiBase) {
   setBaseUrl(apiBase);
 }
-setAuthTokenGetter(() => SecureStore.getItemAsync("auth_session_token"));
+setAuthTokenGetter(() => SecureStore.getItemAsync("hpf_access_token"));
 
 SplashScreen.preventAutoHideAsync();
 

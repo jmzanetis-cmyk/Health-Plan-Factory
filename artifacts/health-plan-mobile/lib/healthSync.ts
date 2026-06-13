@@ -270,7 +270,7 @@ export async function syncHealthData(profileId: string): Promise<DailyHealthMetr
 
 async function pushHealthMetricsToApi(profileId: string, metrics: DailyHealthMetrics): Promise<boolean> {
   try {
-    const token = await SecureStore.getItemAsync("auth_session_token");
+    const token = await SecureStore.getItemAsync("hpf_access_token");
     if (!token) return false;
     const apiBase = getApiBaseUrl();
     const res = await fetch(`${apiBase}/api/health-sync`, {
@@ -289,7 +289,7 @@ async function pushHealthMetricsToApi(profileId: string, metrics: DailyHealthMet
 
 export async function fetchLatestHealthMetrics(profileId: string): Promise<DailyHealthMetrics | null> {
   try {
-    const token = await SecureStore.getItemAsync("auth_session_token");
+    const token = await SecureStore.getItemAsync("hpf_access_token");
     if (!token) return null;
     const apiBase = getApiBaseUrl();
     const res = await fetch(`${apiBase}/api/health-sync?profileId=${profileId}`, {

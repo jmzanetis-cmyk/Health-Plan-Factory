@@ -4,180 +4,241 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
   Platform,
-  Alert,
   ActivityIndicator,
+  TextInput,
   RefreshControl,
 } from "react-native";
-import Slider from "@react-native-community/slider";
-import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
-import { useTranslation } from "react-i18next";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import {
   useListProgress,
-  useCreateProgressLog,
-  useGetCurrentAuthUser,
   useListModalities,
+  useGetCurrentAuthUser,
+  useCreateProgressLog,
   partialQuery,
 } from "@workspace/api-client-react";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
-import { interceptEmergencyText } from "@/lib/emergencyCheck";
-import { PlusPaywall } from "@/components/PlusPaywall";
-import { usePlusAccess } from "@/lib/subscription";
 
-function formatDate(dateStr: string, locale: string) {
-  try {
-    return new Date(dateStr).toLocaleDateString(locale, {
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return "";
-  }
+type ExtProgressLog = ProgressLogRecord & { energy?: number | null; mood?: number | null; pain?: number | null };
+
+const DEFAULT_ACTIVITIES = [
+  "Movement",
+  "Meditation",
+  "Stretching",
+  "Nutrition",
+  "Sleep routine",
+  "Breathwork",
+];
+
+const PAIN_OPTIONS = [
+  { label: "None", value: 1 },
+  { label: "Mild", value: 5 },
+  { label: "Significant", value: 9 },
+];
+
+function scaleToTen(v: number | null): number | undefined {
+  if (v === null) return undefined;
+  return v * 2;
 }
 
-function formatTime(dateStr: string, locale: string) {
-  try {
-    return new Date(dateStr).toLocaleTimeString(locale, {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
-  }
+function todayDateString() {
+  return new Date().toDateString();
 }
 
-const RATING_ICONS = ["", "😣", "😕", "😐", "🙂", "😄"];
-const SLEEP_OPTIONS = ["< 5h", "5-6h", "6-7h", "7-8h", "8-9h", "9h+"];
-
-function encodeMetrics(sleep: number, energy: number, pain: number): string {
-  return `[sleep:${SLEEP_OPTIONS[sleep]}][energy:${energy}][pain:${pain}]`;
-}
-
-function decodeMetric(note: string | null | undefined, key: string): string | null {
-  if (!note) return null;
-  const m = note.match(new RegExp(`\\[${key}:([^\\]]+)\\]`));
-  return m ? m[1] : null;
-}
-
-function cleanNote(note: string | null | undefined): string {
+function parseActivitiesFromNote(note: string | null | undefined): string {
   if (!note) return "";
-  return note.replace(/\[[^\]]+\]/g, "").trim();
+  const m = note.match(/Activities: ([^|]+)/);
+  return m ? m[1].trim() : "";
 }
 
-function MiniInsightChart({ entries, locale }: { entries: ProgressLogRecord[]; locale: string }) {
-  const { t } = useTranslation();
-  const recent = [...entries].slice(0, 10).reverse();
-  if (recent.length < 2) return null;
-  const maxH = 48;
-
+function ScaleButtons({
+  value,
+  onChange,
+}: {
+  value: number | null;
+  onChange: (v: number) => void;
+}) {
   return (
-    <View style={chartStyles.container}>
-      <Text style={chartStyles.title}>{t("journal.ratingTrend", { count: recent.length })}</Text>
-      <View style={chartStyles.bars}>
-        {recent.map((e) => {
-          const val = e.rating ?? 0;
-          const h = val > 0 ? (val / 5) * maxH : 4;
-          const color = val >= 4 ? COLORS.sage : val >= 3 ? COLORS.amber : COLORS.rose;
-          return (
-            <View key={e.id} style={chartStyles.barCol}>
-              <View style={[chartStyles.bar, { height: h, backgroundColor: color }]} />
-              <Text style={chartStyles.barLabel}>{RATING_ICONS[val] ?? "·"}</Text>
-            </View>
-          );
-        })}
-      </View>
-      <View style={chartStyles.legend}>
-        <View style={[chartStyles.dot, { backgroundColor: COLORS.sage }]} />
-        <Text style={chartStyles.legendText}>{t("journal.legendGreatGood")}</Text>
-        <View style={[chartStyles.dot, { backgroundColor: COLORS.amber }]} />
-        <Text style={chartStyles.legendText}>{t("journal.legendOkay")}</Text>
-        <View style={[chartStyles.dot, { backgroundColor: COLORS.rose }]} />
-        <Text style={chartStyles.legendText}>{t("journal.legendLowRough")}</Text>
-      </View>
+    <View style={styles.scaleRow}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <TouchableOpacity
+          key={n}
+          style={[styles.scaleBtn, value === n && styles.scaleBtnSelected]}
+          onPress={() => onChange(n)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.scaleBtnText, value === n && styles.scaleBtnTextSelected]}>
+            {n}
+          </Text>
+        </TouchableOpacity>
+      ))}
     </View>
   );
 }
 
-const chartStyles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginHorizontal: SPACING.xl,
-    marginBottom: SPACING.lg,
-  },
-  title: {
-    fontFamily: FONTS.body,
-    fontSize: 13,
-    fontWeight: "600" as const,
-    color: COLORS.navy,
-    marginBottom: SPACING.md,
-  },
-  bars: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 4,
-    height: 64,
-  },
-  barCol: { flex: 1, alignItems: "center", gap: 4, justifyContent: "flex-end" },
-  bar: { width: "100%", borderRadius: 4, minHeight: 4 },
-  barLabel: { fontSize: 12, textAlign: "center" },
-  legend: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-    flexWrap: "wrap",
-  },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted },
-});
+function CheckInQuestion({
+  label,
+  sublabelMin,
+  sublabelMax,
+  children,
+}: {
+  label: string;
+  sublabelMin?: string;
+  sublabelMax?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.question}>
+      <Text style={styles.questionLabel}>{label}</Text>
+      {children}
+      {(sublabelMin || sublabelMax) && (
+        <View style={styles.sublabelRow}>
+          <Text style={styles.sublabel}>{sublabelMin}</Text>
+          <Text style={styles.sublabel}>{sublabelMax}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function SummaryCard({ entry }: { entry: ExtProgressLog }) {
+  const activitiesText = parseActivitiesFromNote(entry.note);
+  const noteMatch = entry.note?.match(/Note: (.+)$/);
+  const noteText = noteMatch ? noteMatch[1].trim() : "";
+
+  return (
+    <View style={styles.summaryCard}>
+      <Text style={styles.summaryTitle}>Check-in complete for today</Text>
+      <View style={styles.summaryRows}>
+        {entry.energy != null && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Energy</Text>
+            <Text style={styles.summaryValue}>{entry.energy / 2}/5</Text>
+          </View>
+        )}
+        {entry.mood != null && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Mood</Text>
+            <Text style={styles.summaryValue}>{entry.mood / 2}/5</Text>
+          </View>
+        )}
+        {entry.rating != null && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Sleep</Text>
+            <Text style={styles.summaryValue}>{entry.rating / 2}/5</Text>
+          </View>
+        )}
+        {entry.pain != null && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Pain</Text>
+            <Text style={styles.summaryValue}>
+              {entry.pain <= 2 ? "None" : entry.pain <= 6 ? "Mild" : "Significant"}
+            </Text>
+          </View>
+        )}
+        {activitiesText ? (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Activities</Text>
+            <Text style={[styles.summaryValue, { flex: 1, textAlign: "right" }]}>{activitiesText}</Text>
+          </View>
+        ) : null}
+        {noteText ? (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Note</Text>
+            <Text style={[styles.summaryValue, { flex: 1, textAlign: "right" }]}>{noteText}</Text>
+          </View>
+        ) : null}
+      </View>
+      <Text style={styles.summaryFooter}>Come back tomorrow</Text>
+    </View>
+  );
+}
 
 export default function JournalScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const { isPlus, loading: plusLoading } = usePlusAccess();
+
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
-  const { t, i18n } = useTranslation();
 
-  const locale = i18n.language === "es" ? "es-MX" : "en-US";
-
-  const RATING_LABELS = ["", t("journal.rough"), t("journal.low"), t("journal.okay"), t("journal.good"), t("journal.great")];
-
-  const [rating, setRating] = useState(3);
-  const [energy, setEnergy] = useState(3);
-  const [pain, setPain] = useState(2);
-  const [sleepIdx, setSleepIdx] = useState(3);
-  const [note, setNote] = useState("");
-  const [selectedModalityId, setSelectedModalityId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const { data: progress, isLoading, refetch } = useListProgress(
-    { profileId, limit: 50 },
+  const {
+    data: progressData,
+    isLoading: progressLoading,
+    refetch,
+  } = useListProgress(
+    { profileId, limit: 10 },
     { query: partialQuery({ enabled: !!profileId }) }
   );
 
-  const { data: modalities } = useListModalities(undefined, {
+  const { data: modalitiesData } = useListModalities(undefined, {
     query: partialQuery({ staleTime: 300_000 }),
   });
 
-  const { mutate: createLog, isPending } = useCreateProgressLog();
+  const { mutate: createLog, isPending: saving } = useCreateProgressLog();
 
-  if (plusLoading) return (
-    <View style={{ flex: 1, backgroundColor: COLORS.warm, justifyContent: "center", alignItems: "center" }}>
-      <ActivityIndicator color={COLORS.amber} />
-    </View>
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Form state
+  const [energy, setEnergy] = useState<number | null>(null);
+  const [mood, setMood] = useState<number | null>(null);
+  const [sleep, setSleep] = useState<number | null>(null);
+  const [painValue, setPainValue] = useState<number | null>(null);
+  const [activities, setActivities] = useState<string[]>([]);
+  const [quickNote, setQuickNote] = useState("");
+
+  const progress = Array.isArray(progressData) ? progressData : [];
+  const modalities = Array.isArray(modalitiesData) ? modalitiesData : [];
+
+  const todayEntry = progress.find(
+    (e) => new Date(e.createdAt).toDateString() === todayDateString()
   );
-  if (!isPlus) return <PlusPaywall feature="journal" />;
+
+  const activityOptions =
+    modalities.length > 0
+      ? modalities.slice(0, 12).map((m) => m.name).filter(Boolean) as string[]
+      : DEFAULT_ACTIVITIES;
+
+  function toggleActivity(name: string) {
+    setActivities((prev) =>
+      prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name]
+    );
+  }
+
+  const canSubmit =
+    energy !== null && mood !== null && sleep !== null && painValue !== null;
+
+  function handleSubmit() {
+    if (!canSubmit || !profileId || saving) return;
+
+    const noteParts: string[] = [];
+    if (activities.length > 0) {
+      noteParts.push(`Activities: ${activities.join(", ")}`);
+    }
+    if (quickNote.trim()) {
+      noteParts.push(`Note: ${quickNote.trim()}`);
+    }
+
+    createLog(
+      {
+        data: {
+          profileId,
+          energy: scaleToTen(energy),
+          mood: scaleToTen(mood),
+          rating: scaleToTen(sleep),
+          pain: painValue ?? undefined,
+          note: noteParts.length > 0 ? noteParts.join(" | ") : undefined,
+          sessionDate: new Date().toISOString(),
+        },
+      },
+      {
+        onSuccess: () => {
+          refetch();
+        },
+      }
+    );
+  }
 
   async function onRefresh() {
     setRefreshing(true);
@@ -185,489 +246,377 @@ export default function JournalScreen() {
     setRefreshing(false);
   }
 
-  function handleNoteChange(text: string) {
-    setNote(text);
-    interceptEmergencyText(text);
-  }
-
-  function submitEntry() {
-    if (!profileId) {
-      Alert.alert(t("journal.notSignedIn"));
-      return;
-    }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const metaPrefix = encodeMetrics(sleepIdx, energy, pain);
-    const fullNote = note.trim() ? `${metaPrefix} ${note.trim()}` : metaPrefix;
-
-    createLog(
-      {
-        data: {
-          profileId,
-          rating,
-          note: fullNote,
-          modalityId: selectedModalityId ?? undefined,
-          sessionDate: new Date().toISOString().split("T")[0],
-        },
-      },
-      {
-        onSuccess: () => {
-          setNote("");
-          setRating(3);
-          setEnergy(3);
-          setPain(2);
-          setSleepIdx(3);
-          setSelectedModalityId(null);
-          setShowForm(false);
-          refetch();
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        },
-        onError: () => Alert.alert(t("journal.error"), t("journal.errorSaving")),
-      }
-    );
-  }
-
-  const entries = progress ?? [];
-  const showChart = entries.length >= 5;
-  const popularModalities = (Array.isArray(modalities) ? modalities : []).slice(0, 6);
+  const recentEntries = progress.slice(0, 7);
 
   return (
-    <View style={[styles.screen, { paddingTop: topPad }]}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{t("journal.title")}</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => setShowForm((p) => !p)}
-          activeOpacity={0.8}
-        >
-          <Feather name={showForm ? "x" : "plus"} size={20} color={COLORS.white} />
-        </TouchableOpacity>
-      </View>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.content, { paddingTop: topPad + SPACING.xl }]}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
+      }
+    >
+      <Text style={styles.title}>Journal</Text>
 
-      <ScrollView
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
-        }
-      >
-        {showForm && (
-          <View style={styles.formCard}>
-            <Text style={styles.formHeading}>{t("journal.howAreYouDoing")}</Text>
+      {progressLoading ? (
+        <ActivityIndicator color={COLORS.amber} style={{ marginTop: SPACING.xl }} />
+      ) : todayEntry ? (
+        <SummaryCard entry={todayEntry} />
+      ) : (
+        <>
+          <CheckInQuestion
+            label="How is your energy today?"
+            sublabelMin="Drained"
+            sublabelMax="Energized"
+          >
+            <ScaleButtons value={energy} onChange={setEnergy} />
+          </CheckInQuestion>
 
-            <Text style={styles.sectionLabel}>{t("journal.overallRating")}</Text>
-            <View style={styles.ratingRow}>
-              {[1, 2, 3, 4, 5].map((v) => (
+          <CheckInQuestion
+            label="How are you feeling overall?"
+            sublabelMin="Struggling"
+            sublabelMax="Great"
+          >
+            <ScaleButtons value={mood} onChange={setMood} />
+          </CheckInQuestion>
+
+          <CheckInQuestion
+            label="How did you sleep last night?"
+            sublabelMin="Terrible"
+            sublabelMax="Amazing"
+          >
+            <ScaleButtons value={sleep} onChange={setSleep} />
+          </CheckInQuestion>
+
+          <CheckInQuestion label="Any pain or physical discomfort today?">
+            <View style={styles.painRow}>
+              {PAIN_OPTIONS.map((opt) => (
                 <TouchableOpacity
-                  key={v}
-                  style={[styles.ratingBtn, rating === v && styles.ratingBtnActive]}
-                  onPress={() => {
-                    setRating(v);
-                    Haptics.selectionAsync();
-                  }}
+                  key={opt.label}
+                  style={[
+                    styles.painBtn,
+                    painValue === opt.value && styles.painBtnSelected,
+                  ]}
+                  onPress={() => setPainValue(opt.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.ratingEmoji}>{RATING_ICONS[v]}</Text>
-                  <Text style={[styles.ratingLabel, rating === v && styles.ratingLabelActive]}>
-                    {RATING_LABELS[v]}
+                  <Text
+                    style={[
+                      styles.painBtnText,
+                      painValue === opt.value && styles.painBtnTextSelected,
+                    ]}
+                  >
+                    {opt.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
+          </CheckInQuestion>
 
-            <View style={styles.sliderGroup}>
-              <View style={styles.sliderRow}>
-                <Feather name="zap" size={14} color={COLORS.amber} />
-                <Text style={styles.sliderTitle}>{t("journal.energy")}</Text>
-                <Text style={styles.sliderValue}>{energy}/5</Text>
-              </View>
-              <Slider
-                value={energy}
-                minimumValue={1}
-                maximumValue={5}
-                step={1}
-                onValueChange={setEnergy}
-                minimumTrackTintColor={COLORS.amber}
-                maximumTrackTintColor={COLORS.border}
-                thumbTintColor={COLORS.amber}
-              />
-            </View>
-
-            <View style={styles.sliderGroup}>
-              <View style={styles.sliderRow}>
-                <Feather name="activity" size={14} color={COLORS.rose} />
-                <Text style={styles.sliderTitle}>{t("journal.painDiscomfort")}</Text>
-                <Text style={styles.sliderValue}>{pain}/5</Text>
-              </View>
-              <Slider
-                value={pain}
-                minimumValue={1}
-                maximumValue={5}
-                step={1}
-                onValueChange={setPain}
-                minimumTrackTintColor={COLORS.rose}
-                maximumTrackTintColor={COLORS.border}
-                thumbTintColor={COLORS.rose}
-              />
-            </View>
-
-            <Text style={styles.sectionLabel}>{t("journal.sleepLastNight")}</Text>
-            <View style={styles.chipRow}>
-              {SLEEP_OPTIONS.map((opt, idx) => (
+          <CheckInQuestion label="What did you work on today?">
+            <View style={styles.chipsWrap}>
+              {activityOptions.map((name) => (
                 <TouchableOpacity
-                  key={opt}
-                  style={[styles.chip, sleepIdx === idx && styles.chipActive]}
-                  onPress={() => {
-                    setSleepIdx(idx);
-                    Haptics.selectionAsync();
-                  }}
+                  key={name}
+                  style={[
+                    styles.chip,
+                    activities.includes(name) && styles.chipSelected,
+                  ]}
+                  onPress={() => toggleActivity(name)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.chipText, sleepIdx === idx && styles.chipTextActive]}>
-                    {opt}
+                  <Text
+                    style={[
+                      styles.chipText,
+                      activities.includes(name) && styles.chipTextSelected,
+                    ]}
+                  >
+                    {name}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
+          </CheckInQuestion>
 
-            {popularModalities.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>{t("journal.modalityOptional")}</Text>
-                <View style={styles.chipRow}>
-                  {popularModalities.map((m) => (
-                    <TouchableOpacity
-                      key={m.id}
-                      style={[
-                        styles.chip,
-                        selectedModalityId === m.id && styles.chipSage,
-                      ]}
-                      onPress={() =>
-                        setSelectedModalityId((prev) => (prev === m.id ? null : m.id))
-                      }
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.chipEmoji}>{m.emoji ?? "🌿"}</Text>
-                      <Text
-                        style={[
-                          styles.chipText,
-                          selectedModalityId === m.id && styles.chipTextSage,
-                        ]}
-                      >
-                        {m.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
-            )}
-
+          <CheckInQuestion label="Anything to note? (optional)">
             <TextInput
               style={styles.noteInput}
-              placeholder={t("journal.addNoteOptional")}
+              value={quickNote}
+              onChangeText={setQuickNote}
+              placeholder="One word or a quick thought..."
               placeholderTextColor={COLORS.textLight}
-              value={note}
-              onChangeText={handleNoteChange}
-              multiline
-              maxLength={500}
+              maxLength={120}
+              returnKeyType="done"
             />
+          </CheckInQuestion>
 
-            <TouchableOpacity
-              style={[styles.saveBtn, isPending && styles.saveBtnDisabled]}
-              onPress={submitEntry}
-              disabled={isPending}
-              activeOpacity={0.85}
-            >
-              {isPending ? (
-                <ActivityIndicator color={COLORS.white} size="small" />
-              ) : (
-                <Text style={styles.saveBtnText}>{t("journal.saveEntry")}</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
+          <TouchableOpacity
+            style={[styles.submitBtn, (!canSubmit || saving) && styles.submitBtnDisabled]}
+            onPress={handleSubmit}
+            disabled={!canSubmit || saving}
+            activeOpacity={0.85}
+          >
+            {saving ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.submitBtnText}>Save Check-In</Text>
+            )}
+          </TouchableOpacity>
+        </>
+      )}
 
-        {showChart && <MiniInsightChart entries={entries} locale={locale} />}
-
-        {isLoading ? (
-          <View style={styles.loadingState}>
-            <ActivityIndicator color={COLORS.amber} />
-          </View>
-        ) : entries.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Feather name="book-open" size={36} color={COLORS.textLight} />
-            <Text style={styles.emptyTitle}>{t("journal.noEntriesYet")}</Text>
-            <Text style={styles.emptyText}>{t("journal.noEntriesText")}</Text>
-          </View>
-        ) : (
-          <View style={styles.entryList}>
-            {entries.map((entry) => {
-              const sleepLabel = decodeMetric(entry.note, "sleep");
-              const energyVal = decodeMetric(entry.note, "energy");
-              const painVal = decodeMetric(entry.note, "pain");
-              const clean = cleanNote(entry.note);
-              const ratingVal = entry.rating ?? 0;
-              const ratingColor =
-                ratingVal >= 4 ? COLORS.sage : ratingVal >= 3 ? COLORS.amber : COLORS.rose;
-
+      {recentEntries.length > 0 && (
+        <View style={styles.historySection}>
+          <Text style={styles.historyTitle}>Recent Check-ins</Text>
+          <View style={styles.historyCard}>
+            {recentEntries.map((entry, idx) => {
+              const ext = entry as ExtProgressLog;
+              const dateLabel = new Date(entry.createdAt).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              });
+              const acts = parseActivitiesFromNote(entry.note);
               return (
-                <View key={entry.id} style={styles.entryCard}>
-                  <View style={styles.entryMeta}>
-                    <View>
-                      <Text style={styles.entryDate}>{formatDate(entry.createdAt, locale)}</Text>
-                      <Text style={styles.entryTime}>{formatTime(entry.createdAt, locale)}</Text>
-                    </View>
-                    {ratingVal > 0 && (
-                      <View style={[styles.ratingTag, { backgroundColor: ratingColor + "18" }]}>
-                        <Text style={styles.ratingTagEmoji}>{RATING_ICONS[ratingVal]}</Text>
-                        <Text style={[styles.ratingTagText, { color: ratingColor }]}>
-                          {RATING_LABELS[ratingVal]}
-                        </Text>
-                      </View>
-                    )}
+                <View
+                  key={entry.id}
+                  style={[
+                    styles.historyRow,
+                    idx < recentEntries.length - 1 && styles.historyRowBorder,
+                  ]}
+                >
+                  <Text style={styles.historyDate}>{dateLabel}</Text>
+                  <View style={styles.historyMeta}>
+                    <Text style={styles.historyScores}>
+                      {[
+                        ext.energy != null ? `Energy ${ext.energy / 2}` : null,
+                        ext.mood != null ? `Mood ${ext.mood / 2}` : null,
+                        entry.rating != null ? `Sleep ${entry.rating / 2}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
+                    {acts ? (
+                      <Text style={styles.historyActivities} numberOfLines={1}>
+                        {acts}
+                      </Text>
+                    ) : null}
                   </View>
-                  <View style={styles.metaChips}>
-                    {sleepLabel && (
-                      <View style={styles.metaChip}>
-                        <Feather name="moon" size={11} color={COLORS.navy} />
-                        <Text style={styles.metaChipText}>{sleepLabel}</Text>
-                      </View>
-                    )}
-                    {energyVal && (
-                      <View style={styles.metaChip}>
-                        <Feather name="zap" size={11} color={COLORS.amber} />
-                        <Text style={styles.metaChipText}>{t("journal.energyLabel", { value: energyVal })}</Text>
-                      </View>
-                    )}
-                    {painVal && (
-                      <View style={styles.metaChip}>
-                        <Feather name="activity" size={11} color={COLORS.rose} />
-                        <Text style={styles.metaChipText}>{t("journal.painLabel", { value: painVal })}</Text>
-                      </View>
-                    )}
-                  </View>
-                  {clean ? (
-                    <Text style={styles.entryNote}>{clean}</Text>
-                  ) : null}
                 </View>
               );
             })}
           </View>
-        )}
-
-        <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerText}>{t("journal.disclaimer")}</Text>
         </View>
+      )}
 
-        <View style={{ height: 120 }} />
-      </ScrollView>
-    </View>
+      <View style={{ height: 120 }} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.warm },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.lg,
-  },
-  title: { fontFamily: FONTS.heading, fontSize: 28, color: COLORS.navy },
-  addBtn: {
-    backgroundColor: COLORS.navy,
-    borderRadius: RADIUS.full,
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scroll: { flex: 1 },
-  formCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    marginHorizontal: SPACING.xl,
-    marginBottom: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: SPACING.md,
-  },
-  formHeading: {
+  content: { paddingHorizontal: SPACING.xl, paddingBottom: 40 },
+  title: {
     fontFamily: FONTS.heading,
-    fontSize: 18,
+    fontSize: 28,
     color: COLORS.navy,
+    marginBottom: SPACING.xl,
   },
-  sectionLabel: {
+  question: {
+    marginBottom: SPACING.xl,
+  },
+  questionLabel: {
     fontFamily: FONTS.bodySemiBold,
-    fontSize: 11,
-    color: COLORS.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: SPACING.xs,
+    fontSize: 15,
+    color: "#e8306a",
+    marginBottom: SPACING.md,
   },
-  ratingRow: {
+  scaleRow: {
     flexDirection: "row",
-    gap: SPACING.xs,
-    justifyContent: "space-between",
-  },
-  ratingBtn: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: 4,
-  },
-  ratingBtnActive: { borderColor: COLORS.amber, backgroundColor: COLORS.amberPale },
-  ratingEmoji: { fontSize: 20 },
-  ratingLabel: { fontFamily: FONTS.body, fontSize: 10, color: COLORS.textMuted },
-  ratingLabelActive: { color: COLORS.amber },
-  sliderGroup: { gap: SPACING.xs },
-  sliderRow: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: SPACING.sm,
   },
-  sliderTitle: {
-    fontFamily: FONTS.bodyMedium,
-    fontSize: 13,
-    color: COLORS.navy,
+  scaleBtn: {
     flex: 1,
+    height: 44,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.white,
   },
-  sliderValue: {
+  scaleBtnSelected: {
+    borderColor: "#e8306a",
+    backgroundColor: "#e8306a",
+  },
+  scaleBtnText: {
     fontFamily: FONTS.bodySemiBold,
-    fontSize: 13,
+    fontSize: 16,
+    color: COLORS.navy,
+  },
+  scaleBtnTextSelected: { color: "#fff" },
+  sublabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: SPACING.xs,
+  },
+  sublabel: {
+    fontFamily: FONTS.body,
+    fontSize: 11,
     color: COLORS.textMuted,
   },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.xs },
-  chip: {
+  painRow: {
     flexDirection: "row",
+    gap: SPACING.sm,
+  },
+  painBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
     alignItems: "center",
-    gap: 4,
+    justifyContent: "center",
+    backgroundColor: COLORS.white,
+  },
+  painBtnSelected: {
+    borderColor: "#1b2d4f",
+    backgroundColor: "#1b2d4f",
+  },
+  painBtnText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 14,
+    color: COLORS.navy,
+  },
+  painBtnTextSelected: { color: "#fff" },
+  chipsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SPACING.sm,
+  },
+  chip: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs + 2,
     borderRadius: RADIUS.full,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
-    backgroundColor: COLORS.warm,
+    backgroundColor: COLORS.white,
   },
-  chipActive: { borderColor: COLORS.navy, backgroundColor: COLORS.navy10 },
-  chipSage: { borderColor: COLORS.sage, backgroundColor: COLORS.sagePale },
-  chipEmoji: { fontSize: 13 },
-  chipText: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted },
-  chipTextActive: { fontFamily: FONTS.bodySemiBold, color: COLORS.navy },
-  chipTextSage: { fontFamily: FONTS.bodySemiBold, color: COLORS.sage },
+  chipSelected: {
+    borderColor: "#1b2d4f",
+    backgroundColor: "#1b2d4f",
+  },
+  chipText: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+    color: COLORS.navy,
+  },
+  chipTextSelected: { color: "#fff" },
   noteInput: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
     fontFamily: FONTS.body,
     fontSize: 14,
     color: COLORS.text,
-    minHeight: 72,
-    textAlignVertical: "top",
   },
-  saveBtn: {
-    backgroundColor: COLORS.navy,
+  submitBtn: {
+    backgroundColor: "#e8306a",
     borderRadius: RADIUS.lg,
-    paddingVertical: SPACING.md,
+    paddingVertical: SPACING.lg,
     alignItems: "center",
-    justifyContent: "center",
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.xxl,
   },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: {
+  submitBtnDisabled: { opacity: 0.4 },
+  submitBtnText: {
     fontFamily: FONTS.bodySemiBold,
-    fontSize: 15,
-    color: COLORS.white,
+    fontSize: 16,
+    color: "#fff",
   },
-  loadingState: { alignItems: "center", paddingTop: SPACING.xxxl },
-  emptyState: {
-    alignItems: "center",
-    paddingTop: SPACING.xxxl * 2,
-    paddingHorizontal: SPACING.xxxl,
-    gap: SPACING.md,
-  },
-  emptyTitle: { fontFamily: FONTS.heading, fontSize: 20, color: COLORS.navy },
-  emptyText: {
-    fontFamily: FONTS.body,
-    fontSize: 14,
-    color: COLORS.textMuted,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  entryList: { paddingHorizontal: SPACING.xl, gap: SPACING.sm },
-  entryCard: {
+  summaryCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
+    padding: SPACING.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: SPACING.sm,
+    marginBottom: SPACING.xxl,
+    gap: SPACING.md,
   },
-  entryMeta: {
+  summaryTitle: {
+    fontFamily: FONTS.heading,
+    fontSize: 20,
+    color: "#e8306a",
+  },
+  summaryRows: { gap: SPACING.sm },
+  summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
+    paddingVertical: SPACING.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    gap: SPACING.md,
   },
-  entryDate: {
+  summaryLabel: {
     fontFamily: FONTS.bodySemiBold,
     fontSize: 14,
-    color: COLORS.navy,
+    color: "#8496b0",
   },
-  entryTime: { fontFamily: FONTS.body, fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
-  ratingTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: 4,
-    borderRadius: RADIUS.full,
+  summaryValue: {
+    fontFamily: FONTS.body,
+    fontSize: 14,
+    color: "#333",
   },
-  ratingTagEmoji: { fontSize: 14 },
-  ratingTagText: {
-    fontFamily: FONTS.bodySemiBold,
-    fontSize: 12,
-  },
-  metaChips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SPACING.xs,
-  },
-  metaChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: COLORS.navy10,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-    borderRadius: RADIUS.full,
-  },
-  metaChipText: {
-    fontFamily: FONTS.bodyMedium,
-    fontSize: 11,
-    color: COLORS.navy,
-  },
-  entryNote: {
+  summaryFooter: {
     fontFamily: FONTS.body,
     fontSize: 13,
     color: COLORS.textMuted,
-    lineHeight: 18,
-  },
-  disclaimer: {
-    marginHorizontal: SPACING.xl,
-    marginTop: SPACING.lg,
-    paddingTop: SPACING.lg,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  disclaimerText: {
-    fontFamily: FONTS.body,
-    fontSize: 11,
-    color: COLORS.textLight,
-    lineHeight: 16,
     textAlign: "center",
+    marginTop: SPACING.xs,
+  },
+  historySection: { marginBottom: SPACING.xxl },
+  historyTitle: {
+    fontFamily: FONTS.heading,
+    fontSize: 20,
+    color: "#e8306a",
+    marginBottom: SPACING.md,
+  },
+  historyCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  historyRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+  },
+  historyRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  historyDate: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 13,
+    color: "#333",
+    width: 52,
+  },
+  historyMeta: { flex: 1 },
+  historyScores: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+    color: "#333",
+  },
+  historyActivities: {
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    color: "#8496b0",
+    marginTop: 2,
   },
 });
