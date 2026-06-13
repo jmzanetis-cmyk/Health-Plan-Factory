@@ -162,6 +162,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchAndSetUser();
   }, [fetchAndSetUser]);
 
+  // Passive token refresh every 50 minutes to stay ahead of the 60-minute expiry
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        await doRefreshSession();
+      } catch {
+        // silently fail — next 401 will trigger a fresh sign-in
+      }
+    }, 50 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [doRefreshSession]);
+
   const signIn = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${API_BASE_URL}/api/login`, {
       method: "POST",

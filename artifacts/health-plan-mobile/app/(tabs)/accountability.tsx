@@ -23,6 +23,8 @@ import { usePlusAccess } from "@/lib/subscription";
 import { useAuth } from "@/lib/auth";
 import { loadConnectionState, syncHealthData, type DailyHealthMetrics } from "@/lib/healthSync";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
+import { Franco } from "@/components/workers";
+import { useWorker } from "@/hooks/useWorker";
 
 const COMMITS_STORAGE_KEY = "hpf_daily_commits";
 
@@ -294,6 +296,13 @@ export default function AccountabilityScreen() {
     setRefreshing(false);
   }
 
+  const { message: francoMessage, isLoading: francoLoading } = useWorker({
+    worker: "franco",
+    trigger: "track_view",
+    autoFetch: true,
+    cacheDuration: 600_000,
+  });
+
   const entries = progress ?? [];
   const streak = calculateStreak(entries);
   const todayHasEntry = entries.some(
@@ -330,6 +339,16 @@ export default function AccountabilityScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
         }
       >
+        <View style={styles.francoRow}>
+          <Franco
+            pose="clipboard"
+            size={64}
+            speechBubble={francoMessage ?? undefined}
+            isTyping={francoLoading}
+            bubblePosition="right"
+          />
+        </View>
+
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{streak}</Text>
@@ -550,6 +569,11 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: SPACING.xl, paddingBottom: SPACING.lg },
   title: { fontFamily: FONTS.heading, fontSize: 28, color: COLORS.navy },
   scroll: { flex: 1 },
+  francoRow: {
+    paddingHorizontal: SPACING.xl,
+    marginBottom: SPACING.lg,
+    alignItems: "flex-start",
+  },
   statsRow: {
     flexDirection: "row",
     gap: SPACING.sm,

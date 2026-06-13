@@ -24,10 +24,12 @@ import { EmergencyTextInput } from "@/components/EmergencyTextInput";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { PlusPaywall } from "@/components/PlusPaywall";
 import { usePlusAccess } from "@/lib/subscription";
+import { Arnold } from "@/components/workers";
+import { useWorker } from "@/hooks/useWorker";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
-  return SecureStore.getItemAsync("auth_session_token");
+  return SecureStore.getItemAsync("hpf_access_token");
 }
 
 type ProviderRecord = {
@@ -344,6 +346,14 @@ export default function DiscoverScreen() {
   }
 
   const { isPlus } = usePlusAccess();
+
+  const { message: arnoldMessage, isLoading: arnoldLoading } = useWorker({
+    worker: "arnold",
+    trigger: "discover_view",
+    autoFetch: true,
+    cacheDuration: 300_000,
+  });
+
   const isLocked = providersData?.locked === true && !isPlus;
   const lockedCount = providersData?.count ?? 0;
   const providerList = (providersData?.providers ?? []).filter(
@@ -356,8 +366,19 @@ export default function DiscoverScreen() {
   return (
     <View style={[styles.screen, { paddingTop: topPad }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t("discover.title")}</Text>
-        <Text style={styles.subtitle}>{t("discover.subtitle")}</Text>
+        <View style={styles.headerTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{t("discover.title")}</Text>
+            <Text style={styles.subtitle}>{t("discover.subtitle")}</Text>
+          </View>
+          <Arnold
+            pose="waving"
+            size={64}
+            speechBubble={arnoldMessage ?? undefined}
+            isTyping={arnoldLoading}
+            bubblePosition="left"
+          />
+        </View>
       </View>
 
       <View style={styles.searchBar}>
@@ -455,6 +476,7 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.warm },
   header: { paddingHorizontal: SPACING.xl, paddingBottom: SPACING.sm },
+  headerTop: { flexDirection: "row", alignItems: "center", gap: SPACING.md },
   title: { fontFamily: FONTS.heading, fontSize: 28, color: COLORS.navy },
   subtitle: { fontFamily: FONTS.body, fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
   searchBar: {

@@ -24,6 +24,7 @@ import { interceptEmergencyText } from "@/lib/emergencyCheck";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { PlusPaywall } from "@/components/PlusPaywall";
 import { usePlusAccess } from "@/lib/subscription";
+import { Sonia } from "@/components/workers";
 
 interface Message {
   id: string;
@@ -61,9 +62,7 @@ function MessageBubble({ message }: { message: Message }) {
   return (
     <View style={[styles.bubbleRow, isUser ? styles.bubbleRowUser : styles.bubbleRowAssistant]}>
       {!isUser && (
-        <View style={styles.avatarDot}>
-          <Feather name="cpu" size={12} color={COLORS.white} />
-        </View>
+        <Sonia pose="default" size={32} />
       )}
       <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
         <Text style={[styles.bubbleText, isUser && styles.bubbleTextUser]}>
@@ -437,9 +436,7 @@ export default function CoachScreen() {
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={styles.coachAvatar}>
-            <Feather name="cpu" size={16} color={COLORS.white} />
-          </View>
+          <Sonia pose="default" size={36} />
           <View>
             <Text style={styles.headerTitle}>{t("coach.title")}</Text>
             <Text style={styles.headerSub}>{t("coach.poweredBy")}</Text>
@@ -479,9 +476,7 @@ export default function CoachScreen() {
           ListHeaderComponent={
             isSending && reversedMessages[0]?.isStreaming !== true ? (
               <View style={styles.typingRow}>
-                <View style={styles.avatarDot}>
-                  <Feather name="cpu" size={12} color={COLORS.white} />
-                </View>
+                <Sonia pose="default" size={32} />
                 <View style={styles.typingBubble}>
                   <ActivityIndicator color={COLORS.purple} size="small" />
                 </View>

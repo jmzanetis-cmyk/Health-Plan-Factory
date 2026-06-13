@@ -25,6 +25,8 @@ import { useGetCurrentAuthUser, useListProgress, useListModalities, partialQuery
 import type { ProgressLogRecord, ModalityRecord } from "@workspace/api-client-react";
 import { setupNotifications, scheduleSessionReminder } from "@/lib/notifications";
 import { loadConnectionState, syncHealthData, type DailyHealthMetrics } from "@/lib/healthSync";
+import { Sydney } from "@/components/workers";
+import { useWorker } from "@/hooks/useWorker";
 
 const RING_SIZE = 140;
 const RING_STROKE = 14;
@@ -163,6 +165,23 @@ export default function HomeScreen() {
   const modalities = Array.isArray(modalitiesData) ? modalitiesData : [];
   const streak = calculateStreak(entries);
   const wellnessScore = calculateWellnessScore(entries, healthMetrics);
+  const hasPlan = entries.length > 0;
+
+  const sydneyTrigger =
+    streak >= 30 ? "streak_30" :
+    streak >= 14 ? "streak_14" :
+    streak >= 7 ? "streak_7" :
+    streak >= 3 ? "streak_3" :
+    !hasPlan ? "no_plan" :
+    entries.length < 3 ? "new_user" :
+    "returning";
+
+  const { message: sydneyMessage, isLoading: sydneyLoading } = useWorker({
+    worker: "sydney",
+    trigger: sydneyTrigger,
+    autoFetch: true,
+    cacheDuration: 300_000,
+  });
   const trialDaysLeft = getDaysLeftInTrial(authData?.user?.createdAt);
   const todayStr = new Date().toDateString();
   const hasEntryToday = entries.some(
@@ -262,6 +281,16 @@ export default function HomeScreen() {
         style={styles.factoryHero}
         resizeMode="contain"
       />
+
+      <View style={styles.sydneyRow}>
+        <Sydney
+          pose={sydneyLoading ? "default" : "waving"}
+          size={64}
+          speechBubble={sydneyMessage ?? undefined}
+          isTyping={sydneyLoading}
+          bubblePosition="right"
+        />
+      </View>
 
       {progressLoading ? (
         <View style={styles.loadingRing}>
@@ -799,6 +828,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textMuted,
     marginTop: 2,
+  },
+  sydneyRow: {
+    alignItems: "flex-start",
+    marginBottom: SPACING.lg,
+    marginTop: -SPACING.sm,
   },
 
   // ── New-user action prompts ───────────────────────────────────────────────
