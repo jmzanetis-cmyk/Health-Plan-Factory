@@ -85,6 +85,7 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false, presentation: "card" }} />
         <Stack.Screen name="health-connect" options={{ headerShown: false, presentation: "card" }} />
+        <Stack.Screen name="intake" options={{ headerShown: false, presentation: "card" }} />
       </Stack>
     </>
   );

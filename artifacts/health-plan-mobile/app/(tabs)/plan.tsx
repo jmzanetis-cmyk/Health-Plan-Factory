@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser, useListModalities, partialQuery } from "@workspace/api-client-react";
 import type { ModalityRecord } from "@workspace/api-client-react";
@@ -251,6 +252,7 @@ export default function PlanScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const { t } = useTranslation();
+  const router = useRouter();
 
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
@@ -354,7 +356,7 @@ export default function PlanScreen() {
 
           <TouchableOpacity
             style={styles.buildCard}
-            onPress={() => Linking.openURL("https://healthplanfactory.com/onboarding")}
+            onPress={() => router.push("/intake")}
             activeOpacity={0.85}
           >
             <Text style={styles.buildCardTitle}>Build Your Wellness Plan</Text>
