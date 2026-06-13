@@ -3,7 +3,7 @@ import {
   GetCurrentAuthUserResponse,
   LogoutMobileSessionResponse,
 } from "@workspace/api-zod";
-import { db, profiles, usersTable, referrals } from "@workspace/db";
+import { db, profiles, referrals } from "@workspace/db";
 import { eq, sql as drizzleSql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { z } from "zod";
@@ -102,20 +102,6 @@ async function upsertUserAndProfile(claims: Record<string, unknown>) {
     (claims.display_name as string) ||
     [firstName, lastName].filter(Boolean).join(" ") ||
     null;
-
-  await db
-    .insert(usersTable)
-    .values({ id, email: email || null, firstName, lastName, profileImageUrl })
-    .onConflictDoUpdate({
-      target: usersTable.id,
-      set: {
-        email: email || null,
-        firstName,
-        lastName,
-        profileImageUrl,
-        updatedAt: new Date(),
-      },
-    });
 
   const [profile] = await db
     .insert(profiles)
