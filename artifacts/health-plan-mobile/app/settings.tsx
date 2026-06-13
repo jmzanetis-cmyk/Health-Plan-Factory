@@ -13,6 +13,8 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -199,6 +201,141 @@ const notifStyles = StyleSheet.create({
     alignItems: "center",
   },
   saveBtnText: { fontFamily: FONTS.bodySemiBold, fontSize: 14, color: COLORS.white },
+});
+
+const CHECKIN_FREQ_KEY = "hpf_checkin_frequency";
+const CHECKIN_TIME_KEY = "hpf_checkin_time";
+
+type CheckInFrequency = "daily" | "every_other_day" | "weekdays" | "off";
+
+const FREQ_LABELS: Record<CheckInFrequency, string> = {
+  daily: "Daily",
+  every_other_day: "Every other day",
+  weekdays: "Weekdays only",
+  off: "Off",
+};
+
+const WEEKDAY_MAP: Record<CheckInFrequency, number[]> = {
+  daily: [1, 2, 3, 4, 5, 6, 7],
+  every_other_day: [1, 3, 5, 7],
+  weekdays: [2, 3, 4, 5, 6],
+  off: [],
+};
+
+async function scheduleCheckInReminders(freq: CheckInFrequency, time: string) {
+  if (Platform.OS === "web") return;
+  await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
+  if (freq === "off") return;
+
+  const [hourStr, minStr] = time.split(":");
+  const hour = parseInt(hourStr ?? "8", 10);
+  const minute = parseInt(minStr ?? "0", 10);
+  const weekdays = WEEKDAY_MAP[freq];
+
+  for (const weekday of weekdays) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Time for your daily check-in",
+        body: "How are you feeling today? It takes 60 seconds.",
+        sound: true,
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday, hour, minute },
+    }).catch(() => {});
+  }
+}
+
+function CheckInReminderSection() {
+  const [freq, setFreq] = useState<CheckInFrequency>("daily");
+  const [time, setTime] = useState("08:00");
+
+  useEffect(() => {
+    (async () => {
+      const [savedFreq, savedTime] = await Promise.all([
+        AsyncStorage.getItem(CHECKIN_FREQ_KEY),
+        AsyncStorage.getItem(CHECKIN_TIME_KEY),
+      ]);
+      if (savedFreq) setFreq(savedFreq as CheckInFrequency);
+      if (savedTime) setTime(savedTime);
+    })();
+  }, []);
+
+  async function pickFrequency() {
+    const options: CheckInFrequency[] = ["daily", "every_other_day", "weekdays", "off"];
+    Alert.alert("Check-in Frequency", "How often would you like reminders?", [
+      ...options.map((opt) => ({
+        text: FREQ_LABELS[opt],
+        onPress: async () => {
+          setFreq(opt);
+          await AsyncStorage.setItem(CHECKIN_FREQ_KEY, opt);
+          await scheduleCheckInReminders(opt, time);
+        },
+      })),
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
+
+  return (
+    <View style={reminderStyles.card}>
+      <TouchableOpacity style={reminderStyles.row} onPress={pickFrequency} activeOpacity={0.7}>
+        <View style={reminderStyles.icon}>
+          <Feather name="bell" size={16} color={COLORS.amber} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={reminderStyles.label}>Reminder Frequency</Text>
+          <Text style={reminderStyles.value}>{FREQ_LABELS[freq]}</Text>
+        </View>
+        <Feather name="chevron-right" size={16} color={COLORS.textLight} />
+      </TouchableOpacity>
+      {freq !== "off" && (
+        <View style={[reminderStyles.row, reminderStyles.rowBorder]}>
+          <View style={reminderStyles.icon}>
+            <Feather name="clock" size={16} color={COLORS.amber} />
+          </View>
+          <Text style={[reminderStyles.label, { flex: 1 }]}>Reminder Time</Text>
+          <TextInput
+            value={time}
+            onChangeText={setTime}
+            onBlur={async () => {
+              await AsyncStorage.setItem(CHECKIN_TIME_KEY, time);
+              await scheduleCheckInReminders(freq, time);
+            }}
+            style={reminderStyles.timeInput}
+            keyboardType="numbers-and-punctuation"
+            placeholder="08:00"
+            maxLength={5}
+          />
+        </View>
+      )}
+    </View>
+  );
+}
+
+const reminderStyles = StyleSheet.create({
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: "hidden",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    padding: SPACING.lg,
+  },
+  rowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  icon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.amberPale,
+  },
+  label: { fontFamily: FONTS.bodyMedium, fontSize: 15, color: COLORS.navy },
+  value: { fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
+  timeInput: { fontFamily: FONTS.body, fontSize: 15, color: COLORS.navy, textAlign: "right" },
 });
 
 function ConnectedServicesSection({ profileId }: { profileId?: string }) {
@@ -499,6 +636,9 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionLabel}>{t("settings.notifications")}</Text>
         <NotificationPrefsSection />
+
+        <Text style={styles.sectionLabel}>Check-in Reminders</Text>
+        <CheckInReminderSection />
 
         <Text style={styles.sectionLabel}>{t("settings.referEarn")}</Text>
         <TouchableOpacity

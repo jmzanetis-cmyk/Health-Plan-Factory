@@ -24,6 +24,7 @@ import reviewsRouter from "./reviews";
 import surveyResponsesRouter from "./surveyResponses";
 import membersRouter from "./members";
 import testFixturesRouter from "./test-fixtures";
+import workersRouter from "./workers";
 
 const router: IRouter = Router();
 
@@ -55,5 +56,6 @@ router.use(storageRouter);
 router.use(reviewsRouter);
 router.use(surveyResponsesRouter);
 router.use(membersRouter);
+router.use(workersRouter);
 
 export default router;

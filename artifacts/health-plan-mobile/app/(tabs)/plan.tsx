@@ -22,6 +22,8 @@ import { useGetCurrentAuthUser, useListModalities, partialQuery } from "@workspa
 import type { ModalityRecord } from "@workspace/api-client-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { PurchaseModal } from "@/components/PurchaseModal";
+import { Fabio } from "@/components/workers";
+import { useWorker } from "@/hooks/useWorker";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
@@ -296,6 +298,14 @@ export default function PlanScreen() {
     setPaywallVisible(true);
   }
 
+  const fabioTrigger = !planData ? "no_plan" : "plan_ready";
+  const { message: fabioMessage, isLoading: fabioLoading } = useWorker({
+    worker: "fabio",
+    trigger: fabioTrigger,
+    autoFetch: true,
+    cacheDuration: 300_000,
+  });
+
   const sortedItems = [...(planData?.items ?? [])].sort(
     (a, b) =>
       (a.isDeprioritized ? 1 : 0) - (b.isDeprioritized ? 1 : 0) ||
@@ -351,6 +361,15 @@ export default function PlanScreen() {
         </View>
       ) : !planData ? (
         <ScrollView contentContainerStyle={styles.emptyState} showsVerticalScrollIndicator={false}>
+          <View style={styles.fabioEmptyRow}>
+            <Fabio
+              pose="pointing"
+              size={90}
+              speechBubble={fabioMessage ?? undefined}
+              isTyping={fabioLoading}
+              bubblePosition="right"
+            />
+          </View>
           <Text style={styles.emptyTitle}>{t("plan.noPlanYet")}</Text>
           <Text style={styles.emptyText}>{t("plan.noPlanText")}</Text>
 
@@ -665,5 +684,9 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.md,
+  },
+  fabioEmptyRow: {
+    alignItems: "center",
+    marginBottom: SPACING.lg,
   },
 });

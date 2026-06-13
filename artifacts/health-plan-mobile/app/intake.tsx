@@ -20,6 +20,7 @@ import { Feather } from "@expo/vector-icons";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { Fabio } from "@/components/workers";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -600,8 +601,7 @@ export default function IntakeScreen() {
     }
     return (
       <View style={styles.genCenter}>
-        <Animated.View style={[styles.genPulse, { transform: [{ scale: pulseAnim }] }]} />
-        <ActivityIndicator size="large" color={COLORS.pink} style={styles.genSpinner} />
+        <Fabio pose="clipboard" size={100} isTyping />
         <Text style={styles.genMsg}>{genMsg}</Text>
       </View>
     );
