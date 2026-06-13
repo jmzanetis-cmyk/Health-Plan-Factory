@@ -50,7 +50,8 @@ function buildUpcomingSessions(
   tomorrowLabel: string,
   weekDays: string[]
 ): Array<{ id: string; name: string; day: string; time: string; emoji: string }> {
-  if (!modalities.length) return [];
+  const safeModalities = Array.isArray(modalities) ? modalities : [];
+  if (!safeModalities.length) return [];
 
   const threeDaysAgo = Date.now() - 3 * 86400000;
   const recentModalityIds = new Set(
@@ -60,8 +61,8 @@ function buildUpcomingSessions(
       .filter(Boolean)
   );
 
-  const prioritized = modalities.filter((m) => !recentModalityIds.has(m.id));
-  const pool = prioritized.length >= 2 ? prioritized : modalities;
+  const prioritized = safeModalities.filter((m) => !recentModalityIds.has(m.id));
+  const pool = prioritized.length >= 2 ? prioritized : safeModalities;
   const top = pool.slice(0, 2);
 
   const today = new Date();
@@ -216,7 +217,7 @@ export default function HomeScreen() {
     t("home.friday") || "Friday",
     t("home.saturday") || "Saturday",
   ];
-  const upcomingSessions = buildUpcomingSessions(modalities, entries, t("home.tomorrow"), weekDays);
+  const upcomingSessions = buildUpcomingSessions(Array.isArray(modalities) ? modalities : [], entries, t("home.tomorrow"), weekDays);
 
   return (
     <ScrollView
