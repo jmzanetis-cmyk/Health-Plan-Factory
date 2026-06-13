@@ -303,7 +303,7 @@ function ProviderCard({ provider, isPlus }: { provider: ProviderRecord; isPlus: 
 
 function getModalityId(modalities: ModalityRecord[], filter: string): string | undefined {
   if (filter === "All") return undefined;
-  const found = modalities.find((m) => m.name.toLowerCase() === filter.toLowerCase());
+  const found = (Array.isArray(modalities) ? modalities : []).find((m) => m.name.toLowerCase() === filter.toLowerCase());
   return found?.id;
 }
 
@@ -321,8 +321,8 @@ export default function DiscoverScreen() {
     query: partialQuery({ staleTime: 300_000 }),
   });
 
-  const modalityFilters: string[] = ["All", ...(modalities ?? []).slice(0, 5).map((m) => m.name)];
-  const selectedModalityId = getModalityId(modalities ?? [], selectedFilter);
+  const modalityFilters: string[] = ["All", ...(Array.isArray(modalities) ? modalities : []).slice(0, 5).map((m) => m.name)];
+  const selectedModalityId = getModalityId(Array.isArray(modalities) ? modalities : [], selectedFilter);
 
   const queryParams = {
     search: search.length >= 2 ? search : undefined,

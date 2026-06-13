@@ -156,7 +156,7 @@ export default function HomeScreen() {
   const [healthConnected, setHealthConnected] = useState(false);
 
   const entries = progressData ?? [];
-  const modalities = modalitiesData ?? [];
+  const modalities = Array.isArray(modalitiesData) ? modalitiesData : [];
   const streak = calculateStreak(entries);
   const wellnessScore = calculateWellnessScore(entries, healthMetrics);
   const trialDaysLeft = getDaysLeftInTrial(authData?.user?.createdAt);

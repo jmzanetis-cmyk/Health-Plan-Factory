@@ -228,7 +228,7 @@ export default function JournalScreen() {
 
   const entries = progress ?? [];
   const showChart = entries.length >= 5;
-  const popularModalities = (modalities ?? []).slice(0, 6);
+  const popularModalities = (Array.isArray(modalities) ? modalities : []).slice(0, 6);
 
   return (
     <View style={[styles.screen, { paddingTop: topPad }]}>
