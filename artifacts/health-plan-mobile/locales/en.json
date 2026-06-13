@@ -6,7 +6,7 @@
   "tabs": {
     "home": "Home",
     "plan": "Plan",
-    "journal": "Journal",
+    "journal": "Check-In",
     "track": "Track",
     "coach": "Coach",
     "discover": "Discover"
@@ -27,7 +27,7 @@
     "greeting": "Good morning,",
     "wellnessScore": "Wellness Score",
     "dayStreak": "Day Streak",
-    "journalEntries": "Journal Entries",
+    "journalEntries": "Check-Ins",
     "today": "Today",
     "trialDays": "{{count}}d trial",
     "upcomingSessions": "Upcoming Sessions",
@@ -84,7 +84,7 @@
     "couldNotConnect": "Could not connect. Please check your connection."
   },
   "journal": {
-    "title": "Journal",
+    "title": "Check-In",
     "howAreYouDoing": "How are you doing?",
     "overallRating": "Overall Rating",
     "energy": "Energy",
@@ -93,7 +93,7 @@
     "modalityOptional": "Modality Practiced (optional)",
     "addNoteOptional": "Add a note (optional)...",
     "saveEntry": "Save Entry",
-    "noEntriesYet": "No entries yet",
+    "noEntriesYet": "No check-ins yet",
     "noEntriesText": "Tap + to log your first wellness check-in.",
     "ratingTrend": "Rating Trend (last {{count}} entries)",
     "great": "Great",
@@ -105,9 +105,9 @@
     "legendOkay": "Okay",
     "legendLowRough": "Low/Rough",
     "notSignedIn": "Not signed in",
-    "errorSaving": "Could not save journal entry",
+    "errorSaving": "Could not save check-in",
     "error": "Error",
-    "disclaimer": "Journal entries are for personal tracking only. This is not medical advice. If you are in crisis, call or text 988.",
+    "disclaimer": "Check-ins are for personal tracking only. This is not medical advice. If you are in crisis, call or text 988.",
     "energyLabel": "Energy {{value}}/5",
     "painLabel": "Pain {{value}}/5"
   },
@@ -124,9 +124,9 @@
     "monthlyCalendar": "Monthly Calendar",
     "dailyCommitments": "Daily Commitments",
     "dailyCommitmentsSub": "Check off your daily habits to build consistency.",
-    "noEntryToday": "No journal entry today. Tap Journal to log your check-in.",
+    "noEntryToday": "No check-in today. Tap Check-In to log your daily check-in.",
     "allDone": "All commitments complete — great day!",
-    "journalDays": "{{count}} days journaled this month",
+    "journalDays": "{{count}} check-ins this month",
     "disclaimer": "Tracking is for personal accountability only. Not medical advice.",
     "todaysCommitments": "Today's Commitments",
     "weeklyGoals": "Weekly Goals",
@@ -141,7 +141,7 @@
     "buddyMatchingTitle": "Wellness Buddy Matching",
     "buddyMatchingBody": "Get paired with an accountability buddy who shares your wellness goals. Check in together, celebrate streaks, and stay motivated as a team.",
     "comingSoon": "Coming soon",
-    "journalEntriesWeek": "Journal entries this week",
+    "journalEntriesWeek": "Check-ins this week",
     "modalitiesPracticed": "Modalities practiced",
     "weekdays": {
       "mon": "M",
@@ -162,7 +162,7 @@
       "medications": "Take medications / supplements",
       "water": "Drink 8 glasses of water",
       "movement": "10 min mindful movement",
-      "journalLog": "Log today's journal entry",
+      "journalLog": "Log today's check-in",
       "breathing": "2 min breathing exercise"
     }
   },
