@@ -257,7 +257,7 @@ export default function JournalScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />
       }
     >
-      <Text style={styles.title}>Journal</Text>
+      <Text style={styles.title}>Check-In</Text>
 
       {progressLoading ? (
         <ActivityIndicator color={COLORS.amber} style={{ marginTop: SPACING.xl }} />
@@ -368,7 +368,7 @@ export default function JournalScreen() {
 
       {recentEntries.length > 0 && (
         <View style={styles.historySection}>
-          <Text style={styles.historyTitle}>Recent Check-ins</Text>
+          <Text style={styles.historyTitle}>Recent Check-Ins</Text>
           <View style={styles.historyCard}>
             {recentEntries.map((entry, idx) => {
               const ext = entry as ExtProgressLog;

@@ -18,7 +18,7 @@ import * as Notifications from "expo-notifications";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useAuth } from "@/lib/auth";
@@ -27,6 +27,7 @@ import * as SecureStore from "expo-secure-store";
 import { loadConnectionState, type HealthConnectionState } from "@/lib/healthSync";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { changeLanguage, type SupportedLang } from "@/lib/i18n";
+import { restorePurchases } from "@/lib/revenuecat";
 
 async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptionStatus: string }> {
   const base = getApiBaseUrl();
@@ -499,10 +500,24 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { signOut: logout } = useAuth();
   const { data: authData } = useGetCurrentAuthUser();
   const user = authData?.user;
   const { t } = useTranslation();
+  const [restoring, setRestoring] = useState(false);
+
+  async function handleRestorePurchases() {
+    setRestoring(true);
+    const success = await restorePurchases();
+    setRestoring(false);
+    if (success) {
+      await queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      Alert.alert(t("settings.restoreSuccessTitle"), t("settings.restoreSuccessBody"));
+    } else {
+      Alert.alert(t("settings.restoreFailTitle"), t("settings.restoreFailBody"));
+    }
+  }
 
   const { data: subscriptionData } = useQuery({
     queryKey: ["subscription-status"],
@@ -627,6 +642,30 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {Platform.OS === "ios" && (
+          <>
+            <Text style={styles.sectionLabel}>{t("settings.restorePurchases")}</Text>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={handleRestorePurchases}
+              disabled={restoring}
+              activeOpacity={0.7}
+            >
+              <View style={styles.row}>
+                <View style={styles.rowIcon}>
+                  {restoring ? (
+                    <ActivityIndicator size="small" color={COLORS.amber} />
+                  ) : (
+                    <Feather name="refresh-cw" size={16} color={COLORS.amber} />
+                  )}
+                </View>
+                <Text style={styles.rowLabel}>{t("settings.restorePurchases")}</Text>
+                <Feather name="chevron-right" size={16} color={COLORS.textLight} />
+              </View>
+            </TouchableOpacity>
+          </>
+        )}
 
         <Text style={styles.sectionLabel}>{t("settings.language")}</Text>
         <LanguageSection />

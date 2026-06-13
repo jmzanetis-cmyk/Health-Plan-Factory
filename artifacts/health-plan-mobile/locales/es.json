@@ -6,7 +6,7 @@
   "tabs": {
     "home": "Inicio",
     "plan": "Plan",
-    "journal": "Diario",
+    "journal": "Check-In",
     "track": "Seguimiento",
     "coach": "Coach",
     "discover": "Descubrir"
@@ -27,7 +27,7 @@
     "greeting": "Buenos d\u00edas,",
     "wellnessScore": "Puntuaci\u00f3n de Bienestar",
     "dayStreak": "D\u00edas Consecutivos",
-    "journalEntries": "Entradas de Diario",
+    "journalEntries": "Check-Ins",
     "today": "Hoy",
     "trialDays": "{{count}}d prueba",
     "upcomingSessions": "Pr\u00f3ximas Sesiones",
@@ -84,7 +84,7 @@
     "couldNotConnect": "No se pudo conectar. Verifica tu conexi\u00f3n."
   },
   "journal": {
-    "title": "Diario",
+    "title": "Check-In",
     "howAreYouDoing": "\u00bfC\u00f3mo est\u00e1s?",
     "overallRating": "Valoraci\u00f3n General",
     "energy": "Energ\u00eda",
@@ -93,7 +93,7 @@
     "modalityOptional": "Modalidad Practicada (opcional)",
     "addNoteOptional": "Agrega una nota (opcional)...",
     "saveEntry": "Guardar Entrada",
-    "noEntriesYet": "A\u00fan sin entradas",
+    "noEntriesYet": "A\u00fan sin check-ins",
     "noEntriesText": "Toca + para registrar tu primer chequeo de bienestar.",
     "ratingTrend": "Tendencia de Valoraci\u00f3n (\u00faltimas {{count}} entradas)",
     "great": "Excelente",
@@ -105,9 +105,9 @@
     "legendOkay": "Regular",
     "legendLowRough": "Bajo/Dif\u00edcil",
     "notSignedIn": "No has iniciado sesi\u00f3n",
-    "errorSaving": "No se pudo guardar la entrada del diario",
+    "errorSaving": "No se pudo guardar el check-in",
     "error": "Error",
-    "disclaimer": "Las entradas del diario son solo para seguimiento personal. Esto no es asesoramiento m\u00e9dico. Si est\u00e1s en crisis, llama o env\u00eda un mensaje al 988.",
+    "disclaimer": "Los check-ins son solo para seguimiento personal. Esto no es asesoramiento m\u00e9dico. Si est\u00e1s en crisis, llama o env\u00eda un mensaje al 988.",
     "energyLabel": "Energ\u00eda {{value}}/5",
     "painLabel": "Dolor {{value}}/5"
   },
@@ -124,9 +124,9 @@
     "monthlyCalendar": "Calendario Mensual",
     "dailyCommitments": "Compromisos Diarios",
     "dailyCommitmentsSub": "Marca tus h\u00e1bitos diarios para construir constancia.",
-    "noEntryToday": "Sin entrada en el diario hoy. Toca Diario para registrar tu chequeo.",
+    "noEntryToday": "Sin check-in hoy. Toca Check-In para registrar tu chequeo.",
     "allDone": "\u00a1Todos los compromisos cumplidos \u2014 gran d\u00eda!",
-    "journalDays": "{{count}} d\u00edas con diario este mes",
+    "journalDays": "{{count}} check-ins este mes",
     "disclaimer": "El seguimiento es solo para responsabilidad personal. No es asesoramiento m\u00e9dico.",
     "todaysCommitments": "Compromisos de Hoy",
     "weeklyGoals": "Metas Semanales",
@@ -141,7 +141,7 @@
     "buddyMatchingTitle": "Emparejar Compa\u00f1ero de Bienestar",
     "buddyMatchingBody": "Em\u00e1rejate con un compa\u00f1ero de responsabilidad que comparta tus metas de bienestar. Hagan chequeos juntos, celebren rachas y man\u00e9nganse motivados como equipo.",
     "comingSoon": "Pr\u00f3ximamente",
-    "journalEntriesWeek": "Entradas de diario esta semana",
+    "journalEntriesWeek": "Check-ins esta semana",
     "modalitiesPracticed": "Modalidades practicadas",
     "weekdays": {
       "mon": "L",
@@ -162,7 +162,7 @@
       "medications": "Tomar medicamentos / suplementos",
       "water": "Tomar 8 vasos de agua",
       "movement": "10 min de movimiento consciente",
-      "journalLog": "Registrar entrada del diario de hoy",
+      "journalLog": "Registrar el check-in de hoy",
       "breathing": "2 min de ejercicio de respiraci\u00f3n"
     }
   },

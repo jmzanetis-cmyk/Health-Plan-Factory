@@ -24,7 +24,7 @@ function NativeTabLayout() {
         <Label>{t("tabs.plan")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="journal">
-        <Icon sf={{ default: "book", selected: "book.fill" }} />
+        <Icon sf={{ default: "checkmark.circle", selected: "checkmark.circle.fill" }} />
         <Label>{t("tabs.journal")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="accountability">
@@ -106,9 +106,9 @@ function ClassicTabLayout() {
           title: t("tabs.journal"),
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="book" tintColor={color} size={24} />
+              <SymbolView name="checkmark.circle" tintColor={color} size={24} />
             ) : (
-              <Feather name="book" size={22} color={color} />
+              <Feather name="check-circle" size={22} color={color} />
             ),
         }}
       />
