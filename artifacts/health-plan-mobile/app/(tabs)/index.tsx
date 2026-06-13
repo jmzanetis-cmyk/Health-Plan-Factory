@@ -8,7 +8,11 @@ import {
   Platform,
   ActivityIndicator,
   RefreshControl,
+  Image,
+  Dimensions,
 } from "react-native";
+
+const { width: screenWidth } = Dimensions.get("window");
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -252,6 +256,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Image
+        source={require("../../assets/images/factory-hero.png")}
+        style={styles.factoryHero}
+        resizeMode="contain"
+      />
 
       {progressLoading ? (
         <View style={styles.loadingRing}>
@@ -536,6 +546,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: COLORS.navy10,
+  },
+  factoryHero: {
+    width: screenWidth,
+    height: 160,
+    marginLeft: -SPACING.xl,
+    opacity: 0.9,
+    marginVertical: 8,
   },
   loadingRing: { height: 180, justifyContent: "center", alignItems: "center" },
   scoreSection: { alignItems: "center", marginBottom: SPACING.xxl, gap: SPACING.xl },
