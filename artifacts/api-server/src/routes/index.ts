@@ -22,6 +22,7 @@ import healthSyncRouter from "./healthSync";
 import storageRouter from "./storage";
 import reviewsRouter from "./reviews";
 import surveyResponsesRouter from "./surveyResponses";
+import membersRouter from "./members";
 import testFixturesRouter from "./test-fixtures";
 
 const router: IRouter = Router();
@@ -53,5 +54,6 @@ router.use(healthSyncRouter);
 router.use(storageRouter);
 router.use(reviewsRouter);
 router.use(surveyResponsesRouter);
+router.use(membersRouter);
 
 export default router;

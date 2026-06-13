@@ -8,16 +8,20 @@ import {
   Platform,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import { COLORS, SPACING, RADIUS, FONTS } from "@/constants/theme";
 import { useListProgress, useGetCurrentAuthUser, partialQuery } from "@workspace/api-client-react";
 import { PlusPaywall } from "@/components/PlusPaywall";
 import { usePlusAccess } from "@/lib/subscription";
+import { useAuth } from "@/lib/auth";
+import { loadConnectionState, syncHealthData, type DailyHealthMetrics } from "@/lib/healthSync";
 import type { ProgressLogRecord } from "@workspace/api-client-react";
 
 const COMMITS_STORAGE_KEY = "hpf_daily_commits";
@@ -41,6 +45,18 @@ const BASE_COMMITMENTS: CommitmentItem[] = [
   { id: "nourish", nameKey: "accountability.commitments.nourish", emoji: "🥗" },
   { id: "connect", nameKey: "accountability.commitments.connect", emoji: "🤝" },
 ];
+
+const MACRO_GOALS = { protein: 120, carbs: 150, fat: 60 };
+const MACROS_KEY_PREFIX = "hpf_macros_";
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "https://api.healthplanfactory.com";
+
+interface Booking {
+  id: string;
+  modalityType: string;
+  providerName: string;
+  date: string;
+  time: string;
+}
 
 function getWeekDates() {
   const today = new Date();
@@ -160,12 +176,21 @@ export default function AccountabilityScreen() {
   const { data: authData } = useGetCurrentAuthUser();
   const profileId = authData?.user?.id ?? "";
   const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const { getToken } = useAuth();
 
   const [commitState, setCommitState] = useState<CommitState>({
     date: new Date().toDateString(),
     done: {},
   });
   const [refreshing, setRefreshing] = useState(false);
+  const [healthMetrics, setHealthMetrics] = useState<DailyHealthMetrics | null>(null);
+  const [healthConnected, setHealthConnected] = useState(false);
+  const [macros, setMacros] = useState({ protein: 0, carbs: 0, fat: 0 });
+  const [macroEditing, setMacroEditing] = useState<"protein" | "carbs" | "fat" | null>(null);
+  const [macroInput, setMacroInput] = useState("");
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
 
   const { data: progress, isLoading, refetch } = useListProgress(
     { profileId, limit: 90 },
@@ -188,12 +213,68 @@ export default function AccountabilityScreen() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!profileId || Platform.OS === "web") return;
+    (async () => {
+      const state = await loadConnectionState(profileId);
+      const connected = state.appleHealth || state.googleFit;
+      setHealthConnected(connected);
+      if (connected) {
+        const metrics = await syncHealthData(profileId);
+        if (metrics) setHealthMetrics(metrics);
+      }
+    })();
+  }, [profileId]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const todayKey = `${MACROS_KEY_PREFIX}${new Date().toISOString().slice(0, 10)}`;
+        const raw = await AsyncStorage.getItem(todayKey);
+        if (raw) setMacros(JSON.parse(raw));
+      } catch {}
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!profileId) return;
+    setBookingsLoading(true);
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_BASE}/api/members/bookings?status=upcoming`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setBookings(Array.isArray(data.bookings) ? data.bookings : []);
+        }
+      } catch {
+      } finally {
+        setBookingsLoading(false);
+      }
+    })();
+  }, [profileId, getToken]);
+
   if (plusLoading) return (
     <View style={{ flex: 1, backgroundColor: COLORS.warm, justifyContent: "center", alignItems: "center" }}>
       <ActivityIndicator color={COLORS.amber} />
     </View>
   );
   if (!isPlus) return <PlusPaywall feature="accountability" />;
+
+  async function addMacro(key: "protein" | "carbs" | "fat") {
+    const val = parseInt(macroInput, 10);
+    setMacroEditing(null);
+    setMacroInput("");
+    if (isNaN(val) || val <= 0) return;
+    const next = { ...macros, [key]: macros[key] + val };
+    setMacros(next);
+    try {
+      const todayKey = `${MACROS_KEY_PREFIX}${new Date().toISOString().slice(0, 10)}`;
+      await AsyncStorage.setItem(todayKey, JSON.stringify(next));
+    } catch {}
+  }
 
   async function toggleCommit(id: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -320,6 +401,121 @@ export default function AccountabilityScreen() {
             <Text style={styles.nudgeText}>{t("accountability.noEntryToday")}</Text>
           </View>
         )}
+
+        {/* Steps Today */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitlePink}>Steps Today</Text>
+          <View style={styles.trackCard}>
+            {Platform.OS === "web" || !healthConnected ? (
+              <View style={styles.trackCardInner}>
+                <Text style={styles.trackPlaceholder}>
+                  {Platform.OS === "web"
+                    ? "Step tracking is not available on web"
+                    : "Connect Apple Health or Google Fit in Settings to see your steps"}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.trackCardInner}>
+                <Text style={styles.stepsNumber}>
+                  {healthMetrics?.steps != null ? healthMetrics.steps.toLocaleString() : "--"}
+                </Text>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${Math.min(100, ((healthMetrics?.steps ?? 0) / 10000) * 100)}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.trackMuted}>Weekly average: --</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Daily Macros */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitlePink}>Daily Macros</Text>
+          <View style={styles.trackCard}>
+            {(["protein", "carbs", "fat"] as const).map((key, idx) => {
+              const goal = MACRO_GOALS[key];
+              const current = macros[key];
+              const pct = Math.min(100, (current / goal) * 100);
+              const label = key.charAt(0).toUpperCase() + key.slice(1);
+              return (
+                <View key={key} style={[styles.macroRow, idx < 2 && styles.macroRowBorder]}>
+                  <Text style={styles.macroLabel}>{label}</Text>
+                  <Text style={styles.macroAmount}>{current}g / {goal}g</Text>
+                  <View style={styles.macroBar}>
+                    <View style={styles.progressTrack}>
+                      <View style={[styles.progressFill, { width: `${pct}%` }]} />
+                    </View>
+                  </View>
+                  {macroEditing === key ? (
+                    <View style={styles.macroEditArea}>
+                      <TextInput
+                        style={styles.macroInput}
+                        value={macroInput}
+                        onChangeText={setMacroInput}
+                        keyboardType="numeric"
+                        autoFocus
+                        returnKeyType="done"
+                        onSubmitEditing={() => addMacro(key)}
+                        placeholder="0"
+                        placeholderTextColor={COLORS.textLight}
+                      />
+                      <TouchableOpacity style={styles.macroAddBtn} onPress={() => addMacro(key)}>
+                        <Text style={styles.macroAddBtnText}>Add</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.macroPlusBtn}
+                      onPress={() => { setMacroEditing(key); setMacroInput(""); }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.macroPlusBtnText}>+</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Upcoming Appointments */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitlePink}>Upcoming Appointments</Text>
+          {bookingsLoading ? (
+            <ActivityIndicator color={COLORS.amber} style={{ padding: SPACING.lg }} />
+          ) : bookings.length === 0 ? (
+            <View style={styles.trackCard}>
+              <View style={styles.trackCardInner}>
+                <Text style={styles.apptEmpty}>No upcoming appointments</Text>
+                <Text style={styles.trackMuted}>Book sessions through your wellness plan</Text>
+                <TouchableOpacity
+                  style={styles.apptPlanBtn}
+                  onPress={() => router.push("/(tabs)/plan" as never)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.apptPlanBtnText}>View My Plan</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.trackCard}>
+              {bookings.map((b, idx) => (
+                <View
+                  key={b.id}
+                  style={[styles.apptRow, idx < bookings.length - 1 && styles.apptRowBorder]}
+                >
+                  <Text style={styles.apptModality}>{b.modalityType}</Text>
+                  <Text style={styles.trackMuted}>{b.providerName} · {b.date} · {b.time}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
 
         <View style={styles.disclaimer}>
           <Text style={styles.disclaimerText}>{t("accountability.disclaimer")}</Text>
@@ -507,5 +703,154 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     lineHeight: 16,
     textAlign: "center",
+  },
+  sectionTitlePink: {
+    fontFamily: FONTS.heading,
+    fontSize: 20,
+    color: "#e8306a",
+    marginBottom: SPACING.md,
+  },
+  trackCard: {
+    backgroundColor: "#fafaf8",
+    borderRadius: RADIUS.lg,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  trackCardInner: {
+    padding: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  stepsNumber: {
+    fontFamily: FONTS.mono,
+    fontSize: 40,
+    color: "#333",
+    lineHeight: 44,
+  },
+  progressTrack: {
+    height: 6,
+    backgroundColor: "#e0ddd6",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: 6,
+    backgroundColor: "#e8306a",
+    borderRadius: 3,
+  },
+  trackMuted: {
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    color: "#8496b0",
+    marginTop: 2,
+  },
+  trackPlaceholder: {
+    fontFamily: FONTS.body,
+    fontSize: 14,
+    color: "#8496b0",
+    lineHeight: 20,
+  },
+  macroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+  },
+  macroRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  macroLabel: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 14,
+    color: "#333",
+    width: 60,
+  },
+  macroAmount: {
+    fontFamily: FONTS.body,
+    fontSize: 13,
+    color: "#8496b0",
+    width: 80,
+  },
+  macroBar: {
+    flex: 1,
+  },
+  macroEditArea: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  macroInput: {
+    fontFamily: FONTS.body,
+    fontSize: 14,
+    color: "#333",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    width: 56,
+    textAlign: "center",
+  },
+  macroAddBtn: {
+    backgroundColor: "#e8306a",
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 5,
+  },
+  macroAddBtnText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 13,
+    color: "#fff",
+  },
+  macroPlusBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#e8306a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  macroPlusBtnText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 18,
+    color: "#e8306a",
+    lineHeight: 22,
+  },
+  apptEmpty: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 15,
+    color: "#333",
+    marginBottom: SPACING.xs,
+  },
+  apptRow: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    gap: 2,
+  },
+  apptRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  apptModality: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 14,
+    color: "#333",
+  },
+  apptPlanBtn: {
+    marginTop: SPACING.sm,
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "#e8306a",
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+  },
+  apptPlanBtnText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 13,
+    color: "#e8306a",
   },
 });
