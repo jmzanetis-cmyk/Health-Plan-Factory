@@ -267,6 +267,37 @@ export default function HomeScreen() {
         <View style={styles.loadingRing}>
           <ActivityIndicator color={COLORS.amber} />
         </View>
+      ) : entries.length < 3 ? (
+        <View style={styles.newUserSection}>
+          <View style={styles.newUserCard}>
+            <Text style={styles.newUserTitle}>Build your wellness plan</Text>
+            <Text style={styles.newUserBody}>
+              Answer a few questions and we'll create a personalized plan fitted to your budget and
+              goals.
+            </Text>
+            <TouchableOpacity
+              style={styles.newUserBtn}
+              onPress={() => router.push("/intake")}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.newUserBtnText}>Get Started</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.newUserNavyCard}>
+            <Text style={styles.newUserNavyTitle}>How are you feeling today?</Text>
+            <Text style={styles.newUserNavyBody}>
+              Your daily check-in takes 60 seconds and builds your wellness score over time.
+            </Text>
+            <TouchableOpacity
+              style={styles.newUserNavyBtn}
+              onPress={() => router.push("/(tabs)/journal")}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.newUserNavyBtnText}>Start Check-in</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       ) : (
         <View style={styles.scoreSection}>
           <WellnessRing score={wellnessScore} label={t("home.wellnessScore")} />
@@ -768,5 +799,75 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textMuted,
     marginTop: 2,
+  },
+
+  // ── New-user action prompts ───────────────────────────────────────────────
+  newUserSection: {
+    gap: 12,
+    marginBottom: SPACING.xxl,
+  },
+  newUserCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  newUserTitle: {
+    fontFamily: FONTS.heading,
+    fontSize: 22,
+    color: "#1b2d4f",
+    marginBottom: SPACING.sm,
+    lineHeight: 28,
+  },
+  newUserBody: {
+    fontFamily: FONTS.body,
+    fontSize: 14,
+    color: COLORS.textMuted,
+    lineHeight: 22,
+    marginBottom: SPACING.lg,
+  },
+  newUserBtn: {
+    height: 52,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.pink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newUserBtnText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 16,
+    color: COLORS.white,
+  },
+  newUserNavyCard: {
+    backgroundColor: "#1b2d4f",
+    borderRadius: RADIUS.lg,
+    padding: 20,
+  },
+  newUserNavyTitle: {
+    fontFamily: FONTS.heading,
+    fontSize: 20,
+    color: COLORS.white,
+    marginBottom: SPACING.sm,
+    lineHeight: 26,
+  },
+  newUserNavyBody: {
+    fontFamily: FONTS.body,
+    fontSize: 14,
+    color: "rgba(255,255,255,0.7)",
+    lineHeight: 22,
+    marginBottom: SPACING.lg,
+  },
+  newUserNavyBtn: {
+    height: 52,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newUserNavyBtnText: {
+    fontFamily: FONTS.bodySemiBold,
+    fontSize: 16,
+    color: "#1b2d4f",
   },
 });
