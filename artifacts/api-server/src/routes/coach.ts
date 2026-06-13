@@ -79,6 +79,7 @@ router.post("/coach", async (req: Request, res: Response) => {
     return;
   }
 
+  console.log("Anthropic key present:", !!apiKey, "length:", apiKey.length);
   const client = new Anthropic({ apiKey });
 
   let systemWithContext = SYSTEM_PROMPT;
@@ -224,11 +225,14 @@ router.post("/coach", async (req: Request, res: Response) => {
     res.write(`data: ${JSON.stringify({ type: "done", sessionId: resolvedSessionId })}\n\n`);
     res.end();
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const cause = err instanceof Error && err.cause ? String(err.cause) : "";
     req.log?.error({ err }, "Coach streaming error");
+    console.error("Coach streaming error:", msg, cause ? `cause: ${cause}` : "");
     if (!res.headersSent) {
-      res.status(500).json({ error: "Coach error" });
+      res.status(500).json({ error: "Coach error", detail: msg, cause });
     } else {
-      res.write(`data: ${JSON.stringify({ type: "error", message: "Coach error" })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: "error", message: "Coach error", detail: msg, cause })}\n\n`);
       res.end();
     }
   }
