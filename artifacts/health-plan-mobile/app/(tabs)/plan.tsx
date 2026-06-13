@@ -279,7 +279,7 @@ export default function PlanScreen() {
   });
 
   const modalityMap: Record<string, ModalityRecord> = Object.fromEntries(
-    (modalities ?? []).map((m) => [m.id, m])
+    (Array.isArray(modalities) ? modalities : []).map((m) => [m.id, m])
   );
 
   async function onRefresh() {
