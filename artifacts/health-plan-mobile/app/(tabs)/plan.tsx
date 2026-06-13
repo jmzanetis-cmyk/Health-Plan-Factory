@@ -3,11 +3,13 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Platform,
   ActivityIndicator,
   RefreshControl,
+  Linking,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,7 +24,7 @@ import { PurchaseModal } from "@/components/PurchaseModal";
 
 async function getToken() {
   if (Platform.OS === "web") return null;
-  return SecureStore.getItemAsync("auth_session_token");
+  return SecureStore.getItemAsync("hpf_access_token");
 }
 
 async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptionStatus: string }> {
@@ -346,11 +348,47 @@ export default function PlanScreen() {
           <Text style={styles.loadingText}>{t("plan.loadingYourPlan")}</Text>
         </View>
       ) : !planData ? (
-        <View style={styles.emptyState}>
-          <Feather name="clipboard" size={40} color={COLORS.textLight} />
+        <ScrollView contentContainerStyle={styles.emptyState} showsVerticalScrollIndicator={false}>
           <Text style={styles.emptyTitle}>{t("plan.noPlanYet")}</Text>
           <Text style={styles.emptyText}>{t("plan.noPlanText")}</Text>
-        </View>
+
+          <TouchableOpacity
+            style={styles.buildCard}
+            onPress={() => Linking.openURL("https://healthplanfactory.com/onboarding")}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.buildCardTitle}>Build Your Wellness Plan</Text>
+            <Text style={styles.buildCardBody}>
+              Complete the questionnaire on the web to generate your personalized wellness plan.
+            </Text>
+            <View style={styles.buildCardBtn}>
+              <Text style={styles.buildCardBtnText}>Build My Plan</Text>
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.plusCard}>
+            <Text style={styles.plusCardTitle}>Health Plan Factory Plus</Text>
+            <Text style={styles.plusCardPrice}>$9.99/month or $89.99/year</Text>
+            <View style={styles.plusFeatures}>
+              {[
+                "Unlimited provider reveals",
+                "AI accountability coach",
+                "HSA/FSA spending tracker",
+                "Daily check-in and progress tracking",
+                "Routine builder",
+              ].map((f) => (
+                <Text key={f} style={styles.plusFeatureItem}>{f}</Text>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={styles.plusCardBtn}
+              onPress={() => Linking.openURL("https://healthplanfactory.com/pricing")}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.plusCardBtnText}>Subscribe at healthplanfactory.com</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       ) : (
         <FlatList
           data={priorityItems}
@@ -434,13 +472,14 @@ const styles = StyleSheet.create({
   },
   loadingText: { fontFamily: FONTS.body, fontSize: 14, color: COLORS.textMuted },
   emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: SPACING.xxxl,
-    gap: SPACING.md,
+    flexGrow: 1,
+    alignItems: "stretch",
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xxl,
+    paddingBottom: 120,
+    gap: SPACING.xl,
   },
-  emptyTitle: { fontFamily: FONTS.heading, fontSize: 22, color: COLORS.navy },
+  emptyTitle: { fontFamily: FONTS.heading, fontSize: 22, color: COLORS.navy, textAlign: "center" },
   emptyText: {
     fontFamily: FONTS.body,
     fontSize: 14,
@@ -448,6 +487,47 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+  buildCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: SPACING.md,
+  },
+  buildCardTitle: { fontFamily: FONTS.heading, fontSize: 20, color: COLORS.navy },
+  buildCardBody: { fontFamily: FONTS.body, fontSize: 14, color: COLORS.textMuted, lineHeight: 20 },
+  buildCardBtn: {
+    backgroundColor: COLORS.navy,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    alignItems: "center",
+    marginTop: SPACING.xs,
+  },
+  buildCardBtnText: { fontFamily: FONTS.bodySemiBold, fontSize: 15, color: COLORS.white },
+  plusCard: {
+    backgroundColor: "#1b2d4f",
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    gap: SPACING.md,
+  },
+  plusCardTitle: { fontFamily: FONTS.heading, fontSize: 22, color: "#fff" },
+  plusCardPrice: { fontFamily: FONTS.body, fontSize: 14, color: "rgba(255,255,255,0.7)" },
+  plusFeatures: { gap: SPACING.sm, marginVertical: SPACING.xs },
+  plusFeatureItem: {
+    fontFamily: FONTS.body,
+    fontSize: 14,
+    color: "rgba(255,255,255,0.85)",
+    lineHeight: 20,
+  },
+  plusCardBtn: {
+    backgroundColor: COLORS.pink,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    alignItems: "center",
+    marginTop: SPACING.xs,
+  },
+  plusCardBtnText: { fontFamily: FONTS.bodySemiBold, fontSize: 15, color: "#fff" },
   listContent: { paddingHorizontal: SPACING.xl, paddingBottom: 120, gap: SPACING.sm },
   summaryCard: {
     flexDirection: "row",

@@ -5,7 +5,7 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 
 async function fetchPlusStatus(): Promise<boolean> {
   if (Platform.OS === "web") return false;
-  const token = await SecureStore.getItemAsync("auth_session_token");
+  const token = await SecureStore.getItemAsync("hpf_access_token");
   if (!token) return false;
   const base = getApiBaseUrl();
   try {

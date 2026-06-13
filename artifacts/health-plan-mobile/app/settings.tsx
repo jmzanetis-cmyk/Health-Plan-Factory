@@ -31,7 +31,7 @@ async function fetchSubscriptionStatus(): Promise<{ isPlus: boolean; subscriptio
   try {
     let token: string | null = null;
     if (Platform.OS !== "web") {
-      token = await SecureStore.getItemAsync("auth_session_token");
+      token = await SecureStore.getItemAsync("hpf_access_token");
     }
     if (!token) return { isPlus: false, subscriptionStatus: "free" };
     const res = await fetch(`${base}/api/members/subscription`, {
@@ -66,7 +66,7 @@ function NotificationPrefsSection() {
 
   useEffect(() => {
     (async () => {
-      const token = await SecureStore.getItemAsync("auth_session_token");
+      const token = await SecureStore.getItemAsync("hpf_access_token");
       if (!token) { setLoading(false); return; }
       try {
         const res = await fetch(`${apiBase}/api/profile/comms-prefs`, {
@@ -81,7 +81,7 @@ function NotificationPrefsSection() {
   }, []);
 
   const save = async () => {
-    const token = await SecureStore.getItemAsync("auth_session_token");
+    const token = await SecureStore.getItemAsync("hpf_access_token");
     if (!token) return;
     setSaving(true);
     try {
@@ -288,7 +288,7 @@ function LanguageSection() {
     if (apiBase) {
       let token: string | null = null;
       try {
-        token = await SecureStore.getItemAsync("auth_session_token");
+        token = await SecureStore.getItemAsync("hpf_access_token");
       } catch { /* ignore */ }
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
