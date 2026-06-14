@@ -521,7 +521,7 @@ router.post(
 
         // ── Member subscription confirmed by Stripe ──────────────────────────
         if (sessionType === "member_subscription") {
-          if (session.payment_status !== "paid") {
+          if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
             res.json({ received: true });
             return;
           }
