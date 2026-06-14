@@ -9,6 +9,8 @@ const config: CharacterConfig = {
   shoesColor: "#2a4a44",
   hatType: "none",
   hairColor: "#b8892a",
+  imageSource: require("../../assets/images/workers/sonia.png"),
+  accentColor: "#4a9b8e",
 };
 
 export function Sonia(props: WorkerProps) {
