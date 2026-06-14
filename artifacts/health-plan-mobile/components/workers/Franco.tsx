@@ -9,6 +9,7 @@ const config: CharacterConfig = {
   hatType: "none",
   hairColor: "#1a1a1a",
   hasGlasses: true,
+  imageSource: require("../../assets/images/workers/franco.png"),
 };
 
 export function Franco(props: WorkerProps) {

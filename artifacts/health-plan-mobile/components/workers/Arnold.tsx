@@ -9,6 +9,7 @@ const config: CharacterConfig = {
   hatColor: "#3d6b52",
   hatType: "cap",
   hairColor: "#5a3a1a",
+  imageSource: require("../../assets/images/workers/arnold.png"),
 };
 
 export function Arnold(props: WorkerProps) {

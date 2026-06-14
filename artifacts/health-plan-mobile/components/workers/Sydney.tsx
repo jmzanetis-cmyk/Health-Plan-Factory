@@ -10,6 +10,7 @@ const config: CharacterConfig = {
   hatColor: "#D4227E",
   hatType: "hardhat",
   hairColor: "#3d2b1f",
+  imageSource: require("../../assets/images/workers/sydney.png"),
 };
 
 export function Sydney(props: WorkerProps) {

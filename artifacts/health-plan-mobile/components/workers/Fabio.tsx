@@ -9,6 +9,7 @@ const config: CharacterConfig = {
   hatColor: "#1b2d4f",
   hatType: "hardhat",
   hairColor: "#2a1a0a",
+  imageSource: require("../../assets/images/workers/fabio.png"),
 };
 
 export function Fabio(props: WorkerProps) {

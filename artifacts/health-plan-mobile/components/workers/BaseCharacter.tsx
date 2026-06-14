@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Image,
+  type ImageSourcePropType,
+} from "react-native";
 import Svg, { Circle, Rect, Line, Path, G } from "react-native-svg";
 import { FONTS } from "@/constants/theme";
 
@@ -22,9 +29,11 @@ export interface WorkerProps {
   isTyping?: boolean;
 }
 
+const DEFAULT_ACCENT = "#D4227E";
+
 // ── Speech bubble ──────────────────────────────────────────────────────────
 
-function TypingDots() {
+function TypingDots({ color }: { color: string }) {
   const a = useRef(new Animated.Value(0.3)).current;
   const b = useRef(new Animated.Value(0.3)).current;
   const c = useRef(new Animated.Value(0.3)).current;
@@ -47,7 +56,10 @@ function TypingDots() {
   return (
     <View style={styles.dots}>
       {[a, b, c].map((val, i) => (
-        <Animated.View key={i} style={[styles.dot, { opacity: val }]} />
+        <Animated.View
+          key={i}
+          style={[styles.dot, { opacity: val, backgroundColor: color }]}
+        />
       ))}
     </View>
   );
@@ -57,36 +69,44 @@ function SpeechBubble({
   text,
   isTyping,
   position,
+  accentColor,
 }: {
   text?: string;
   isTyping?: boolean;
   position: BubblePosition;
+  accentColor: string;
 }) {
   if (!text && !isTyping) return null;
 
-  const tailStyle =
-    position === "right"
-      ? styles.tailLeft
-      : position === "left"
-      ? styles.tailRight
-      : styles.tailBelow;
+  const showTailLeft = position === "right";
+  const showTailRight = position === "left";
 
   return (
     <View style={[styles.bubbleOuter, position === "above" && { alignItems: "center" }]}>
-      {position === "above" && <View style={[styles.tailAboveConnector]} />}
-      <View style={styles.bubble}>
-        {tailStyle !== styles.tailBelow && <View style={tailStyle} />}
-        {isTyping ? <TypingDots /> : <Text style={styles.bubbleText}>{text}</Text>}
+      {position === "above" && (
+        <View style={[styles.tailAboveConnector, { borderTopColor: accentColor }]} />
+      )}
+      <View style={[styles.bubble, { borderColor: accentColor }]}>
+        {showTailLeft && (
+          <View style={[styles.tailLeft, { borderRightColor: accentColor }]} />
+        )}
+        {showTailRight && (
+          <View style={[styles.tailRight, { borderLeftColor: accentColor }]} />
+        )}
+        {isTyping ? (
+          <TypingDots color={accentColor} />
+        ) : (
+          <Text style={styles.bubbleText}>{text}</Text>
+        )}
       </View>
-      {position === "above" && null}
     </View>
   );
 }
 
-// ── Arm path helpers ───────────────────────────────────────────────────────
+// ── Arm path helpers (SVG fallback) ───────────────────────────────────────
 
 function Arms({ pose, armColor }: { pose: Pose; armColor: string }) {
-  const sw = 8; // strokeWidth
+  const sw = 8;
   const cap = "round";
 
   switch (pose) {
@@ -102,7 +122,6 @@ function Arms({ pose, armColor }: { pose: Pose; armColor: string }) {
         <G>
           <Line x1={25} y1={50} x2={8} y2={54} stroke={armColor} strokeWidth={sw} strokeLinecap={cap} />
           <Line x1={75} y1={46} x2={80} y2={30} stroke={armColor} strokeWidth={sw} strokeLinecap={cap} />
-          {/* thumb */}
           <Circle cx={78} cy={26} r={4} fill={armColor} />
         </G>
       );
@@ -126,7 +145,6 @@ function Arms({ pose, armColor }: { pose: Pose; armColor: string }) {
         <G>
           <Line x1={25} y1={52} x2={42} y2={62} stroke={armColor} strokeWidth={sw} strokeLinecap={cap} />
           <Line x1={75} y1={52} x2={58} y2={62} stroke={armColor} strokeWidth={sw} strokeLinecap={cap} />
-          {/* clipboard */}
           <Rect x={38} y={58} width={24} height={28} rx={2} fill="#fff" stroke="#1b2d4f" strokeWidth={2} />
           <Line x1={43} y1={65} x2={57} y2={65} stroke="#1b2d4f" strokeWidth={1.5} />
           <Line x1={43} y1={70} x2={57} y2={70} stroke="#1b2d4f" strokeWidth={1.5} />
@@ -164,9 +182,13 @@ export interface CharacterConfig {
   hairColor?: string;
   hasGlasses?: boolean;
   showTablet?: boolean;
+  /** Illustrated PNG — when present, replaces the SVG body */
+  imageSource?: ImageSourcePropType;
+  /** Bubble border + dot color. Defaults to brand pink. */
+  accentColor?: string;
 }
 
-// ── Core character SVG ─────────────────────────────────────────────────────
+// ── Core character SVG (fallback when no imageSource) ─────────────────────
 
 function CharacterSVG({ config, pose, size }: { config: CharacterConfig; pose: Pose; size: number }) {
   const {
@@ -186,28 +208,15 @@ function CharacterSVG({ config, pose, size }: { config: CharacterConfig; pose: P
 
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100">
-      {/* Hair / back (for Sonia) */}
       {hairColor && hatType === "none" && (
         <G>
-          <Path
-            d="M 37 24 Q 32 44 33 60 L 37 60 Q 38 42 41 26 Z"
-            fill={hairColor}
-          />
-          <Path
-            d="M 63 24 Q 68 44 67 60 L 63 60 Q 62 42 59 26 Z"
-            fill={hairColor}
-          />
+          <Path d="M 37 24 Q 32 44 33 60 L 37 60 Q 38 42 41 26 Z" fill={hairColor} />
+          <Path d="M 63 24 Q 68 44 67 60 L 63 60 Q 62 42 59 26 Z" fill={hairColor} />
         </G>
       )}
-
-      {/* Head */}
       <Circle cx={50} cy={24} r={13} fill={skinColor} />
-
-      {/* Eyes */}
       <Circle cx={45} cy={21} r={1.8} fill="#1b2d4f" />
       <Circle cx={55} cy={21} r={1.8} fill="#1b2d4f" />
-
-      {/* Glasses (Franco) */}
       {hasGlasses && (
         <G>
           <Circle cx={45} cy={21} r={4} fill="none" stroke="#1b2d4f" strokeWidth={1.5} />
@@ -217,8 +226,6 @@ function CharacterSVG({ config, pose, size }: { config: CharacterConfig; pose: P
           <Line x1={59} y1={21} x2={63} y2={21} stroke="#1b2d4f" strokeWidth={1.2} />
         </G>
       )}
-
-      {/* Smile */}
       <Path
         d="M 44 27 Q 50 33 56 27"
         stroke="#1b2d4f"
@@ -226,47 +233,29 @@ function CharacterSVG({ config, pose, size }: { config: CharacterConfig; pose: P
         strokeLinecap="round"
         fill="none"
       />
-
-      {/* Hat */}
       {hatType === "hardhat" && hatColor && (
         <G>
-          {/* Brim */}
           <Rect x={33} y={16} width={34} height={4} rx={2} fill={hatColor} />
-          {/* Dome */}
           <Path d="M 37 16 Q 50 2 63 16 Z" fill={hatColor} />
         </G>
       )}
       {hatType === "cap" && hatColor && (
         <G>
-          {/* Cap body */}
           <Path d="M 38 16 Q 50 4 62 16 Z" fill={hatColor} />
-          {/* Brim */}
           <Rect x={33} y={14} width={20} height={4} rx={2} fill={hatColor} />
         </G>
       )}
-
-      {/* Hair top (visible below hat for non-Sonia) */}
       {hairColor && hatType !== "none" && (
         <G>
           <Rect x={39} y={34} width={22} height={5} rx={2} fill={hairColor} />
         </G>
       )}
-
-      {/* Neck */}
       <Rect x={47} y={36} width={6} height={6} fill={skinColor} />
-
-      {/* Arms */}
       <Arms pose={showTablet ? "clipboard" : pose} armColor={armColor} />
-
-      {/* Body (torso) */}
       <Rect x={26} y={42} width={48} height={27} rx={4} fill={uniformColor} />
       {uniformTrim && <Rect x={26} y={42} width={48} height={6} rx={4} fill={uniformTrim} />}
-
-      {/* Pants/legs */}
       <Rect x={29} y={69} width={16} height={22} rx={3} fill={pantsColor} />
       <Rect x={55} y={69} width={16} height={22} rx={3} fill={pantsColor} />
-
-      {/* Shoes */}
       <Rect x={26} y={89} width={20} height={8} rx={3} fill={shoesColor} />
       <Rect x={54} y={89} width={20} height={8} rx={3} fill={shoesColor} />
     </Svg>
@@ -283,21 +272,31 @@ export function WorkerCharacter({
   bubblePosition = "right",
   isTyping,
 }: WorkerProps & { config: CharacterConfig }) {
+  const accent = config.accentColor ?? DEFAULT_ACCENT;
   const hasBubble = !!(speechBubble || isTyping);
   const isAbove = bubblePosition === "above";
   const isLeft = bubblePosition === "left";
 
+  const body = config.imageSource ? (
+    <Image
+      source={config.imageSource}
+      style={{ height: size * 1.4, width: size, resizeMode: "contain" }}
+    />
+  ) : (
+    <CharacterSVG config={config} pose={pose} size={size} />
+  );
+
   return (
     <View style={[styles.wrapper, isAbove ? styles.wrapperCol : styles.wrapperRow]}>
       {isAbove && hasBubble && (
-        <SpeechBubble text={speechBubble} isTyping={isTyping} position="above" />
+        <SpeechBubble text={speechBubble} isTyping={isTyping} position="above" accentColor={accent} />
       )}
       {isLeft && hasBubble && (
-        <SpeechBubble text={speechBubble} isTyping={isTyping} position="left" />
+        <SpeechBubble text={speechBubble} isTyping={isTyping} position="left" accentColor={accent} />
       )}
-      <CharacterSVG config={config} pose={pose} size={size} />
+      {body}
       {!isAbove && !isLeft && hasBubble && (
-        <SpeechBubble text={speechBubble} isTyping={isTyping} position="right" />
+        <SpeechBubble text={speechBubble} isTyping={isTyping} position="right" accentColor={accent} />
       )}
     </View>
   );
@@ -317,10 +316,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: "#D4227E",
     paddingHorizontal: 10,
     paddingVertical: 7,
     maxWidth: BUBBLE_MAX_WIDTH,
+    // borderColor set inline per accentColor
   },
   bubbleText: {
     fontFamily: FONTS.body,
@@ -329,7 +328,6 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
 
-  // Tail triangles (CSS border trick)
   tailLeft: {
     position: "absolute",
     left: -7,
@@ -341,7 +339,7 @@ const styles = StyleSheet.create({
     borderRightWidth: 7,
     borderTopColor: "transparent",
     borderBottomColor: "transparent",
-    borderRightColor: "#D4227E",
+    // borderRightColor set inline
   },
   tailRight: {
     position: "absolute",
@@ -354,9 +352,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 7,
     borderTopColor: "transparent",
     borderBottomColor: "transparent",
-    borderLeftColor: "#D4227E",
+    // borderLeftColor set inline
   },
-  tailBelow: {},
   tailAboveConnector: {
     width: 0,
     height: 0,
@@ -365,12 +362,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 6,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: "#D4227E",
+    // borderTopColor set inline
     alignSelf: "center",
     marginBottom: -1,
   },
 
-  // Typing dots
   dots: { flexDirection: "row", gap: 4, paddingHorizontal: 4, paddingVertical: 2 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#D4227E" },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  // backgroundColor set inline per accentColor
 });
