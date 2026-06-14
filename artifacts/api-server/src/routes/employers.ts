@@ -979,7 +979,8 @@ router.post("/employer/billing/create-checkout", requireEmployerAuth, async (req
 router.post(
   "/employer/billing/webhook",
   async (req: Request, res: Response) => {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    // Employer endpoint has its own whsec_ from Stripe — distinct from the providers webhook secret.
+    const webhookSecret = process.env.STRIPE_EMPLOYER_WEBHOOK_SECRET;
 
     if (!stripe || !webhookSecret) {
       res.json({ received: true, note: "Stripe not configured — webhook ignored" });
