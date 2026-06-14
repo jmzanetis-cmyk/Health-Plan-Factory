@@ -14,11 +14,24 @@ const router: IRouter = Router();
 router.use(moderateLimiter);
 
 router.get("/intakes", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   try {
-    const profileId = req.query.profileId as string | undefined;
-    const rows = profileId
-      ? await db.select().from(memberIntakes).where(eq(memberIntakes.profileId, profileId))
-      : await db.select().from(memberIntakes);
+    // Admins may query any profile's intakes via ?profileId=.
+    // All other callers are scoped to their own id — never trust the query param.
+    const profileId =
+      req.user!.role === "admin" && typeof req.query.profileId === "string"
+        ? req.query.profileId
+        : req.user!.id;
+
+    const rows = await db
+      .select()
+      .from(memberIntakes)
+      .where(eq(memberIntakes.profileId, profileId));
+
     res.json(ListIntakesResponse.parse(rows));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
@@ -27,6 +40,11 @@ router.get("/intakes", async (req, res) => {
 });
 
 router.post("/intakes", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
   try {
     const body = CreateIntakeBody.safeParse(req.body);
     if (!body.success) {
@@ -34,11 +52,12 @@ router.post("/intakes", async (req, res) => {
       return;
     }
 
+    // profileId is always the authenticated caller's id — ignore any value in the body.
     const [created] = await db
       .insert(memberIntakes)
       .values({
         id: crypto.randomUUID(),
-        profileId: body.data.profileId ?? null,
+        profileId: req.user!.id,
         budget: body.data.budget,
         goals: body.data.goals ?? [],
         conditions: body.data.conditions ?? [],
