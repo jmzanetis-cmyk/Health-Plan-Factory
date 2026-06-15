@@ -389,7 +389,9 @@ export default function PlanScreen() {
 
           <View style={styles.plusCard}>
             <Text style={styles.plusCardTitle}>Health Plan Factory Plus</Text>
-            <Text style={styles.plusCardPrice}>$9.99/month or $89.99/year</Text>
+            {Platform.OS === "web" && (
+              <Text style={styles.plusCardPrice}>$9.99/month or $89.99/year</Text>
+            )}
             <View style={styles.plusFeatures}>
               {[
                 "Unlimited provider reveals",
@@ -403,10 +405,16 @@ export default function PlanScreen() {
             </View>
             <TouchableOpacity
               style={styles.plusCardBtn}
-              onPress={() => Linking.openURL("https://healthplanfactory.com/pricing")}
+              onPress={
+                Platform.OS === "web"
+                  ? () => Linking.openURL("https://healthplanfactory.com/pricing")
+                  : onUpgrade
+              }
               activeOpacity={0.85}
             >
-              <Text style={styles.plusCardBtnText}>Subscribe at healthplanfactory.com</Text>
+              <Text style={styles.plusCardBtnText}>
+                {Platform.OS === "web" ? "Subscribe at healthplanfactory.com" : "Get Plus"}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

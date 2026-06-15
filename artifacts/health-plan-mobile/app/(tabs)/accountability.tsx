@@ -199,6 +199,13 @@ export default function AccountabilityScreen() {
     { query: partialQuery({ enabled: !!profileId }) }
   );
 
+  const { message: francoMessage, isLoading: francoLoading } = useWorker({
+    worker: "franco",
+    trigger: "track_view",
+    autoFetch: true,
+    cacheDuration: 600_000,
+  });
+
   useEffect(() => {
     (async () => {
       try {
@@ -295,13 +302,6 @@ export default function AccountabilityScreen() {
     await refetch();
     setRefreshing(false);
   }
-
-  const { message: francoMessage, isLoading: francoLoading } = useWorker({
-    worker: "franco",
-    trigger: "track_view",
-    autoFetch: true,
-    cacheDuration: 600_000,
-  });
 
   const entries = progress ?? [];
   const streak = calculateStreak(entries);
