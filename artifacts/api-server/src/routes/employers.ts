@@ -19,7 +19,7 @@ import PDFDocument from "pdfkit";
 // enable live Stripe Checkout sessions and webhook processing.
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 const stripe: Stripe | null = stripeKey
-  ? new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" })
+  ? new Stripe(stripeKey, { apiVersion: "2026-05-27.dahlia" })
   : null;
 
 const router: IRouter = Router();

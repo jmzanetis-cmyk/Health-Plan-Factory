@@ -20,7 +20,7 @@ import { haversineDistanceMiles, ZIP_COORDS } from "../lib/geoUtils";
 // ── Stripe (lazy — only active when STRIPE_SECRET_KEY is set) ─────────────────
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 const stripe: Stripe | null = stripeKey
-  ? new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" })
+  ? new Stripe(stripeKey, { apiVersion: "2026-05-27.dahlia" })
   : null;
 
 // ── Anthropic AI (lazy — only active when ANTHROPIC_API_KEY is set) ───────────

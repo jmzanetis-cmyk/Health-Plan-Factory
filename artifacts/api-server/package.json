@@ -30,7 +30,7 @@
     "pino-http": "^10",
     "resend": "^6.9.4",
     "serverless-http": "^4.0.0",
-    "stripe": "^21.0.1",
+    "stripe": "^22.2.1",
     "twilio": "^5.13.1",
     "zod": "catalog:"
   },

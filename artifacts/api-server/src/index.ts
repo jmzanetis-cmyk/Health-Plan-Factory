@@ -47,8 +47,8 @@ async function validateStripeKey(): Promise<void> {
     return;
   }
   try {
-    const stripe = new Stripe(key, { apiVersion: "2026-03-25.dahlia" });
-    const account = await stripe.accounts.retrieve();
+    const stripe = new Stripe(key, { apiVersion: "2026-05-27.dahlia" });
+    const account = await stripe.accounts.retrieveCurrent();
     logger.info(
       { accountId: account.id, country: account.country },
       "Stripe: live key validated successfully"
