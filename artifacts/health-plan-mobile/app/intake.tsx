@@ -28,42 +28,54 @@ const DRAFT_KEY = "hpf_intake_draft";
 const BUDGET_MIN = 50;
 const BUDGET_MAX = 1000;
 const BUDGET_STEP = 25;
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 const TRUE_NAVY = "#1b2d4f";
 
 const CONDITIONS = [
-  "Back Pain", "Neck Pain", "Shoulder Pain", "Hip Pain", "Knee Pain",
-  "Joint Pain", "Chronic Pain", "Sciatica", "Headaches / Migraines",
-  "Fibromyalgia", "Anxiety", "Depression", "Stress & Burnout",
-  "PTSD / Trauma", "Sleep Issues", "Fatigue / Low Energy", "Brain Fog",
-  "Digestive Issues", "Autoimmune Condition", "Diabetes / Blood Sugar",
-  "Heart Health", "High Blood Pressure", "Weight Management",
-  "Hormonal Imbalance", "Menopause Symptoms", "Poor Flexibility",
-  "Poor Posture", "Sedentary Lifestyle", "Athletic Recovery",
-  "Post-Surgery Recovery", "Injury Rehabilitation",
+  { id: "back-pain",        label: "Back Pain" },
+  { id: "neck-pain",        label: "Neck Pain" },
+  { id: "stress",           label: "Stress & Burnout" },
+  { id: "anxiety",          label: "Anxiety" },
+  { id: "sedentary",        label: "Sedentary Lifestyle" },
+  { id: "recovery-needs",   label: "Recovery Needs" },
+  { id: "poor-flexibility", label: "Poor Flexibility" },
+  { id: "digestive",        label: "Digestive Concerns" },
+  { id: "none",             label: "None of these" },
 ];
 
 const GOALS = [
-  "Pain Relief", "Stress Reduction", "Better Sleep", "More Energy",
-  "Weight Loss", "Improved Mobility", "Better Posture", "Injury Recovery",
-  "Athletic Performance", "Mental Clarity", "Emotional Wellbeing",
-  "Gut Health", "Heart Health", "Hormone Balance", "Preventive Care",
-  "Nutrition Improvement", "Better Breathing", "Immune Support",
-  "Skin Health", "General Wellness",
+  { id: "pain-relief",      label: "Pain Relief" },
+  { id: "stress-reduction", label: "Stress Reduction" },
+  { id: "sleep",            label: "Better Sleep" },
+  { id: "energy",           label: "Energy" },
+  { id: "weight-loss",      label: "Weight Loss" },
+  { id: "mobility",         label: "Mobility" },
+  { id: "posture",          label: "Posture" },
+  { id: "recovery",         label: "Recovery" },
+  { id: "preventive",       label: "Preventive Care" },
+  { id: "nutrition",        label: "Nutrition Support" },
+  { id: "fitness",          label: "Fitness" },
 ];
 
-const ACTIVITY_OPTIONS = [
-  "Sedentary (desk job, little movement)",
-  "Lightly active (occasional walks/exercise)",
-  "Moderately active (3-4x/week)",
-  "Very active (daily exercise or physical job)",
+const PREFERENCES = [
+  { id: "in-person",           label: "In-Person" },
+  { id: "virtual",             label: "Virtual / Telehealth" },
+  { id: "low-touch",           label: "Low-Touch" },
+  { id: "high-accountability", label: "High Accountability" },
+  { id: "mind-body",           label: "Mind-Body Focus" },
+  { id: "exercise-based",      label: "Exercise-Based" },
+  { id: "recovery-based",      label: "Recovery-Based" },
+  { id: "clinically-guided",   label: "Clinically Guided" },
+  { id: "gentle",              label: "Gentle / Beginner" },
 ];
 
-const TIME_OPTIONS = [
-  "Under 1 hour",
-  "1-3 hours",
-  "3-5 hours",
-  "5+ hours",
+const EXCLUSIONS = [
+  { id: "no-chiro",        label: "Avoid Chiropractic" },
+  { id: "no-needles",      label: "Avoid Needles" },
+  { id: "no-group",        label: "No Group Classes" },
+  { id: "no-hiit",         label: "No High-Intensity" },
+  { id: "mobility-limits", label: "Mobility Limitations" },
+  { id: "pregnancy-safe",  label: "Pregnancy-Safe Only" },
 ];
 
 const SESSION_OPTIONS = [
@@ -87,8 +99,12 @@ const STEP_META = [
     subtitle: "Select your top priorities.",
   },
   {
-    title: "Tell us about your lifestyle.",
-    subtitle: "This helps us recommend modalities that fit your schedule and preferences.",
+    title: "How do you like to work?",
+    subtitle: "Select all that apply. This shapes which modalities we recommend.",
+  },
+  {
+    title: "Anything to avoid?",
+    subtitle: "We'll exclude these from your plan. Skip if nothing applies.",
   },
   {
     title: "Where are you located?",
@@ -179,8 +195,8 @@ export default function IntakeScreen() {
   const [budget, setBudget] = useState(250);
   const [conditions, setConditions] = useState<string[]>([]);
   const [goals, setGoals] = useState<string[]>([]);
-  const [activityLevel, setActivityLevel] = useState<string | null>(null);
-  const [timePerWeek, setTimePerWeek] = useState<string | null>(null);
+  const [preferences, setPreferences] = useState<string[]>([]);
+  const [exclusions, setExclusions] = useState<string[]>([]);
   const [sessionPref, setSessionPref] = useState<string | null>(null);
   const [zipCode, setZipCode] = useState("");
   const [consentGiven, setConsentGiven] = useState(false);
@@ -233,8 +249,8 @@ export default function IntakeScreen() {
             budget?: number;
             conditions?: string[];
             goals?: string[];
-            activityLevel?: string | null;
-            timePerWeek?: string | null;
+            preferences?: string[];
+            exclusions?: string[];
             sessionPref?: string | null;
             zipCode?: string;
             consentGiven?: boolean;
@@ -242,12 +258,12 @@ export default function IntakeScreen() {
           if (d.budget != null) setBudget(d.budget);
           if (d.conditions) setConditions(d.conditions);
           if (d.goals) setGoals(d.goals);
-          if (d.activityLevel !== undefined) setActivityLevel(d.activityLevel ?? null);
-          if (d.timePerWeek !== undefined) setTimePerWeek(d.timePerWeek ?? null);
+          if (d.preferences) setPreferences(d.preferences);
+          if (d.exclusions) setExclusions(d.exclusions);
           if (d.sessionPref !== undefined) setSessionPref(d.sessionPref ?? null);
           if (d.zipCode != null) setZipCode(d.zipCode);
           if (d.consentGiven != null) setConsentGiven(d.consentGiven);
-          if (d.step && d.step >= 1 && d.step < 7) {
+          if (d.step && d.step >= 1 && d.step < 8) {
             setStep(d.step);
             setDraftBanner(true);
           }
@@ -258,7 +274,7 @@ export default function IntakeScreen() {
 
   // ── Generating step effects ──────────────────────────────────────────────
   useEffect(() => {
-    if (step !== 7) return;
+    if (step !== 8) return;
     const messages = [
       "Analyzing your goals...",
       "Matching evidence-based modalities...",
@@ -297,7 +313,6 @@ export default function IntakeScreen() {
         const token = await SecureStore.getItemAsync("hpf_access_token");
         const base = getApiBaseUrl();
         const telehealth = sessionPref !== "In-person only";
-        const preferences = [activityLevel, timePerWeek].filter(Boolean) as string[];
         const res = await fetch(`${base}/api/plans/generate`, {
           method: "POST",
           headers: {
@@ -308,9 +323,9 @@ export default function IntakeScreen() {
             profileId,
             budget,
             goals,
-            conditions,
+            conditions: conditions.filter((c) => c !== "none"),
             preferences,
-            exclusions: [],
+            exclusions,
             telehealth,
             zipCode: zipCode || undefined,
             radius: 25,
@@ -342,7 +357,7 @@ export default function IntakeScreen() {
   async function handleSaveAndExit() {
     await AsyncStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({ step, budget, conditions, goals, activityLevel, timePerWeek, sessionPref, zipCode, consentGiven })
+      JSON.stringify({ step, budget, conditions, goals, preferences, exclusions, sessionPref, zipCode, consentGiven })
     ).catch(() => {});
     router.back();
   }
@@ -356,8 +371,8 @@ export default function IntakeScreen() {
   }
 
   function handleContinue() {
-    if (step === 6) {
-      setStep(7);
+    if (step === 7) {
+      setStep(8);
       setGenTrigger((t) => t + 1);
     } else {
       setStep((s) => s + 1);
@@ -383,29 +398,38 @@ export default function IntakeScreen() {
     setLocLoading(false);
   }
 
-  function toggleCondition(c: string) {
-    if (c === "None of the above") {
-      setConditions((prev) => (prev.includes(c) ? [] : [c]));
+  function toggleCondition(id: string) {
+    if (id === "none") {
+      setConditions((prev) => (prev.includes("none") ? [] : ["none"]));
       return;
     }
     setConditions((prev) => {
-      const without = prev.filter((x) => x !== "None of the above");
-      return without.includes(c) ? without.filter((x) => x !== c) : [...without, c];
+      const without = prev.filter((x) => x !== "none");
+      return without.includes(id) ? without.filter((x) => x !== id) : [...without, id];
     });
   }
 
-  function toggleGoal(g: string) {
-    setGoals((prev) => (prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]));
+  function toggleGoal(id: string) {
+    setGoals((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function togglePreference(id: string) {
+    setPreferences((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function toggleExclusion(id: string) {
+    setExclusions((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function isStepValid(): boolean {
     switch (step) {
       case 1: return budget >= BUDGET_MIN;
-      case 2: return true;
+      case 2: return true;                          // conditions optional
       case 3: return goals.length > 0;
-      case 4: return !!activityLevel && !!timePerWeek && !!sessionPref;
-      case 5: return /^\d{5}$/.test(zipCode);
-      case 6: return consentGiven;
+      case 4: return preferences.length > 0;
+      case 5: return true;                          // exclusions optional
+      case 6: return /^\d{5}$/.test(zipCode);
+      case 7: return consentGiven;
       default: return true;
     }
   }
@@ -460,13 +484,8 @@ export default function IntakeScreen() {
       <View>
         <View style={styles.chipGrid}>
           {CONDITIONS.map((c) => (
-            <Chip key={c} label={c} selected={conditions.includes(c)} onPress={() => toggleCondition(c)} />
+            <Chip key={c.id} label={c.label} selected={conditions.includes(c.id)} onPress={() => toggleCondition(c.id)} />
           ))}
-          <Chip
-            label="None of the above"
-            selected={conditions.includes("None of the above")}
-            onPress={() => toggleCondition("None of the above")}
-          />
         </View>
         <TouchableOpacity style={styles.skipBtn} onPress={handleContinue}>
           <Text style={styles.skipText}>Skip for now</Text>
@@ -479,7 +498,7 @@ export default function IntakeScreen() {
     return (
       <View style={styles.chipGrid}>
         {GOALS.map((g) => (
-          <Chip key={g} label={g} selected={goals.includes(g)} onPress={() => toggleGoal(g)} />
+          <Chip key={g.id} label={g.label} selected={goals.includes(g.id)} onPress={() => toggleGoal(g.id)} />
         ))}
       </View>
     );
@@ -487,28 +506,30 @@ export default function IntakeScreen() {
 
   function renderStep4() {
     return (
-      <View>
-        <Text style={styles.lifestyleQ}>How active are you currently?</Text>
-        {ACTIVITY_OPTIONS.map((o) => (
-          <OptionBtn key={o} label={o} selected={activityLevel === o} onPress={() => setActivityLevel(o)} />
-        ))}
-        <Text style={[styles.lifestyleQ, { marginTop: SPACING.xl }]}>
-          How much time can you dedicate per week?
-        </Text>
-        {TIME_OPTIONS.map((o) => (
-          <OptionBtn key={o} label={o} selected={timePerWeek === o} onPress={() => setTimePerWeek(o)} />
-        ))}
-        <Text style={[styles.lifestyleQ, { marginTop: SPACING.xl }]}>
-          Do you prefer in-person or remote sessions?
-        </Text>
-        {SESSION_OPTIONS.map((o) => (
-          <OptionBtn key={o} label={o} selected={sessionPref === o} onPress={() => setSessionPref(o)} />
+      <View style={styles.chipGrid}>
+        {PREFERENCES.map((p) => (
+          <Chip key={p.id} label={p.label} selected={preferences.includes(p.id)} onPress={() => togglePreference(p.id)} />
         ))}
       </View>
     );
   }
 
   function renderStep5() {
+    return (
+      <View>
+        <View style={styles.chipGrid}>
+          {EXCLUSIONS.map((e) => (
+            <Chip key={e.id} label={e.label} selected={exclusions.includes(e.id)} onPress={() => toggleExclusion(e.id)} />
+          ))}
+        </View>
+        <TouchableOpacity style={styles.skipBtn} onPress={handleContinue}>
+          <Text style={styles.skipText}>Skip — nothing to exclude</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  function renderStep6() {
     return (
       <View>
         <TextInput
@@ -539,11 +560,17 @@ export default function IntakeScreen() {
           Your zip code is used only to match you with local providers. We do not track or share your
           location.
         </Text>
+        <Text style={[styles.lifestyleQ, { marginTop: SPACING.xl }]}>
+          Do you prefer in-person or remote sessions?
+        </Text>
+        {SESSION_OPTIONS.map((o) => (
+          <OptionBtn key={o} label={o} selected={sessionPref === o} onPress={() => setSessionPref(o)} />
+        ))}
       </View>
     );
   }
 
-  function renderStep6() {
+  function renderStep7() {
     return (
       <View>
         <ScrollView
@@ -582,7 +609,7 @@ export default function IntakeScreen() {
     );
   }
 
-  function renderStep7() {
+  function renderStep8() {
     if (genError) {
       return (
         <View style={styles.genCenter}>
@@ -611,7 +638,7 @@ export default function IntakeScreen() {
 
   const stepValid = isStepValid();
   const meta = STEP_META[step] ?? { title: "", subtitle: "" };
-  const showFooter = step < 7;
+  const showFooter = step < 8;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -627,7 +654,7 @@ export default function IntakeScreen() {
 
         <Text style={styles.headerStep}>Step {step} of {TOTAL_STEPS}</Text>
 
-        {step < 7 ? (
+        {step < 8 ? (
           <TouchableOpacity onPress={handleSaveAndExit} style={styles.headerSideBtn}>
             <Text style={styles.saveExitText}>Save & Exit</Text>
           </TouchableOpacity>
@@ -677,6 +704,7 @@ export default function IntakeScreen() {
         {step === 5 && renderStep5()}
         {step === 6 && renderStep6()}
         {step === 7 && renderStep7()}
+        {step === 8 && renderStep8()}
       </ScrollView>
 
       {/* Footer nav */}
@@ -689,7 +717,7 @@ export default function IntakeScreen() {
             activeOpacity={0.85}
           >
             <Text style={styles.continueBtnText}>
-              {step === 6 ? "Generate My Plan" : "Continue"}
+              {step === 7 ? "Generate My Plan" : "Continue"}
             </Text>
           </TouchableOpacity>
         </View>
