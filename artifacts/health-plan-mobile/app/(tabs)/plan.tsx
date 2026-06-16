@@ -380,7 +380,7 @@ export default function PlanScreen() {
           >
             <Text style={styles.buildCardTitle}>Build Your Wellness Plan</Text>
             <Text style={styles.buildCardBody}>
-              Complete the questionnaire on the web to generate your personalized wellness plan.
+              Answer a few quick questions to build your personalized wellness plan.
             </Text>
             <View style={styles.buildCardBtn}>
               <Text style={styles.buildCardBtnText}>Build My Plan</Text>
