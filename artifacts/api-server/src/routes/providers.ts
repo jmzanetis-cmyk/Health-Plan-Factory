@@ -16,6 +16,7 @@ import {
   GetAdminProviderResponse,
 } from "@workspace/api-zod";
 import { haversineDistanceMiles, ZIP_COORDS } from "../lib/geoUtils";
+import { visibilityWhere } from "../lib/providerVisibility";
 
 // ── Stripe (lazy — only active when STRIPE_SECRET_KEY is set) ─────────────────
 const stripeKey = process.env.STRIPE_SECRET_KEY;
@@ -69,7 +70,7 @@ router.get("/providers", async (req, res) => {
 
     const { modalityId, zipCode, radius, telehealth } = query.data;
 
-    let rows = await db.select().from(providers).where(eq(providers.status, "approved"));
+    let rows = await db.select().from(providers).where(visibilityWhere(req.user?.id ?? null));
 
     if (telehealth) {
       rows = rows.filter((p) => p.offersTelehealth);
@@ -764,7 +765,7 @@ router.get("/providers/counts", async (req, res) => {
     let allProviders = await db
       .select()
       .from(providers)
-      .where(eq(providers.status, "approved"));
+      .where(visibilityWhere(req.user?.id ?? null));
 
     let filtered = allProviders;
 
@@ -911,7 +912,7 @@ router.post("/providers/:id/book", async (req, res) => {
     const [provider] = await db
       .select({ id: providers.id, name: providers.name, profileId: providers.profileId })
       .from(providers)
-      .where(and(eq(providers.id, providerId), eq(providers.status, "approved")))
+      .where(and(eq(providers.id, providerId), visibilityWhere(req.user!.id)))
       .limit(1);
 
     if (!provider) {

@@ -66,7 +66,7 @@ router.post("/plans/speculate", async (req, res) => {
     ]);
 
     const modalityIds = allModalities.map((m) => m.id);
-    const providerAvailability = await queryProviderAvailability(zipCode ?? null, radius ?? 25, modalityIds);
+    const providerAvailability = await queryProviderAvailability(zipCode ?? null, radius ?? 25, modalityIds, req.user?.id ?? null);
 
     const generated = runPlanEngine(allModalities, {
       budget,
@@ -130,7 +130,7 @@ router.post("/plans/generate", async (req, res) => {
 
     // Run provider availability check
     const modalityIds = allModalities.map((m) => m.id);
-    const providerAvailability = await queryProviderAvailability(zipCode ?? null, radius ?? 25, modalityIds);
+    const providerAvailability = await queryProviderAvailability(zipCode ?? null, radius ?? 25, modalityIds, req.user?.id ?? null);
 
     // Run the plan engine with provider availability and clinical evidence
     const generated = runPlanEngine(allModalities, {
@@ -698,7 +698,7 @@ router.post("/plans/:id/reconfigure", async (req, res) => {
       fetchClinicalEvidenceCorpus(),
     ]);
     const modalityIds = allModalities.map((m) => m.id);
-    const providerAvailability = await queryProviderAvailability(intakeData.zipCode, intakeData.radius, modalityIds);
+    const providerAvailability = await queryProviderAvailability(intakeData.zipCode, intakeData.radius, modalityIds, req.user!.id);
 
     const generated = runPlanEngine(allModalities, {
       budget: intakeData.budget,

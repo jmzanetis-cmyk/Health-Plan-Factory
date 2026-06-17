@@ -5,8 +5,9 @@
 
 import { db } from "@workspace/db";
 import { providers, providerModalities } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { haversineDistanceMiles, ZIP_COORDS } from "./geoUtils";
+import { visibilityWhere } from "./providerVisibility";
 
 /**
  * A map of modalityId → nearby provider count.
@@ -33,6 +34,7 @@ export async function queryProviderAvailability(
   zipCode: string | null | undefined,
   radiusMiles: number,
   modalityIds: string[],
+  viewerProfileId?: string | null,
 ): Promise<ProviderAvailabilityMap> {
   if (modalityIds.length === 0) return {};
 
@@ -55,7 +57,7 @@ export async function queryProviderAvailability(
       offersTelehealth: providers.offersTelehealth,
     })
     .from(providers)
-    .where(eq(providers.status, "approved"));
+    .where(visibilityWhere(viewerProfileId));
 
   const nearbyProviderIds = new Set<string>(
     approvedProviders
