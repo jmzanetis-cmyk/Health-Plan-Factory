@@ -9,6 +9,7 @@ import {
   ListProgressResponseItem,
 } from "@workspace/api-zod";
 import { sendNotification, queueNotification } from "../lib/comms";
+import { randomUUID } from "crypto";
 import { sessionConfirmedEmail } from "../emails/session-confirmed";
 import { sessionReminderEmail } from "../emails/session-reminder";
 
@@ -134,7 +135,7 @@ router.post("/progress", async (req, res) => {
       return tx
         .insert(planProgressLogs)
         .values({
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           profileId: body.data.profileId,
           planId: body.data.planId ?? null,
           modalityId: body.data.modalityId ?? null,

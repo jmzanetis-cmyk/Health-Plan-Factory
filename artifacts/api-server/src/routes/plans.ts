@@ -16,7 +16,7 @@ import { runPlanEngine } from "../lib/serverPlanEngine";
 import { queryProviderAvailability } from "../lib/providerAvailability";
 import { sendNotification } from "../lib/comms";
 import { planReadyEmail } from "../emails/plan-ready";
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import PDFDocument from "pdfkit";
 import { moderateLimiter } from "../middlewares/rateLimit";
 
@@ -145,10 +145,10 @@ router.post("/plans/generate", async (req, res) => {
     }, providerAvailability, evidenceCorpus);
 
     const now = new Date();
-    const planId = crypto.randomUUID();
+    const planId = randomUUID();
 
     const itemValues = generated.items.map((item, idx) => ({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       planId,
       modalityId: item.modality.id,
       score: item.score,
@@ -583,7 +583,7 @@ router.post("/plans/:id/modality-feedback", async (req, res) => {
     await db
       .insert(planModalityFeedback)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         profileId: ownerProfileId,
         planId,
         modalityId,
@@ -712,10 +712,10 @@ router.post("/plans/:id/reconfigure", async (req, res) => {
     }, providerAvailability, evidenceCorpus);
 
     const now = new Date();
-    const newPlanId = crypto.randomUUID();
+    const newPlanId = randomUUID();
 
     const itemValues = generated.items.map((item, idx) => ({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       planId: newPlanId,
       modalityId: item.modality.id,
       score: item.score,

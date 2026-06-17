@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { healthSyncLogs, planProgressLogs } from "@workspace/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 import { computeAndCacheInsights } from "./insights.js";
 
 const router = Router();
@@ -89,7 +90,7 @@ async function upsertProgressLogEntry(
       .where(eq(planProgressLogs.id, existing[0].id));
   } else {
     await db.insert(planProgressLogs).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       profileId,
       note: syncNote,
       sessionDate,
@@ -133,7 +134,7 @@ router.post("/health-sync", async (req, res) => {
       const [created] = await db
         .insert(healthSyncLogs)
         .values({
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           profileId,
           date,
           source,

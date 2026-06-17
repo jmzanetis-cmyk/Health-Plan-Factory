@@ -1,3 +1,4 @@
+import './crypto-polyfill';
 import * as Sentry from "@sentry/react-native";
 import {
   CormorantGaramond_400Regular,

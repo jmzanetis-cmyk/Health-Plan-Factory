@@ -7,6 +7,7 @@ import {
   ListIntakesResponse,
   ListIntakesResponseItem,
 } from "@workspace/api-zod";
+import { randomUUID } from "crypto";
 import { moderateLimiter } from "../middlewares/rateLimit";
 
 const router: IRouter = Router();
@@ -56,7 +57,7 @@ router.post("/intakes", async (req, res) => {
     const [created] = await db
       .insert(memberIntakes)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         profileId: req.user!.id,
         budget: body.data.budget,
         goals: body.data.goals ?? [],
