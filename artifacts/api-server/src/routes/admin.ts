@@ -18,6 +18,12 @@ import { providerApprovedEmail } from "../emails/provider-approved";
 import { providerRejectedEmail } from "../emails/provider-rejected";
 import { planSummaryEmail } from "../emails/plan-summary";
 import { planNudgeEmail } from "../emails/plan-nudge";
+import {
+  resolveCategory,
+  fetchNearbyPlaces,
+  upsertProspects,
+  ALLOWED_CATEGORIES,
+} from "../lib/providerSourcing";
 
 const BASE_URL = process.env.BASE_URL || "https://healthplanfactory.com";
 
@@ -974,6 +980,68 @@ router.patch("/admin/booking-requests/:id", async (req, res) => {
       .where(eq(bookingRequests.id, id));
 
     res.json({ success: true });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /admin/providers/source — pull nearby prospects from Google Places
+// Gated by the router.use("/admin", ...) middleware above. Redundant in-handler
+// check is a defense-in-depth measure; do not remove it.
+router.post("/admin/providers/source", async (req, res) => {
+  if (!req.isAuthenticated() || req.user!.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+
+  const { category, radiusMeters, lat, lng } = (req.body ?? {}) as {
+    category?: unknown;
+    radiusMeters?: unknown;
+    lat?: unknown;
+    lng?: unknown;
+  };
+
+  const includedTypes = resolveCategory(String(category ?? ""));
+  if (!includedTypes) {
+    res.status(400).json({
+      error: `unknown category '${String(category)}'`,
+      allowed: ALLOWED_CATEGORIES,
+    });
+    return;
+  }
+
+  const radius = Number(radiusMeters);
+  if (!Number.isFinite(radius) || radius <= 0 || radius > 50000) {
+    res.status(400).json({ error: "radiusMeters must be 1–50000" });
+    return;
+  }
+
+  const latN = Number(lat);
+  const lngN = Number(lng);
+  if (!Number.isFinite(latN) || !Number.isFinite(lngN)) {
+    res.status(400).json({ error: "lat and lng are required (no ZIP support in v1)" });
+    return;
+  }
+
+  let raw: Awaited<ReturnType<typeof fetchNearbyPlaces>>;
+  try {
+    raw = await fetchNearbyPlaces(includedTypes, { lat: latN, lng: lngN }, radius);
+  } catch (e) {
+    res.status(502).json({ error: "Places API fetch failed", detail: String(e) });
+    return;
+  }
+
+  try {
+    const result = await upsertProspects(raw);
+    res.json({
+      category: String(category),
+      center: { lat: latN, lng: lngN },
+      radiusMeters: radius,
+      found: raw.length,
+      new: result.inserted,
+      alreadyKnown: result.skipped,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
