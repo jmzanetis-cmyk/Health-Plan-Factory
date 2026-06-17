@@ -340,6 +340,7 @@ export default function IntakeScreen() {
         await queryClient.invalidateQueries({ queryKey: ["latest-plan", profileId] });
         router.replace("/(tabs)/plan");
       } catch (err) {
+        console.error("[intake] plan generation error:", err);
         if (!cancelled) {
           setGenError(err instanceof Error ? err.message : "Unknown error");
         }
